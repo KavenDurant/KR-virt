@@ -90,7 +90,13 @@ const AppLayout: React.FC = () => {
   return (
     <Layout
       className="app-layout"
-      style={{ height: "100vh", display: "flex", flexDirection: "row" }}
+      style={{ 
+        height: "100vh", 
+        display: "flex", 
+        flexDirection: "row",
+        width: "100vw",
+        overflow: "hidden"
+      }}
     >
       {/* 活动栏 - VS Code左侧窄栏 */}
       <div
@@ -277,21 +283,22 @@ const AppLayout: React.FC = () => {
       </div>
 
       {/* 内容区域 */}
-      <Layout style={{ flex: 1, height: "100vh", overflow: "hidden" }}>
+      <Layout style={{ flex: "1 1 auto", minWidth: 0, height: "100vh", overflow: "hidden" }}>
         <div
           className="editor-area"
-          style={{ width: "100%", position: "relative" }}
+          style={{ width: "100%", height: "100%", position: "relative" }}
         >
           <div
             className="editor-content"
             style={{
               padding: "20px",
-              height: "calc(100vh - 22px)",
+              height: "100%",
               transition: "height 0.3s",
               overflow: "auto",
               width: "100%",
               position: "relative",
               zIndex: 1,
+              boxSizing: "border-box",
             }}
           >
             <Outlet />

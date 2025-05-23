@@ -1,0 +1,64 @@
+@import './variables.less';
+
+// 重置为全屏布局
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: @editor-bg;
+  color: @text-color;
+}
+
+// VS Code 风格的布局样式
+.app-layout {
+  min-height: 100vh;
+  background-color: @editor-bg;
+  color: @text-color;
+  display: flex;
+  flex-direction: row;
+}
+
+// 活动栏样式 - VS Code左侧窄栏
+.activity-bar {
+  width: @activity-bar-width;
+  background-color: @activity-bar-bg;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.activity-bar-menu {
+  background-color: @activity-bar-bg;
+  border-right: none;
+}
+
+// 活动栏工具提示样式
+.activity-tooltip {
+  .ant-tooltip-inner {
+    background-color: @sidebar-bg;
+    color: @text-color;
+    border: 1px solid @border-color;
+    border-radius: 2px;
+    font-size: @font-size-small;
+    padding: 4px 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  }
+  
+  .ant-tooltip-arrow-content {
+    background-color: @sidebar-bg;
+  }
+}
+
+// 侧边栏样式
+.sidebar {
+  background-color: @sidebar-bg !important;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: @sidebar-width;
+}

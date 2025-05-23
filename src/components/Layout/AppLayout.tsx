@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Badge, Layout, Menu, Tooltip } from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -37,13 +37,13 @@ const AppLayout: React.FC = () => {
   };
 
   // 根据当前路径确定选中的菜单项
-  const getCurrentSelectedPath = () => {
+  const getCurrentSelectedPath = useCallback(() => {
     // 如果是根路径，默认选中仪表盘
     return location.pathname === "/" ? "/dashboard" : location.pathname;
-  };
+  }, [location.pathname]);
 
   const [selectedActivityItem, setSelectedActivityItem] = useState(
-    getCurrentSelectedPath
+    getCurrentSelectedPath,
   );
 
   // 当路由变化时更新选中的菜单项
@@ -55,7 +55,7 @@ const AppLayout: React.FC = () => {
     if (location.pathname === "/") {
       navigate("/dashboard");
     }
-  }, [location.pathname]);
+  }, [location.pathname, getCurrentSelectedPath, navigate]);
 
   // 初始加载时检查路由
   useEffect(() => {
@@ -63,7 +63,7 @@ const AppLayout: React.FC = () => {
     if (location.pathname === "/") {
       navigate("/dashboard");
     }
-  }, []);
+  }, [location.pathname, navigate]);
 
   // 处理菜单点击事件
   const handleMenuClick = (path: string) => {
@@ -90,12 +90,12 @@ const AppLayout: React.FC = () => {
   return (
     <Layout
       className="app-layout"
-      style={{ 
-        height: "100vh", 
-        display: "flex", 
+      style={{
+        height: "100vh",
+        display: "flex",
         flexDirection: "row",
         width: "100vw",
-        overflow: "hidden"
+        overflow: "hidden",
       }}
     >
       {/* 活动栏 - VS Code左侧窄栏 */}
@@ -125,7 +125,7 @@ const AppLayout: React.FC = () => {
                 <Tooltip
                   title={item.label}
                   placement="right"
-                  overlayClassName="activity-tooltip"
+                  classNames={{ root: "activity-tooltip" }}
                   mouseEnterDelay={0.5}
                 >
                   {React.cloneElement(item.icon, {
@@ -283,7 +283,14 @@ const AppLayout: React.FC = () => {
       </div>
 
       {/* 内容区域 */}
-      <Layout style={{ flex: "1 1 auto", minWidth: 0, height: "100vh", overflow: "hidden" }}>
+      <Layout
+        style={{
+          flex: "1 1 auto",
+          minWidth: 0,
+          height: "100vh",
+          overflow: "hidden",
+        }}
+      >
         <div
           className="editor-area"
           style={{ width: "100%", height: "100%", position: "relative" }}

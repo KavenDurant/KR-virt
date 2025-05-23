@@ -30,9 +30,9 @@ export interface RouteConfig {
   caseSensitive?: boolean;
   index?: boolean;
   id?: string;
-  handle?: any;
-  loader?: any;
-  action?: any;
+  handle?: Record<string, unknown>;
+  loader?: (args: Record<string, unknown>) => Promise<unknown> | unknown;
+  action?: (args: Record<string, unknown>) => Promise<unknown> | unknown;
   errorElement?: React.ReactNode;
 }
 

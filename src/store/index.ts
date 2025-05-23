@@ -1,4 +1,4 @@
-import { configureStore, createSlice } from '@reduxjs/toolkit';
+import { configureStore, createSlice } from "@reduxjs/toolkit";
 
 // 初始状态
 interface AppState {
@@ -6,12 +6,12 @@ interface AppState {
 }
 
 const initialState: AppState = {
-  sampleData: '示例数据',
+  sampleData: "示例数据",
 };
 
 // 使用 createSlice 创建 reducer 和 actions
 const appSlice = createSlice({
-  name: 'app',
+  name: "app",
   initialState,
   reducers: {
     setSampleData: (state, action) => {

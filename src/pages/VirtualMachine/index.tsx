@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Card, 
-  Row, 
-  Col, 
-  Statistic, 
-  Button, 
-  Table, 
-  Tag, 
-  Space, 
-  Input, 
-  Select, 
+import {
+  Card,
+  Row,
+  Col,
+  Statistic,
+  Button,
+  Table,
+  Tag,
+  Space,
+  Input,
+  Select,
   Dropdown,
-  Menu,
-  Tooltip
+  Tooltip,
 } from "antd";
-import type { MenuProps } from 'antd';
+import type { MenuProps } from "antd";
 import {
   PoweroffOutlined,
   PlayCircleOutlined,
@@ -29,7 +28,7 @@ import {
   DeleteOutlined,
   CopyOutlined,
 } from "@ant-design/icons";
-import type { ColumnsType } from 'antd/es/table';
+import type { ColumnsType } from "antd/es/table";
 
 // 定义虚拟机数据类型
 interface VirtualMachine {
@@ -212,15 +211,16 @@ const VirtualMachineManagement: React.FC = () => {
   ];
 
   // 筛选数据
-  const filteredData = vmData.filter(vm => {
-    const matchSearch = searchText === "" || 
-      vm.name.toLowerCase().includes(searchText.toLowerCase()) || 
+  const filteredData = vmData.filter((vm) => {
+    const matchSearch =
+      searchText === "" ||
+      vm.name.toLowerCase().includes(searchText.toLowerCase()) ||
       vm.id.toLowerCase().includes(searchText.toLowerCase()) ||
       (vm.ip && vm.ip.includes(searchText));
-    
+
     const matchStatus = statusFilter === "全部" || vm.status === statusFilter;
     const matchZone = zoneFilter === "全部" || vm.zone === zoneFilter;
-    
+
     return matchSearch && matchStatus && matchZone;
   });
 
@@ -306,7 +306,12 @@ const VirtualMachineManagement: React.FC = () => {
       render: (usage: string) => {
         const usageValue = parseInt(usage);
         return (
-          <div style={{ color: !isNaN(usageValue) && usageValue > 80 ? "#f14c4c" : "#cccccc" }}>
+          <div
+            style={{
+              color:
+                !isNaN(usageValue) && usageValue > 80 ? "#f14c4c" : "#cccccc",
+            }}
+          >
             {usage}
           </div>
         );
@@ -320,7 +325,12 @@ const VirtualMachineManagement: React.FC = () => {
       render: (usage: string) => {
         const usageValue = parseInt(usage);
         return (
-          <div style={{ color: !isNaN(usageValue) && usageValue > 80 ? "#f14c4c" : "#cccccc" }}>
+          <div
+            style={{
+              color:
+                !isNaN(usageValue) && usageValue > 80 ? "#f14c4c" : "#cccccc",
+            }}
+          >
             {usage}
           </div>
         );
@@ -398,7 +408,8 @@ const VirtualMachineManagement: React.FC = () => {
       dataIndex: "createTime",
       key: "createTime",
       width: 120,
-      sorter: (a, b) => new Date(a.createTime).getTime() - new Date(b.createTime).getTime(),
+      sorter: (a, b) =>
+        new Date(a.createTime).getTime() - new Date(b.createTime).getTime(),
     },
     {
       title: "到期时间",
@@ -448,10 +459,10 @@ const VirtualMachineManagement: React.FC = () => {
     },
   ];
 
-  const menuItems: MenuProps['items'] = [
-    { key: '1', icon: <PoweroffOutlined />, label: '批量停止' },
-    { key: '2', icon: <DeleteOutlined />, label: '批量删除' },
-    { key: '3', icon: <CopyOutlined />, label: '批量克隆' },
+  const menuItems: MenuProps["items"] = [
+    { key: "1", icon: <PoweroffOutlined />, label: "批量停止" },
+    { key: "2", icon: <DeleteOutlined />, label: "批量删除" },
+    { key: "3", icon: <CopyOutlined />, label: "批量克隆" },
   ];
 
   return (
@@ -530,23 +541,39 @@ const VirtualMachineManagement: React.FC = () => {
           border: "1px solid #3c3c3c",
           width: "100%",
         }}
-        headStyle={{
-          backgroundColor: "#252526",
-          color: "#ffffff",
-          borderBottom: "1px solid #3c3c3c",
+        styles={{
+          header: {
+            backgroundColor: "#252526",
+            color: "#ffffff",
+            borderBottom: "1px solid #3c3c3c",
+          },
         }}
       >
-        <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between" }}>
+        <div
+          style={{
+            marginBottom: 16,
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
           <div style={{ display: "flex", gap: 8 }}>
             <Input
               placeholder="搜索虚拟机名称、IP或ID"
               prefix={<SearchOutlined />}
-              style={{ width: 240, backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}
+              style={{
+                width: 240,
+                backgroundColor: "#3c3c3c",
+                borderColor: "#4c4c4c",
+              }}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
             />
             <Select
-              style={{ width: 120, backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}
+              style={{
+                width: 120,
+                backgroundColor: "#3c3c3c",
+                borderColor: "#4c4c4c",
+              }}
               placeholder="状态"
               defaultValue="全部"
               options={[
@@ -559,7 +586,11 @@ const VirtualMachineManagement: React.FC = () => {
               onChange={(value) => setStatusFilter(value)}
             />
             <Select
-              style={{ width: 140, backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}
+              style={{
+                width: 140,
+                backgroundColor: "#3c3c3c",
+                borderColor: "#4c4c4c",
+              }}
               placeholder="可用区"
               defaultValue="全部"
               options={[
@@ -571,29 +602,40 @@ const VirtualMachineManagement: React.FC = () => {
               onChange={(value) => setZoneFilter(value)}
             />
             <Tooltip title="更多筛选条件">
-              <Button icon={<FilterOutlined />} style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }} />
+              <Button
+                icon={<FilterOutlined />}
+                style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}
+              />
             </Tooltip>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <Button 
-              icon={<SyncOutlined />} 
+            <Button
+              icon={<SyncOutlined />}
               style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}
               onClick={refreshData}
             >
               刷新
             </Button>
             <Tooltip title="导出">
-              <Button icon={<ExportOutlined />} style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }} />
+              <Button
+                icon={<ExportOutlined />}
+                style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}
+              />
             </Tooltip>
             <Tooltip title="批量操作">
               <Dropdown menu={{ items: menuItems }}>
-                <Button style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}>
+                <Button
+                  style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}
+                >
                   批量操作 <DownOutlined />
                 </Button>
               </Dropdown>
             </Tooltip>
             <Tooltip title="表格列设置">
-              <Button icon={<SettingOutlined />} style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }} />
+              <Button
+                icon={<SettingOutlined />}
+                style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}
+              />
             </Tooltip>
           </div>
         </div>
@@ -618,10 +660,7 @@ const VirtualMachineManagement: React.FC = () => {
           rowSelection={{
             type: "checkbox",
             columnWidth: 48,
-            selections: [
-              Table.SELECTION_ALL,
-              Table.SELECTION_NONE,
-            ],
+            selections: [Table.SELECTION_ALL, Table.SELECTION_NONE],
           }}
         />
       </Card>

@@ -283,7 +283,7 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({ visible, onClose }) => {
   return (
     <div className="task-drawer-container" ref={panelRef}>
       <PanelGroup autoSaveId="task-panel" direction="vertical">
-        <Panel defaultSize={100} minSize={10} className="main-content-panel" />
+        <Panel defaultSize={100} minSize={100} className="main-content-panel" />
         <PanelResizeHandle className="resize-handle">
           <div className="handle-bar">
             <div className="handle-icon" />

@@ -1,11 +1,11 @@
-import axios from 'axios';
+import axios from "axios";
 
 // 创建 axios 实例
 const request = axios.create({
-  baseURL: '/api', // API的基础URL
-  timeout: 10000,  // 请求超时时间
+  baseURL: "/api", // API的基础URL
+  timeout: 10000, // 请求超时时间
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -13,7 +13,7 @@ const request = axios.create({
 request.interceptors.request.use(
   (config) => {
     // 可以在这里做一些请求前的处理，例如添加token等
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -21,7 +21,7 @@ request.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // 响应拦截器
@@ -32,11 +32,11 @@ request.interceptors.response.use(
     if (response.status === 200) {
       return res;
     }
-    return Promise.reject(new Error('请求失败'));
+    return Promise.reject(new Error("请求失败"));
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 export default request;

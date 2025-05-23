@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Layout, Menu, Tabs, Tree, theme } from "antd";
+import { Layout, Menu, Tabs, Tree } from "antd";
 import {
   FileOutlined,
   SearchOutlined,
@@ -8,7 +8,6 @@ import {
   SettingOutlined,
   FolderOutlined,
   FileTextOutlined,
-  CodeOutlined,
 } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import type { RootState } from "./store";
@@ -16,9 +15,7 @@ import "./App.css";
 // 引入Less样式文件
 import "./styles/theme.less";
 
-const { Content } = Layout;
 const { DirectoryTree } = Tree;
-const { TabPane } = Tabs;
 
 // 示例文件树数据
 const treeData = [

@@ -13,6 +13,7 @@ import {
   BellOutlined,
 } from "@ant-design/icons";
 import routes from "../../router/routes";
+import TaskDrawer from "../TaskDrawer";
 import "./AppLayout.css";
 
 const AppLayout: React.FC = () => {
@@ -25,6 +26,9 @@ const AppLayout: React.FC = () => {
     const savedWidth = localStorage.getItem("sidebarWidth");
     return savedWidth ? parseInt(savedWidth) : 250;
   });
+
+  // 添加任务抽屉状态
+  const [taskDrawerVisible, setTaskDrawerVisible] = useState(false);
 
   // 处理侧边栏宽度调整
   const handleSidebarResize = (newWidth: number) => {
@@ -164,12 +168,12 @@ const AppLayout: React.FC = () => {
                   <BellOutlined
                     style={{
                       fontSize: "20px",
-                      color: "#858585",
+                      color: taskDrawerVisible ? "#ffffff" : "#858585",
                       cursor: "pointer",
                     }}
                     onClick={() => {
-                      // 处理通知点击事件
-                      console.log("通知图标点击");
+                      // 处理通知点击事件，打开/关闭任务抽屉
+                      setTaskDrawerVisible(!taskDrawerVisible);
                     }}
                   />
                 </div>
@@ -274,7 +278,10 @@ const AppLayout: React.FC = () => {
 
       {/* 内容区域 */}
       <Layout style={{ flex: 1, height: "100vh", overflow: "hidden" }}>
-        <div className="editor-area" style={{ width: "100%" }}>
+        <div
+          className="editor-area"
+          style={{ width: "100%", position: "relative" }}
+        >
           <div
             className="editor-content"
             style={{
@@ -283,10 +290,17 @@ const AppLayout: React.FC = () => {
               transition: "height 0.3s",
               overflow: "auto",
               width: "100%",
+              position: "relative",
+              zIndex: 1,
             }}
           >
             <Outlet />
           </div>
+          {/* 任务抽屉 */}
+          <TaskDrawer
+            visible={taskDrawerVisible}
+            onClose={() => setTaskDrawerVisible(false)}
+          />
         </div>
       </Layout>
     </Layout>

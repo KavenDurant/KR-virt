@@ -277,21 +277,20 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({ visible, onClose }) => {
       ),
     },
   ];
-
   if (!visible) return null;
 
   return (
     <div className="task-drawer-container" ref={panelRef}>
       <PanelGroup autoSaveId="task-panel" direction="vertical">
-        <Panel defaultSize={100} minSize={100} className="main-content-panel" />
+        <Panel defaultSize={70} minSize={30} className="main-content-panel" />
         <PanelResizeHandle className="resize-handle">
           <div className="handle-bar">
             <div className="handle-icon" />
           </div>
         </PanelResizeHandle>
         <Panel
-          defaultSize={0}
-          minSize={20}
+          defaultSize={30}
+          minSize={15}
           maxSize={70}
           className="drawer-panel"
           style={{ overflow: "hidden" }} // 防止溢出

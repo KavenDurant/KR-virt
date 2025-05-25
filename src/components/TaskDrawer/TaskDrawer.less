@@ -9,17 +9,29 @@
   z-index: 5;
   display: flex;
   flex-direction: column;
+  pointer-events: none; // 让容器本身不阻挡鼠标事件
+
+  // 只让实际的抽屉面板可以接收鼠标事件
+  .drawer-panel {
+    pointer-events: auto;
+  }
+
+  .resize-handle {
+    pointer-events: auto;
+  }
 }
 
 .resize-handle {
-  height: 4px;
+  height: 6px;
   background-color: @border-color;
   cursor: row-resize;
   position: relative;
   transition: background-color 0.2s;
+  border-top: 1px solid darken(@border-color, 10%);
 
   &:hover {
     background-color: @primary-color;
+    height: 8px;
   }
 
   .handle-bar {
@@ -27,35 +39,53 @@
     justify-content: center;
     align-items: center;
     height: 100%;
+    width: 100%;
 
     .handle-icon {
-      width: 40px;
-      height: 3px;
-      border-radius: 3px;
-      background-color: #666;
+      width: 60px;
+      height: 2px;
+      border-radius: 2px;
+      background-color: #999;
       position: relative;
 
       &::after,
       &::before {
         content: "";
         position: absolute;
-        width: 20px;
-        height: 3px;
-        border-radius: 3px;
-        background-color: #666;
+        width: 40px;
+        height: 2px;
+        border-radius: 2px;
+        background-color: #999;
         left: 50%;
         transform: translateX(-50%);
       }
 
       &::after {
-        top: -5px;
+        top: -4px;
       }
 
       &::before {
-        bottom: -5px;
+        bottom: -4px;
       }
     }
   }
+
+  // 增加拖拽区域的响应范围
+  &::before {
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: 0;
+    right: 0;
+    bottom: -3px;
+    cursor: row-resize;
+  }
+}
+
+// 主内容面板样式 - 透明，不阻挡用户交互
+.main-content-panel {
+  background: transparent;
+  pointer-events: none; // 完全透明，不阻挡用户交互
 }
 
 .drawer-panel {

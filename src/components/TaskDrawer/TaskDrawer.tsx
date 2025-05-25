@@ -16,6 +16,7 @@ import "./TaskDrawer.less";
 interface TaskDrawerProps {
   visible: boolean;
   onClose: () => void;
+  children?: React.ReactNode;
 }
 // test commit
 // 模拟数据
@@ -112,7 +113,11 @@ const logsData = [
   },
 ];
 
-const TaskDrawer: React.FC<TaskDrawerProps> = ({ visible, onClose }) => {
+const TaskDrawer: React.FC<TaskDrawerProps> = ({
+  visible,
+  onClose,
+  children,
+}) => {
   const panelRef = useRef<HTMLDivElement>(null);
 
   // 渲染任务状态图标
@@ -275,37 +280,47 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({ visible, onClose }) => {
           )}
         />
       ),
-    },
-  ];
-  if (!visible) return null;
+    },  ];
 
   return (
     <div className="task-drawer-container" ref={panelRef}>
-      <PanelGroup autoSaveId="task-panel" direction="vertical">
-        <Panel defaultSize={70} minSize={30} className="main-content-panel" />
-        <PanelResizeHandle className="resize-handle">
-          <div className="handle-bar">
-            <div className="handle-icon" />
-          </div>
-        </PanelResizeHandle>
-        <Panel
-          defaultSize={30}
-          minSize={15}
-          maxSize={70}
-          className="drawer-panel"
-          style={{ overflow: "hidden" }} // 防止溢出
-        >
-          <div className="drawer-header">
-            <h3>消息中心</h3>
-            <span className="close-button" onClick={onClose}>
-              ✕
-            </span>
-          </div>
-          <div className="drawer-content">
-            <Tabs defaultActiveKey="1" items={items} className="drawer-tabs" />
-          </div>
-        </Panel>
-      </PanelGroup>
+      {visible ? (
+        <PanelGroup autoSaveId="task-panel" direction="vertical">
+          <Panel defaultSize={70} minSize={30} className="main-content-panel">
+            <div className="editor-content">{children}</div>
+          </Panel>
+          <PanelResizeHandle className="resize-handle">
+            <div className="handle-bar">
+              <div className="handle-icon" />
+            </div>
+          </PanelResizeHandle>
+          <Panel
+            defaultSize={30}
+            minSize={15}
+            maxSize={70}
+            className="drawer-panel"
+            style={{ overflow: "hidden" }}
+          >
+            <div className="drawer-header">
+              <h3>消息中心</h3>
+              <span className="close-button" onClick={onClose}>
+                ✕
+              </span>
+            </div>
+            <div className="drawer-content">
+              <Tabs
+                defaultActiveKey="1"
+                items={items}
+                className="drawer-tabs"
+              />
+            </div>
+          </Panel>
+        </PanelGroup>
+      ) : (
+        <div className="main-content-panel">
+          <div className="editor-content">{children}</div>
+        </div>
+      )}
     </div>
   );
 };

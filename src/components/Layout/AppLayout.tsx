@@ -270,7 +270,6 @@ const AppLayout: React.FC = () => {
           />
         </div>
       </div>
-
       {/* 侧边栏 - 导航菜单 */}
       <div
         ref={sidebarRef}
@@ -329,8 +328,7 @@ const AppLayout: React.FC = () => {
             document.addEventListener("mouseup", handleMouseUp);
           }}
         />
-      </div>
-
+      </div>{" "}
       {/* 内容区域 */}
       <Layout
         style={{
@@ -340,31 +338,23 @@ const AppLayout: React.FC = () => {
           overflow: "hidden",
         }}
       >
-        <div
-          className="editor-area"
-          style={{ width: "100%", height: "100%", position: "relative" }}
+        <TaskDrawer
+          visible={taskDrawerVisible}
+          onClose={() => setTaskDrawerVisible(false)}
         >
           <div
             className="editor-content"
             style={{
               padding: "20px",
               height: "100%",
-              transition: "height 0.3s",
               overflow: "auto",
               width: "100%",
-              position: "relative",
-              zIndex: 1,
               boxSizing: "border-box",
             }}
           >
             <Outlet />
           </div>
-          {/* 任务抽屉 */}
-          <TaskDrawer
-            visible={taskDrawerVisible}
-            onClose={() => setTaskDrawerVisible(false)}
-          />
-        </div>
+        </TaskDrawer>
       </Layout>
     </Layout>
   );

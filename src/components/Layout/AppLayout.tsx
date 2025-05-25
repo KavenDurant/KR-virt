@@ -32,7 +32,7 @@ const AppLayout: React.FC = () => {
   const originalWidthRef = useRef(sidebarWidth);
   // 添加任务抽屉状态
   const [taskDrawerVisible, setTaskDrawerVisible] = useState(false);
-  
+
   // 添加拖拽状态
   const [isDragging, setIsDragging] = useState(false);
   // 处理侧边栏宽度调整 - 优化版本，减少重新渲染
@@ -270,10 +270,11 @@ const AppLayout: React.FC = () => {
             }))}
           />
         </div>
-      </div>      {/* 侧边栏 - 导航菜单 */}
+      </div>{" "}
+      {/* 侧边栏 - 导航菜单 */}
       <div
         ref={sidebarRef}
-        className={`sidebar ${isDragging ? 'dragging' : ''}`}
+        className={`sidebar ${isDragging ? "dragging" : ""}`}
         style={{
           width: `${sidebarWidth}px`,
           backgroundColor: "#252526",
@@ -303,33 +304,37 @@ const AppLayout: React.FC = () => {
               className: "sidebar-menu-item",
             },
           ]}
-        />        {/* 拖拽手柄 */}
+        />{" "}
+        {/* 拖拽手柄 */}
         <div
           className="sidebar-resize-handle"
           onMouseDown={(e) => {
             e.preventDefault();
             setIsDragging(true);
-            
+
             const startX = e.clientX;
             const startWidth = originalWidthRef.current;
             let lastUpdateTime = 0;
             const throttleDelay = 16; // 约60FPS
 
             // 添加拖拽类到body，禁用文本选择
-            document.body.classList.add('sidebar-dragging');
+            document.body.classList.add("sidebar-dragging");
 
             const handleMouseMove = (moveEvent: MouseEvent) => {
               const now = Date.now();
               const newWidth = startWidth + (moveEvent.clientX - startX);
-              
+
               // 确保在有效范围内
               if (newWidth >= 200 && newWidth <= 400) {
                 // 立即更新DOM，提供流畅的视觉反馈
                 handleSidebarResize(newWidth, false);
-                
+
                 // 节流状态更新，减少重新渲染
                 if (now - lastUpdateTime > throttleDelay) {
-                  originalWidthRef.current = Math.max(200, Math.min(newWidth, 400));
+                  originalWidthRef.current = Math.max(
+                    200,
+                    Math.min(newWidth, 400)
+                  );
                   lastUpdateTime = now;
                 }
               }
@@ -337,15 +342,15 @@ const AppLayout: React.FC = () => {
 
             const handleMouseUp = () => {
               setIsDragging(false);
-              
+
               // 移除拖拽类
-              document.body.classList.remove('sidebar-dragging');
-              
+              document.body.classList.remove("sidebar-dragging");
+
               // 拖拽结束时，最终更新状态和localStorage
               const finalWidth = originalWidthRef.current;
               setSidebarWidth(finalWidth);
               localStorage.setItem("sidebarWidth", finalWidth.toString());
-              
+
               document.removeEventListener("mousemove", handleMouseMove);
               document.removeEventListener("mouseup", handleMouseUp);
             };

@@ -144,7 +144,7 @@
 
 /* 拖拽手柄扩大响应区域 */
 .sidebar-resize-handle::before {
-  content: '';
+  content: "";
   position: absolute;
   left: -2px;
   right: -2px;

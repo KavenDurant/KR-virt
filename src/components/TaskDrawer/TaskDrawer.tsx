@@ -280,7 +280,8 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({
           )}
         />
       ),
-    },  ];
+    },
+  ];
 
   return (
     <div className="task-drawer-container" ref={panelRef}>

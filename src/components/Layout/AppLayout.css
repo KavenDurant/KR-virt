@@ -6,13 +6,18 @@
   right: 0;
   top: 0;
   bottom: 0;
-  transition: background-color 0.2s;
   z-index: 10;
+  /* 移除过渡效果，提高拖拽性能 */
 }
 
-.sidebar-resize-handle:hover,
+.sidebar-resize-handle:hover {
+  background-color: #007acc;
+}
+
 .sidebar-resize-handle:active {
   background-color: #007acc;
+  /* 拖拽时禁用过渡效果 */
+  transition: none;
 }
 
 .sidebar {
@@ -119,4 +124,31 @@
 
 .notification-icon:hover {
   background-color: #444444;
+}
+
+/* 拖拽时的性能优化 */
+.sidebar-dragging {
+  user-select: none;
+  pointer-events: none;
+}
+
+.sidebar-dragging * {
+  user-select: none;
+  pointer-events: none;
+}
+
+/* 拖拽时禁用过渡效果，提高性能 */
+.sidebar-dragging .sidebar {
+  transition: none !important;
+}
+
+/* 拖拽手柄扩大响应区域 */
+.sidebar-resize-handle::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  cursor: col-resize;
 }

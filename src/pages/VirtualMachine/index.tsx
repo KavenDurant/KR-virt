@@ -470,7 +470,7 @@ const VirtualMachineManagement: React.FC = () => {
       <h1 style={{ color: "#ffffff" }}>虚拟机管理</h1>
 
       <Row gutter={16} style={{ marginBottom: "24px", width: "100%" }}>
-        <Col span={6}>
+        <Col span={6} xxl={6} xl={6} lg={6} md={12} sm={24} xs={24}>
           <Card
             style={{
               backgroundColor: "#252526",
@@ -481,7 +481,7 @@ const VirtualMachineManagement: React.FC = () => {
             <Statistic title="总虚拟机数量" value={12} />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col span={6} xxl={6} xl={6} lg={6} md={12} sm={24} xs={24}>
           <Card
             style={{
               backgroundColor: "#252526",
@@ -496,7 +496,7 @@ const VirtualMachineManagement: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col span={6} xxl={6} xl={6} lg={6} md={12} sm={24} xs={24}>
           <Card
             style={{
               backgroundColor: "#252526",
@@ -511,7 +511,7 @@ const VirtualMachineManagement: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col span={6} xxl={6} xl={6} lg={6} md={12} sm={24} xs={24}>
           <Card
             style={{
               backgroundColor: "#252526",

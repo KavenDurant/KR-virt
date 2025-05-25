@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Badge, Layout, Menu, Tooltip } from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -19,22 +19,41 @@ import "./AppLayout.css";
 const AppLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
-  // 添加侧边栏宽度状态
+  // 添加侧边栏宽度状态，使用useRef保证它不会随渲染重置
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     // 从本地存储中获取保存的侧边栏宽度，如果没有则使用默认值
     const savedWidth = localStorage.getItem("sidebarWidth");
     return savedWidth ? parseInt(savedWidth) : 250;
   });
 
+  // 存储原始宽度的ref，用于拖动参考
+  const originalWidthRef = useRef(sidebarWidth);
+
   // 添加任务抽屉状态
   const [taskDrawerVisible, setTaskDrawerVisible] = useState(false);
 
   // 处理侧边栏宽度调整
-  const handleSidebarResize = (newWidth: number) => {
-    setSidebarWidth(newWidth);
-    localStorage.setItem("sidebarWidth", newWidth.toString());
-  };
+  const handleSidebarResize = useCallback(
+    (newWidth: number) => {
+      // 确保宽度在有效范围内
+      const validWidth = Math.max(200, Math.min(newWidth, 400));
+
+      // 防止不必要的更新
+      if (validWidth === sidebarWidth) return;
+
+      setSidebarWidth(validWidth);
+      localStorage.setItem("sidebarWidth", validWidth.toString());
+      originalWidthRef.current = validWidth;
+
+      // 确保DOM元素宽度也更新
+      if (sidebarRef.current) {
+        sidebarRef.current.style.width = `${validWidth}px`;
+      }
+    },
+    [sidebarWidth]
+  );
 
   // 根据当前路径确定选中的菜单项
   const getCurrentSelectedPath = useCallback(() => {
@@ -43,7 +62,7 @@ const AppLayout: React.FC = () => {
   }, [location.pathname]);
 
   const [selectedActivityItem, setSelectedActivityItem] = useState(
-    getCurrentSelectedPath,
+    getCurrentSelectedPath
   );
 
   // 当路由变化时更新选中的菜单项
@@ -57,9 +76,37 @@ const AppLayout: React.FC = () => {
     }
   }, [location.pathname, getCurrentSelectedPath, navigate]);
 
-  // 初始加载时检查路由
+  // 初始加载时设置侧边栏宽度
   useEffect(() => {
-    // 如果是根路径，自动导航到仪表盘
+    // 确保侧边栏宽度与localStorage同步（仅在组件挂载时）
+    const savedWidth = localStorage.getItem("sidebarWidth");
+    if (savedWidth && sidebarRef.current) {
+      const width = parseInt(savedWidth);
+      setSidebarWidth(width);
+      originalWidthRef.current = width;
+      sidebarRef.current.style.width = `${width}px`;
+    }
+
+    // 监听存储变化（来自其他标签页的变化）
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "sidebarWidth" && e.newValue) {
+        const width = parseInt(e.newValue);
+        setSidebarWidth(width);
+        originalWidthRef.current = width;
+        if (sidebarRef.current) {
+          sidebarRef.current.style.width = `${width}px`;
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []); // 空依赖数组，仅在挂载时执行
+
+  // 处理根路径重定向
+  useEffect(() => {
     if (location.pathname === "/") {
       navigate("/dashboard");
     }
@@ -226,11 +273,13 @@ const AppLayout: React.FC = () => {
 
       {/* 侧边栏 - 导航菜单 */}
       <div
+        ref={sidebarRef}
         className="sidebar"
         style={{
-          width: sidebarWidth,
+          width: `${sidebarWidth}px`,
           backgroundColor: "#252526",
           position: "relative",
+          flexShrink: 0,
         }}
       >
         <Menu
@@ -262,7 +311,7 @@ const AppLayout: React.FC = () => {
           onMouseDown={(e) => {
             e.preventDefault();
             const startX = e.clientX;
-            const startWidth = sidebarWidth;
+            const startWidth = originalWidthRef.current;
 
             const handleMouseMove = (moveEvent: MouseEvent) => {
               const newWidth = startWidth + (moveEvent.clientX - startX);

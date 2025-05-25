@@ -333,7 +333,6 @@ interface IPDetail {
 }
 
 // 定义路由接口类型
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface Route {
   id: string;
   destination: string;
@@ -344,7 +343,6 @@ interface Route {
 }
 
 // 定义安全组规则类型
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface SecurityRule {
   id: string;
   name: string;

@@ -294,6 +294,7 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({ visible, onClose }) => {
           minSize={20}
           maxSize={70}
           className="drawer-panel"
+          style={{ overflow: "hidden" }} // 防止溢出
         >
           <div className="drawer-header">
             <h3>消息中心</h3>

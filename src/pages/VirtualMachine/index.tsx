@@ -29,7 +29,7 @@ import {
   CopyOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import { useTheme } from "../../contexts/ThemeContext";
+import { useTheme } from "../../hooks/useTheme";
 
 // 定义虚拟机数据类型
 interface VirtualMachine {
@@ -63,13 +63,14 @@ interface VirtualMachine {
 
 const VirtualMachineManagement: React.FC = () => {
   const { themeConfig } = useTheme();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // 改为初始loading状态
+  const [vmList, setVmList] = useState<VirtualMachine[]>([]); // 添加状态管理
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("全部");
   const [zoneFilter, setZoneFilter] = useState("全部");
 
   // 模拟数据
-  const vmData: VirtualMachine[] = [
+  const mockVmData: VirtualMachine[] = [
     {
       id: "vm-001",
       name: "Web服务器01",
@@ -212,8 +213,23 @@ const VirtualMachineManagement: React.FC = () => {
     },
   ];
 
+  // 添加数据加载effect
+  useEffect(() => {
+    const loadVmData = () => {
+      setLoading(true);
+      // 模拟API调用延迟
+      setTimeout(() => {
+        setVmList(mockVmData);
+        setLoading(false);
+      }, 1200);
+    };
+
+    loadVmData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 筛选数据
-  const filteredData = vmData.filter((vm) => {
+  const filteredData = vmList.filter((vm) => {
     const matchSearch =
       searchText === "" ||
       vm.name.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -226,18 +242,14 @@ const VirtualMachineManagement: React.FC = () => {
     return matchSearch && matchStatus && matchZone;
   });
 
-  // 模拟加载数据
-  const refreshData = () => {
+  // 刷新数据函数
+  const handleRefresh = () => {
     setLoading(true);
     setTimeout(() => {
+      setVmList(mockVmData);
       setLoading(false);
-    }, 1000);
+    }, 800);
   };
-
-  useEffect(() => {
-    // 初始化数据加载
-    refreshData();
-  }, []);
 
   const columns: ColumnsType<VirtualMachine> = [
     {
@@ -270,7 +282,7 @@ const VirtualMachineManagement: React.FC = () => {
               return { color: "default", icon: "●" };
           }
         };
-        
+
         const config = getStatusConfig(status);
         return (
           <Tag
@@ -331,7 +343,9 @@ const VirtualMachineManagement: React.FC = () => {
           <div
             style={{
               color:
-                !isNaN(usageValue) && usageValue > 80 ? "#ff4d4f" : themeConfig.token.colorTextBase,
+                !isNaN(usageValue) && usageValue > 80
+                  ? "#ff4d4f"
+                  : themeConfig.token.colorTextBase,
             }}
           >
             {usage}
@@ -350,7 +364,9 @@ const VirtualMachineManagement: React.FC = () => {
           <div
             style={{
               color:
-                !isNaN(usageValue) && usageValue > 80 ? "#ff4d4f" : themeConfig.token.colorTextBase,
+                !isNaN(usageValue) && usageValue > 80
+                  ? "#ff4d4f"
+                  : themeConfig.token.colorTextBase,
             }}
           >
             {usage}
@@ -410,7 +426,7 @@ const VirtualMachineManagement: React.FC = () => {
               return { color: "default", icon: "💻" };
           }
         };
-        
+
         const config = getPlatformConfig(platform);
         return (
           <Tag
@@ -465,19 +481,11 @@ const VirtualMachineManagement: React.FC = () => {
       render: (_, record) => (
         <Space size="small">
           {record.status === "已停止" ? (
-            <Button
-              type="primary"
-              size="small"
-              icon={<PlayCircleOutlined />}
-            >
+            <Button type="primary" size="small" icon={<PlayCircleOutlined />}>
               启动
             </Button>
           ) : (
-            <Button
-              danger
-              size="small"
-              icon={<PoweroffOutlined />}
-            >
+            <Button danger size="small" icon={<PoweroffOutlined />}>
               停止
             </Button>
           )}
@@ -642,9 +650,9 @@ const VirtualMachineManagement: React.FC = () => {
             <Tooltip title="更多筛选条件">
               <Button
                 icon={<FilterOutlined />}
-                style={{ 
-                  backgroundColor: themeConfig.token.colorBgContainer, 
-                  borderColor: themeConfig.token.colorBorder 
+                style={{
+                  backgroundColor: themeConfig.token.colorBgContainer,
+                  borderColor: themeConfig.token.colorBorder,
                 }}
               />
             </Tooltip>
@@ -652,29 +660,29 @@ const VirtualMachineManagement: React.FC = () => {
           <div style={{ display: "flex", gap: 8 }}>
             <Button
               icon={<SyncOutlined />}
-              style={{ 
-                backgroundColor: themeConfig.token.colorBgContainer, 
-                borderColor: themeConfig.token.colorBorder 
+              style={{
+                backgroundColor: themeConfig.token.colorBgContainer,
+                borderColor: themeConfig.token.colorBorder,
               }}
-              onClick={refreshData}
+              onClick={handleRefresh}
             >
               刷新
             </Button>
             <Tooltip title="导出">
               <Button
                 icon={<ExportOutlined />}
-                style={{ 
-                  backgroundColor: themeConfig.token.colorBgContainer, 
-                  borderColor: themeConfig.token.colorBorder 
+                style={{
+                  backgroundColor: themeConfig.token.colorBgContainer,
+                  borderColor: themeConfig.token.colorBorder,
                 }}
               />
             </Tooltip>
             <Tooltip title="批量操作">
               <Dropdown menu={{ items: menuItems }}>
                 <Button
-                  style={{ 
-                    backgroundColor: themeConfig.token.colorBgContainer, 
-                    borderColor: themeConfig.token.colorBorder 
+                  style={{
+                    backgroundColor: themeConfig.token.colorBgContainer,
+                    borderColor: themeConfig.token.colorBorder,
                   }}
                 >
                   批量操作 <DownOutlined />
@@ -684,9 +692,9 @@ const VirtualMachineManagement: React.FC = () => {
             <Tooltip title="表格列设置">
               <Button
                 icon={<SettingOutlined />}
-                style={{ 
-                  backgroundColor: themeConfig.token.colorBgContainer, 
-                  borderColor: themeConfig.token.colorBorder 
+                style={{
+                  backgroundColor: themeConfig.token.colorBgContainer,
+                  borderColor: themeConfig.token.colorBorder,
                 }}
               />
             </Tooltip>
@@ -700,13 +708,20 @@ const VirtualMachineManagement: React.FC = () => {
             pageSize: 10,
             itemRender: (page, type, originalElement) => {
               if (type === "page") {
-                return <a style={{ color: themeConfig.token.colorTextBase }}>{page}</a>;
+                return (
+                  <a style={{ color: themeConfig.token.colorTextBase }}>
+                    {page}
+                  </a>
+                );
               }
               return originalElement;
             },
           }}
           loading={loading}
-          style={{ backgroundColor: themeConfig.token.colorBgContainer, width: "100%" }}
+          style={{
+            backgroundColor: themeConfig.token.colorBgContainer,
+            width: "100%",
+          }}
           scroll={{ x: 2500 }}
           bordered
           size="middle"

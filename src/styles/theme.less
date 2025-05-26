@@ -9,7 +9,9 @@ body,
   padding: 0;
   background-color: var(--bg-color, @editor-bg);
   color: var(--text-color, @text-color);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 // 主题切换样式
@@ -43,7 +45,7 @@ body,
   display: flex;
   flex-direction: row;
   transition: all 0.3s ease;
-  
+
   .ant-layout-content {
     overflow-y: auto; /* 允许内容区域垂直滚动 */
     height: 100vh;
@@ -118,7 +120,7 @@ body,
   .ant-tabs {
     .ant-tabs-nav {
       background-color: var(--sidebar-bg);
-      
+
       .ant-tabs-tab {
         background-color: transparent;
         border-color: var(--border-color);
@@ -152,7 +154,8 @@ body,
     border-color: var(--border-color);
     color: var(--text-color);
 
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
       border-color: var(--primary-color);
       background-color: var(--bg-color);
     }
@@ -196,7 +199,7 @@ body,
   .sidebar {
     width: 200px;
   }
-  
+
   .activity-bar {
     width: 40px;
   }

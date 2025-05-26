@@ -8,6 +8,7 @@ import {
   UserOutlined,
   SettingOutlined,
   DashboardOutlined,
+  AuditOutlined,
 } from "@ant-design/icons";
 
 // 导入页面组件
@@ -19,6 +20,7 @@ import StorageManagement from "../pages/Storage";
 import UserManagement from "../pages/User";
 import SystemSettings from "../pages/System";
 import Dashboard from "../pages/Dashboard";
+import AuditManagement from "../pages/Audit";
 
 // 定义路由
 export interface RouteConfig {
@@ -79,6 +81,12 @@ const routes: RouteConfig[] = [
     name: "用户管理",
     element: <UserManagement />,
     icon: <UserOutlined />,
+  },
+  {
+    path: "/audit",
+    name: "审计管理",
+    element: <AuditManagement />,
+    icon: <AuditOutlined />,
   },
   {
     path: "/system",

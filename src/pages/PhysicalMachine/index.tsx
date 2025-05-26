@@ -41,7 +41,7 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
-import { useTheme } from "../../contexts/ThemeContext";
+import { useTheme } from "../../hooks/useTheme";
 
 const { Content } = Layout;
 const { TabPane } = Tabs;
@@ -429,7 +429,7 @@ const PhysicalMachineManagement: React.FC = () => {
                 location: values.location,
                 tags: values.tags,
               }
-            : host
+            : host,
         );
         setHostList(updatedHosts);
       } else {
@@ -731,7 +731,7 @@ const PhysicalMachineManagement: React.FC = () => {
                         title="维护中"
                         value={
                           hostList.filter(
-                            (host) => host.status === "maintenance"
+                            (host) => host.status === "maintenance",
                           ).length
                         }
                         valueStyle={{ color: "#1890ff" }}
@@ -751,8 +751,8 @@ const PhysicalMachineManagement: React.FC = () => {
                         percent={Math.round(
                           hostList.reduce(
                             (acc, host) => acc + host.cpu.usage,
-                            0
-                          ) / hostList.length
+                            0,
+                          ) / hostList.length,
                         )}
                         status="active"
                         strokeColor={{
@@ -768,8 +768,8 @@ const PhysicalMachineManagement: React.FC = () => {
                         percent={Math.round(
                           hostList.reduce(
                             (acc, host) => acc + host.memory.usage,
-                            0
-                          ) / hostList.length
+                            0,
+                          ) / hostList.length,
                         )}
                         status="active"
                         strokeColor={{
@@ -1119,7 +1119,7 @@ const PhysicalMachineManagement: React.FC = () => {
                   <Table
                     columns={vmColumns}
                     dataSource={mockVMs.filter(
-                      (vm) => vm.hostId === selectedHost.id
+                      (vm) => vm.hostId === selectedHost.id,
                     )}
                     rowKey="id"
                     pagination={false}

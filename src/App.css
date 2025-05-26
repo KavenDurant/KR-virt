@@ -5,39 +5,47 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #1e1e1e;
-  color: #cccccc;
+  background-color: var(--bg-color, #1e1e1e);
+  color: var(--text-color, #cccccc);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* VS Code 风格的布局样式 */
 .app-layout {
   min-height: 100vh;
-  background-color: #1e1e1e;
-  color: #cccccc;
+  background-color: var(--bg-color, #1e1e1e);
+  color: var(--text-color, #cccccc);
   display: flex;
   flex-direction: row;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* 活动栏样式 - VS Code左侧窄栏 */
 .activity-bar {
   width: 48px;
-  background-color: #2c2c3a;
+  background-color: var(--activity-bar-bg, #2c2c3a);
   height: 100vh;
   overflow: hidden;
   z-index: 10;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  transition: background-color 0.3s ease;
 }
 
 .activity-bar-menu {
-  background-color: #2c2c3a;
+  background-color: var(--activity-bar-bg, #2c2c3a);
   border-right: none;
+  transition: background-color 0.3s ease;
 }
 
 /* 覆盖Ant Design菜单的默认背景色 */
 .activity-bar-menu.ant-menu.ant-menu-dark {
-  background-color: #2c2c3a !important;
+  background-color: var(--activity-bar-bg, #2c2c3a) !important;
 }
 
 .activity-bar-menu .ant-menu-item {
@@ -52,18 +60,19 @@ body,
 }
 
 .activity-bar-menu .ant-menu-item-selected {
-  background-color: #3a3a4c !important;
+  background-color: var(--activity-bar-selected, #3a3a4c) !important;
   border-left: 2px solid #0f85d1 !important;
 }
 
 /* 侧边栏样式 */
 .sidebar {
-  background-color: #222233 !important;
+  background-color: var(--sidebar-bg, #222233) !important;
   height: 100vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  transition: background-color 0.3s ease;
 }
 
 .sidebar-header {
@@ -74,56 +83,61 @@ body,
   height: 35px;
   display: flex;
   align-items: center;
-  color: #e0e0e0;
-  background-color: #222233;
-  border-bottom: 1px solid #2d2d42;
+  color: var(--text-color, #e0e0e0);
+  background-color: var(--sidebar-bg, #222233);
+  border-bottom: 1px solid var(--border-color, #2d2d42);
+  transition: all 0.3s ease;
 }
 
 .explorer-tree {
-  background-color: #222233;
-  color: #e0e0e0;
+  background-color: var(--sidebar-bg, #222233);
+  color: var(--text-color, #e0e0e0);
+  transition: all 0.3s ease;
 }
 
 .sidebar-menu-item.ant-menu-item-selected {
-  background-color: #2d2d45 !important;
+  background-color: var(--selected-bg, #2d2d45) !important;
 }
 
 .ant-menu-inline.ant-menu-dark .ant-menu-item-selected {
-  background-color: #2d2d45 !important;
+  background-color: var(--selected-bg, #2d2d45) !important;
 }
 
 .explorer-tree .ant-menu-item {
-  background-color: #222233;
+  background-color: var(--sidebar-bg, #222233);
   transition: background-color 0.3s;
 }
 
 .explorer-tree .ant-menu-item-selected {
-  background-color: #2d2d45 !important;
+  background-color: var(--selected-bg, #2d2d45) !important;
 }
 
 /* 编辑器区域样式 */
 .editor-area {
-  background-color: #1e1e1e;
+  background-color: var(--bg-color, #1e1e1e);
   padding: 0;
   height: calc(100vh - 22px); /* 100vh 减去状态栏的高度 */
   display: flex;
   flex-direction: column;
   width: 100%; /* 确保占满宽度 */
   flex: 1; /* 占用所有可用空间 */
+  transition: background-color 0.3s ease;
 }
 
 .editor-tab {
-  background-color: #252526;
-  border-bottom: 1px solid #1e1e1e;
+  background-color: var(--sidebar-bg, #252526);
+  border-bottom: 1px solid var(--bg-color, #1e1e1e);
   width: 100%;
+  transition: background-color 0.3s ease;
 }
 
 .editor-content {
   padding: 0;
   flex: 1;
   overflow: auto;
-  background-color: #1e1e1e;
+  background-color: var(--bg-color, #1e1e1e);
   width: 100%; /* 确保占满宽度 */
+  transition: background-color 0.3s ease;
 }
 
 .editor-tab .ant-tabs-nav {
@@ -131,16 +145,17 @@ body,
 }
 
 .editor-tab .ant-tabs-tab {
-  background-color: #2d2d2d;
+  background-color: var(--hover-bg, #2d2d2d);
   border: none;
-  color: #969696;
-  border-right: 1px solid #1e1e1e;
+  color: var(--activity-bar-icon, #969696);
+  border-right: 1px solid var(--bg-color, #1e1e1e);
   padding: 0 15px;
+  transition: all 0.3s ease;
 }
 
 .editor-tab .ant-tabs-tab-active {
-  background-color: #1e1e1e;
-  color: #ffffff;
+  background-color: var(--bg-color, #1e1e1e);
+  color: var(--text-color, #ffffff);
 }
 
 /* 状态栏样式 */
@@ -169,27 +184,27 @@ body,
 
 /* VSCode 风格的表格样式 */
 .ant-table {
-  background-color: #1e1e1e !important;
+  background-color: var(--bg-color, #1e1e1e) !important;
 }
 
 .ant-table-thead > tr > th {
-  background-color: #252526 !important;
-  color: #cccccc !important;
-  border-bottom: 1px solid #3c3c3c !important;
+  background-color: var(--sidebar-bg, #252526) !important;
+  color: var(--text-color, #cccccc) !important;
+  border-bottom: 1px solid var(--border-color, #3c3c3c) !important;
 }
 
 .ant-table-tbody > tr > td {
-  border-bottom: 1px solid #3c3c3c !important;
-  color: #cccccc !important;
+  border-bottom: 1px solid var(--border-color, #3c3c3c) !important;
+  color: var(--text-color, #cccccc) !important;
 }
 
 .ant-table-tbody > tr:hover > td {
-  background-color: #2a2d2e !important;
+  background-color: var(--hover-bg, #2a2d2e) !important;
 }
 
 .ant-pagination-item {
-  background-color: #252526 !important;
-  border-color: #3c3c3c !important;
+  background-color: var(--sidebar-bg, #252526) !important;
+  border-color: var(--border-color, #3c3c3c) !important;
 }
 
 .ant-pagination-item-active {
@@ -197,14 +212,15 @@ body,
 }
 
 .ant-pagination-item a {
-  color: #cccccc !important;
+  color: var(--text-color, #cccccc) !important;
 }
 
 /* VS Code 风格的按钮 */
 .ant-btn {
-  background-color: #2d2d2d;
-  border-color: #3c3c3c;
-  color: #cccccc;
+  background-color: var(--hover-bg, #2d2d2d);
+  border-color: var(--border-color, #3c3c3c);
+  color: var(--text-color, #cccccc);
+  transition: all 0.3s ease;
 }
 
 .ant-btn-primary {
@@ -231,39 +247,92 @@ body,
 
 /* 菜单项选中和悬停样式 */
 .ant-menu-dark .ant-menu-item-selected {
-  background-color: #37373d !important;
+  background-color: var(--selected-bg, #37373d) !important;
 }
 
 .ant-menu-dark .ant-menu-item:hover {
-  background-color: #2a2d2e !important;
+  background-color: var(--hover-bg, #2a2d2e) !important;
 }
 
 .ant-menu-inline.ant-menu-root .ant-menu-item {
-  background-color: #1c1c1c !important;
+  background-color: var(--bg-color, #1c1c1c) !important;
 }
 
 .ant-menu-dark .ant-menu-submenu-selected > .ant-menu-submenu-title {
-  color: #ffffff !important;
+  color: var(--text-color, #ffffff) !important;
 }
 
 /* 活动栏工具提示样式 */
 .activity-tooltip .ant-tooltip-inner {
-  background-color: #252526;
-  color: #cccccc;
-  border: 1px solid #454545;
-  border-radius: 2px;
-  font-size: 12px;
-  padding: 4px 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  background-color: var(--tooltip-bg, #252526) !important;
+  color: var(--tooltip-text, #cccccc) !important;
+  border: 1px solid var(--tooltip-border, #454545) !important;
+  border-radius: 2px !important;
+  font-size: 12px !important;
+  padding: 4px 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
 }
 
 .activity-tooltip .ant-tooltip-arrow-content {
-  background-color: #252526;
+  background-color: var(--tooltip-bg, #252526) !important;
+  border-color: var(--tooltip-border, #454545) !important;
+}
+
+/* 确保所有使用 activity-tooltip 类的 tooltip 都应用主题 */
+.ant-tooltip.activity-tooltip .ant-tooltip-inner {
+  background-color: var(--tooltip-bg, #252526) !important;
+  color: var(--tooltip-text, #cccccc) !important;
+  border: 1px solid var(--tooltip-border, #454545) !important;
+  border-radius: 2px !important;
+  font-size: 12px !important;
+  padding: 4px 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+}
+
+.ant-tooltip.activity-tooltip .ant-tooltip-arrow-content {
+  background-color: var(--tooltip-bg, #252526) !important;
+  border-color: var(--tooltip-border, #454545) !important;
+}
+
+/* 全局 tooltip 样式覆盖 - 提供更高的优先级 */
+.ant-tooltip-inner[data-theme="dark"] {
+  background-color: var(--tooltip-bg, #252526) !important;
+  color: var(--tooltip-text, #cccccc) !important;
+  border: 1px solid var(--tooltip-border, #454545) !important;
+}
+
+.ant-tooltip-inner[data-theme="light"] {
+  background-color: var(--tooltip-bg, #ffffff) !important;
+  color: var(--tooltip-text, #000000) !important;
+  border: 1px solid var(--tooltip-border, #d9d9d9) !important;
+}
+
+/* 全局 Tooltip 主题样式 - 确保所有 tooltip 都响应主题变化 */
+[data-theme="dark"] .ant-tooltip .ant-tooltip-inner {
+  background-color: var(--tooltip-bg, #252526) !important;
+  color: var(--tooltip-text, #cccccc) !important;
+  border: 1px solid var(--tooltip-border, #454545) !important;
+}
+
+[data-theme="dark"] .ant-tooltip .ant-tooltip-arrow-content {
+  background-color: var(--tooltip-bg, #252526) !important;
+  border-color: var(--tooltip-border, #454545) !important;
+}
+
+[data-theme="light"] .ant-tooltip .ant-tooltip-inner {
+  background-color: var(--tooltip-bg, #ffffff) !important;
+  color: var(--tooltip-text, #000000) !important;
+  border: 1px solid var(--tooltip-border, #d9d9d9) !important;
+}
+
+[data-theme="light"] .ant-tooltip .ant-tooltip-arrow-content {
+  background-color: var(--tooltip-bg, #ffffff) !important;
+  border-color: var(--tooltip-border, #d9d9d9) !important;
 }
 
 /* 可调整大小的面板样式 */
 .resize-handle {
-  background-color: #2d2d2d;
+  background-color: var(--hover-bg, #2d2d2d);
   width: 4px;
   transition: background-color 0.2s;
 }

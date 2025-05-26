@@ -32,7 +32,7 @@ import {
   InfoCircleOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
-import { useTheme } from "../../contexts/ThemeContext";
+import { useTheme } from "../../hooks/useTheme";
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -330,13 +330,14 @@ const ClusterManagement: React.FC = () => {
   const [clusterForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { themeConfig } = useTheme();
 
   // 获取进度条颜色的函数
   const getProgressColor = (percent: number) => {
-    if (percent > 80) return "#ff4d4f";  // 保留语义颜色：危险/错误
-    if (percent > 60) return "#faad14";  // 保留语义颜色：警告
-    return "#52c41a";  // 保留语义颜色：成功/正常
+    if (percent > 80) return "#ff4d4f"; // 保留语义颜色：危险/错误
+    if (percent > 60) return "#faad14"; // 保留语义颜色：警告
+    return "#52c41a"; // 保留语义颜色：成功/正常
   };
 
   // 加载集群数据
@@ -650,7 +651,7 @@ const ClusterManagement: React.FC = () => {
 
   return (
     <Layout className="cluster-management">
-      <Content style={{  minHeight: 280 }}>
+      <Content style={{ minHeight: 280 }}>
         <Card
           title={
             <Space>

@@ -41,7 +41,7 @@ import {
   CloudOutlined,
   RocketOutlined,
 } from "@ant-design/icons";
-import { useTheme } from "../../contexts/ThemeContext";
+import { useTheme } from "../../hooks/useTheme";
 
 const { Content } = Layout;
 const { TabPane } = Tabs;
@@ -183,8 +183,8 @@ const mockIpDetails = [
     vmId: null,
     description: "预留地址",
   },
-];  // 模拟路由表数据
-  const mockRoutes: Route[] = [
+]; // 模拟路由表数据
+const mockRoutes: Route[] = [
   {
     id: "1",
     destination: "0.0.0.0/0",
@@ -209,8 +209,8 @@ const mockIpDetails = [
     metric: 10,
     type: "static",
   },
-];  // 模拟安全组规则
-  const mockSecurityRules: SecurityRule[] = [
+]; // 模拟安全组规则
+const mockSecurityRules: SecurityRule[] = [
   {
     id: "1",
     name: "Allow HTTP/HTTPS",
@@ -420,7 +420,7 @@ const NetworkManagement: React.FC = () => {
         const updatedNetworks = networkList.map((network) =>
           network.id === selectedNetwork.id
             ? ({ ...network, ...values } as Network)
-            : network
+            : network,
         );
         setNetworkList(updatedNetworks);
       } else {
@@ -481,7 +481,7 @@ const NetworkManagement: React.FC = () => {
   const viewIPDetails = (record: Network) => {
     setSelectedNetwork(record);
     setSelectedNetworkIps(
-      mockIpDetails.filter((ip) => ip.networkId === record.id)
+      mockIpDetails.filter((ip) => ip.networkId === record.id),
     );
     setIpDetailsVisible(true);
   };
@@ -561,8 +561,8 @@ const NetworkManagement: React.FC = () => {
               calculateIPUsagePercent(record.usedIps, record.totalIps) > 80
                 ? "#ff4d4f"
                 : calculateIPUsagePercent(record.usedIps, record.totalIps) > 60
-                ? "#faad14"
-                : "#52c41a"
+                  ? "#faad14"
+                  : "#52c41a"
             }
           />
         </Tooltip>
@@ -819,7 +819,7 @@ const NetworkManagement: React.FC = () => {
                         title="VLAN网络"
                         value={
                           networkList.filter(
-                            (network) => network.type === "VLAN"
+                            (network) => network.type === "VLAN",
                           ).length
                         }
                         prefix={<ApartmentOutlined />}
@@ -844,13 +844,13 @@ const NetworkManagement: React.FC = () => {
                         value={Math.round(
                           (networkList.reduce(
                             (acc, curr) => acc + curr.usedIps,
-                            0
+                            0,
                           ) /
                             networkList.reduce(
                               (acc, curr) => acc + curr.totalIps,
-                              0
+                              0,
                             )) *
-                            100
+                            100,
                         )}
                         suffix="%"
                         prefix={<ApiOutlined />}
@@ -929,21 +929,21 @@ const NetworkManagement: React.FC = () => {
                           <Progress
                             percent={calculateIPUsagePercent(
                               network.usedIps,
-                              network.totalIps
+                              network.totalIps,
                             )}
                             size="small"
                             strokeColor={
                               calculateIPUsagePercent(
                                 network.usedIps,
-                                network.totalIps
+                                network.totalIps,
                               ) > 80
                                 ? "#ff4d4f"
                                 : calculateIPUsagePercent(
-                                    network.usedIps,
-                                    network.totalIps
-                                  ) > 60
-                                ? "#faad14"
-                                : "#52c41a"
+                                      network.usedIps,
+                                      network.totalIps,
+                                    ) > 60
+                                  ? "#faad14"
+                                  : "#52c41a"
                             }
                           />
                         </div>
@@ -1192,14 +1192,14 @@ const NetworkManagement: React.FC = () => {
                       {selectedNetwork.usedIps}/{selectedNetwork.totalIps}(
                       {calculateIPUsagePercent(
                         selectedNetwork.usedIps,
-                        selectedNetwork.totalIps
+                        selectedNetwork.totalIps,
                       )}
                       %)
                     </div>
                     <Progress
                       percent={calculateIPUsagePercent(
                         selectedNetwork.usedIps,
-                        selectedNetwork.totalIps
+                        selectedNetwork.totalIps,
                       )}
                       size="small"
                     />
@@ -1271,7 +1271,7 @@ const NetworkManagement: React.FC = () => {
                   {selectedNetwork.usedIps}/{selectedNetwork.totalIps}(
                   {calculateIPUsagePercent(
                     selectedNetwork.usedIps,
-                    selectedNetwork.totalIps
+                    selectedNetwork.totalIps,
                   )}
                   %)
                 </Descriptions.Item>
@@ -1306,13 +1306,13 @@ const NetworkManagement: React.FC = () => {
             }}
           >
             <Alert message="网络拓扑图（模拟占位）" type="info" showIcon />
-
             <div style={{ marginTop: "24px" }}>
               <DirectoryTree
                 defaultExpandAll
                 treeData={mockTopologyData.children}
               />
-            </div>              <div
+            </div>{" "}
+            <div
               style={{
                 marginTop: "24px",
                 border: `1px dashed ${themeConfig.token.colorBorder}`,

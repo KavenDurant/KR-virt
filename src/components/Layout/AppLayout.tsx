@@ -11,15 +11,18 @@ import {
   SettingOutlined,
   DashboardOutlined,
   BellOutlined,
+  AuditOutlined,
 } from "@ant-design/icons";
 import routes from "../../router/routes";
 import TaskDrawer from "../TaskDrawer";
+import { useTheme } from "../../hooks/useTheme";
 import "./AppLayout.css";
 
 const AppLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const { actualTheme } = useTheme();
 
   // 添加侧边栏宽度状态，使用useRef保证它不会随渲染重置
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -53,7 +56,7 @@ const AppLayout: React.FC = () => {
         originalWidthRef.current = validWidth;
       }
     },
-    [] // 移除sidebarWidth依赖，避免频繁重新创建函数
+    [], // 移除sidebarWidth依赖，避免频繁重新创建函数
   );
 
   // 根据当前路径确定选中的菜单项
@@ -63,7 +66,7 @@ const AppLayout: React.FC = () => {
   }, [location.pathname]);
 
   const [selectedActivityItem, setSelectedActivityItem] = useState(
-    getCurrentSelectedPath
+    getCurrentSelectedPath,
   );
 
   // 当路由变化时更新选中的菜单项
@@ -132,6 +135,7 @@ const AppLayout: React.FC = () => {
     { key: "/network", icon: <GlobalOutlined />, label: "网络管理" },
     { key: "/storage", icon: <HddOutlined />, label: "存储管理" },
     { key: "/user", icon: <UserOutlined />, label: "用户管理" },
+    { key: "/audit", icon: <AuditOutlined />, label: "审计管理" },
     { key: "/system", icon: <SettingOutlined />, label: "系统设置" },
   ];
 
@@ -150,7 +154,7 @@ const AppLayout: React.FC = () => {
       <div
         className="activity-bar"
         style={{
-          backgroundColor: "#333333",
+          backgroundColor: actualTheme === "dark" ? "#333333" : "#f3f3f3",
           display: "flex",
           flexDirection: "column",
           width: "50px",
@@ -164,8 +168,11 @@ const AppLayout: React.FC = () => {
             className="activity-bar-menu"
             selectedKeys={[selectedActivityItem]}
             mode="vertical"
-            theme="dark"
-            style={{ backgroundColor: "#333333" }}
+            theme={actualTheme === "dark" ? "dark" : "light"}
+            style={{
+              backgroundColor: actualTheme === "dark" ? "#333333" : "#f3f3f3",
+              borderRight: "none",
+            }}
             onClick={(e) => handleMenuClick(e.key)}
             items={activityItems.slice(0, 6).map((item) => ({
               key: item.key,
@@ -173,23 +180,46 @@ const AppLayout: React.FC = () => {
                 <Tooltip
                   title={item.label}
                   placement="right"
-                  classNames={{ root: "activity-tooltip" }}
+                  overlayClassName="activity-tooltip"
                   mouseEnterDelay={0.5}
+                  overlayInnerStyle={{
+                    backgroundColor:
+                      actualTheme === "dark" ? "#252526" : "#ffffff",
+                    color: actualTheme === "dark" ? "#cccccc" : "#000000",
+                    border: `1px solid ${actualTheme === "dark" ? "#454545" : "#d9d9d9"}`,
+                    borderRadius: "2px",
+                    fontSize: "12px",
+                    padding: "4px 8px",
+                    boxShadow:
+                      actualTheme === "dark"
+                        ? "0 2px 8px rgba(0, 0, 0, 0.5)"
+                        : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                  }}
                 >
                   {React.cloneElement(item.icon, {
                     style: {
                       fontSize: "20px",
                       color:
                         item.key === selectedActivityItem
-                          ? "#ffffff"
-                          : "#858585",
+                          ? actualTheme === "dark"
+                            ? "#ffffff"
+                            : "#000000"
+                          : actualTheme === "dark"
+                            ? "#858585"
+                            : "#666666",
                     },
                   })}
                 </Tooltip>
               ),
               style: {
                 backgroundColor:
-                  item.key === selectedActivityItem ? "#444444" : "#333333",
+                  item.key === selectedActivityItem
+                    ? actualTheme === "dark"
+                      ? "#444444"
+                      : "#e6f7ff"
+                    : actualTheme === "dark"
+                      ? "#333333"
+                      : "#f3f3f3",
                 height: "50px",
               },
             }))}
@@ -216,13 +246,32 @@ const AppLayout: React.FC = () => {
                 placement="right"
                 overlayClassName="activity-tooltip"
                 mouseEnterDelay={0.5}
+                overlayInnerStyle={{
+                  backgroundColor:
+                    actualTheme === "dark" ? "#252526" : "#ffffff",
+                  color: actualTheme === "dark" ? "#cccccc" : "#000000",
+                  border: `1px solid ${actualTheme === "dark" ? "#454545" : "#d9d9d9"}`,
+                  borderRadius: "2px",
+                  fontSize: "12px",
+                  padding: "4px 8px",
+                  boxShadow:
+                    actualTheme === "dark"
+                      ? "0 2px 8px rgba(0, 0, 0, 0.5)"
+                      : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                }}
               >
                 <div style={{ position: "relative" }}>
                   {" "}
                   <BellOutlined
                     style={{
                       fontSize: "20px",
-                      color: taskDrawerVisible ? "#ffffff" : "#858585",
+                      color: taskDrawerVisible
+                        ? actualTheme === "dark"
+                          ? "#ffffff"
+                          : "#000000"
+                        : actualTheme === "dark"
+                          ? "#858585"
+                          : "#666666",
                       cursor: "pointer",
                     }}
                     onClick={() => {
@@ -239,8 +288,11 @@ const AppLayout: React.FC = () => {
             className="activity-bar-menu"
             selectedKeys={[selectedActivityItem]}
             mode="vertical"
-            theme="dark"
-            style={{ backgroundColor: "#333333" }}
+            theme={actualTheme === "dark" ? "dark" : "light"}
+            style={{
+              backgroundColor: actualTheme === "dark" ? "#333333" : "#f3f3f3",
+              borderRight: "none",
+            }}
             onClick={(e) => handleMenuClick(e.key)}
             items={activityItems.slice(6).map((item) => ({
               key: item.key,
@@ -250,21 +302,44 @@ const AppLayout: React.FC = () => {
                   placement="right"
                   overlayClassName="activity-tooltip"
                   mouseEnterDelay={0.5}
+                  overlayInnerStyle={{
+                    backgroundColor:
+                      actualTheme === "dark" ? "#252526" : "#ffffff",
+                    color: actualTheme === "dark" ? "#cccccc" : "#000000",
+                    border: `1px solid ${actualTheme === "dark" ? "#454545" : "#d9d9d9"}`,
+                    borderRadius: "2px",
+                    fontSize: "12px",
+                    padding: "4px 8px",
+                    boxShadow:
+                      actualTheme === "dark"
+                        ? "0 2px 8px rgba(0, 0, 0, 0.5)"
+                        : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                  }}
                 >
                   {React.cloneElement(item.icon, {
                     style: {
                       fontSize: "20px",
                       color:
                         item.key === selectedActivityItem
-                          ? "#ffffff"
-                          : "#858585",
+                          ? actualTheme === "dark"
+                            ? "#ffffff"
+                            : "#000000"
+                          : actualTheme === "dark"
+                            ? "#858585"
+                            : "#666666",
                     },
                   })}
                 </Tooltip>
               ),
               style: {
                 backgroundColor:
-                  item.key === selectedActivityItem ? "#444444" : "#333333",
+                  item.key === selectedActivityItem
+                    ? actualTheme === "dark"
+                      ? "#444444"
+                      : "#e6f7ff"
+                    : actualTheme === "dark"
+                      ? "#333333"
+                      : "#f3f3f3",
                 height: "50px",
               },
             }))}
@@ -277,19 +352,19 @@ const AppLayout: React.FC = () => {
         className={`sidebar ${isDragging ? "dragging" : ""}`}
         style={{
           width: `${sidebarWidth}px`,
-          backgroundColor: "#252526",
+          backgroundColor: actualTheme === "dark" ? "#252526" : "#f8f8f8",
           position: "relative",
           flexShrink: 0,
         }}
       >
         <Menu
           mode="inline"
-          theme="dark"
+          theme={actualTheme === "dark" ? "dark" : "light"}
           className="explorer-tree"
           style={{
             height: "calc(100% - 35px)",
             borderRight: 0,
-            backgroundColor: "#252526",
+            backgroundColor: actualTheme === "dark" ? "#252526" : "#f8f8f8",
           }}
           selectedKeys={[selectedActivityItem]} // 使用selectedActivityItem保持一致
           items={[
@@ -333,7 +408,7 @@ const AppLayout: React.FC = () => {
                 if (now - lastUpdateTime > throttleDelay) {
                   originalWidthRef.current = Math.max(
                     200,
-                    Math.min(newWidth, 400)
+                    Math.min(newWidth, 400),
                   );
                   lastUpdateTime = now;
                 }

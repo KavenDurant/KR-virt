@@ -11,7 +11,7 @@ import {
   FileTextOutlined,
 } from "@ant-design/icons";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { useTheme } from "../../contexts/ThemeContext";
+import { useTheme } from "../../hooks/useTheme";
 import "./TaskDrawer.less";
 
 interface TaskDrawerProps {
@@ -130,9 +130,18 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({
       case "failed":
         return <CloseCircleOutlined style={{ color: "#ff4d4f" }} />; // 保留语义色：错误
       case "processing":
-        return <SyncOutlined spin style={{ color: themeConfig.token.colorPrimary }} />;
+        return (
+          <SyncOutlined
+            spin
+            style={{ color: themeConfig.token.colorPrimary }}
+          />
+        );
       default:
-        return <InfoCircleOutlined style={{ color: themeConfig.token.colorPrimary }} />;
+        return (
+          <InfoCircleOutlined
+            style={{ color: themeConfig.token.colorPrimary }}
+          />
+        );
     }
   };
 
@@ -320,8 +329,16 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({
           </Panel>
         </PanelGroup>
       ) : (
-        <div className="main-content-panel" style={{ height: "100%", overflow: "hidden" }}>
-          <div className="editor-content" style={{ height: "100%", overflow: "auto" }}>{children}</div>
+        <div
+          className="main-content-panel"
+          style={{ height: "100%", overflow: "hidden" }}
+        >
+          <div
+            className="editor-content"
+            style={{ height: "100%", overflow: "auto" }}
+          >
+            {children}
+          </div>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Badge, Layout, Menu, Tooltip } from "antd";
+import { Badge, Layout, Menu, Tooltip, Dropdown, Avatar, Space, Typography, Button, Modal } from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   DesktopOutlined,
@@ -12,17 +12,72 @@ import {
   DashboardOutlined,
   BellOutlined,
   AuditOutlined,
+  LogoutOutlined,
+  SafetyOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import routes from "../../router/routes";
 import TaskDrawer from "../TaskDrawer";
 import { useTheme } from "../../hooks/useTheme";
+import { authService } from "../../services/authService";
+import type { UserInfo } from "../../services/authService";
 import "./AppLayout.css";
+
+const { Header } = Layout;
+const { Text } = Typography;
 
 const AppLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { actualTheme } = useTheme();
+
+  // 用户信息状态
+  const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
+
+  // 初始化用户信息
+  useEffect(() => {
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
+  }, []);
+
+  // 处理登出
+  const handleLogout = () => {
+    Modal.confirm({
+      title: '确认登出',
+      icon: <ExclamationCircleOutlined />,
+      content: '您确定要退出系统吗？',
+      okText: '确认',
+      cancelText: '取消',
+      onOk() {
+        authService.logout();
+        navigate('/login');
+      },
+    });
+  };
+
+  // 用户下拉菜单
+  const userMenuItems = [
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: '个人信息',
+    },
+    {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: '账户设置',
+    },
+    {
+      type: 'divider' as const,
+    },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: '安全登出',
+      onClick: handleLogout,
+    },
+  ];
 
   // 添加侧边栏宽度状态，使用useRef保证它不会随渲染重置
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -138,7 +193,6 @@ const AppLayout: React.FC = () => {
     { key: "/audit", icon: <AuditOutlined />, label: "审计管理" },
     { key: "/system", icon: <SettingOutlined />, label: "系统设置" },
   ];
-
   return (
     <Layout
       className="app-layout"
@@ -434,16 +488,129 @@ const AppLayout: React.FC = () => {
             document.addEventListener("mouseup", handleMouseUp);
           }}
         />
-      </div>{" "}
-      {/* 内容区域 */}
+      </div>{" "}      {/* 内容区域 */}
       <Layout
         style={{
           flex: "1 1 auto",
           minWidth: 0,
           height: "100vh",
           overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
+        {/* 头部区域 */}
+        <Header
+          style={{
+            backgroundColor: actualTheme === "dark" ? "#252526" : "#ffffff",
+            borderBottom: `1px solid ${actualTheme === "dark" ? "#454545" : "#e8e8e8"}`,
+            padding: "0 24px",
+            height: "56px",
+            lineHeight: "56px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            boxShadow: "0 1px 4px rgba(0, 0, 0, 0.1)",
+            zIndex: 100,
+            flex: "0 0 auto",
+          }}
+        >
+          {/* 系统标题 */}
+          <Space align="center">
+            <SafetyOutlined 
+              style={{ 
+                fontSize: "20px", 
+                color: actualTheme === "dark" ? "#007acc" : "#1890ff" 
+              }} 
+            />
+            <Text 
+              style={{ 
+                fontSize: "16px", 
+                fontWeight: 600,
+                color: actualTheme === "dark" ? "#cccccc" : "#262626"
+              }}
+            >
+              KR虚拟化管理系统
+            </Text>
+          </Space>
+
+          {/* 用户信息区域 */}
+          <Space align="center" size="middle">
+            {/* 通知图标 */}
+            <Badge count={3} size="small">
+              <Tooltip title="系统通知">
+                <Button
+                  type="text"
+                  icon={<BellOutlined />}
+                  style={{
+                    color: actualTheme === "dark" ? "#cccccc" : "#666666",
+                  }}
+                  onClick={() => setTaskDrawerVisible(!taskDrawerVisible)}
+                />
+              </Tooltip>
+            </Badge>
+
+            {/* 用户信息下拉菜单 */}
+            <Dropdown
+              menu={{ 
+                items: userMenuItems,
+                style: {
+                  backgroundColor: actualTheme === "dark" ? "#252526" : "#ffffff",
+                }
+              }}
+              placement="bottomRight"
+              arrow
+            >
+              <Space 
+                style={{ 
+                  cursor: "pointer",
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  transition: "background-color 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = actualTheme === "dark" ? "#404040" : "#f5f5f5";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                <Avatar 
+                  size={32} 
+                  icon={<UserOutlined />}
+                  style={{
+                    backgroundColor: actualTheme === "dark" ? "#007acc" : "#1890ff",
+                  }}
+                />
+                <div style={{ textAlign: "left" }}>
+                  <div 
+                    style={{ 
+                      fontSize: "14px", 
+                      fontWeight: 500,
+                      color: actualTheme === "dark" ? "#cccccc" : "#262626",
+                      lineHeight: "16px"
+                    }}
+                  >
+                    {currentUser?.username || "用户"}
+                  </div>
+                  <div 
+                    style={{ 
+                      fontSize: "12px", 
+                      color: actualTheme === "dark" ? "#858585" : "#999999",
+                      lineHeight: "14px"
+                    }}
+                  >
+                    {currentUser?.role === "administrator" ? "系统管理员" : 
+                     currentUser?.role === "operator" ? "操作员" : 
+                     currentUser?.role === "auditor" ? "审计员" : "用户"}
+                  </div>
+                </div>
+              </Space>
+            </Dropdown>
+          </Space>
+        </Header>
+
+        {/* 主内容区域 */}
         <TaskDrawer
           visible={taskDrawerVisible}
           onClose={() => setTaskDrawerVisible(false)}
@@ -452,10 +619,11 @@ const AppLayout: React.FC = () => {
             className="editor-content"
             style={{
               padding: "20px",
-              height: "100%",
+              height: "calc(100vh - 56px)", // 减去头部高度
               overflow: "auto",
               width: "100%",
               boxSizing: "border-box",
+              backgroundColor: actualTheme === "dark" ? "#1e1e1e" : "#ffffff",
             }}
           >
             <Outlet />

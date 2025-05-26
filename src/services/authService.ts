@@ -40,9 +40,7 @@ export interface LoginData {
 class AuthService {
   private readonly TOKEN_KEY = 'kr_virt_token';
   private readonly USER_KEY = 'kr_virt_user';
-  private readonly TEMP_TOKEN_KEY = 'kr_virt_temp_token';
-
-  // 模拟用户数据库
+  private readonly TEMP_TOKEN_KEY = 'kr_virt_temp_token';  // 模拟用户数据库
   private mockUsers = [
     {
       username: 'admin',
@@ -50,6 +48,13 @@ class AuthService {
       role: 'administrator',
       permissions: ['*'],
       twoFactorEnabled: true
+    },
+    {
+      username: 'test',
+      password: '123456', // 简化的测试密码
+      role: 'administrator',
+      permissions: ['*'],
+      twoFactorEnabled: false // 禁用双因子认证便于测试
     },
     {
       username: 'operator',
@@ -66,44 +71,77 @@ class AuthService {
       twoFactorEnabled: true
     }
   ];
-
   // 登录验证
   async login(data: LoginData): Promise<AuthResponse> {
     try {
       // 模拟网络延迟
       await new Promise(resolve => setTimeout(resolve, 500));
 
+      // 调试信息
+      console.log('登录尝试:', {
+        username: data.username,
+        password: data.password?.substring(0, 3) + '***',
+        hasKeyFile: !!data.keyFile
+      });
+
       // 验证用户名密码
       const user = this.mockUsers.find(u => 
         u.username === data.username && u.password === data.password
       );
+
+      console.log('用户查找结果:', user ? '找到用户' : '用户不存在');
 
       if (!user) {
         return {
           success: false,
           message: '用户名或密码错误'
         };
-      }
-
-      // 验证密钥文件
+      }// 验证密钥文件（简化验证）
       if (data.keyFile) {
         const keyValid = await this.validateKeyFile(data.keyFile);
         if (!keyValid) {
           return {
             success: false,
-            message: '密钥文件验证失败'
+            message: '密钥文件验证失败，请上传正确的测试密钥文件'
           };
         }
       } else {
         return {
           success: false,
-          message: '请上传有效的密钥文件'
+          message: '请上传密钥文件（可使用 public/test-key.key）'
+        };
+      }      // 检查是否需要双因子认证
+      if (!user.twoFactorEnabled) {
+        // 直接登录，不需要双因子认证
+        const token = this.generateToken('auth');
+        const userInfo: UserInfo = {
+          username: user.username,
+          role: user.role,
+          permissions: user.permissions,
+          lastLogin: new Date().toISOString(),
+          twoFactorEnabled: user.twoFactorEnabled
+        };
+
+        // 保存登录状态
+        localStorage.setItem(this.TOKEN_KEY, token);
+        localStorage.setItem(this.USER_KEY, JSON.stringify(userInfo));
+
+        return {
+          success: true,
+          message: '登录成功',
+          token,
+          user: userInfo
         };
       }
 
-      // 生成临时token
+      // 需要双因子认证的用户
       const tempToken = this.generateToken('temp');
       sessionStorage.setItem(this.TEMP_TOKEN_KEY, tempToken);
+      sessionStorage.setItem('temp_user_info', JSON.stringify({
+        username: user.username,
+        role: user.role,
+        permissions: user.permissions
+      }));
 
       return {
         success: true,
@@ -133,9 +171,7 @@ class AuthService {
           success: false,
           message: '会话已过期，请重新登录'
         };
-      }
-
-      // 验证双因子认证码（模拟）
+      }      // 验证双因子认证码（模拟）
       const validCodes = ['123456', '666666', '888888']; // 模拟验证码
       if (!validCodes.includes(data.verificationCode)) {
         return {
@@ -144,12 +180,20 @@ class AuthService {
         };
       }
 
+      // 从临时存储中获取用户信息
+      const tempUserInfo = sessionStorage.getItem('temp_user_info');
+      const userDetails = tempUserInfo ? JSON.parse(tempUserInfo) : {
+        username: 'admin',
+        role: 'administrator',
+        permissions: ['*']
+      };
+
       // 生成正式token
       const token = this.generateToken('auth');
       const userInfo: UserInfo = {
-        username: 'admin', // 这里应该从临时token中解析
-        role: 'administrator',
-        permissions: ['*'],
+        username: userDetails.username,
+        role: userDetails.role,
+        permissions: userDetails.permissions,
         lastLogin: new Date().toISOString(),
         twoFactorEnabled: true
       };
@@ -158,6 +202,7 @@ class AuthService {
       localStorage.setItem(this.TOKEN_KEY, token);
       localStorage.setItem(this.USER_KEY, JSON.stringify(userInfo));
       sessionStorage.removeItem(this.TEMP_TOKEN_KEY);
+      sessionStorage.removeItem('temp_user_info');
 
       return {
         success: true,

@@ -88,15 +88,24 @@ const Login: React.FC = () => {
         username: values.username,
         password: values.password,
         keyFile
-      };
-
-      const result = await authService.login(loginData);
+      };      const result = await authService.login(loginData);
+      
+      // 调试信息
+      console.log('登录结果:', result);
       
       if (result.success && result.requireTwoFactor) {
+        // 需要双因子认证
         setTempToken(result.tempToken!);
         setShowTwoFactor(true);
         message.success(result.message);
+      } else if (result.success && result.user) {
+        // 直接登录成功（无需双因子认证）
+        message.success('登录成功！正在跳转...');
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
       } else if (!result.success) {
+        console.error('登录失败原因:', result.message);
         message.error(result.message);
       }
     } catch {
@@ -213,12 +222,10 @@ const Login: React.FC = () => {
                 />
               )}
             </div>
-          </Form.Item>
-
-          <Form.Item
+          </Form.Item>          <Form.Item
             label="密钥文件"
             required
-            tooltip="请上传信创认证密钥文件，支持.key、.pem、.crt格式"
+            tooltip="请上传测试密钥文件，可以使用 public/test-key.key"
           >
             <div className="key-file-upload">
               <Dragger
@@ -240,6 +247,7 @@ const Login: React.FC = () => {
                   点击或拖拽上传密钥文件
                 </p>
                 <p className="ant-upload-hint">
+                  测试文件：public/test-key.key<br/>
                   支持 .key、.pem、.crt 格式，文件大小不超过100KB
                 </p>
               </Dragger>
@@ -257,22 +265,21 @@ const Login: React.FC = () => {
               安全登录
             </Button>
           </Form.Item>
-        </Form>
-
-        <div className="security-notice">
+        </Form>        <div className="security-notice">
           <CheckCircleOutlined />
           <div>
             <Text strong style={{ color: '#389e0d', fontSize: '13px' }}>
-              安全提示：
+              测试账户信息：
             </Text>
             <ul>
-              <li>系统采用双因子认证，确保账户安全</li>
-              <li>测试账户：admin/Admin123!@#、operator/Operator123!@#</li>
-              <li>请在安全环境下进行操作，避免信息泄露</li>
-              <li>如遇异常请及时联系系统管理员</li>
+              <li><strong>管理员：</strong>用户名: admin，密码: Admin123!@#</li>
+              <li><strong>操作员：</strong>用户名: operator，密码: Operator123!@#</li>
+              <li><strong>审计员：</strong>用户名: auditor，密码: Auditor123!@#</li>
+              <li><strong>密钥文件：</strong>使用 public/test-key.key</li>
+              <li><strong>验证码：</strong>123456、666666、888888（任选其一）</li>
             </ul>
           </div>
-        </div>        <div className="compliance-info">
+        </div><div className="compliance-info">
           <div className="compliance-badge">
             <SecurityScanOutlined />
             信创合规认证

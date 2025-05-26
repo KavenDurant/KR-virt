@@ -259,10 +259,8 @@ export class SecurityUtils {
     // 字符检查
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
       return { isValid: false, message: '用户名只能包含字母、数字和下划线' };
-    }
-
-    // 保留字检查
-    const reservedWords = ['admin', 'root', 'system', 'guest', 'anonymous'];
+    }    // 保留字检查
+    const reservedWords = ['root', 'system', 'guest', 'anonymous'];
     if (reservedWords.includes(username.toLowerCase())) {
       return { isValid: false, message: '不能使用系统保留用户名' };
     }

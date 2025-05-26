@@ -37,9 +37,9 @@
 .app-layout {
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
   display: flex;
   flex-direction: row;
+  overflow: hidden; /* 保持主容器 hidden 以防止水平滚动 */
 }
 
 .app-layout-panels {

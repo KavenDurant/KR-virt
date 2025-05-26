@@ -41,6 +41,7 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const { Content } = Layout;
 const { TabPane } = Tabs;
@@ -389,6 +390,7 @@ const getStatusTag = (status: string) => {
 };
 
 const PhysicalMachineManagement: React.FC = () => {
+  const { themeConfig } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
   const [hostList, setHostList] = useState<Host[]>(mockHosts);
   const [selectedHost, setSelectedHost] = useState<Host | null>(null);
@@ -427,7 +429,7 @@ const PhysicalMachineManagement: React.FC = () => {
                 location: values.location,
                 tags: values.tags,
               }
-            : host,
+            : host
         );
         setHostList(updatedHosts);
       } else {
@@ -655,7 +657,7 @@ const PhysicalMachineManagement: React.FC = () => {
 
   return (
     <Layout className="physical-machine-management">
-      <Content style={{ padding: "24px", minHeight: 280 }}>
+      <Content style={{ minHeight: 280 }}>
         <Card
           title={
             <Space>
@@ -729,7 +731,7 @@ const PhysicalMachineManagement: React.FC = () => {
                         title="维护中"
                         value={
                           hostList.filter(
-                            (host) => host.status === "maintenance",
+                            (host) => host.status === "maintenance"
                           ).length
                         }
                         valueStyle={{ color: "#1890ff" }}
@@ -749,8 +751,8 @@ const PhysicalMachineManagement: React.FC = () => {
                         percent={Math.round(
                           hostList.reduce(
                             (acc, host) => acc + host.cpu.usage,
-                            0,
-                          ) / hostList.length,
+                            0
+                          ) / hostList.length
                         )}
                         status="active"
                         strokeColor={{
@@ -766,8 +768,8 @@ const PhysicalMachineManagement: React.FC = () => {
                         percent={Math.round(
                           hostList.reduce(
                             (acc, host) => acc + host.memory.usage,
-                            0,
-                          ) / hostList.length,
+                            0
+                          ) / hostList.length
                         )}
                         status="active"
                         strokeColor={{
@@ -1117,7 +1119,7 @@ const PhysicalMachineManagement: React.FC = () => {
                   <Table
                     columns={vmColumns}
                     dataSource={mockVMs.filter(
-                      (vm) => vm.hostId === selectedHost.id,
+                      (vm) => vm.hostId === selectedHost.id
                     )}
                     rowKey="id"
                     pagination={false}
@@ -1134,7 +1136,7 @@ const PhysicalMachineManagement: React.FC = () => {
                         <div
                           style={{
                             height: "300px",
-                            background: "#f0f2f5",
+                            background: themeConfig.token.colorBgLayout,
                             padding: "20px",
                             borderRadius: "4px",
                           }}
@@ -1182,7 +1184,7 @@ const PhysicalMachineManagement: React.FC = () => {
                         <div
                           style={{
                             height: "200px",
-                            background: "#f0f2f5",
+                            background: themeConfig.token.colorBgLayout,
                             padding: "20px",
                             borderRadius: "4px",
                           }}
@@ -1200,7 +1202,7 @@ const PhysicalMachineManagement: React.FC = () => {
                         <div
                           style={{
                             height: "200px",
-                            background: "#f0f2f5",
+                            background: themeConfig.token.colorBgLayout,
                             padding: "20px",
                             borderRadius: "4px",
                           }}
@@ -1218,7 +1220,7 @@ const PhysicalMachineManagement: React.FC = () => {
                         <div
                           style={{
                             height: "200px",
-                            background: "#f0f2f5",
+                            background: themeConfig.token.colorBgLayout,
                             padding: "20px",
                             borderRadius: "4px",
                           }}

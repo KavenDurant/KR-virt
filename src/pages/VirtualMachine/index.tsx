@@ -29,6 +29,7 @@ import {
   CopyOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
+import { useTheme } from "../../contexts/ThemeContext";
 
 // 定义虚拟机数据类型
 interface VirtualMachine {
@@ -61,6 +62,7 @@ interface VirtualMachine {
 }
 
 const VirtualMachineManagement: React.FC = () => {
+  const { themeConfig } = useTheme();
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("全部");
@@ -255,18 +257,38 @@ const VirtualMachineManagement: React.FC = () => {
       dataIndex: "status",
       key: "status",
       width: 90,
-      render: (status: string) => (
-        <Tag
-          color={status === "运行中" ? "#3fa33f" : "#f14c4c"}
-          style={{
-            borderRadius: "4px",
-            backgroundColor: status === "运行中" ? "#143d14" : "#411616",
-            border: `1px solid ${status === "运行中" ? "#3fa33f" : "#f14c4c"}`,
-          }}
-        >
-          {status}
-        </Tag>
-      ),
+      render: (status: string) => {
+        const getStatusConfig = (status: string) => {
+          switch (status) {
+            case "运行中":
+              return { color: "success", icon: "●" };
+            case "已停止":
+              return { color: "error", icon: "●" };
+            case "异常":
+              return { color: "warning", icon: "●" };
+            default:
+              return { color: "default", icon: "●" };
+          }
+        };
+        
+        const config = getStatusConfig(status);
+        return (
+          <Tag
+            color={config.color}
+            style={{
+              borderRadius: "4px",
+              fontWeight: "500",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              width: "fit-content",
+            }}
+          >
+            <span style={{ fontSize: "8px" }}>{config.icon}</span>
+            {status}
+          </Tag>
+        );
+      },
     },
     {
       title: "IP地址",
@@ -309,7 +331,7 @@ const VirtualMachineManagement: React.FC = () => {
           <div
             style={{
               color:
-                !isNaN(usageValue) && usageValue > 80 ? "#f14c4c" : "#cccccc",
+                !isNaN(usageValue) && usageValue > 80 ? "#ff4d4f" : themeConfig.token.colorTextBase,
             }}
           >
             {usage}
@@ -328,7 +350,7 @@ const VirtualMachineManagement: React.FC = () => {
           <div
             style={{
               color:
-                !isNaN(usageValue) && usageValue > 80 ? "#f14c4c" : "#cccccc",
+                !isNaN(usageValue) && usageValue > 80 ? "#ff4d4f" : themeConfig.token.colorTextBase,
             }}
           >
             {usage}
@@ -377,18 +399,36 @@ const VirtualMachineManagement: React.FC = () => {
       dataIndex: "platform",
       key: "platform",
       width: 90,
-      render: (platform: string) => (
-        <Tag
-          color={platform === "Linux" ? "#0e639c" : "#643f9c"}
-          style={{
-            borderRadius: "4px",
-            backgroundColor: platform === "Linux" ? "#143d5c" : "#342852",
-            border: `1px solid ${platform === "Linux" ? "#0e639c" : "#643f9c"}`,
-          }}
-        >
-          {platform}
-        </Tag>
-      ),
+      render: (platform: string) => {
+        const getPlatformConfig = (platform: string) => {
+          switch (platform) {
+            case "Linux":
+              return { color: "blue", icon: "🐧" };
+            case "Windows":
+              return { color: "purple", icon: "🪟" };
+            default:
+              return { color: "default", icon: "💻" };
+          }
+        };
+        
+        const config = getPlatformConfig(platform);
+        return (
+          <Tag
+            color={config.color}
+            style={{
+              borderRadius: "4px",
+              fontWeight: "500",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              width: "fit-content",
+            }}
+          >
+            <span style={{ fontSize: "12px" }}>{config.icon}</span>
+            {platform}
+          </Tag>
+        );
+      },
     },
     {
       title: "描述",
@@ -429,7 +469,6 @@ const VirtualMachineManagement: React.FC = () => {
               type="primary"
               size="small"
               icon={<PlayCircleOutlined />}
-              style={{ backgroundColor: "#0e639c", borderColor: "#0e639c" }}
             >
               启动
             </Button>
@@ -438,7 +477,6 @@ const VirtualMachineManagement: React.FC = () => {
               danger
               size="small"
               icon={<PoweroffOutlined />}
-              style={{ backgroundColor: "#5a1d1d", borderColor: "#5a1d1d" }}
             >
               停止
             </Button>
@@ -447,9 +485,9 @@ const VirtualMachineManagement: React.FC = () => {
             size="small"
             icon={<ReloadOutlined />}
             style={{
-              backgroundColor: "#2d2d2d",
-              borderColor: "#3c3c3c",
-              color: "#cccccc",
+              backgroundColor: themeConfig.token.colorBgContainer,
+              borderColor: themeConfig.token.colorBorder,
+              color: themeConfig.token.colorTextBase,
             }}
           >
             重启
@@ -467,15 +505,15 @@ const VirtualMachineManagement: React.FC = () => {
 
   return (
     <div style={{ width: "100%" }}>
-      <h1 style={{ color: "#ffffff" }}>虚拟机管理</h1>
+      <h1 style={{ color: themeConfig.token.colorTextBase }}>虚拟机管理</h1>
 
       <Row gutter={16} style={{ marginBottom: "24px", width: "100%" }}>
         <Col span={6} xxl={6} xl={6} lg={6} md={12} sm={24} xs={24}>
           <Card
             style={{
-              backgroundColor: "#252526",
-              color: "#cccccc",
-              border: "1px solid #3c3c3c",
+              backgroundColor: themeConfig.token.colorBgContainer,
+              color: themeConfig.token.colorTextBase,
+              border: `1px solid ${themeConfig.token.colorBorder}`,
             }}
           >
             <Statistic title="总虚拟机数量" value={12} />
@@ -484,45 +522,45 @@ const VirtualMachineManagement: React.FC = () => {
         <Col span={6} xxl={6} xl={6} lg={6} md={12} sm={24} xs={24}>
           <Card
             style={{
-              backgroundColor: "#252526",
-              color: "#cccccc",
-              border: "1px solid #3c3c3c",
+              backgroundColor: themeConfig.token.colorBgContainer,
+              color: themeConfig.token.colorTextBase,
+              border: `1px solid ${themeConfig.token.colorBorder}`,
             }}
           >
             <Statistic
               title="运行中"
               value={8}
-              valueStyle={{ color: "#3fa33f" }}
+              valueStyle={{ color: "#52c41a" }}
             />
           </Card>
         </Col>
         <Col span={6} xxl={6} xl={6} lg={6} md={12} sm={24} xs={24}>
           <Card
             style={{
-              backgroundColor: "#252526",
-              color: "#cccccc",
-              border: "1px solid #3c3c3c",
+              backgroundColor: themeConfig.token.colorBgContainer,
+              color: themeConfig.token.colorTextBase,
+              border: `1px solid ${themeConfig.token.colorBorder}`,
             }}
           >
             <Statistic
               title="已停止"
               value={3}
-              valueStyle={{ color: "#f14c4c" }}
+              valueStyle={{ color: "#ff4d4f" }}
             />
           </Card>
         </Col>
         <Col span={6} xxl={6} xl={6} lg={6} md={12} sm={24} xs={24}>
           <Card
             style={{
-              backgroundColor: "#252526",
-              color: "#cccccc",
-              border: "1px solid #3c3c3c",
+              backgroundColor: themeConfig.token.colorBgContainer,
+              color: themeConfig.token.colorTextBase,
+              border: `1px solid ${themeConfig.token.colorBorder}`,
             }}
           >
             <Statistic
               title="异常"
               value={1}
-              valueStyle={{ color: "#e9a700" }}
+              valueStyle={{ color: "#faad14" }}
             />
           </Card>
         </Col>
@@ -536,16 +574,16 @@ const VirtualMachineManagement: React.FC = () => {
           </Button>
         }
         style={{
-          backgroundColor: "#252526",
-          color: "#cccccc",
-          border: "1px solid #3c3c3c",
+          backgroundColor: themeConfig.token.colorBgContainer,
+          color: themeConfig.token.colorTextBase,
+          border: `1px solid ${themeConfig.token.colorBorder}`,
           width: "100%",
         }}
         styles={{
           header: {
-            backgroundColor: "#252526",
-            color: "#ffffff",
-            borderBottom: "1px solid #3c3c3c",
+            backgroundColor: themeConfig.token.colorBgContainer,
+            color: themeConfig.token.colorTextBase,
+            borderBottom: `1px solid ${themeConfig.token.colorBorder}`,
           },
         }}
       >
@@ -562,8 +600,8 @@ const VirtualMachineManagement: React.FC = () => {
               prefix={<SearchOutlined />}
               style={{
                 width: 240,
-                backgroundColor: "#3c3c3c",
-                borderColor: "#4c4c4c",
+                backgroundColor: themeConfig.token.colorBgContainer,
+                borderColor: themeConfig.token.colorBorder,
               }}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
@@ -571,8 +609,8 @@ const VirtualMachineManagement: React.FC = () => {
             <Select
               style={{
                 width: 120,
-                backgroundColor: "#3c3c3c",
-                borderColor: "#4c4c4c",
+                backgroundColor: themeConfig.token.colorBgContainer,
+                borderColor: themeConfig.token.colorBorder,
               }}
               placeholder="状态"
               defaultValue="全部"
@@ -588,8 +626,8 @@ const VirtualMachineManagement: React.FC = () => {
             <Select
               style={{
                 width: 140,
-                backgroundColor: "#3c3c3c",
-                borderColor: "#4c4c4c",
+                backgroundColor: themeConfig.token.colorBgContainer,
+                borderColor: themeConfig.token.colorBorder,
               }}
               placeholder="可用区"
               defaultValue="全部"
@@ -604,14 +642,20 @@ const VirtualMachineManagement: React.FC = () => {
             <Tooltip title="更多筛选条件">
               <Button
                 icon={<FilterOutlined />}
-                style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}
+                style={{ 
+                  backgroundColor: themeConfig.token.colorBgContainer, 
+                  borderColor: themeConfig.token.colorBorder 
+                }}
               />
             </Tooltip>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <Button
               icon={<SyncOutlined />}
-              style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}
+              style={{ 
+                backgroundColor: themeConfig.token.colorBgContainer, 
+                borderColor: themeConfig.token.colorBorder 
+              }}
               onClick={refreshData}
             >
               刷新
@@ -619,13 +663,19 @@ const VirtualMachineManagement: React.FC = () => {
             <Tooltip title="导出">
               <Button
                 icon={<ExportOutlined />}
-                style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}
+                style={{ 
+                  backgroundColor: themeConfig.token.colorBgContainer, 
+                  borderColor: themeConfig.token.colorBorder 
+                }}
               />
             </Tooltip>
             <Tooltip title="批量操作">
               <Dropdown menu={{ items: menuItems }}>
                 <Button
-                  style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}
+                  style={{ 
+                    backgroundColor: themeConfig.token.colorBgContainer, 
+                    borderColor: themeConfig.token.colorBorder 
+                  }}
                 >
                   批量操作 <DownOutlined />
                 </Button>
@@ -634,7 +684,10 @@ const VirtualMachineManagement: React.FC = () => {
             <Tooltip title="表格列设置">
               <Button
                 icon={<SettingOutlined />}
-                style={{ backgroundColor: "#3c3c3c", borderColor: "#4c4c4c" }}
+                style={{ 
+                  backgroundColor: themeConfig.token.colorBgContainer, 
+                  borderColor: themeConfig.token.colorBorder 
+                }}
               />
             </Tooltip>
           </div>
@@ -647,13 +700,13 @@ const VirtualMachineManagement: React.FC = () => {
             pageSize: 10,
             itemRender: (page, type, originalElement) => {
               if (type === "page") {
-                return <a style={{ color: "#cccccc" }}>{page}</a>;
+                return <a style={{ color: themeConfig.token.colorTextBase }}>{page}</a>;
               }
               return originalElement;
             },
           }}
           loading={loading}
-          style={{ backgroundColor: "#252526", width: "100%" }}
+          style={{ backgroundColor: themeConfig.token.colorBgContainer, width: "100%" }}
           scroll={{ x: 2500 }}
           bordered
           size="middle"

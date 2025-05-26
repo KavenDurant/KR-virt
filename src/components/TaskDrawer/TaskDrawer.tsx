@@ -11,6 +11,7 @@ import {
   FileTextOutlined,
 } from "@ant-design/icons";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { useTheme } from "../../contexts/ThemeContext";
 import "./TaskDrawer.less";
 
 interface TaskDrawerProps {
@@ -118,19 +119,20 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({
   onClose,
   children,
 }) => {
+  const { themeConfig } = useTheme();
   const panelRef = useRef<HTMLDivElement>(null);
 
   // 渲染任务状态图标
   const renderTaskStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
-        return <CheckCircleOutlined style={{ color: "#52c41a" }} />;
+        return <CheckCircleOutlined style={{ color: "#52c41a" }} />; // 保留语义色：成功
       case "failed":
-        return <CloseCircleOutlined style={{ color: "#f5222d" }} />;
+        return <CloseCircleOutlined style={{ color: "#ff4d4f" }} />; // 保留语义色：错误
       case "processing":
-        return <SyncOutlined spin style={{ color: "#1890ff" }} />;
+        return <SyncOutlined spin style={{ color: themeConfig.token.colorPrimary }} />;
       default:
-        return <InfoCircleOutlined style={{ color: "#1890ff" }} />;
+        return <InfoCircleOutlined style={{ color: themeConfig.token.colorPrimary }} />;
     }
   };
 
@@ -265,7 +267,7 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 avatar={
                   <Avatar
                     icon={<FileTextOutlined />}
-                    style={{ backgroundColor: "#87d068" }}
+                    style={{ backgroundColor: themeConfig.token.colorPrimary }}
                   />
                 }
                 title={<span className="log-title">{item.action}</span>}
@@ -318,8 +320,8 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({
           </Panel>
         </PanelGroup>
       ) : (
-        <div className="main-content-panel">
-          <div className="editor-content">{children}</div>
+        <div className="main-content-panel" style={{ height: "100%", overflow: "hidden" }}>
+          <div className="editor-content" style={{ height: "100%", overflow: "auto" }}>{children}</div>
         </div>
       )}
     </div>

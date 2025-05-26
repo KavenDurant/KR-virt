@@ -27,6 +27,7 @@ import {
   AreaChartOutlined,
 } from "@ant-design/icons";
 import "./Dashboard.less";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -117,8 +118,7 @@ const mockResourceData = {
       id: 3,
       level: "warning",
       message: "虚拟机 vm-12 内存使用率高",
-      time: "1小时前",
-    },
+      time: "1小时前" },
     { id: 4, level: "info", message: "系统自动备份完成", time: "3小时前" },
   ],
   recentEvents: [
@@ -184,7 +184,7 @@ const vmColumns = [
       <Progress
         percent={cpu}
         size="small"
-        strokeColor={cpu > 80 ? "#ff4d4f" : "#1890ff"}
+        status={cpu > 80 ? "exception" : "normal"}
       />
     ),
   },
@@ -196,7 +196,7 @@ const vmColumns = [
       <Progress
         percent={memory}
         size="small"
-        strokeColor={memory > 80 ? "#ff4d4f" : "#1890ff"}
+        status={memory > 80 ? "exception" : "normal"}
       />
     ),
   },
@@ -211,6 +211,7 @@ const mockVMData = [
 ];
 
 const Dashboard: React.FC = () => {
+  const { themeConfig } = useTheme();
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState(mockResourceData);
 
@@ -244,25 +245,25 @@ const Dashboard: React.FC = () => {
       case "critical":
         return {
           color: "#ff4d4f",
-          bgColor: "#fff1f0",
+          bgColor: themeConfig.token.colorBgContainer,
           icon: <ExclamationCircleOutlined />,
         };
       case "warning":
         return {
           color: "#faad14",
-          bgColor: "#fffbe6",
+          bgColor: themeConfig.token.colorBgContainer,
           icon: <WarningOutlined />,
         };
       default:
         return {
           color: "#52c41a",
-          bgColor: "#f6ffed",
+          bgColor: themeConfig.token.colorBgContainer,
           icon: <CheckCircleOutlined />,
         };
     }
   };
 
-  // 趋势图标
+  // 趋势图标和颜色
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case "up":
@@ -270,7 +271,19 @@ const Dashboard: React.FC = () => {
       case "down":
         return { icon: "↘", color: "#52c41a" };
       default:
-        return { icon: "→", color: "#1890ff" };
+        return { icon: "→", color: themeConfig.token.colorPrimary };
+    }
+  };
+
+  // 获取性能状态的颜色
+  const getPerformanceColor = (trend: string) => {
+    switch (trend) {
+      case "up":
+        return "#ff4d4f";
+      case "down":
+        return "#52c41a";
+      default:
+        return themeConfig.token.colorPrimary;
     }
   };
 
@@ -476,12 +489,7 @@ const Dashboard: React.FC = () => {
                 value={item.current}
                 suffix={item.unit}
                 valueStyle={{
-                  color:
-                    item.trend === "up"
-                      ? "#ff4d4f"
-                      : item.trend === "down"
-                        ? "#52c41a"
-                        : "#1890ff",
+                  color: getPerformanceColor(item.trend),
                 }}
               />
               <div className="performance-chart">
@@ -491,12 +499,7 @@ const Dashboard: React.FC = () => {
                     className="chart-bar"
                     style={{
                       height: `${val / 6}%`,
-                      backgroundColor:
-                        item.trend === "up"
-                          ? "#ff4d4f"
-                          : item.trend === "down"
-                            ? "#52c41a"
-                            : "#1890ff",
+                      backgroundColor: getPerformanceColor(item.trend),
                       opacity: 0.3 + i * 0.1,
                     }}
                   />

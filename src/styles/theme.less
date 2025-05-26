@@ -7,58 +7,206 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: @editor-bg;
-  color: @text-color;
+  background-color: var(--bg-color, @editor-bg);
+  color: var(--text-color, @text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// 主题切换样式
+[data-theme="light"] {
+  --bg-color: @light-editor-bg;
+  --text-color: @light-text-color;
+  --border-color: @light-border-color;
+  --hover-bg: @light-hover-bg;
+  --selected-bg: @light-selected-bg;
+  --sidebar-bg: @light-sidebar-bg;
+  --activity-bar-bg: @light-activity-bar-bg;
+  --primary-color: @light-primary-color;
+}
+
+[data-theme="dark"] {
+  --bg-color: @editor-bg;
+  --text-color: @text-color;
+  --border-color: @border-color;
+  --hover-bg: @hover-bg;
+  --selected-bg: @selected-bg;
+  --sidebar-bg: @sidebar-bg;
+  --activity-bar-bg: @activity-bar-bg;
+  --primary-color: @primary-color;
 }
 
 // VS Code 风格的布局样式
 .app-layout {
   min-height: 100vh;
-  background-color: @editor-bg;
-  color: @text-color;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   display: flex;
   flex-direction: row;
+  transition: all 0.3s ease;
+  
+  .ant-layout-content {
+    overflow-y: auto; /* 允许内容区域垂直滚动 */
+    height: 100vh;
+  }
 }
 
 // 活动栏样式 - VS Code左侧窄栏
 .activity-bar {
   width: @activity-bar-width;
-  background-color: @activity-bar-bg;
+  background-color: var(--activity-bar-bg);
   height: 100vh;
   overflow: hidden;
   z-index: 10;
   flex-shrink: 0;
+  transition: background-color 0.3s ease;
 }
 
 .activity-bar-menu {
-  background-color: @activity-bar-bg;
+  background-color: var(--activity-bar-bg) !important;
   border-right: none;
+  transition: background-color 0.3s ease;
 }
 
 // 活动栏工具提示样式
 .activity-tooltip {
   .ant-tooltip-inner {
-    background-color: @sidebar-bg;
-    color: @text-color;
-    border: 1px solid @border-color;
+    background-color: var(--sidebar-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
     border-radius: 2px;
     font-size: @font-size-small;
     padding: 4px 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
 
   .ant-tooltip-arrow-content {
-    background-color: @sidebar-bg;
+    background-color: var(--sidebar-bg);
   }
 }
 
 // 侧边栏样式
 .sidebar {
-  background-color: @sidebar-bg !important;
+  background-color: var(--sidebar-bg) !important;
   height: 100vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   width: @sidebar-width;
+  transition: background-color 0.3s ease;
+}
+
+// 系统设置页面样式
+.system-settings {
+  .ant-card {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    transition: all 0.3s ease;
+
+    .ant-card-head {
+      background-color: var(--sidebar-bg);
+      border-bottom-color: var(--border-color);
+      color: var(--text-color);
+    }
+
+    .ant-card-body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+  }
+
+  .ant-tabs {
+    .ant-tabs-nav {
+      background-color: var(--sidebar-bg);
+      
+      .ant-tabs-tab {
+        background-color: transparent;
+        border-color: var(--border-color);
+        color: var(--text-color);
+
+        &:hover {
+          background-color: var(--hover-bg);
+        }
+
+        &.ant-tabs-tab-active {
+          background-color: var(--bg-color);
+          border-bottom-color: var(--primary-color);
+          color: var(--primary-color);
+        }
+      }
+    }
+
+    .ant-tabs-content-holder {
+      background-color: var(--bg-color);
+    }
+  }
+
+  .ant-form {
+    .ant-form-item-label > label {
+      color: var(--text-color);
+    }
+  }
+
+  .ant-input {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+
+    &:hover, &:focus {
+      border-color: var(--primary-color);
+      background-color: var(--bg-color);
+    }
+  }
+
+  .ant-select {
+    .ant-select-selector {
+      background-color: var(--bg-color) !important;
+      border-color: var(--border-color) !important;
+      color: var(--text-color) !important;
+    }
+
+    &:hover .ant-select-selector {
+      border-color: var(--primary-color) !important;
+    }
+  }
+
+  .ant-table {
+    background-color: var(--bg-color);
+
+    .ant-table-thead > tr > th {
+      background-color: var(--sidebar-bg);
+      border-bottom-color: var(--border-color);
+      color: var(--text-color);
+    }
+
+    .ant-table-tbody > tr > td {
+      background-color: var(--bg-color);
+      border-bottom-color: var(--border-color);
+      color: var(--text-color);
+    }
+
+    .ant-table-tbody > tr:hover > td {
+      background-color: var(--hover-bg) !important;
+    }
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .sidebar {
+    width: 200px;
+  }
+  
+  .activity-bar {
+    width: 40px;
+  }
+}
+
+@media (max-width: 576px) {
+  .sidebar {
+    position: absolute;
+    z-index: 1000;
+    width: 250px;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  }
 }

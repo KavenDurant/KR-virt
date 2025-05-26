@@ -32,6 +32,7 @@ import {
   InfoCircleOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -329,6 +330,14 @@ const ClusterManagement: React.FC = () => {
   const [clusterForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const { themeConfig } = useTheme();
+
+  // 获取进度条颜色的函数
+  const getProgressColor = (percent: number) => {
+    if (percent > 80) return "#ff4d4f";  // 保留语义颜色：危险/错误
+    if (percent > 60) return "#faad14";  // 保留语义颜色：警告
+    return "#52c41a";  // 保留语义颜色：成功/正常
+  };
 
   // 加载集群数据
   useEffect(() => {
@@ -442,9 +451,7 @@ const ClusterManagement: React.FC = () => {
         <Progress
           percent={percent}
           size="small"
-          strokeColor={
-            percent > 80 ? "#ff4d4f" : percent > 60 ? "#faad14" : "#52c41a"
-          }
+          strokeColor={getProgressColor(percent)}
         />
       ),
     },
@@ -456,9 +463,7 @@ const ClusterManagement: React.FC = () => {
         <Progress
           percent={percent}
           size="small"
-          strokeColor={
-            percent > 80 ? "#ff4d4f" : percent > 60 ? "#faad14" : "#52c41a"
-          }
+          strokeColor={getProgressColor(percent)}
         />
       ),
     },
@@ -471,7 +476,7 @@ const ClusterManagement: React.FC = () => {
       title: "操作",
       key: "action",
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      render: (text: string, record: any) => (
+      render: (_: string, record: any) => (
         <Space size="middle">
           <Tooltip title="查看详情">
             <Button
@@ -531,9 +536,7 @@ const ClusterManagement: React.FC = () => {
         <Progress
           percent={percent}
           size="small"
-          strokeColor={
-            percent > 80 ? "#ff4d4f" : percent > 60 ? "#faad14" : "#52c41a"
-          }
+          strokeColor={getProgressColor(percent)}
         />
       ),
     },
@@ -550,9 +553,7 @@ const ClusterManagement: React.FC = () => {
         <Progress
           percent={percent}
           size="small"
-          strokeColor={
-            percent > 80 ? "#ff4d4f" : percent > 60 ? "#faad14" : "#52c41a"
-          }
+          strokeColor={getProgressColor(percent)}
         />
       ),
     },
@@ -599,9 +600,7 @@ const ClusterManagement: React.FC = () => {
         <Progress
           percent={percent}
           size="small"
-          strokeColor={
-            percent > 80 ? "#ff4d4f" : percent > 60 ? "#faad14" : "#52c41a"
-          }
+          strokeColor={getProgressColor(percent)}
         />
       ),
     },
@@ -638,7 +637,7 @@ const ClusterManagement: React.FC = () => {
       title: "IP使用率",
       key: "ipUsage",
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      render: (text: string, record: any) => (
+      render: (_: string, record: any) => (
         <Tooltip title={`${record.usedIps}/${record.totalIps}`}>
           <Progress
             percent={Math.round((record.usedIps / record.totalIps) * 100)}
@@ -651,7 +650,7 @@ const ClusterManagement: React.FC = () => {
 
   return (
     <Layout className="cluster-management">
-      <Content style={{ padding: "24px", minHeight: 280 }}>
+      <Content style={{  minHeight: 280 }}>
         <Card
           title={
             <Space>

@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Badge, Layout, Menu, Tooltip, Dropdown, Avatar, Space, Typography, Button, Modal } from "antd";
+import {
+  Badge,
+  Layout,
+  Menu,
+  Tooltip,
+  Dropdown,
+  Avatar,
+  Space,
+  Typography,
+  Button,
+  Modal,
+} from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   DesktopOutlined,
@@ -44,14 +55,14 @@ const AppLayout: React.FC = () => {
   // 处理登出
   const handleLogout = () => {
     Modal.confirm({
-      title: '确认登出',
+      title: "确认登出",
       icon: <ExclamationCircleOutlined />,
-      content: '您确定要退出系统吗？',
-      okText: '确认',
-      cancelText: '取消',
+      content: "您确定要退出系统吗？",
+      okText: "确认",
+      cancelText: "取消",
       onOk() {
         authService.logout();
-        navigate('/login');
+        navigate("/login");
       },
     });
   };
@@ -59,22 +70,22 @@ const AppLayout: React.FC = () => {
   // 用户下拉菜单
   const userMenuItems = [
     {
-      key: 'profile',
+      key: "profile",
       icon: <UserOutlined />,
-      label: '个人信息',
+      label: "个人信息",
     },
     {
-      key: 'settings',
+      key: "settings",
       icon: <SettingOutlined />,
-      label: '账户设置',
+      label: "账户设置",
     },
     {
-      type: 'divider' as const,
+      type: "divider" as const,
     },
     {
-      key: 'logout',
+      key: "logout",
       icon: <LogoutOutlined />,
-      label: '安全登出',
+      label: "安全登出",
       onClick: handleLogout,
     },
   ];
@@ -111,7 +122,7 @@ const AppLayout: React.FC = () => {
         originalWidthRef.current = validWidth;
       }
     },
-    [], // 移除sidebarWidth依赖，避免频繁重新创建函数
+    [] // 移除sidebarWidth依赖，避免频繁重新创建函数
   );
 
   // 根据当前路径确定选中的菜单项
@@ -121,7 +132,7 @@ const AppLayout: React.FC = () => {
   }, [location.pathname]);
 
   const [selectedActivityItem, setSelectedActivityItem] = useState(
-    getCurrentSelectedPath,
+    getCurrentSelectedPath
   );
 
   // 当路由变化时更新选中的菜单项
@@ -240,7 +251,9 @@ const AppLayout: React.FC = () => {
                     backgroundColor:
                       actualTheme === "dark" ? "#252526" : "#ffffff",
                     color: actualTheme === "dark" ? "#cccccc" : "#000000",
-                    border: `1px solid ${actualTheme === "dark" ? "#454545" : "#d9d9d9"}`,
+                    border: `1px solid ${
+                      actualTheme === "dark" ? "#454545" : "#d9d9d9"
+                    }`,
                     borderRadius: "2px",
                     fontSize: "12px",
                     padding: "4px 8px",
@@ -259,8 +272,8 @@ const AppLayout: React.FC = () => {
                             ? "#ffffff"
                             : "#000000"
                           : actualTheme === "dark"
-                            ? "#858585"
-                            : "#666666",
+                          ? "#858585"
+                          : "#666666",
                     },
                   })}
                 </Tooltip>
@@ -272,8 +285,8 @@ const AppLayout: React.FC = () => {
                       ? "#444444"
                       : "#e6f7ff"
                     : actualTheme === "dark"
-                      ? "#333333"
-                      : "#f3f3f3",
+                    ? "#333333"
+                    : "#f3f3f3",
                 height: "50px",
               },
             }))}
@@ -304,7 +317,9 @@ const AppLayout: React.FC = () => {
                   backgroundColor:
                     actualTheme === "dark" ? "#252526" : "#ffffff",
                   color: actualTheme === "dark" ? "#cccccc" : "#000000",
-                  border: `1px solid ${actualTheme === "dark" ? "#454545" : "#d9d9d9"}`,
+                  border: `1px solid ${
+                    actualTheme === "dark" ? "#454545" : "#d9d9d9"
+                  }`,
                   borderRadius: "2px",
                   fontSize: "12px",
                   padding: "4px 8px",
@@ -324,8 +339,8 @@ const AppLayout: React.FC = () => {
                           ? "#ffffff"
                           : "#000000"
                         : actualTheme === "dark"
-                          ? "#858585"
-                          : "#666666",
+                        ? "#858585"
+                        : "#666666",
                       cursor: "pointer",
                     }}
                     onClick={() => {
@@ -360,7 +375,9 @@ const AppLayout: React.FC = () => {
                     backgroundColor:
                       actualTheme === "dark" ? "#252526" : "#ffffff",
                     color: actualTheme === "dark" ? "#cccccc" : "#000000",
-                    border: `1px solid ${actualTheme === "dark" ? "#454545" : "#d9d9d9"}`,
+                    border: `1px solid ${
+                      actualTheme === "dark" ? "#454545" : "#d9d9d9"
+                    }`,
                     borderRadius: "2px",
                     fontSize: "12px",
                     padding: "4px 8px",
@@ -379,8 +396,8 @@ const AppLayout: React.FC = () => {
                             ? "#ffffff"
                             : "#000000"
                           : actualTheme === "dark"
-                            ? "#858585"
-                            : "#666666",
+                          ? "#858585"
+                          : "#666666",
                     },
                   })}
                 </Tooltip>
@@ -392,8 +409,8 @@ const AppLayout: React.FC = () => {
                       ? "#444444"
                       : "#e6f7ff"
                     : actualTheme === "dark"
-                      ? "#333333"
-                      : "#f3f3f3",
+                    ? "#333333"
+                    : "#f3f3f3",
                 height: "50px",
               },
             }))}
@@ -462,7 +479,7 @@ const AppLayout: React.FC = () => {
                 if (now - lastUpdateTime > throttleDelay) {
                   originalWidthRef.current = Math.max(
                     200,
-                    Math.min(newWidth, 400),
+                    Math.min(newWidth, 400)
                   );
                   lastUpdateTime = now;
                 }
@@ -488,7 +505,8 @@ const AppLayout: React.FC = () => {
             document.addEventListener("mouseup", handleMouseUp);
           }}
         />
-      </div>{" "}      {/* 内容区域 */}
+      </div>{" "}
+      {/* 内容区域 */}
       <Layout
         style={{
           flex: "1 1 auto",
@@ -503,7 +521,9 @@ const AppLayout: React.FC = () => {
         <Header
           style={{
             backgroundColor: actualTheme === "dark" ? "#252526" : "#ffffff",
-            borderBottom: `1px solid ${actualTheme === "dark" ? "#454545" : "#e8e8e8"}`,
+            borderBottom: `1px solid ${
+              actualTheme === "dark" ? "#454545" : "#e8e8e8"
+            }`,
             padding: "0 24px",
             height: "56px",
             lineHeight: "56px",
@@ -517,17 +537,17 @@ const AppLayout: React.FC = () => {
         >
           {/* 系统标题 */}
           <Space align="center">
-            <SafetyOutlined 
-              style={{ 
-                fontSize: "20px", 
-                color: actualTheme === "dark" ? "#007acc" : "#1890ff" 
-              }} 
+            <SafetyOutlined
+              style={{
+                fontSize: "20px",
+                color: actualTheme === "dark" ? "#007acc" : "#1890ff",
+              }}
             />
-            <Text 
-              style={{ 
-                fontSize: "16px", 
+            <Text
+              style={{
+                fontSize: "16px",
                 fontWeight: 600,
-                color: actualTheme === "dark" ? "#cccccc" : "#262626"
+                color: actualTheme === "dark" ? "#cccccc" : "#262626",
               }}
             >
               KR虚拟化管理系统
@@ -552,57 +572,64 @@ const AppLayout: React.FC = () => {
 
             {/* 用户信息下拉菜单 */}
             <Dropdown
-              menu={{ 
+              menu={{
                 items: userMenuItems,
                 style: {
-                  backgroundColor: actualTheme === "dark" ? "#252526" : "#ffffff",
-                }
+                  backgroundColor:
+                    actualTheme === "dark" ? "#252526" : "#ffffff",
+                },
               }}
               placement="bottomRight"
               arrow
             >
-              <Space 
-                style={{ 
+              <Space
+                style={{
                   cursor: "pointer",
                   padding: "4px 8px",
                   borderRadius: "6px",
                   transition: "background-color 0.2s",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = actualTheme === "dark" ? "#404040" : "#f5f5f5";
+                  e.currentTarget.style.backgroundColor =
+                    actualTheme === "dark" ? "#404040" : "#f5f5f5";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
-                <Avatar 
-                  size={32} 
+                <Avatar
+                  size={32}
                   icon={<UserOutlined />}
                   style={{
-                    backgroundColor: actualTheme === "dark" ? "#007acc" : "#1890ff",
+                    backgroundColor:
+                      actualTheme === "dark" ? "#007acc" : "#1890ff",
                   }}
                 />
                 <div style={{ textAlign: "left" }}>
-                  <div 
-                    style={{ 
-                      fontSize: "14px", 
+                  <div
+                    style={{
+                      fontSize: "14px",
                       fontWeight: 500,
                       color: actualTheme === "dark" ? "#cccccc" : "#262626",
-                      lineHeight: "16px"
+                      lineHeight: "16px",
                     }}
                   >
                     {currentUser?.username || "用户"}
                   </div>
-                  <div 
-                    style={{ 
-                      fontSize: "12px", 
+                  <div
+                    style={{
+                      fontSize: "12px",
                       color: actualTheme === "dark" ? "#858585" : "#999999",
-                      lineHeight: "14px"
+                      lineHeight: "14px",
                     }}
                   >
-                    {currentUser?.role === "administrator" ? "系统管理员" : 
-                     currentUser?.role === "operator" ? "操作员" : 
-                     currentUser?.role === "auditor" ? "审计员" : "用户"}
+                    {currentUser?.role === "administrator"
+                      ? "系统管理员"
+                      : currentUser?.role === "operator"
+                      ? "操作员"
+                      : currentUser?.role === "auditor"
+                      ? "审计员"
+                      : "用户"}
                   </div>
                 </div>
               </Space>

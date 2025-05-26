@@ -3,33 +3,51 @@
  * 设计理念：简约大气、安全可信、符合中国信创标准
  */
 
+// 确保登录页面背景充满整个屏幕
+body.login-page {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 .login-container {
+  width: 100vw;
+  height: 100vh;
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
   overflow: hidden;
+  box-sizing: border-box;
 
   // 背景装饰
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></svg>')
+      repeat;
     background-size: 50px 50px;
     animation: float 20s ease-in-out infinite;
   }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .login-card {
@@ -50,7 +68,7 @@
 
   // 顶部装饰条
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -87,8 +105,13 @@
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 .login-form {
@@ -126,6 +149,33 @@
 }
 
 .key-file-upload {
+  .test-file-download {
+    background: #f0f8ff;
+    border: 1px solid #d4edda;
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: #e6f3ff;
+    }
+
+    .ant-btn-link {
+      color: #1890ff;
+      font-size: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      
+      &:hover {
+        color: #096dd9;
+        text-decoration: underline;
+      }
+    }
+  }
+
   .ant-upload-drag {
     border-radius: 8px;
     border: 2px dashed #d9d9d9;

@@ -4,11 +4,15 @@
  * @Description: 双因子认证组件
  */
 
-import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, message, Space, Typography, Card } from 'antd';
-import { SafetyOutlined, SendOutlined, CheckCircleOutlined } from '@ant-design/icons';
-import { authService } from '../../services/authService';
-import type { TwoFactorData } from '../../services/authService';
+import React, { useState, useEffect } from "react";
+import { Form, Input, Button, message, Space, Typography, Card } from "antd";
+import {
+  SafetyOutlined,
+  SendOutlined,
+  CheckCircleOutlined,
+} from "@ant-design/icons";
+import { authService } from "../../services/authService";
+import type { TwoFactorData } from "../../services/authService";
 
 const { Title, Text } = Typography;
 
@@ -18,7 +22,11 @@ interface TwoFactorAuthProps {
   onBack: () => void;
 }
 
-const TwoFactorAuth: React.FC<TwoFactorAuthProps> = ({ tempToken, onSuccess, onBack }) => {
+const TwoFactorAuth: React.FC<TwoFactorAuthProps> = ({
+  tempToken,
+  onSuccess,
+  onBack,
+}) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
@@ -43,8 +51,9 @@ const TwoFactorAuth: React.FC<TwoFactorAuthProps> = ({ tempToken, onSuccess, onB
         setCountdown(60); // 60秒倒计时
       } else {
         message.error(result.message);
-      }    } catch {
-      message.error('发送验证码失败');
+      }
+    } catch {
+      message.error("发送验证码失败");
     } finally {
       setSendingCode(false);
     }
@@ -56,18 +65,19 @@ const TwoFactorAuth: React.FC<TwoFactorAuthProps> = ({ tempToken, onSuccess, onB
     try {
       const data: TwoFactorData = {
         tempToken,
-        verificationCode: values.verificationCode
+        verificationCode: values.verificationCode,
       };
-      
+
       const result = await authService.verifyTwoFactor(data);
-      
+
       if (result.success) {
         message.success(result.message);
         onSuccess();
       } else {
         message.error(result.message);
-      }    } catch {
-      message.error('验证失败，请重试');
+      }
+    } catch {
+      message.error("验证失败，请重试");
     } finally {
       setLoading(false);
     }
@@ -96,9 +106,9 @@ const TwoFactorAuth: React.FC<TwoFactorAuthProps> = ({ tempToken, onSuccess, onB
             name="verificationCode"
             label="验证码"
             rules={[
-              { required: true, message: '请输入验证码' },
-              { len: 6, message: '验证码长度为6位' },
-              { pattern: /^\d{6}$/, message: '验证码只能包含数字' }
+              { required: true, message: "请输入验证码" },
+              { len: 6, message: "验证码长度为6位" },
+              { pattern: /^\d{6}$/, message: "验证码只能包含数字" },
             ]}
           >
             <Input
@@ -115,26 +125,22 @@ const TwoFactorAuth: React.FC<TwoFactorAuthProps> = ({ tempToken, onSuccess, onB
                   onClick={handleSendCode}
                   icon={<SendOutlined />}
                 >
-                  {countdown > 0 ? `${countdown}s后重发` : '发送验证码'}
+                  {countdown > 0 ? `${countdown}s后重发` : "发送验证码"}
                 </Button>
               }
             />
           </Form.Item>
 
           <div className="security-notice">
-            <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />
-            <Text type="secondary" style={{ fontSize: '12px' }}>
+            <CheckCircleOutlined style={{ color: "#52c41a", marginRight: 8 }} />
+            <Text type="secondary" style={{ fontSize: "12px" }}>
               验证码已通过安全渠道发送，请在5分钟内完成验证
             </Text>
           </div>
 
           <Form.Item className="two-factor-actions">
-            <Space size="middle" style={{ width: '100%' }}>
-              <Button
-                size="large"
-                onClick={onBack}
-                style={{ flex: 1 }}
-              >
+            <Space size="middle" style={{ width: "100%" }}>
+              <Button size="large" onClick={onBack} style={{ flex: 1 }}>
                 返回
               </Button>
               <Button
@@ -151,10 +157,11 @@ const TwoFactorAuth: React.FC<TwoFactorAuthProps> = ({ tempToken, onSuccess, onB
         </Form>
 
         <div className="security-tips">
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            • 测试验证码：123456、666666、888888<br/>
-            • 请确保在安全的网络环境下进行操作<br/>
-            • 如遇问题请联系系统管理员
+          <Text type="secondary" style={{ fontSize: "12px" }}>
+            • 测试验证码：123456、666666、888888
+            <br />
+            • 请确保在安全的网络环境下进行操作
+            <br />• 如遇问题请联系系统管理员
           </Text>
         </div>
       </Card>

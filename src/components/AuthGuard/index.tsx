@@ -4,10 +4,10 @@
  * @Description: 路由守卫组件 - 保护需要认证的路由
  */
 
-import React, { useEffect, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { Spin } from 'antd';
-import { authService } from '../../services/authService';
+import React, { useEffect, useState } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { Spin } from "antd";
+import { authService } from "../../services/authService";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -26,12 +26,12 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     try {
       // 检查认证状态
       const authenticated = authService.isAuthenticated();
-      
+
       // 验证token的有效性（这里可以添加更复杂的验证逻辑）
       if (authenticated) {
         const user = authService.getCurrentUser();
         const token = authService.getToken();
-        
+
         // 检查用户信息和token是否存在
         if (user && token) {
           setIsAuthenticated(true);
@@ -44,7 +44,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         setIsAuthenticated(false);
       }
     } catch (error) {
-      console.error('认证检查失败:', error);
+      console.error("认证检查失败:", error);
       authService.logout();
       setIsAuthenticated(false);
     } finally {
@@ -55,13 +55,15 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   // 显示加载状态
   if (isLoading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        }}
+      >
         <Spin size="large" />
       </div>
     );

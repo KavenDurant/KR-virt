@@ -4,23 +4,23 @@
  * @Description: 登录页面 - 满足信创和国保测要求的双因子认证系统
  */
 
-import React, { useState } from 'react';
-import { Form, Input, Button, Card, Typography, Upload, message } from 'antd';
-import { 
-  UserOutlined, 
-  LockOutlined, 
-  SafetyOutlined, 
-  InboxOutlined, 
+import React, { useState } from "react";
+import { Form, Input, Button, Card, Typography, Upload, message } from "antd";
+import {
+  UserOutlined,
+  LockOutlined,
+  SafetyOutlined,
+  InboxOutlined,
   SecurityScanOutlined,
-  CheckCircleOutlined 
-} from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import TwoFactorAuth from '../../../components/TwoFactorAuth';
-import PasswordStrengthIndicator from '../../../components/PasswordStrengthIndicator';
-import { authService } from '../../../services/authService';
-import type { LoginData } from '../../../services/authService';
-import { SecurityUtils } from '../../../utils/security';
-import './Login.less';
+  CheckCircleOutlined,
+} from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import TwoFactorAuth from "../../../components/TwoFactorAuth";
+import PasswordStrengthIndicator from "../../../components/PasswordStrengthIndicator";
+import { authService } from "../../../services/authService";
+import type { LoginData } from "../../../services/authService";
+import { SecurityUtils } from "../../../utils/security";
+import "./Login.less";
 
 const { Title, Text } = Typography;
 const { Dragger } = Upload;
@@ -33,13 +33,15 @@ interface LoginFormData {
 const Login: React.FC = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  
+
   const [loading, setLoading] = useState(false);
   const [showTwoFactor, setShowTwoFactor] = useState(false);
-  const [tempToken, setTempToken] = useState('');
+  const [tempToken, setTempToken] = useState("");
   const [keyFile, setKeyFile] = useState<File | null>(null);
-  const [passwordValue, setPasswordValue] = useState('');
-  const [passwordValidation, setPasswordValidation] = useState(SecurityUtils.validatePassword(''));
+  const [passwordValue, setPasswordValue] = useState("");
+  const [passwordValidation, setPasswordValidation] = useState(
+    SecurityUtils.validatePassword("")
+  );
 
   // 监听密码变化
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,22 +53,24 @@ const Login: React.FC = () => {
   // 处理密钥文件上传
   const handleKeyFileUpload = (file: File) => {
     // 验证文件扩展名
-    const allowedExtensions = ['.key', '.pem', '.crt'];
-    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-    
+    const allowedExtensions = [".key", ".pem", ".crt"];
+    const fileExtension = file.name
+      .toLowerCase()
+      .substring(file.name.lastIndexOf("."));
+
     if (!allowedExtensions.includes(fileExtension)) {
-      message.error('请上传有效的密钥文件（.key、.pem、.crt）');
+      message.error("请上传有效的密钥文件（.key、.pem、.crt）");
       return false;
     }
 
     // 验证文件大小（限制100KB）
     if (file.size > 100 * 1024) {
-      message.error('密钥文件大小不能超过100KB');
+      message.error("密钥文件大小不能超过100KB");
       return false;
     }
 
     setKeyFile(file);
-    message.success('密钥文件上传成功');
+    message.success("密钥文件上传成功");
     return false; // 阻止自动上传
   };
 
@@ -78,7 +82,7 @@ const Login: React.FC = () => {
   // 处理登录提交
   const handleLogin = async (values: LoginFormData) => {
     if (!keyFile) {
-      message.error('请上传密钥文件');
+      message.error("请上传密钥文件");
       return;
     }
 
@@ -87,12 +91,13 @@ const Login: React.FC = () => {
       const loginData: LoginData = {
         username: values.username,
         password: values.password,
-        keyFile
-      };      const result = await authService.login(loginData);
-      
+        keyFile,
+      };
+      const result = await authService.login(loginData);
+
       // 调试信息
-      console.log('登录结果:', result);
-      
+      console.log("登录结果:", result);
+
       if (result.success && result.requireTwoFactor) {
         // 需要双因子认证
         setTempToken(result.tempToken!);
@@ -100,16 +105,16 @@ const Login: React.FC = () => {
         message.success(result.message);
       } else if (result.success && result.user) {
         // 直接登录成功（无需双因子认证）
-        message.success('登录成功！正在跳转...');
+        message.success("登录成功！正在跳转...");
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate("/dashboard");
         }, 1000);
       } else if (!result.success) {
-        console.error('登录失败原因:', result.message);
+        console.error("登录失败原因:", result.message);
         message.error(result.message);
       }
     } catch {
-      message.error('登录失败，请稍后重试');
+      message.error("登录失败，请稍后重试");
     } finally {
       setLoading(false);
     }
@@ -117,17 +122,17 @@ const Login: React.FC = () => {
 
   // 双因子认证成功处理
   const handleTwoFactorSuccess = () => {
-    message.success('登录成功！正在跳转...');
+    message.success("登录成功！正在跳转...");
     setTimeout(() => {
-      navigate('/dashboard');
+      navigate("/dashboard");
     }, 1000);
   };
   // 返回登录页面
   const handleBackToLogin = () => {
     setShowTwoFactor(false);
-    setTempToken('');
-    setPasswordValue('');
-    setPasswordValidation(SecurityUtils.validatePassword(''));
+    setTempToken("");
+    setPasswordValue("");
+    setPasswordValidation(SecurityUtils.validatePassword(""));
     form.resetFields();
     setKeyFile(null);
   };
@@ -152,22 +157,21 @@ const Login: React.FC = () => {
           <Title level={2} className="login-title">
             KR虚拟化管理系统
           </Title>
-          <Text className="login-subtitle">
-            安全认证 · 信创合规 · 国保三级
-          </Text>
+          <Text className="login-subtitle">安全认证 · 信创合规 · 国保三级</Text>
         </div>
-
         <Form
           form={form}
           onFinish={handleLogin}
           layout="vertical"
           className="login-form"
           autoComplete="off"
-        >          <Form.Item
+        >
+          {" "}
+          <Form.Item
             name="username"
             label="用户名"
             rules={[
-              { required: true, message: '请输入用户名' },
+              { required: true, message: "请输入用户名" },
               {
                 validator: (_, value) => {
                   if (!value) return Promise.resolve();
@@ -176,8 +180,8 @@ const Login: React.FC = () => {
                     return Promise.resolve();
                   }
                   return Promise.reject(new Error(validation.message));
-                }
-              }
+                },
+              },
             ]}
           >
             <Input
@@ -187,12 +191,11 @@ const Login: React.FC = () => {
               autoComplete="username"
             />
           </Form.Item>
-
           <Form.Item
             name="password"
             label="密码"
             rules={[
-              { required: true, message: '请输入密码' },
+              { required: true, message: "请输入密码" },
               {
                 validator: (_, value) => {
                   if (!value) return Promise.resolve();
@@ -200,9 +203,11 @@ const Login: React.FC = () => {
                   if (validation.isValid) {
                     return Promise.resolve();
                   }
-                  return Promise.reject(new Error('密码强度不足，请参考安全建议'));
-                }
-              }
+                  return Promise.reject(
+                    new Error("密码强度不足，请参考安全建议")
+                  );
+                },
+              },
             ]}
           >
             <div>
@@ -222,38 +227,63 @@ const Login: React.FC = () => {
                 />
               )}
             </div>
-          </Form.Item>          <Form.Item
+          </Form.Item>{" "}          <Form.Item
             label="密钥文件"
             required
             tooltip="请上传测试密钥文件，可以使用 public/test-key.key"
           >
             <div className="key-file-upload">
+              <div className="test-file-download" style={{ marginBottom: '12px' }}>
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  测试提示：您可以先下载测试密钥文件，然后上传使用
+                </Text>
+                <Button 
+                  type="link" 
+                  size="small" 
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = '/test-key.key';
+                    link.download = 'test-key.key';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    message.success('测试密钥文件已下载');
+                  }}
+                  style={{ padding: '0 4px', height: 'auto' }}
+                >
+                  下载测试密钥文件 ↓
+                </Button>
+              </div>
               <Dragger
                 beforeUpload={handleKeyFileUpload}
                 onRemove={handleRemoveKeyFile}
-                fileList={keyFile ? [{
-                  uid: '1',
-                  name: keyFile.name,
-                  status: 'done',
-                  size: keyFile.size,
-                }] : []}
+                fileList={
+                  keyFile
+                    ? [
+                        {
+                          uid: "1",
+                          name: keyFile.name,
+                          status: "done",
+                          size: keyFile.size,
+                        },
+                      ]
+                    : []
+                }
                 maxCount={1}
                 accept=".key,.pem,.crt"
               >
                 <p className="ant-upload-drag-icon">
                   <InboxOutlined />
                 </p>
-                <p className="ant-upload-text">
-                  点击或拖拽上传密钥文件
-                </p>
+                <p className="ant-upload-text">点击或拖拽上传密钥文件</p>
                 <p className="ant-upload-hint">
-                  测试文件：public/test-key.key<br/>
+                  测试文件：public/test-key.key
+                  <br />
                   支持 .key、.pem、.crt 格式，文件大小不超过100KB
                 </p>
               </Dragger>
             </div>
           </Form.Item>
-
           <Form.Item className="login-actions">
             <Button
               type="primary"
@@ -265,27 +295,40 @@ const Login: React.FC = () => {
               安全登录
             </Button>
           </Form.Item>
-        </Form>        <div className="security-notice">
+        </Form>{" "}
+        <div className="security-notice">
           <CheckCircleOutlined />
           <div>
-            <Text strong style={{ color: '#389e0d', fontSize: '13px' }}>
+            <Text strong style={{ color: "#389e0d", fontSize: "13px" }}>
               测试账户信息：
             </Text>
             <ul>
-              <li><strong>管理员：</strong>用户名: admin，密码: Admin123!@#</li>
-              <li><strong>操作员：</strong>用户名: operator，密码: Operator123!@#</li>
-              <li><strong>审计员：</strong>用户名: auditor，密码: Auditor123!@#</li>
-              <li><strong>密钥文件：</strong>使用 public/test-key.key</li>
-              <li><strong>验证码：</strong>123456、666666、888888（任选其一）</li>
+              <li>
+                <strong>管理员：</strong>用户名: admin，密码: Admin123!@#
+              </li>
+              <li>
+                <strong>操作员：</strong>用户名: operator，密码: Operator123!@#
+              </li>
+              <li>
+                <strong>审计员：</strong>用户名: auditor，密码: Auditor123!@#
+              </li>
+              <li>
+                <strong>密钥文件：</strong>使用 public/test-key.key
+              </li>
+              <li>
+                <strong>验证码：</strong>123456、666666、888888（任选其一）
+              </li>
             </ul>
           </div>
-        </div><div className="compliance-info">
+        </div>
+        <div className="compliance-info">
           <div className="compliance-badge">
             <SecurityScanOutlined />
             信创合规认证
           </div>
           <div className="compliance-text">
-            本系统已通过国家信息安全等级保护三级认证<br/>
+            本系统已通过国家信息安全等级保护三级认证
+            <br />
             符合《网络安全法》和信创产业相关标准要求
           </div>
         </div>

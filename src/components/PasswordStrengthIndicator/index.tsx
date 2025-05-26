@@ -4,11 +4,14 @@
  * @Description: 密码强度指示器组件
  */
 
-import React from 'react';
-import { Progress, Typography, Space } from 'antd';
-import { CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
-import { PasswordStrength } from '../../utils/security';
-import type { PasswordValidationResult } from '../../utils/security';
+import React from "react";
+import { Progress, Typography, Space } from "antd";
+import {
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+} from "@ant-design/icons";
+import { PasswordStrength } from "../../utils/security";
+import type { PasswordValidationResult } from "../../utils/security";
 
 const { Text } = Typography;
 
@@ -21,21 +24,21 @@ interface PasswordStrengthIndicatorProps {
 const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
   password,
   validation,
-  showSuggestions = true
+  showSuggestions = true,
 }) => {
   // 获取进度条颜色
   const getProgressColor = (strength: PasswordStrength): string => {
     switch (strength) {
       case PasswordStrength.WEAK:
-        return '#ff4d4f';
+        return "#ff4d4f";
       case PasswordStrength.MEDIUM:
-        return '#faad14';
+        return "#faad14";
       case PasswordStrength.STRONG:
-        return '#52c41a';
+        return "#52c41a";
       case PasswordStrength.VERY_STRONG:
-        return '#1890ff';
+        return "#1890ff";
       default:
-        return '#d9d9d9';
+        return "#d9d9d9";
     }
   };
 
@@ -43,15 +46,15 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
   const getStrengthText = (strength: PasswordStrength): string => {
     switch (strength) {
       case PasswordStrength.WEAK:
-        return '弱';
+        return "弱";
       case PasswordStrength.MEDIUM:
-        return '中等';
+        return "中等";
       case PasswordStrength.STRONG:
-        return '强';
+        return "强";
       case PasswordStrength.VERY_STRONG:
-        return '很强';
+        return "很强";
       default:
-        return '';
+        return "";
     }
   };
 
@@ -66,9 +69,9 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
 
   return (
     <div style={{ marginTop: 8 }}>
-      <Space direction="vertical" style={{ width: '100%' }} size="small">
+      <Space direction="vertical" style={{ width: "100%" }} size="small">
         {/* 强度进度条 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Progress
             percent={getProgressPercent(validation.score)}
             size="small"
@@ -79,9 +82,9 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
           <Text
             style={{
               color: getProgressColor(validation.strength),
-              fontSize: '12px',
+              fontSize: "12px",
               fontWeight: 500,
-              minWidth: '32px'
+              minWidth: "32px",
             }}
           >
             {getStrengthText(validation.strength)}
@@ -89,18 +92,22 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
         </div>
 
         {/* 安全状态指示 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           {validation.isValid ? (
             <>
-              <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '12px' }} />
-              <Text style={{ color: '#52c41a', fontSize: '12px' }}>
+              <CheckCircleOutlined
+                style={{ color: "#52c41a", fontSize: "12px" }}
+              />
+              <Text style={{ color: "#52c41a", fontSize: "12px" }}>
                 符合安全要求
               </Text>
             </>
           ) : (
             <>
-              <ExclamationCircleOutlined style={{ color: '#faad14', fontSize: '12px' }} />
-              <Text style={{ color: '#faad14', fontSize: '12px' }}>
+              <ExclamationCircleOutlined
+                style={{ color: "#faad14", fontSize: "12px" }}
+              />
+              <Text style={{ color: "#faad14", fontSize: "12px" }}>
                 需要增强安全性
               </Text>
             </>
@@ -110,9 +117,9 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
         {/* 改进建议 */}
         {showSuggestions && validation.suggestions.length > 0 && (
           <div style={{ marginTop: 4 }}>
-            <Text style={{ fontSize: '11px', color: '#8c8c8c' }}>
-              建议：{validation.suggestions.slice(0, 2).join('，')}
-              {validation.suggestions.length > 2 && '...'}
+            <Text style={{ fontSize: "11px", color: "#8c8c8c" }}>
+              建议：{validation.suggestions.slice(0, 2).join("，")}
+              {validation.suggestions.length > 2 && "..."}
             </Text>
           </div>
         )}

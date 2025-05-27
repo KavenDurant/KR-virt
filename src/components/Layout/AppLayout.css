@@ -1,6 +1,6 @@
 .sidebar-resize-handle {
   width: 5px;
-  background-color: #1e1e1e;
+  background-color: #ccc;
   cursor: col-resize;
   position: absolute;
   right: 0;

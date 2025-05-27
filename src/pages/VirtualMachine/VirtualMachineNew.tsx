@@ -80,7 +80,9 @@ const VirtualMachineManagement: React.FC = () => {
   >(null);
   const [selectedNodeData, setSelectedNodeData] = useState<
     ClusterData | VMData | null
-  >(null); // 监听侧边栏选择事件
+  >(null);
+
+  // 监听侧边栏选择事件
   useEffect(() => {
     const handleSidebarSelect = (event: CustomEvent) => {
       const { nodeType, nodeData } = event.detail;
@@ -100,6 +102,15 @@ const VirtualMachineManagement: React.FC = () => {
       );
     };
   }, []);
+
+  // 如果有选中的节点，显示相应的组件
+  if (selectedNodeData) {
+    if (selectedNodeType === "cluster") {
+      return <ClusterStats cluster={selectedNodeData as ClusterData} />;
+    } else if (selectedNodeType === "vm") {
+      return <VMDetails vm={selectedNodeData as VMData} />;
+    }
+  }
 
   // 模拟数据
   const mockVmData: VirtualMachine[] = [
@@ -160,6 +171,7 @@ const VirtualMachineManagement: React.FC = () => {
       platform: "Linux",
     },
   ];
+
   // 数据加载effect
   useEffect(() => {
     const loadVmData = () => {
@@ -171,7 +183,7 @@ const VirtualMachineManagement: React.FC = () => {
     };
 
     loadVmData();
-  }, [mockVmData]);
+  }, []);
 
   // 筛选数据
   const filteredData = vmList.filter((vm) => {
@@ -186,15 +198,6 @@ const VirtualMachineManagement: React.FC = () => {
 
     return matchSearch && matchStatus && matchZone;
   });
-
-  // 如果有选中的节点，显示相应的组件
-  if (selectedNodeData) {
-    if (selectedNodeType === "cluster") {
-      return <ClusterStats cluster={selectedNodeData as ClusterData} />;
-    } else if (selectedNodeType === "vm") {
-      return <VMDetails vm={selectedNodeData as VMData} />;
-    }
-  }
 
   // 刷新数据函数
   const handleRefresh = () => {

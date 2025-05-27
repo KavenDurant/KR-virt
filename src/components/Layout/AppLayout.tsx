@@ -101,7 +101,9 @@ const AppLayout: React.FC = () => {
 
   // 获取当前模块的侧边栏数据
   const sidebarData = getSidebarData(selectedActivityItem);
-  const shouldShowHierarchicalSidebar = selectedActivityItem === '/virtual-machine' || selectedActivityItem === '/cluster';
+  const shouldShowHierarchicalSidebar =
+    selectedActivityItem === "/virtual-machine" ||
+    selectedActivityItem === "/cluster";
 
   // 当路由变化时更新选中的菜单项
   useEffect(() => {
@@ -485,12 +487,30 @@ const AppLayout: React.FC = () => {
           flexShrink: 0,
         }}
       >
+        {" "}
         {shouldShowHierarchicalSidebar ? (
-          <HierarchicalSidebar 
+          <HierarchicalSidebar
             data={sidebarData}
-            onSelect={(selectedKeys: string[], info) => {
-              // 处理树节点选择事件
-              console.log('Selected:', selectedKeys, info);
+            onSelect={(
+              selectedKeys: string[],
+              info: Record<string, unknown>
+            ) => {
+              // 处理树节点选择事件，传递选择信息到主内容区域
+              const selectedKey = selectedKeys[0];
+              const nodeInfo = info.node as any;
+
+              if (nodeInfo && nodeInfo.data) {
+                // 通过自定义事件传递选择信息到页面组件
+                window.dispatchEvent(
+                  new CustomEvent("hierarchical-sidebar-select", {
+                    detail: {
+                      selectedKey,
+                      nodeType: nodeInfo.type,
+                      nodeData: nodeInfo.data,
+                    },
+                  })
+                );
+              }
             }}
           />
         ) : (
@@ -510,8 +530,9 @@ const AppLayout: React.FC = () => {
                 label:
                   routes.find((route) => route.path === selectedActivityItem)
                     ?.name || "仪表盘",
-                icon: routes.find((route) => route.path === selectedActivityItem)
-                  ?.icon,
+                icon: routes.find(
+                  (route) => route.path === selectedActivityItem
+                )?.icon,
                 children: [],
                 className: "sidebar-menu-item",
               },

@@ -28,9 +28,11 @@ import {
 } from "@ant-design/icons";
 import routes from "../../router/routes";
 import TaskDrawer from "../TaskDrawer";
+import HierarchicalSidebar from "../HierarchicalSidebar";
 import { useTheme } from "../../hooks/useTheme";
 import { authService } from "../../services/authService";
 import type { UserInfo } from "../../services/authService";
+import { getSidebarData } from "../../services/mockData";
 import "./AppLayout.css";
 
 const AppLayout: React.FC = () => {
@@ -96,6 +98,10 @@ const AppLayout: React.FC = () => {
   const [selectedActivityItem, setSelectedActivityItem] = useState(
     getCurrentSelectedPath
   );
+
+  // 获取当前模块的侧边栏数据
+  const sidebarData = getSidebarData(selectedActivityItem);
+  const shouldShowHierarchicalSidebar = selectedActivityItem === '/virtual-machine' || selectedActivityItem === '/cluster';
 
   // 当路由变化时更新选中的菜单项
   useEffect(() => {
@@ -479,29 +485,39 @@ const AppLayout: React.FC = () => {
           flexShrink: 0,
         }}
       >
-        <Menu
-          mode="inline"
-          theme={actualTheme === "dark" ? "dark" : "light"}
-          className="explorer-tree"
-          style={{
-            height: "calc(100% - 35px)",
-            borderRight: 0,
-            backgroundColor: actualTheme === "dark" ? "#252526" : "#f8f8f8",
-          }}
-          selectedKeys={[selectedActivityItem]} // 使用selectedActivityItem保持一致
-          items={[
-            {
-              key: selectedActivityItem,
-              label:
-                routes.find((route) => route.path === selectedActivityItem)
-                  ?.name || "仪表盘",
-              icon: routes.find((route) => route.path === selectedActivityItem)
-                ?.icon,
-              children: [],
-              className: "sidebar-menu-item",
-            },
-          ]}
-        />{" "}
+        {shouldShowHierarchicalSidebar ? (
+          <HierarchicalSidebar 
+            data={sidebarData}
+            onSelect={(selectedKeys: string[], info) => {
+              // 处理树节点选择事件
+              console.log('Selected:', selectedKeys, info);
+            }}
+          />
+        ) : (
+          <Menu
+            mode="inline"
+            theme={actualTheme === "dark" ? "dark" : "light"}
+            className="explorer-tree"
+            style={{
+              height: "calc(100% - 35px)",
+              borderRight: 0,
+              backgroundColor: actualTheme === "dark" ? "#252526" : "#f8f8f8",
+            }}
+            selectedKeys={[selectedActivityItem]} // 使用selectedActivityItem保持一致
+            items={[
+              {
+                key: selectedActivityItem,
+                label:
+                  routes.find((route) => route.path === selectedActivityItem)
+                    ?.name || "仪表盘",
+                icon: routes.find((route) => route.path === selectedActivityItem)
+                  ?.icon,
+                children: [],
+                className: "sidebar-menu-item",
+              },
+            ]}
+          />
+        )}{" "}
         {/* 拖拽手柄 */}
         <div
           className="sidebar-resize-handle"

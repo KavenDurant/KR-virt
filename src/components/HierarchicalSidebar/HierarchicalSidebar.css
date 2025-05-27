@@ -1,0 +1,241 @@
+.hierarchical-sidebar {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+.sidebar-header {
+  flex-shrink: 0;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.resource-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+/* 重置 Ant Design Tree 的默认样式 */
+.resource-tree .ant-tree {
+  background: transparent !important;
+  color: inherit;
+}
+
+.resource-tree .ant-tree-list-holder-inner {
+  background: transparent;
+}
+
+.resource-tree .ant-tree-treenode {
+  padding: 0;
+  margin: 1px 0;
+}
+
+.resource-tree .ant-tree-node-content-wrapper {
+  width: 100%;
+  padding: 3px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  line-height: 1.4;
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+}
+
+.resource-tree .ant-tree-node-content-wrapper:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.resource-tree .ant-tree-node-content-wrapper.ant-tree-node-selected {
+  background-color: rgba(24, 144, 255, 0.15) !important;
+  border: 1px solid rgba(24, 144, 255, 0.4);
+}
+
+/* 树节点内容样式 */
+.tree-node-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  font-size: 12px;
+  gap: 6px;
+  min-height: 20px;
+}
+
+.tree-node-icon {
+  font-size: 13px;
+  min-width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.tree-node-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.tree-node-status {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  font-size: 10px;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+.status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.status-text {
+  font-size: 9px;
+  text-transform: capitalize;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+}
+
+/* 展开/收起图标样式 */
+.resource-tree .ant-tree-switcher {
+  width: 16px;
+  height: 24px;
+  line-height: 24px;
+  margin-right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.resource-tree .ant-tree-switcher-icon {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+}
+
+.resource-tree .ant-tree-switcher[aria-expanded="true"] .ant-tree-switcher-icon {
+  transform: rotate(90deg);
+}
+
+/* 树节点图标 */
+.resource-tree .ant-tree-iconEle {
+  width: 16px;
+  height: 24px;
+  line-height: 24px;
+  text-align: center;
+  margin-right: 4px;
+}
+
+.resource-tree .ant-tree-iconEle .anticon {
+  font-size: 11px;
+}
+
+/* 缩进样式 */
+.resource-tree .ant-tree-indent-unit {
+  width: 16px;
+}
+
+/* 主题适配 */
+[data-theme="dark"] .hierarchical-sidebar {
+  color: #cccccc;
+}
+
+[data-theme="dark"] .resource-tree .ant-tree-switcher {
+  color: #888888;
+}
+
+[data-theme="dark"] .resource-tree .ant-tree-iconEle {
+  color: #888888;
+}
+
+[data-theme="dark"] .resource-tree .ant-tree-node-content-wrapper:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme="dark"] .resource-tree .ant-tree-node-content-wrapper.ant-tree-node-selected {
+  background-color: rgba(24, 144, 255, 0.2) !important;
+  border-color: rgba(24, 144, 255, 0.5);
+}
+
+[data-theme="light"] .hierarchical-sidebar {
+  color: #333333;
+}
+
+[data-theme="light"] .resource-tree .ant-tree-switcher {
+  color: #666666;
+}
+
+[data-theme="light"] .resource-tree .ant-tree-iconEle {
+  color: #666666;
+}
+
+[data-theme="light"] .resource-tree .ant-tree-node-content-wrapper:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .resource-tree .ant-tree-node-content-wrapper.ant-tree-node-selected {
+  background-color: rgba(24, 144, 255, 0.1) !important;
+  border-color: rgba(24, 144, 255, 0.3);
+}
+
+/* 滚动条样式 */
+.resource-tree::-webkit-scrollbar {
+  width: 4px;
+}
+
+.resource-tree::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.resource-tree::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.resource-tree::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+[data-theme="light"] .resource-tree::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .resource-tree::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* 特殊节点类型样式 */
+.tree-node-content[data-type="datacenter"] .tree-node-title {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.tree-node-content[data-type="cluster"] .tree-node-title {
+  font-weight: 450;
+  font-size: 12px;
+}
+
+.tree-node-content[data-type="node"] .tree-node-title {
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.tree-node-content[data-type="vm"] .tree-node-title {
+  font-weight: 350;
+  font-size: 11px;
+}
+
+/* 响应式调整 */
+@media (max-width: 1200px) {
+  .tree-node-status {
+    display: none;
+  }
+}

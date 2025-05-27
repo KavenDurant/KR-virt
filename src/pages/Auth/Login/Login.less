@@ -148,64 +148,7 @@ body.login-page {
   }
 }
 
-.key-file-upload {
-  .test-file-download {
-    background: #f0f8ff;
-    border: 1px solid #d4edda;
-    border-radius: 6px;
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: all 0.3s ease;
 
-    &:hover {
-      background: #e6f3ff;
-    }
-
-    .ant-btn-link {
-      color: #1890ff;
-      font-size: 12px;
-      font-weight: 500;
-      text-decoration: none;
-      
-      &:hover {
-        color: #096dd9;
-        text-decoration: underline;
-      }
-    }
-  }
-
-  .ant-upload-drag {
-    border-radius: 8px;
-    border: 2px dashed #d9d9d9;
-    background: #fafafa;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-    &:hover {
-      border-color: #40a9ff;
-      background: #f0f8ff;
-    }
-
-    .ant-upload-drag-icon {
-      .anticon {
-        font-size: 32px;
-        color: #1890ff;
-      }
-    }
-
-    .ant-upload-text {
-      color: #595959;
-      font-size: 14px;
-      margin-top: 8px;
-    }
-
-    .ant-upload-hint {
-      color: #8c8c8c;
-      font-size: 12px;
-    }
-  }
-}
 
 .login-actions {
   margin-top: 24px;
@@ -286,100 +229,15 @@ body.login-page {
   }
 }
 
-// 双因子认证样式
-.two-factor-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
 
-.two-factor-card {
-  width: 100%;
-  max-width: 400px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-
-  .ant-card-body {
-    padding: 32px;
-  }
-}
-
-.two-factor-header {
-  text-align: center;
-  margin-bottom: 32px;
-
-  .two-factor-icon {
-    font-size: 48px;
-    color: #1890ff;
-    margin-bottom: 16px;
-    display: block;
-  }
-
-  .two-factor-title {
-    margin: 0 0 8px 0 !important;
-    color: #262626;
-    font-weight: 600;
-  }
-
-  .two-factor-subtitle {
-    color: #8c8c8c;
-    font-size: 14px;
-  }
-}
-
-.two-factor-form {
-  .verification-input {
-    text-align: center;
-    font-size: 18px;
-    letter-spacing: 2px;
-
-    .ant-input {
-      text-align: center;
-      font-size: 18px;
-      letter-spacing: 2px;
-    }
-  }
-
-  .two-factor-actions {
-    margin-top: 24px;
-    margin-bottom: 0;
-
-    .ant-btn {
-      height: 44px;
-      border-radius: 8px;
-      font-weight: 500;
-    }
-
-    .ant-btn-primary {
-      background: linear-gradient(135deg, #1890ff, #096dd9);
-      border: none;
-      box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
-    }
-  }
-}
-
-.security-tips {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid #f0f0f0;
-  text-align: center;
-}
 
 // 响应式设计
 @media (max-width: 576px) {
-  .login-container,
-  .two-factor-container {
+  .login-container {
     padding: 12px;
   }
 
-  .login-card,
-  .two-factor-card {
+  .login-card {
     .ant-card-body {
       padding: 24px 20px 20px;
     }

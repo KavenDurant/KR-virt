@@ -44,7 +44,6 @@ import {
 import { useTheme } from "../../hooks/useTheme";
 
 const { Content } = Layout;
-const { TabPane } = Tabs;
 const { Text } = Typography;
 
 // 物理机接口类型定义
@@ -686,201 +685,220 @@ const PhysicalMachineManagement: React.FC = () => {
             </Space>
           }
         >
-          <Tabs activeKey={activeTab} onChange={setActiveTab}>
-            <TabPane tab="物理机概览" key="overview">
-              <div className="host-overview">
-                <Row gutter={[16, 16]}>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card>
-                      <Statistic
-                        title="物理机总数"
-                        value={hostList.length}
-                        prefix={<CloudServerOutlined />}
-                      />
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card>
-                      <Statistic
-                        title="运行中"
-                        value={
-                          hostList.filter((host) => host.status === "running")
-                            .length
-                        }
-                        valueStyle={{ color: "#52c41a" }}
-                        prefix={<CheckCircleOutlined />}
-                      />
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card>
-                      <Statistic
-                        title="警告"
-                        value={
-                          hostList.filter((host) => host.status === "warning")
-                            .length
-                        }
-                        valueStyle={{ color: "#faad14" }}
-                        prefix={<ExclamationCircleOutlined />}
-                      />
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card>
-                      <Statistic
-                        title="维护中"
-                        value={
-                          hostList.filter(
-                            (host) => host.status === "maintenance",
-                          ).length
-                        }
-                        valueStyle={{ color: "#1890ff" }}
-                        prefix={<ClockCircleOutlined />}
-                      />
-                    </Card>
-                  </Col>
-                </Row>
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            items={[
+              {
+                key: "overview",
+                label: "物理机概览",
+                children: (
+                  <div className="host-overview">
+                    <Row gutter={[16, 16]}>
+                      <Col xs={24} sm={12} md={8} lg={6}>
+                        <Card>
+                          <Statistic
+                            title="物理机总数"
+                            value={hostList.length}
+                            prefix={<CloudServerOutlined />}
+                          />
+                        </Card>
+                      </Col>
+                      <Col xs={24} sm={12} md={8} lg={6}>
+                        <Card>
+                          <Statistic
+                            title="运行中"
+                            value={
+                              hostList.filter(
+                                (host) => host.status === "running",
+                              ).length
+                            }
+                            valueStyle={{ color: "#52c41a" }}
+                            prefix={<CheckCircleOutlined />}
+                          />
+                        </Card>
+                      </Col>
+                      <Col xs={24} sm={12} md={8} lg={6}>
+                        <Card>
+                          <Statistic
+                            title="警告"
+                            value={
+                              hostList.filter(
+                                (host) => host.status === "warning",
+                              ).length
+                            }
+                            valueStyle={{ color: "#faad14" }}
+                            prefix={<ExclamationCircleOutlined />}
+                          />
+                        </Card>
+                      </Col>
+                      <Col xs={24} sm={12} md={8} lg={6}>
+                        <Card>
+                          <Statistic
+                            title="维护中"
+                            value={
+                              hostList.filter(
+                                (host) => host.status === "maintenance",
+                              ).length
+                            }
+                            valueStyle={{ color: "#1890ff" }}
+                            prefix={<ClockCircleOutlined />}
+                          />
+                        </Card>
+                      </Col>
+                    </Row>
 
-                <Divider orientation="left">资源使用概览</Divider>
+                    <Divider orientation="left">资源使用概览</Divider>
 
-                <Row gutter={[16, 16]}>
-                  {" "}
-                  <Col xs={24} sm={12}>
-                    <Card title="平均CPU使用率" extra={<ApiOutlined />}>
-                      <Progress
-                        percent={Math.round(
-                          hostList.reduce(
-                            (acc, host) => acc + host.cpu.usage,
-                            0,
-                          ) / hostList.length,
-                        )}
-                        status="active"
-                        strokeColor={{
-                          "0%": "#108ee9",
-                          "100%": "#87d068",
-                        }}
-                      />
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12}>
-                    <Card title="平均内存使用率" extra={<DatabaseOutlined />}>
-                      <Progress
-                        percent={Math.round(
-                          hostList.reduce(
-                            (acc, host) => acc + host.memory.usage,
-                            0,
-                          ) / hostList.length,
-                        )}
-                        status="active"
-                        strokeColor={{
-                          "0%": "#108ee9",
-                          "100%": "#87d068",
-                        }}
-                      />
-                    </Card>
-                  </Col>
-                </Row>
-
-                <Divider orientation="left">物理机状态</Divider>
-
-                <Row gutter={[16, 16]}>
-                  {hostList.map((host) => (
-                    <Col xs={24} sm={12} lg={8} key={host.id}>
-                      <Card
-                        title={
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
+                    <Row gutter={[16, 16]}>
+                      {" "}
+                      <Col xs={24} sm={12}>
+                        <Card title="平均CPU使用率" extra={<ApiOutlined />}>
+                          <Progress
+                            percent={Math.round(
+                              hostList.reduce(
+                                (acc, host) => acc + host.cpu.usage,
+                                0,
+                              ) / hostList.length,
+                            )}
+                            status="active"
+                            strokeColor={{
+                              "0%": "#108ee9",
+                              "100%": "#87d068",
                             }}
+                          />
+                        </Card>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Card title="平均内存使用率" extra={<DatabaseOutlined />}>
+                          <Progress
+                            percent={Math.round(
+                              hostList.reduce(
+                                (acc, host) => acc + host.memory.usage,
+                                0,
+                              ) / hostList.length,
+                            )}
+                            status="active"
+                            strokeColor={{
+                              "0%": "#108ee9",
+                              "100%": "#87d068",
+                            }}
+                          />
+                        </Card>
+                      </Col>
+                    </Row>
+
+                    <Divider orientation="left">物理机状态</Divider>
+
+                    <Row gutter={[16, 16]}>
+                      {hostList.map((host) => (
+                        <Col xs={24} sm={12} lg={8} key={host.id}>
+                          <Card
+                            title={
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <span>{host.name}</span>
+                                {getStatusTag(host.status)}
+                              </div>
+                            }
+                            extra={
+                              <a onClick={() => viewHostDetails(host)}>详情</a>
+                            }
+                            style={{ height: "100%" }}
                           >
-                            <span>{host.name}</span>
-                            {getStatusTag(host.status)}
-                          </div>
-                        }
-                        extra={
-                          <a onClick={() => viewHostDetails(host)}>详情</a>
-                        }
-                        style={{ height: "100%" }}
-                      >
-                        <Row gutter={[16, 8]}>
-                          <Col span={12}>
-                            <Text type="secondary">IP地址</Text>
-                            <div>{host.ip}</div>
-                          </Col>
-                          <Col span={12}>
-                            <Text type="secondary">所属集群</Text>
-                            <div>{host.cluster}</div>
-                          </Col>
-                          <Col span={12}>
-                            <Text type="secondary">CPU</Text>
+                            <Row gutter={[16, 8]}>
+                              <Col span={12}>
+                                <Text type="secondary">IP地址</Text>
+                                <div>{host.ip}</div>
+                              </Col>
+                              <Col span={12}>
+                                <Text type="secondary">所属集群</Text>
+                                <div>{host.cluster}</div>
+                              </Col>
+                              <Col span={12}>
+                                <Text type="secondary">CPU</Text>
+                                <div>
+                                  {host.cpu.cores}核/{host.cpu.threads}线程
+                                </div>
+                              </Col>
+                              <Col span={12}>
+                                <Text type="secondary">内存</Text>
+                                <div>{host.memory.total}</div>
+                              </Col>
+                            </Row>
+
+                            <Divider style={{ margin: "12px 0" }} />
+
                             <div>
-                              {host.cpu.cores}核/{host.cpu.threads}线程
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  marginBottom: "8px",
+                                }}
+                              >
+                                <Text>CPU使用率</Text>
+                                <Text>{host.cpu.usage}%</Text>
+                              </div>
+                              <Progress
+                                percent={host.cpu.usage}
+                                size="small"
+                              />
                             </div>
-                          </Col>
-                          <Col span={12}>
-                            <Text type="secondary">内存</Text>
-                            <div>{host.memory.total}</div>
-                          </Col>
-                        </Row>
 
-                        <Divider style={{ margin: "12px 0" }} />
+                            <div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  marginBottom: "8px",
+                                }}
+                              >
+                                <Text>内存使用率</Text>
+                                <Text>{host.memory.usage}%</Text>
+                              </div>
+                              <Progress
+                                percent={host.memory.usage}
+                                size="small"
+                              />
+                            </div>
 
-                        <div>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              marginBottom: "8px",
-                            }}
-                          >
-                            <Text>CPU使用率</Text>
-                            <Text>{host.cpu.usage}%</Text>
-                          </div>
-                          <Progress percent={host.cpu.usage} size="small" />
-                        </div>
-
-                        <div>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              marginBottom: "8px",
-                            }}
-                          >
-                            <Text>内存使用率</Text>
-                            <Text>{host.memory.usage}%</Text>
-                          </div>
-                          <Progress percent={host.memory.usage} size="small" />
-                        </div>
-
-                        <div style={{ marginTop: "16px" }}>
-                          <Space>
-                            <Badge
-                              status="processing"
-                              text={`${host.vms} 台虚拟机`}
-                            />
-                            <Badge status="success" text={host.os} />
-                          </Space>
-                        </div>
-                      </Card>
-                    </Col>
-                  ))}
-                </Row>
-              </div>
-            </TabPane>
-
-            <TabPane tab="物理机列表" key="list">
-              <Table
-                columns={hostColumns}
-                dataSource={hostList}
-                rowKey="id"
-                loading={loading}
-                pagination={{ pageSize: 10 }}
-              />
-            </TabPane>
-          </Tabs>
+                            <div style={{ marginTop: "16px" }}>
+                              <Space>
+                                <Badge
+                                  status="processing"
+                                  text={`${host.vms} 台虚拟机`}
+                                />
+                                <Badge status="success" text={host.os} />
+                              </Space>
+                            </div>
+                          </Card>
+                        </Col>
+                      ))}
+                    </Row>
+                  </div>
+                ),
+              },
+              {
+                key: "list",
+                label: "物理机列表",
+                children: (
+                  <Table
+                    columns={hostColumns}
+                    dataSource={hostList}
+                    rowKey="id"
+                    loading={loading}
+                    pagination={{ pageSize: 10 }}
+                  />
+                ),
+              },
+            ]}
+          />
         </Card>
 
         {/* 创建/编辑物理机的模态框 */}
@@ -889,7 +907,7 @@ const PhysicalMachineManagement: React.FC = () => {
           open={hostModalVisible}
           onOk={handleHostModalOk}
           onCancel={handleHostModalCancel}
-          destroyOnClose
+          destroyOnHidden
         >
           <Form form={hostForm} layout="vertical">
             <Form.Item
@@ -995,247 +1013,289 @@ const PhysicalMachineManagement: React.FC = () => {
         >
           {selectedHost && (
             <>
-              <Tabs defaultActiveKey="info">
-                <TabPane tab="基本信息" key="info">
-                  <Descriptions
-                    bordered
-                    column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
-                  >
-                    <Descriptions.Item label="物理机名称">
-                      {selectedHost.name}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="IP地址">
-                      {selectedHost.ip}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="状态">
-                      {getStatusTag(selectedHost.status)}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="所属集群">
-                      {selectedHost.cluster}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="操作系统">
-                      {selectedHost.os}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="虚拟化平台">
-                      {selectedHost.hypervisor}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="物理位置">
-                      {selectedHost.location}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="最后检查">
-                      {selectedHost.lastChecked}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="标签">
-                      {selectedHost.tags.map((tag: string) => (
-                        <Tag key={tag}>{tag}</Tag>
-                      ))}
-                    </Descriptions.Item>
-                  </Descriptions>
-
-                  <Divider orientation="left">处理器</Divider>
-                  <Descriptions
-                    bordered
-                    column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
-                  >
-                    <Descriptions.Item label="型号">
-                      {selectedHost.cpu.model}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="物理核心数">
-                      {selectedHost.cpu.cores}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="逻辑处理器数">
-                      {selectedHost.cpu.threads}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="频率">
-                      {selectedHost.cpu.frequency}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="使用率">
-                      <Progress percent={selectedHost.cpu.usage} size="small" />
-                    </Descriptions.Item>
-                  </Descriptions>
-
-                  <Divider orientation="left">内存</Divider>
-                  <Descriptions
-                    bordered
-                    column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
-                  >
-                    <Descriptions.Item label="总内存">
-                      {selectedHost.memory.total}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="已使用">
-                      {selectedHost.memory.used}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="使用率">
-                      <Progress
-                        percent={selectedHost.memory.usage}
-                        size="small"
-                      />
-                    </Descriptions.Item>
-                  </Descriptions>
-
-                  <Divider orientation="left">存储</Divider>
-                  <Table
-                    dataSource={selectedHost.storage}
-                    columns={[
-                      { title: "类型", dataIndex: "type", key: "type" },
-                      { title: "容量", dataIndex: "size", key: "size" },
-                      {
-                        title: "使用率",
-                        dataIndex: "usage",
-                        key: "usage",
-                        render: (percent: number) => (
-                          <Progress percent={percent} size="small" />
-                        ),
-                      },
-                    ]}
-                    pagination={false}
-                    rowKey="type"
-                  />
-
-                  <Divider orientation="left">网络</Divider>
-                  <Table
-                    dataSource={selectedHost.network}
-                    columns={[
-                      { title: "接口", dataIndex: "name", key: "name" },
-                      { title: "速率", dataIndex: "speed", key: "speed" },
-                      {
-                        title: "状态",
-                        dataIndex: "status",
-                        key: "status",
-                        render: (status: string) => getStatusTag(status),
-                      },
-                      {
-                        title: "吞吐量",
-                        dataIndex: "throughput",
-                        key: "throughput",
-                      },
-                    ]}
-                    pagination={false}
-                    rowKey="name"
-                  />
-                </TabPane>
-
-                <TabPane tab="虚拟机" key="vms">
-                  <Table
-                    columns={vmColumns}
-                    dataSource={mockVMs.filter(
-                      (vm) => vm.hostId === selectedHost.id,
-                    )}
-                    rowKey="id"
-                    pagination={false}
-                  />
-                </TabPane>
-
-                <TabPane tab="性能监控" key="performance">
-                  <Row gutter={[16, 16]}>
-                    <Col span={24}>
-                      <Card
-                        title="CPU使用率（24小时）"
-                        extra={<AreaChartOutlined />}
-                      >
-                        <div
-                          style={{
-                            height: "300px",
-                            background: themeConfig.token.colorBgLayout,
-                            padding: "20px",
-                            borderRadius: "4px",
+              <Tabs
+                defaultActiveKey="info"
+                items={[
+                  {
+                    key: "info",
+                    label: "基本信息",
+                    children: (
+                      <>
+                        <Descriptions
+                          bordered
+                          column={{
+                            xxl: 3,
+                            xl: 3,
+                            lg: 3,
+                            md: 2,
+                            sm: 1,
+                            xs: 1,
                           }}
                         >
-                          {/* 实际应用中这里会使用图表组件如ECharts或Recharts */}
-                          <Alert
-                            message="这里将显示CPU使用率图表（模拟占位）"
-                            type="info"
-                            showIcon
-                          />
-
-                          {/* 简单模拟图表效果 */}
-                          <div
-                            style={{
-                              marginTop: "20px",
-                              height: "200px",
-                              position: "relative",
-                            }}
-                          >
-                            {mockPerformanceData.cpuUsage.map((item, index) => (
-                              <div
-                                key={index}
-                                style={{
-                                  position: "absolute",
-                                  left: `${
-                                    (index /
-                                      (mockPerformanceData.cpuUsage.length -
-                                        1)) *
-                                    100
-                                  }%`,
-                                  bottom: `${item.value}%`,
-                                  width: "2px",
-                                  height: "2px",
-                                  background: "#1890ff",
-                                  transform: "translate(-50%, 50%)",
-                                }}
-                              />
+                          <Descriptions.Item label="物理机名称">
+                            {selectedHost.name}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="IP地址">
+                            {selectedHost.ip}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="状态">
+                            {getStatusTag(selectedHost.status)}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="所属集群">
+                            {selectedHost.cluster}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="操作系统">
+                            {selectedHost.os}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="虚拟化平台">
+                            {selectedHost.hypervisor}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="物理位置">
+                            {selectedHost.location}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="最后检查">
+                            {selectedHost.lastChecked}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="标签">
+                            {selectedHost.tags.map((tag: string) => (
+                              <Tag key={tag}>{tag}</Tag>
                             ))}
-                          </div>
-                        </div>
-                      </Card>
-                    </Col>
-                    <Col xs={24} md={12}>
-                      <Card title="内存使用率" extra={<BarChartOutlined />}>
-                        <div
-                          style={{
-                            height: "200px",
-                            background: themeConfig.token.colorBgLayout,
-                            padding: "20px",
-                            borderRadius: "4px",
+                          </Descriptions.Item>
+                        </Descriptions>
+
+                        <Divider orientation="left">处理器</Divider>
+                        <Descriptions
+                          bordered
+                          column={{
+                            xxl: 3,
+                            xl: 3,
+                            lg: 3,
+                            md: 2,
+                            sm: 1,
+                            xs: 1,
                           }}
                         >
-                          <Alert
-                            message="这里将显示内存使用率图表（模拟占位）"
-                            type="info"
-                            showIcon
-                          />
-                        </div>
-                      </Card>
-                    </Col>
-                    <Col xs={24} md={12}>
-                      <Card title="存储性能" extra={<LineChartOutlined />}>
-                        <div
-                          style={{
-                            height: "200px",
-                            background: themeConfig.token.colorBgLayout,
-                            padding: "20px",
-                            borderRadius: "4px",
+                          <Descriptions.Item label="型号">
+                            {selectedHost.cpu.model}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="物理核心数">
+                            {selectedHost.cpu.cores}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="逻辑处理器数">
+                            {selectedHost.cpu.threads}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="频率">
+                            {selectedHost.cpu.frequency}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="使用率">
+                            <Progress
+                              percent={selectedHost.cpu.usage}
+                              size="small"
+                            />
+                          </Descriptions.Item>
+                        </Descriptions>
+
+                        <Divider orientation="left">内存</Divider>
+                        <Descriptions
+                          bordered
+                          column={{
+                            xxl: 3,
+                            xl: 3,
+                            lg: 3,
+                            md: 2,
+                            sm: 1,
+                            xs: 1,
                           }}
                         >
-                          <Alert
-                            message="这里将显示存储性能图表（模拟占位）"
-                            type="info"
-                            showIcon
-                          />
-                        </div>
-                      </Card>
-                    </Col>
-                    <Col xs={24} md={12}>
-                      <Card title="网络吞吐量" extra={<ApiOutlined />}>
-                        <div
-                          style={{
-                            height: "200px",
-                            background: themeConfig.token.colorBgLayout,
-                            padding: "20px",
-                            borderRadius: "4px",
-                          }}
-                        >
-                          <Alert
-                            message="这里将显示网络吞吐量图表（模拟占位）"
-                            type="info"
-                            showIcon
-                          />
-                        </div>
-                      </Card>
-                    </Col>
-                  </Row>
-                </TabPane>
-              </Tabs>
+                          <Descriptions.Item label="总内存">
+                            {selectedHost.memory.total}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="已使用">
+                            {selectedHost.memory.used}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="使用率">
+                            <Progress
+                              percent={selectedHost.memory.usage}
+                              size="small"
+                            />
+                          </Descriptions.Item>
+                        </Descriptions>
+
+                        <Divider orientation="left">存储</Divider>
+                        <Table
+                          dataSource={selectedHost.storage}
+                          columns={[
+                            { title: "类型", dataIndex: "type", key: "type" },
+                            { title: "容量", dataIndex: "size", key: "size" },
+                            {
+                              title: "使用率",
+                              dataIndex: "usage",
+                              key: "usage",
+                              render: (percent: number) => (
+                                <Progress percent={percent} size="small" />
+                              ),
+                            },
+                          ]}
+                          pagination={false}
+                          rowKey="type"
+                        />
+
+                        <Divider orientation="left">网络</Divider>
+                        <Table
+                          dataSource={selectedHost.network}
+                          columns={[
+                            { title: "接口", dataIndex: "name", key: "name" },
+                            { title: "速率", dataIndex: "speed", key: "speed" },
+                            {
+                              title: "状态",
+                              dataIndex: "status",
+                              key: "status",
+                              render: (status: string) =>
+                                getStatusTag(status),
+                            },
+                            {
+                              title: "吞吐量",
+                              dataIndex: "throughput",
+                              key: "throughput",
+                            },
+                          ]}
+                          pagination={false}
+                          rowKey="name"
+                        />
+                      </>
+                    ),
+                  },
+                  {
+                    key: "vms",
+                    label: "虚拟机",
+                    children: (
+                      <Table
+                        columns={vmColumns}
+                        dataSource={mockVMs.filter(
+                          (vm) => vm.hostId === selectedHost.id,
+                        )}
+                        rowKey="id"
+                        pagination={false}
+                      />
+                    ),
+                  },
+                  {
+                    key: "performance",
+                    label: "性能监控",
+                    children: (
+                      <Row gutter={[16, 16]}>
+                        <Col span={24}>
+                          <Card
+                            title="CPU使用率（24小时）"
+                            extra={<AreaChartOutlined />}
+                          >
+                            <div
+                              style={{
+                                height: "300px",
+                                background: themeConfig.token.colorBgLayout,
+                                padding: "20px",
+                                borderRadius: "4px",
+                              }}
+                            >
+                              {/* 实际应用中这里会使用图表组件如ECharts或Recharts */}
+                              <Alert
+                                message="这里将显示CPU使用率图表（模拟占位）"
+                                type="info"
+                                showIcon
+                              />
+
+                              {/* 简单模拟图表效果 */}
+                              <div
+                                style={{
+                                  marginTop: "20px",
+                                  height: "200px",
+                                  position: "relative",
+                                }}
+                              >
+                                {mockPerformanceData.cpuUsage.map(
+                                  (item, index) => (
+                                    <div
+                                      key={index}
+                                      style={{
+                                        position: "absolute",
+                                        left: `${
+                                          (index /
+                                            (mockPerformanceData.cpuUsage
+                                              .length - 1)) *
+                                          100
+                                        }%`,
+                                        bottom: `${item.value}%`,
+                                        width: "2px",
+                                        height: "2px",
+                                        background: "#1890ff",
+                                        transform: "translate(-50%, 50%)",
+                                      }}
+                                    />
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          </Card>
+                        </Col>
+                        <Col xs={24} md={12}>
+                          <Card title="内存使用率" extra={<BarChartOutlined />}>
+                            <div
+                              style={{
+                                height: "200px",
+                                background: themeConfig.token.colorBgLayout,
+                                padding: "20px",
+                                borderRadius: "4px",
+                              }}
+                            >
+                              <Alert
+                                message="这里将显示内存使用率图表（模拟占位）"
+                                type="info"
+                                showIcon
+                              />
+                            </div>
+                          </Card>
+                        </Col>
+                        <Col xs={24} md={12}>
+                          <Card title="存储性能" extra={<LineChartOutlined />}>
+                            <div
+                              style={{
+                                height: "200px",
+                                background: themeConfig.token.colorBgLayout,
+                                padding: "20px",
+                                borderRadius: "4px",
+                              }}
+                            >
+                              <Alert
+                                message="这里将显示存储性能图表（模拟占位）"
+                                type="info"
+                                showIcon
+                              />
+                            </div>
+                          </Card>
+                        </Col>
+                        <Col xs={24} md={12}>
+                          <Card title="网络吞吐量" extra={<ApiOutlined />}>
+                            <div
+                              style={{
+                                height: "200px",
+                                background: themeConfig.token.colorBgLayout,
+                                padding: "20px",
+                                borderRadius: "4px",
+                              }}
+                            >
+                              <Alert
+                                message="这里将显示网络吞吐量图表（模拟占位）"
+                                type="info"
+                                showIcon
+                              />
+                            </div>
+                          </Card>
+                        </Col>
+                      </Row>
+                    ),
+                  },
+                ]}
+              />
             </>
           )}
         </Modal>

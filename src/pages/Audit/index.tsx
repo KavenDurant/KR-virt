@@ -609,7 +609,7 @@ const AuditManagement: React.FC = () => {
         backgroundColor: themeConfig.token.colorBgLayout,
       }}
     >
-      <Content style={{ padding: "24px" }}>
+      <Content>
         <Card
           title={
             <Space>

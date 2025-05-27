@@ -1,7 +1,7 @@
 /*
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-05-27 10:00:00
- * @Description: 认证服务 - 满足信创和国保测要求
+ * @Description: 认证服务 - 简化版
  */
 
 // 用户信息接口
@@ -10,7 +10,6 @@ export interface UserInfo {
   role: string;
   permissions: string[];
   lastLogin: string;
-  twoFactorEnabled: boolean;
 }
 
 // 认证响应接口
@@ -19,195 +18,76 @@ export interface AuthResponse {
   message: string;
   token?: string;
   user?: UserInfo;
-  requireTwoFactor?: boolean;
-  tempToken?: string;
-}
-
-// 双因子认证接口
-export interface TwoFactorData {
-  tempToken: string;
-  verificationCode: string;
-  keyFileContent?: string;
 }
 
 // 登录数据接口
 export interface LoginData {
   username: string;
   password: string;
-  keyFile?: File;
 }
 
 class AuthService {
   private readonly TOKEN_KEY = "kr_virt_token";
   private readonly USER_KEY = "kr_virt_user";
-  private readonly TEMP_TOKEN_KEY = "kr_virt_temp_token"; // 模拟用户数据库
+  
+  // 模拟用户数据库
   private mockUsers = [
     {
       username: "admin",
-      password: "Admin123!@#", // 符合安全要求的密码
+      password: "Admin123!@#",
       role: "administrator",
       permissions: ["*"],
-      twoFactorEnabled: true,
     },
     {
       username: "test",
-      password: "123456", // 简化的测试密码
+      password: "123456",
       role: "administrator",
       permissions: ["*"],
-      twoFactorEnabled: false, // 禁用双因子认证便于测试
     },
     {
       username: "operator",
       password: "Operator123!@#",
       role: "operator",
       permissions: ["vm:read", "vm:create", "network:read"],
-      twoFactorEnabled: true,
     },
     {
       username: "auditor",
       password: "Auditor123!@#",
       role: "auditor",
       permissions: ["audit:read", "log:read"],
-      twoFactorEnabled: true,
     },
   ];
+
   // 登录验证
   async login(data: LoginData): Promise<AuthResponse> {
     try {
       // 模拟网络延迟
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // 调试信息
-      console.log("登录尝试:", {
-        username: data.username,
-        password: data.password?.substring(0, 3) + "***",
-        hasKeyFile: !!data.keyFile,
-      });
-
       // 验证用户名密码
       const user = this.mockUsers.find(
         (u) => u.username === data.username && u.password === data.password
       );
-
-      console.log("用户查找结果:", user ? "找到用户" : "用户不存在");
 
       if (!user) {
         return {
           success: false,
           message: "用户名或密码错误",
         };
-      } // 验证密钥文件（简化验证）
-      if (data.keyFile) {
-        const keyValid = await this.validateKeyFile(data.keyFile);
-        if (!keyValid) {
-          return {
-            success: false,
-            message: "密钥文件验证失败，请上传正确的测试密钥文件",
-          };
-        }
-      } else {
-        return {
-          success: false,
-          message: "请上传密钥文件（可使用 public/test-key.key）",
-        };
-      } // 检查是否需要双因子认证
-      if (!user.twoFactorEnabled) {
-        // 直接登录，不需要双因子认证
-        const token = this.generateToken("auth");
-        const userInfo: UserInfo = {
-          username: user.username,
-          role: user.role,
-          permissions: user.permissions,
-          lastLogin: new Date().toISOString(),
-          twoFactorEnabled: user.twoFactorEnabled,
-        };
-
-        // 保存登录状态
-        localStorage.setItem(this.TOKEN_KEY, token);
-        localStorage.setItem(this.USER_KEY, JSON.stringify(userInfo));
-
-        return {
-          success: true,
-          message: "登录成功",
-          token,
-          user: userInfo,
-        };
       }
 
-      // 需要双因子认证的用户
-      const tempToken = this.generateToken("temp");
-      sessionStorage.setItem(this.TEMP_TOKEN_KEY, tempToken);
-      sessionStorage.setItem(
-        "temp_user_info",
-        JSON.stringify({
-          username: user.username,
-          role: user.role,
-          permissions: user.permissions,
-        })
-      );
-
-      return {
-        success: true,
-        message: "第一步验证成功，请输入双因子认证码",
-        requireTwoFactor: true,
-        tempToken,
-      };
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      return {
-        success: false,
-        message: "登录服务异常，请稍后重试",
-      };
-    }
-  }
-
-  // 双因子认证验证
-  async verifyTwoFactor(data: TwoFactorData): Promise<AuthResponse> {
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      // 验证临时token
-      const storedTempToken = sessionStorage.getItem(this.TEMP_TOKEN_KEY);
-      if (!storedTempToken || storedTempToken !== data.tempToken) {
-        return {
-          success: false,
-          message: "会话已过期，请重新登录",
-        };
-      } // 验证双因子认证码（模拟）
-      const validCodes = ["123456", "666666", "888888"]; // 模拟验证码
-      if (!validCodes.includes(data.verificationCode)) {
-        return {
-          success: false,
-          message: "验证码错误",
-        };
-      }
-
-      // 从临时存储中获取用户信息
-      const tempUserInfo = sessionStorage.getItem("temp_user_info");
-      const userDetails = tempUserInfo
-        ? JSON.parse(tempUserInfo)
-        : {
-            username: "admin",
-            role: "administrator",
-            permissions: ["*"],
-          };
-
-      // 生成正式token
-      const token = this.generateToken("auth");
+      // 直接登录成功
+      const token = this.generateToken();
       const userInfo: UserInfo = {
-        username: userDetails.username,
-        role: userDetails.role,
-        permissions: userDetails.permissions,
+        username: user.username,
+        role: user.role,
+        permissions: user.permissions,
         lastLogin: new Date().toISOString(),
-        twoFactorEnabled: true,
       };
 
-      // 存储认证信息
+      // 保存登录状态
       localStorage.setItem(this.TOKEN_KEY, token);
       localStorage.setItem(this.USER_KEY, JSON.stringify(userInfo));
-      sessionStorage.removeItem(this.TEMP_TOKEN_KEY);
-      sessionStorage.removeItem("temp_user_info");
 
       return {
         success: true,
@@ -215,77 +95,40 @@ class AuthService {
         token,
         user: userInfo,
       };
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch {
       return {
         success: false,
-        message: "双因子认证服务异常",
+        message: "登录失败，请稍后重试",
       };
     }
   }
 
-  // 验证密钥文件
-  private async validateKeyFile(file: File): Promise<boolean> {
-    try {
-      const content = await this.readFileAsText(file);
-
-      // 验证文件格式和内容
-      const requiredSections = [
-        "[AUTH_CONFIG]",
-        "[SYSTEM_INFO]",
-        "[MASTER_KEY]",
-        "[AUTH_KEYS]",
-        "[SIGNATURE]",
-      ];
-      const hasRequiredSections = requiredSections.every((section) =>
-        content.includes(section)
-      );
-
-      if (!hasRequiredSections) {
-        return false;
-      }
-
-      // 验证系统类型
-      const hasXinchuanGuobao = content.includes("SYSTEM_TYPE=XINCHUAN_GUOBAO");
-      const hasComplianceLevel = content.includes("COMPLIANCE_LEVEL=LEVEL_3");
-
-      return hasXinchuanGuobao && hasComplianceLevel;
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      return false;
-    }
-  }
-
-  // 读取文件内容
-  private readFileAsText(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsText(file);
-    });
-  }
-
   // 生成token
-  private generateToken(type: "temp" | "auth"): string {
+  private generateToken(): string {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2);
-    return `${type}_${timestamp}_${random}`;
+    const token = `kr_virt_${timestamp}_${random}`;
+    return btoa(token);
   }
 
   // 检查认证状态
   isAuthenticated(): boolean {
-    const token = localStorage.getItem(this.TOKEN_KEY);
-    const user = localStorage.getItem(this.USER_KEY);
+    const token = this.getToken();
+    const user = this.getCurrentUser();
     return !!(token && user);
   }
 
   // 获取当前用户信息
   getCurrentUser(): UserInfo | null {
     const userStr = localStorage.getItem(this.USER_KEY);
-    return userStr ? JSON.parse(userStr) : null;
+    if (userStr) {
+      try {
+        return JSON.parse(userStr);
+      } catch {
+        return null;
+      }
+    }
+    return null;
   }
 
   // 获取token
@@ -297,20 +140,10 @@ class AuthService {
   logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
-    sessionStorage.removeItem(this.TEMP_TOKEN_KEY);
-  }
-
-  // 生成验证码（模拟短信或邮件发送）
-  async sendVerificationCode(): Promise<{ success: boolean; message: string }> {
-    // 模拟发送验证码
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    return {
-      success: true,
-      message: "验证码已发送，测试验证码：123456、666666、888888",
-    };
   }
 }
 
-export const authService = new AuthService();
+// 创建并导出单个实例
+const authService = new AuthService();
+export { authService };
 export default authService;

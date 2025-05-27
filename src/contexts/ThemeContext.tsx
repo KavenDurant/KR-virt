@@ -63,7 +63,7 @@ export interface ThemeContextType {
 // 创建主题上下文
 // eslint-disable-next-line react-refresh/only-export-components
 export const ThemeContext = createContext<ThemeContextType | undefined>(
-  undefined,
+  undefined
 );
 
 // 获取系统主题偏好
@@ -87,7 +87,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   const [systemTheme, setSystemTheme] = useState<"light" | "dark">(
-    getSystemTheme,
+    getSystemTheme
   );
 
   // 计算实际使用的主题

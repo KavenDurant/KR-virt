@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Badge, Layout, Menu, Tooltip } from "antd";
+import {
+  Badge,
+  Layout,
+  Menu,
+  Tooltip,
+  Avatar,
+  Dropdown,
+  Modal,
+  Form,
+  Input,
+  message,
+} from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   DesktopOutlined,
@@ -12,6 +23,8 @@ import {
   DashboardOutlined,
   BellOutlined,
   AuditOutlined,
+  LogoutOutlined,
+  KeyOutlined,
 } from "@ant-design/icons";
 import routes from "../../router/routes";
 import TaskDrawer from "../TaskDrawer";
@@ -28,6 +41,10 @@ const AppLayout: React.FC = () => {
 
   // 用户信息状态
   const [, setCurrentUser] = useState<UserInfo | null>(null);
+  const [passwordModalVisible, setPasswordModalVisible] =
+    useState<boolean>(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState<boolean>(false);
+  const [passwordForm] = Form.useForm();
 
   // 初始化用户信息
   useEffect(() => {
@@ -133,6 +150,49 @@ const AppLayout: React.FC = () => {
     navigate(path);
   };
 
+  // 处理退出登录
+  const handleLogout = () => {
+    // 使用内联模态框代替静态方法，这样可以正确获取上下文
+    setLogoutModalVisible(true);
+  };
+
+  // 确认退出登录
+  const confirmLogout = () => {
+    try {
+      // 清除认证信息
+      authService.logout();
+      console.log("已清除登录信息");
+
+      // 直接使用window.location进行页面跳转和刷新
+      window.location.href = "#/login";
+      window.location.reload();
+    } catch (error) {
+      console.error("退出登录出错:", error);
+    } finally {
+      setLogoutModalVisible(false);
+    }
+  };
+
+  // 处理修改密码
+  const handleChangePassword = () => {
+    setPasswordModalVisible(true);
+  };
+
+  // 提交密码修改
+  const handlePasswordSubmit = () => {
+    passwordForm.validateFields().then((values) => {
+      if (values.newPassword !== values.confirmPassword) {
+        message.error("两次输入的新密码不一致");
+        return;
+      }
+
+      // 这里只是模拟成功，实际应调用API
+      message.success("密码修改成功");
+      setPasswordModalVisible(false);
+      passwordForm.resetFields();
+    });
+  };
+
   // 恢复活动栏图标配置，后续会按位置单独渲染
   const activityItems = [
     { key: "/dashboard", icon: <DashboardOutlined />, label: "仪表盘" },
@@ -190,22 +250,24 @@ const AppLayout: React.FC = () => {
                 <Tooltip
                   title={item.label}
                   placement="right"
-                  overlayClassName="activity-tooltip"
+                  classNames={{ root: "activity-tooltip" }}
                   mouseEnterDelay={0.5}
-                  overlayInnerStyle={{
-                    backgroundColor:
-                      actualTheme === "dark" ? "#252526" : "#ffffff",
-                    color: actualTheme === "dark" ? "#cccccc" : "#000000",
-                    border: `1px solid ${
-                      actualTheme === "dark" ? "#454545" : "#d9d9d9"
-                    }`,
-                    borderRadius: "2px",
-                    fontSize: "12px",
-                    padding: "4px 8px",
-                    boxShadow:
-                      actualTheme === "dark"
-                        ? "0 2px 8px rgba(0, 0, 0, 0.5)"
-                        : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                  styles={{
+                    body: {
+                      backgroundColor:
+                        actualTheme === "dark" ? "#252526" : "#ffffff",
+                      color: actualTheme === "dark" ? "#cccccc" : "#000000",
+                      border: `1px solid ${
+                        actualTheme === "dark" ? "#454545" : "#d9d9d9"
+                      }`,
+                      borderRadius: "2px",
+                      fontSize: "12px",
+                      padding: "4px 8px",
+                      boxShadow:
+                        actualTheme === "dark"
+                          ? "0 2px 8px rgba(0, 0, 0, 0.5)"
+                          : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                    },
                   }}
                 >
                   {React.cloneElement(item.icon, {
@@ -256,22 +318,24 @@ const AppLayout: React.FC = () => {
               <Tooltip
                 title="通知"
                 placement="right"
-                overlayClassName="activity-tooltip"
+                classNames={{ root: "activity-tooltip" }}
                 mouseEnterDelay={0.5}
-                overlayInnerStyle={{
-                  backgroundColor:
-                    actualTheme === "dark" ? "#252526" : "#ffffff",
-                  color: actualTheme === "dark" ? "#cccccc" : "#000000",
-                  border: `1px solid ${
-                    actualTheme === "dark" ? "#454545" : "#d9d9d9"
-                  }`,
-                  borderRadius: "2px",
-                  fontSize: "12px",
-                  padding: "4px 8px",
-                  boxShadow:
-                    actualTheme === "dark"
-                      ? "0 2px 8px rgba(0, 0, 0, 0.5)"
-                      : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                styles={{
+                  body: {
+                    backgroundColor:
+                      actualTheme === "dark" ? "#252526" : "#ffffff",
+                    color: actualTheme === "dark" ? "#cccccc" : "#000000",
+                    border: `1px solid ${
+                      actualTheme === "dark" ? "#454545" : "#d9d9d9"
+                    }`,
+                    borderRadius: "2px",
+                    fontSize: "12px",
+                    padding: "4px 8px",
+                    boxShadow:
+                      actualTheme === "dark"
+                        ? "0 2px 8px rgba(0, 0, 0, 0.5)"
+                        : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                  },
                 }}
               >
                 <div style={{ position: "relative" }}>
@@ -314,22 +378,24 @@ const AppLayout: React.FC = () => {
                 <Tooltip
                   title={item.label}
                   placement="right"
-                  overlayClassName="activity-tooltip"
+                  classNames={{ root: "activity-tooltip" }}
                   mouseEnterDelay={0.5}
-                  overlayInnerStyle={{
-                    backgroundColor:
-                      actualTheme === "dark" ? "#252526" : "#ffffff",
-                    color: actualTheme === "dark" ? "#cccccc" : "#000000",
-                    border: `1px solid ${
-                      actualTheme === "dark" ? "#454545" : "#d9d9d9"
-                    }`,
-                    borderRadius: "2px",
-                    fontSize: "12px",
-                    padding: "4px 8px",
-                    boxShadow:
-                      actualTheme === "dark"
-                        ? "0 2px 8px rgba(0, 0, 0, 0.5)"
-                        : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                  styles={{
+                    body: {
+                      backgroundColor:
+                        actualTheme === "dark" ? "#252526" : "#ffffff",
+                      color: actualTheme === "dark" ? "#cccccc" : "#000000",
+                      border: `1px solid ${
+                        actualTheme === "dark" ? "#454545" : "#d9d9d9"
+                      }`,
+                      borderRadius: "2px",
+                      fontSize: "12px",
+                      padding: "4px 8px",
+                      boxShadow:
+                        actualTheme === "dark"
+                          ? "0 2px 8px rgba(0, 0, 0, 0.5)"
+                          : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                    },
                   }}
                 >
                   {React.cloneElement(item.icon, {
@@ -360,6 +426,46 @@ const AppLayout: React.FC = () => {
               },
             }))}
           />
+
+          {/* 用户头像 */}
+          <div
+            style={{
+              marginTop: "20px",
+              marginBottom: "10px",
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <Dropdown
+              menu={{
+                items: [
+                  {
+                    key: "changePassword",
+                    label: "修改密码",
+                    icon: <KeyOutlined />,
+                    onClick: handleChangePassword,
+                  },
+                  {
+                    key: "logout",
+                    label: "退出登录",
+                    icon: <LogoutOutlined />,
+                    onClick: handleLogout,
+                  },
+                ],
+              }}
+              placement="topRight"
+              trigger={["click"]}
+            >
+              <Avatar
+                style={{
+                  cursor: "pointer",
+                  backgroundColor:
+                    actualTheme === "dark" ? "#1890ff" : "#1890ff",
+                }}
+                icon={<UserOutlined />}
+              />
+            </Dropdown>
+          </div>
         </div>
       </div>{" "}
       {/* 侧边栏 - 导航菜单 */}
@@ -471,7 +577,7 @@ const AppLayout: React.FC = () => {
             className="editor-content"
             style={{
               padding: "20px",
-              height: "calc(100vh - 56px)", // 减去头部高度
+              height: "100vh", // 减去头部高度
               overflow: "auto",
               width: "100%",
               boxSizing: "border-box",
@@ -482,6 +588,66 @@ const AppLayout: React.FC = () => {
           </div>
         </TaskDrawer>
       </Layout>
+      {/* 修改密码模态框 */}
+      <Modal
+        title="修改密码"
+        open={passwordModalVisible}
+        onOk={handlePasswordSubmit}
+        onCancel={() => {
+          setPasswordModalVisible(false);
+          passwordForm.resetFields();
+        }}
+        okText="确认"
+        cancelText="取消"
+      >
+        <Form form={passwordForm} layout="vertical">
+          <Form.Item
+            name="oldPassword"
+            label="当前密码"
+            rules={[{ required: true, message: "请输入当前密码" }]}
+          >
+            <Input.Password placeholder="请输入当前密码" />
+          </Form.Item>
+          <Form.Item
+            name="newPassword"
+            label="新密码"
+            rules={[
+              { required: true, message: "请输入新密码" },
+              { min: 6, message: "密码长度不能少于6位" },
+            ]}
+          >
+            <Input.Password placeholder="请输入新密码" />
+          </Form.Item>
+          <Form.Item
+            name="confirmPassword"
+            label="确认新密码"
+            rules={[
+              { required: true, message: "请确认新密码" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("newPassword") === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error("两次输入的密码不一致"));
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="请确认新密码" />
+          </Form.Item>
+        </Form>
+      </Modal>
+      {/* 退出登录确认模态框 */}
+      <Modal
+        title="确认退出"
+        open={logoutModalVisible}
+        onOk={confirmLogout}
+        onCancel={() => setLogoutModalVisible(false)}
+        okText="确认"
+        cancelText="取消"
+      >
+        <p>确定要退出登录吗？</p>
+      </Modal>
     </Layout>
   );
 };

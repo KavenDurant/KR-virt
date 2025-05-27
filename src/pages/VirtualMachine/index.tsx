@@ -513,7 +513,7 @@ const VirtualMachineManagement: React.FC = () => {
 
   return (
     <div style={{ width: "100%" }}>
-      <h1 style={{ color: themeConfig.token.colorTextBase }}>虚拟机管理</h1>
+      <h3 style={{ color: themeConfig.token.colorTextBase }}>虚拟机管理</h3>
 
       <Row gutter={16} style={{ marginBottom: "24px", width: "100%" }}>
         <Col span={6} xxl={6} xl={6} lg={6} md={12} sm={24} xs={24}>

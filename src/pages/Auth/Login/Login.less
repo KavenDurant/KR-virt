@@ -1,0 +1,254 @@
+/*
+ * 登录页面样式 - 满足信创和国保测要求
+ * 设计理念：简约大气、安全可信、符合中国信创标准
+ */
+
+// 确保登录页面背景充满整个屏幕
+body.login-page {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.login-container {
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  // 背景装饰
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></svg>')
+      repeat;
+    background-size: 50px 50px;
+    animation: float 20s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+
+  .ant-card-body {
+    padding: 40px 32px 32px;
+  }
+
+  // 顶部装饰条
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+  }
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+
+  .login-logo {
+    font-size: 48px;
+    color: #1890ff;
+    margin-bottom: 16px;
+    display: block;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .login-title {
+    margin: 0 0 8px 0 !important;
+    color: #262626;
+    font-weight: 600;
+    font-size: 24px;
+  }
+
+  .login-subtitle {
+    color: #8c8c8c;
+    font-size: 14px;
+    margin: 0;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.login-form {
+  .ant-form-item {
+    margin-bottom: 20px;
+  }
+
+  .ant-form-item-label > label {
+    font-weight: 500;
+    color: #595959;
+  }
+
+  .ant-input-affix-wrapper,
+  .ant-input {
+    border-radius: 8px;
+    border: 1px solid #d9d9d9;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+      border-color: #40a9ff;
+      box-shadow: 0 2px 8px rgba(64, 169, 255, 0.1);
+    }
+
+    &:focus,
+    &.ant-input-affix-wrapper-focused {
+      border-color: #1890ff;
+      box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+    }
+  }
+
+  .ant-input-prefix {
+    color: #bfbfbf;
+    margin-right: 8px;
+  }
+}
+
+
+
+.login-actions {
+  margin-top: 24px;
+
+  .ant-btn-primary {
+    height: 44px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    background: linear-gradient(135deg, #1890ff, #096dd9);
+    border: none;
+    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(24, 144, 255, 0.4);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+.security-notice {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 20px;
+  display: flex;
+  align-items: flex-start;
+
+  .anticon {
+    color: #52c41a;
+    margin-right: 8px;
+    margin-top: 2px;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 16px;
+    color: #389e0d;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+}
+
+.compliance-info {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+
+  .compliance-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    background: #f0f8ff;
+    border: 1px solid #d4edda;
+    border-radius: 12px;
+    color: #0066cc;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 8px;
+
+    .anticon {
+      margin-right: 4px;
+      color: #52c41a;
+    }
+  }
+
+  .compliance-text {
+    color: #8c8c8c;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+}
+
+
+
+// 响应式设计
+@media (max-width: 576px) {
+  .login-container {
+    padding: 12px;
+  }
+
+  .login-card {
+    .ant-card-body {
+      padding: 24px 20px 20px;
+    }
+  }
+
+  .login-header .login-title {
+    font-size: 20px;
+  }
+
+  .login-actions .ant-btn-primary {
+    height: 40px;
+    font-size: 14px;
+  }
+}

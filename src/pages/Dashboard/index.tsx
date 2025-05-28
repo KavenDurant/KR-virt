@@ -13,6 +13,7 @@ import {
   Space,
   Tag,
   Tooltip,
+  Button,
 } from "antd";
 import {
   DashboardOutlined,
@@ -29,7 +30,7 @@ import {
 import "./Dashboard.less";
 import { useTheme } from "../../hooks/useTheme";
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Text } = Typography;
 
 // 模拟数据 - 实际应用中应该从API获取
 const mockResourceData = {
@@ -294,309 +295,346 @@ const Dashboard: React.FC = () => {
         style={{
           minHeight: loading ? "600px" : "auto",
           backgroundColor: themeConfig.token.colorBgContainer,
-          padding: loading ? "20px" : "0",
         }}
       >
         <div className="dashboard-container">
-          <div className="dashboard-header">
-            <Title level={2}>
-              <DashboardOutlined /> 系统仪表盘
-            </Title>
-            <Paragraph>查看系统整体运行状态、资源使用情况及最近事件</Paragraph>
-          </div>
-
-          {/* 系统健康状态 */}
-          <Row gutter={[16, 16]}>
-            <Col span={24}>
-              <Card className="health-card">
-                <Title level={4}>
-                  系统健康状态
-                  {data.systemHealth.overall !== "normal" && (
-                    <Tag
-                      color={
-                        data.systemHealth.overall === "critical"
-                          ? "error"
-                          : "warning"
-                      }
-                      style={{ marginLeft: 8 }}
-                    >
-                      {data.systemHealth.overall === "critical"
-                        ? "严重警告"
-                        : "注意"}
-                    </Tag>
-                  )}
-                </Title>
-
-                <Row gutter={[16, 16]} className="health-components">
-                  {data.systemHealth.components.map((comp, index) => {
-                    const style = getHealthStyle(comp.status);
-                    return (
-                      <Col xs={24} sm={12} md={6} key={index}>
-                        <Card
-                          size="small"
-                          className="health-component-card"
-                          style={{
-                            borderLeft: `4px solid ${style.color}`,
-                            backgroundColor: style.bgColor,
-                          }}
+          <Card
+            title={
+              <Space>
+                <DashboardOutlined />
+                <span>系统仪表盘</span>
+              </Space>
+            }
+            extra={
+              <Space>
+                <Button
+                  icon={<SyncOutlined />}
+                  onClick={() => {
+                    setLoading(true);
+                    setTimeout(() => {
+                      setLoading(false);
+                      setData(mockResourceData);
+                    }, 1000);
+                  }}
+                >
+                  刷新
+                </Button>
+                <Text type="secondary">
+                  查看系统整体运行状态、资源使用情况及最近事件
+                </Text>
+              </Space>
+            }
+            className="dashboard-main-card"
+          >
+            {" "}
+            {/* 系统健康状态 */}
+            <div style={{ marginBottom: 24 }}>
+              <Row gutter={[16, 16]}>
+                <Col span={24}>
+                  <Card className="health-card">
+                    <Title level={4}>
+                      系统健康状态
+                      {data.systemHealth.overall !== "normal" && (
+                        <Tag
+                          color={
+                            data.systemHealth.overall === "critical"
+                              ? "error"
+                              : "warning"
+                          }
+                          style={{ marginLeft: 8 }}
                         >
-                          <div className="health-component-title">
-                            {style.icon}
-                            <span>{comp.name}</span>
-                          </div>
-                          <div className="health-component-message">
-                            {comp.message}
-                          </div>
-                        </Card>
-                      </Col>
-                    );
-                  })}
+                          {data.systemHealth.overall === "critical"
+                            ? "严重警告"
+                            : "注意"}
+                        </Tag>
+                      )}
+                    </Title>
+
+                    <Row gutter={[16, 16]} className="health-components">
+                      {data.systemHealth.components.map((comp, index) => {
+                        const style = getHealthStyle(comp.status);
+                        return (
+                          <Col xs={24} sm={12} md={6} key={index}>
+                            <Card
+                              size="small"
+                              className="health-component-card"
+                              style={{
+                                borderLeft: `4px solid ${style.color}`,
+                                backgroundColor: style.bgColor,
+                              }}
+                            >
+                              <div className="health-component-title">
+                                {style.icon}
+                                <span>{comp.name}</span>
+                              </div>
+                              <div className="health-component-message">
+                                {comp.message}
+                              </div>
+                            </Card>
+                          </Col>
+                        );
+                      })}
+                    </Row>
+                  </Card>
+                </Col>
+              </Row>
+            </div>{" "}
+            {/* 资源概览部分 */}
+            <div style={{ marginBottom: 24 }}>
+              <Card title="资源概览" className="resource-overview-card">
+                <Row gutter={[16, 16]}>
+                  <Col xs={24} sm={12} md={12} lg={8} xl={6}>
+                    <Card className="resource-card">
+                      <Statistic
+                        title="虚拟机"
+                        value={data.vm.total}
+                        prefix={<CloudServerOutlined />}
+                        suffix={`运行中: ${data.vm.running}`}
+                      />
+                      <div className="resource-details">
+                        <Progress
+                          percent={data.vm.cpuUsage}
+                          size="small"
+                          status={
+                            data.vm.cpuUsage > 80 ? "exception" : "normal"
+                          }
+                          format={(percent) => `CPU ${percent}%`}
+                        />
+                        <Progress
+                          percent={data.vm.memoryUsage}
+                          size="small"
+                          status={
+                            data.vm.memoryUsage > 80 ? "exception" : "normal"
+                          }
+                          format={(percent) => `内存 ${percent}%`}
+                        />
+                      </div>
+                    </Card>
+                  </Col>
+
+                  <Col xs={24} sm={12} md={12} lg={8} xl={6}>
+                    <Card className="resource-card">
+                      <Statistic
+                        title="物理机"
+                        value={data.host.total}
+                        prefix={<HddOutlined />}
+                        suffix={`在线: ${data.host.connected}`}
+                      />
+                      <div className="resource-details">
+                        <Progress
+                          percent={data.host.cpuUsage}
+                          size="small"
+                          format={(percent) => `CPU ${percent}%`}
+                        />
+                        <Progress
+                          percent={data.host.memoryUsage}
+                          size="small"
+                          format={(percent) => `内存 ${percent}%`}
+                        />
+                      </div>
+                    </Card>
+                  </Col>
+
+                  <Col xs={24} sm={12} md={12} lg={8} xl={6}>
+                    <Card className="resource-card">
+                      <Statistic
+                        title="存储"
+                        value={data.storage.total}
+                        prefix={<HddOutlined />}
+                        suffix={`可用: ${data.storage.available}`}
+                      />
+                      <div className="resource-details">
+                        <Progress
+                          percent={data.storage.usagePercent}
+                          size="small"
+                          format={(percent) => `已使用 ${percent}%`}
+                        />
+                      </div>
+                    </Card>
+                  </Col>
+
+                  <Col xs={24} sm={12} md={12} lg={8} xl={6}>
+                    <Card className="resource-card">
+                      <Statistic
+                        title="网络"
+                        value={data.network.vlans}
+                        prefix={<GlobalOutlined />}
+                        suffix="VLANs"
+                      />
+                      <div className="resource-details">
+                        <Text>
+                          公网IP: {data.network.publicIPs} (已用{" "}
+                          {data.network.usedIPs})
+                        </Text>
+                      </div>
+                    </Card>
+                  </Col>
+
+                  <Col xs={24} sm={12} md={12} lg={8} xl={6}>
+                    <Card className="resource-card">
+                      <Statistic
+                        title="集群"
+                        value={data.cluster.count}
+                        prefix={<ClusterOutlined />}
+                        suffix={`健康: ${data.cluster.healthy}`}
+                      />
+                      {data.cluster.warning > 0 && (
+                        <Alert
+                          message={`${data.cluster.warning}个集群有警告`}
+                          type="warning"
+                          showIcon
+                          banner
+                        />
+                      )}
+                    </Card>
+                  </Col>
                 </Row>
               </Card>
-            </Col>
-          </Row>
-
-          {/* 资源概览部分 */}
-          <Title level={4} className="section-title">
-            资源概览
-          </Title>
-          <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12} md={12} lg={8} xl={6}>
-              <Card className="resource-card">
-                <Statistic
-                  title="虚拟机"
-                  value={data.vm.total}
-                  prefix={<CloudServerOutlined />}
-                  suffix={`运行中: ${data.vm.running}`}
-                />
-                <div className="resource-details">
-                  <Progress
-                    percent={data.vm.cpuUsage}
-                    size="small"
-                    status={data.vm.cpuUsage > 80 ? "exception" : "normal"}
-                    format={(percent) => `CPU ${percent}%`}
-                  />
-                  <Progress
-                    percent={data.vm.memoryUsage}
-                    size="small"
-                    status={data.vm.memoryUsage > 80 ? "exception" : "normal"}
-                    format={(percent) => `内存 ${percent}%`}
-                  />
-                </div>
-              </Card>
-            </Col>
-
-            <Col xs={24} sm={12} md={12} lg={8} xl={6}>
-              <Card className="resource-card">
-                <Statistic
-                  title="物理机"
-                  value={data.host.total}
-                  prefix={<HddOutlined />}
-                  suffix={`在线: ${data.host.connected}`}
-                />
-                <div className="resource-details">
-                  <Progress
-                    percent={data.host.cpuUsage}
-                    size="small"
-                    format={(percent) => `CPU ${percent}%`}
-                  />
-                  <Progress
-                    percent={data.host.memoryUsage}
-                    size="small"
-                    format={(percent) => `内存 ${percent}%`}
-                  />
-                </div>
-              </Card>
-            </Col>
-
-            <Col xs={24} sm={12} md={12} lg={8} xl={6}>
-              <Card className="resource-card">
-                <Statistic
-                  title="存储"
-                  value={data.storage.total}
-                  prefix={<HddOutlined />}
-                  suffix={`可用: ${data.storage.available}`}
-                />
-                <div className="resource-details">
-                  <Progress
-                    percent={data.storage.usagePercent}
-                    size="small"
-                    format={(percent) => `已使用 ${percent}%`}
-                  />
-                </div>
-              </Card>
-            </Col>
-
-            <Col xs={24} sm={12} md={12} lg={8} xl={6}>
-              <Card className="resource-card">
-                <Statistic
-                  title="网络"
-                  value={data.network.vlans}
-                  prefix={<GlobalOutlined />}
-                  suffix="VLANs"
-                />
-                <div className="resource-details">
-                  <Text>
-                    公网IP: {data.network.publicIPs} (已用{" "}
-                    {data.network.usedIPs})
-                  </Text>
-                </div>
-              </Card>
-            </Col>
-
-            <Col xs={24} sm={12} md={12} lg={8} xl={6}>
-              <Card className="resource-card">
-                <Statistic
-                  title="集群"
-                  value={data.cluster.count}
-                  prefix={<ClusterOutlined />}
-                  suffix={`健康: ${data.cluster.healthy}`}
-                />
-                {data.cluster.warning > 0 && (
-                  <Alert
-                    message={`${data.cluster.warning}个集群有警告`}
-                    type="warning"
-                    showIcon
-                    banner
-                  />
-                )}
-              </Card>
-            </Col>
-          </Row>
-
-          {/* 系统性能指标 */}
-          <Title level={4} className="section-title">
-            系统性能
-          </Title>
-          <Row gutter={[16, 16]}>
-            {data.performance.map((item, index) => (
-              <Col xs={24} sm={12} md={6} key={index}>
-                <Card className="performance-card">
-                  <div className="performance-header">
-                    <div className="performance-title">
-                      <AreaChartOutlined /> {item.name}
-                    </div>
-                    <Tooltip
-                      title={`趋势: ${item.trend === "up" ? "上升" : item.trend === "down" ? "下降" : "稳定"}`}
-                    >
-                      <span
-                        className="performance-trend"
-                        style={{ color: getTrendIcon(item.trend).color }}
-                      >
-                        {getTrendIcon(item.trend).icon}
-                      </span>
-                    </Tooltip>
-                  </div>
-                  <Statistic
-                    value={item.current}
-                    suffix={item.unit}
-                    valueStyle={{
-                      color: getPerformanceColor(item.trend),
-                    }}
-                  />
-                  <div className="performance-chart">
-                    {item.history.map((val, i) => (
-                      <div
-                        key={i}
-                        className="chart-bar"
-                        style={{
-                          height: `${val / 6}%`,
-                          backgroundColor: getPerformanceColor(item.trend),
-                          opacity: 0.3 + i * 0.1,
-                        }}
-                      />
-                    ))}
-                  </div>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-
-          {/* 详细信息部分 */}
-          <Row gutter={[16, 16]} style={{ marginTop: "20px" }}>
-            {/* 虚拟机监控表格 */}
-            <Col xs={24} lg={16}>
-              <Card
-                title="热点虚拟机监控"
-                className="detail-card"
-                extra={<a href="#">查看全部</a>}
-              >
-                <Table
-                  columns={vmColumns}
-                  dataSource={mockVMData}
-                  pagination={false}
-                  size="middle"
-                  scroll={{ x: true }}
-                />
-              </Card>
-            </Col>
-
-            {/* 告警信息 */}
-            <Col xs={24} lg={8}>
-              <Card
-                title="系统告警"
-                className="detail-card alert-card"
-                extra={<a href="#">查看全部</a>}
-              >
-                <List
-                  itemLayout="horizontal"
-                  dataSource={data.alerts}
-                  renderItem={(item) => {
-                    const alertStyle = getAlertStyle(item.level);
-                    return (
-                      <List.Item>
-                        <Space>
-                          <span style={{ color: alertStyle.color }}>
-                            {alertStyle.icon}
-                          </span>
-                          <div>
-                            <div>{item.message}</div>
-                            <div className="event-time">{item.time}</div>
+            </div>
+            {/* 系统性能指标 */}
+            <div style={{ marginBottom: 24 }}>
+              <Card title="系统性能" className="performance-overview-card">
+                <Row gutter={[16, 16]}>
+                  {data.performance.map((item, index) => (
+                    <Col xs={24} sm={12} md={6} key={index}>
+                      <Card className="performance-card">
+                        <div className="performance-header">
+                          <div className="performance-title">
+                            <AreaChartOutlined /> {item.name}
                           </div>
-                        </Space>
-                      </List.Item>
-                    );
-                  }}
-                />
-              </Card>
-            </Col>
-          </Row>
-
-          {/* 最近事件 */}
-          <Row gutter={[16, 16]} style={{ marginTop: "20px" }}>
-            <Col span={24}>
-              <Card
-                title="最近操作"
-                className="detail-card"
-                extra={<a href="#">查看全部</a>}
-              >
-                <List
-                  grid={{
-                    gutter: 16,
-                    xs: 1,
-                    sm: 1,
-                    md: 2,
-                    lg: 2,
-                    xl: 4,
-                    xxl: 4,
-                  }}
-                  dataSource={data.recentEvents}
-                  renderItem={(item) => (
-                    <List.Item>
-                      <Card size="small">
-                        <div className="event-title">{item.operation}</div>
-                        <div className="event-details">
-                          <div>目标: {item.target}</div>
-                          <div>用户: {item.user}</div>
-                          <div className="event-time">{item.time}</div>
+                          <Tooltip
+                            title={`趋势: ${
+                              item.trend === "up"
+                                ? "上升"
+                                : item.trend === "down"
+                                ? "下降"
+                                : "稳定"
+                            }`}
+                          >
+                            <span
+                              className="performance-trend"
+                              style={{ color: getTrendIcon(item.trend).color }}
+                            >
+                              {getTrendIcon(item.trend).icon}
+                            </span>
+                          </Tooltip>
                         </div>
+                        <Statistic
+                          value={item.current}
+                          suffix={item.unit}
+                          valueStyle={{
+                            color: getPerformanceColor(item.trend),
+                          }}
+                        />
+                        <div className="performance-chart">
+                          {item.history.map((val, i) => (
+                            <div
+                              key={i}
+                              className="chart-bar"
+                              style={{
+                                height: `${val / 6}%`,
+                                backgroundColor: getPerformanceColor(
+                                  item.trend
+                                ),
+                                opacity: 0.3 + i * 0.1,
+                              }}
+                            />
+                          ))}
+                        </div>{" "}
                       </Card>
-                    </List.Item>
-                  )}
-                />
+                    </Col>
+                  ))}
+                </Row>
               </Card>
-            </Col>
-          </Row>
+            </div>
+            {/* 详细信息部分 */}
+            <div style={{ marginBottom: 24 }}>
+              <Row gutter={[16, 16]}>
+                {/* 虚拟机监控表格 */}
+                <Col xs={24} lg={16}>
+                  <Card
+                    title="热点虚拟机监控"
+                    className="detail-card"
+                    extra={<a href="#">查看全部</a>}
+                  >
+                    <Table
+                      columns={vmColumns}
+                      dataSource={mockVMData}
+                      pagination={false}
+                      size="middle"
+                      scroll={{ x: true }}
+                    />
+                  </Card>
+                </Col>
+
+                {/* 告警信息 */}
+                <Col xs={24} lg={8}>
+                  <Card
+                    title="系统告警"
+                    className="detail-card alert-card"
+                    extra={<a href="#">查看全部</a>}
+                  >
+                    <List
+                      itemLayout="horizontal"
+                      dataSource={data.alerts}
+                      renderItem={(item) => {
+                        const alertStyle = getAlertStyle(item.level);
+                        return (
+                          <List.Item>
+                            <Space>
+                              <span style={{ color: alertStyle.color }}>
+                                {alertStyle.icon}
+                              </span>
+                              <div>
+                                <div>{item.message}</div>
+                                <div className="event-time">{item.time}</div>
+                              </div>
+                            </Space>
+                          </List.Item>
+                        );
+                      }}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+
+              {/* 最近事件 */}
+              <Row gutter={[16, 16]} style={{ marginTop: "20px" }}>
+                <Col span={24}>
+                  <Card
+                    title="最近操作"
+                    className="detail-card"
+                    extra={<a href="#">查看全部</a>}
+                  >
+                    <List
+                      grid={{
+                        gutter: 16,
+                        xs: 1,
+                        sm: 1,
+                        md: 2,
+                        lg: 2,
+                        xl: 4,
+                        xxl: 4,
+                      }}
+                      dataSource={data.recentEvents}
+                      renderItem={(item) => (
+                        <List.Item>
+                          <Card size="small">
+                            <div className="event-title">{item.operation}</div>
+                            <div className="event-details">
+                              <div>目标: {item.target}</div>
+                              <div>用户: {item.user}</div>
+                              <div className="event-time">{item.time}</div>
+                            </div>
+                          </Card>
+                        </List.Item>
+                      )}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+            </div>
+          </Card>
         </div>
       </div>
     </Spin>

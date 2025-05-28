@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Badge, Layout, Menu, Tooltip } from "antd";
+import {
+  Badge,
+  Layout,
+  Menu,
+  Tooltip,
+  Avatar,
+  Dropdown,
+  Modal,
+  Form,
+  Input,
+  message,
+} from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   DesktopOutlined,
@@ -12,10 +23,16 @@ import {
   DashboardOutlined,
   BellOutlined,
   AuditOutlined,
+  LogoutOutlined,
+  KeyOutlined,
 } from "@ant-design/icons";
 import routes from "../../router/routes";
 import TaskDrawer from "../TaskDrawer";
+import HierarchicalSidebar from "../HierarchicalSidebar";
 import { useTheme } from "../../hooks/useTheme";
+import { authService } from "../../services/authService";
+import type { UserInfo } from "../../services/authService";
+import { getSidebarData } from "../../services/mockData";
 import "./AppLayout.css";
 
 const AppLayout: React.FC = () => {
@@ -23,6 +40,19 @@ const AppLayout: React.FC = () => {
   const location = useLocation();
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { actualTheme } = useTheme();
+
+  // 用户信息状态
+  const [, setCurrentUser] = useState<UserInfo | null>(null);
+  const [passwordModalVisible, setPasswordModalVisible] =
+    useState<boolean>(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState<boolean>(false);
+  const [passwordForm] = Form.useForm();
+
+  // 初始化用户信息
+  useEffect(() => {
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
+  }, []);
 
   // 添加侧边栏宽度状态，使用useRef保证它不会随渲染重置
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -56,7 +86,7 @@ const AppLayout: React.FC = () => {
         originalWidthRef.current = validWidth;
       }
     },
-    [], // 移除sidebarWidth依赖，避免频繁重新创建函数
+    [] // 移除sidebarWidth依赖，避免频繁重新创建函数
   );
 
   // 根据当前路径确定选中的菜单项
@@ -66,8 +96,20 @@ const AppLayout: React.FC = () => {
   }, [location.pathname]);
 
   const [selectedActivityItem, setSelectedActivityItem] = useState(
-    getCurrentSelectedPath,
+    getCurrentSelectedPath
   );
+
+  // 获取当前模块的侧边栏数据
+  const sidebarData = getSidebarData(selectedActivityItem);
+  const shouldShowHierarchicalSidebar =
+    selectedActivityItem === "/virtual-machine" ||
+    selectedActivityItem === "/cluster";
+  
+  // 判断是否需要显示侧边栏（只有虚拟机、集群、物理机模块显示侧边栏）
+  const shouldShowSidebar = 
+    selectedActivityItem === "/virtual-machine" ||
+    selectedActivityItem === "/cluster" ||
+    selectedActivityItem === "/physical-machine";
 
   // 当路由变化时更新选中的菜单项
   useEffect(() => {
@@ -122,6 +164,49 @@ const AppLayout: React.FC = () => {
     navigate(path);
   };
 
+  // 处理退出登录
+  const handleLogout = () => {
+    // 使用内联模态框代替静态方法，这样可以正确获取上下文
+    setLogoutModalVisible(true);
+  };
+
+  // 确认退出登录
+  const confirmLogout = () => {
+    try {
+      // 清除认证信息
+      authService.logout();
+      console.log("已清除登录信息");
+
+      // 直接使用window.location进行页面跳转和刷新
+      window.location.href = "#/login";
+      window.location.reload();
+    } catch (error) {
+      console.error("退出登录出错:", error);
+    } finally {
+      setLogoutModalVisible(false);
+    }
+  };
+
+  // 处理修改密码
+  const handleChangePassword = () => {
+    setPasswordModalVisible(true);
+  };
+
+  // 提交密码修改
+  const handlePasswordSubmit = () => {
+    passwordForm.validateFields().then((values) => {
+      if (values.newPassword !== values.confirmPassword) {
+        message.error("两次输入的新密码不一致");
+        return;
+      }
+
+      // 这里只是模拟成功，实际应调用API
+      message.success("密码修改成功");
+      setPasswordModalVisible(false);
+      passwordForm.resetFields();
+    });
+  };
+
   // 恢复活动栏图标配置，后续会按位置单独渲染
   const activityItems = [
     { key: "/dashboard", icon: <DashboardOutlined />, label: "仪表盘" },
@@ -138,7 +223,6 @@ const AppLayout: React.FC = () => {
     { key: "/audit", icon: <AuditOutlined />, label: "审计管理" },
     { key: "/system", icon: <SettingOutlined />, label: "系统设置" },
   ];
-
   return (
     <Layout
       className="app-layout"
@@ -180,20 +264,24 @@ const AppLayout: React.FC = () => {
                 <Tooltip
                   title={item.label}
                   placement="right"
-                  overlayClassName="activity-tooltip"
+                  classNames={{ root: "activity-tooltip" }}
                   mouseEnterDelay={0.5}
-                  overlayInnerStyle={{
-                    backgroundColor:
-                      actualTheme === "dark" ? "#252526" : "#ffffff",
-                    color: actualTheme === "dark" ? "#cccccc" : "#000000",
-                    border: `1px solid ${actualTheme === "dark" ? "#454545" : "#d9d9d9"}`,
-                    borderRadius: "2px",
-                    fontSize: "12px",
-                    padding: "4px 8px",
-                    boxShadow:
-                      actualTheme === "dark"
-                        ? "0 2px 8px rgba(0, 0, 0, 0.5)"
-                        : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                  styles={{
+                    body: {
+                      backgroundColor:
+                        actualTheme === "dark" ? "#252526" : "#ffffff",
+                      color: actualTheme === "dark" ? "#cccccc" : "#000000",
+                      border: `1px solid ${
+                        actualTheme === "dark" ? "#454545" : "#d9d9d9"
+                      }`,
+                      borderRadius: "2px",
+                      fontSize: "12px",
+                      padding: "4px 8px",
+                      boxShadow:
+                        actualTheme === "dark"
+                          ? "0 2px 8px rgba(0, 0, 0, 0.5)"
+                          : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                    },
                   }}
                 >
                   {React.cloneElement(item.icon, {
@@ -205,8 +293,8 @@ const AppLayout: React.FC = () => {
                             ? "#ffffff"
                             : "#000000"
                           : actualTheme === "dark"
-                            ? "#858585"
-                            : "#666666",
+                          ? "#858585"
+                          : "#666666",
                     },
                   })}
                 </Tooltip>
@@ -218,8 +306,8 @@ const AppLayout: React.FC = () => {
                       ? "#444444"
                       : "#e6f7ff"
                     : actualTheme === "dark"
-                      ? "#333333"
-                      : "#f3f3f3",
+                    ? "#333333"
+                    : "#f3f3f3",
                 height: "50px",
               },
             }))}
@@ -244,20 +332,24 @@ const AppLayout: React.FC = () => {
               <Tooltip
                 title="通知"
                 placement="right"
-                overlayClassName="activity-tooltip"
+                classNames={{ root: "activity-tooltip" }}
                 mouseEnterDelay={0.5}
-                overlayInnerStyle={{
-                  backgroundColor:
-                    actualTheme === "dark" ? "#252526" : "#ffffff",
-                  color: actualTheme === "dark" ? "#cccccc" : "#000000",
-                  border: `1px solid ${actualTheme === "dark" ? "#454545" : "#d9d9d9"}`,
-                  borderRadius: "2px",
-                  fontSize: "12px",
-                  padding: "4px 8px",
-                  boxShadow:
-                    actualTheme === "dark"
-                      ? "0 2px 8px rgba(0, 0, 0, 0.5)"
-                      : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                styles={{
+                  body: {
+                    backgroundColor:
+                      actualTheme === "dark" ? "#252526" : "#ffffff",
+                    color: actualTheme === "dark" ? "#cccccc" : "#000000",
+                    border: `1px solid ${
+                      actualTheme === "dark" ? "#454545" : "#d9d9d9"
+                    }`,
+                    borderRadius: "2px",
+                    fontSize: "12px",
+                    padding: "4px 8px",
+                    boxShadow:
+                      actualTheme === "dark"
+                        ? "0 2px 8px rgba(0, 0, 0, 0.5)"
+                        : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                  },
                 }}
               >
                 <div style={{ position: "relative" }}>
@@ -270,8 +362,8 @@ const AppLayout: React.FC = () => {
                           ? "#ffffff"
                           : "#000000"
                         : actualTheme === "dark"
-                          ? "#858585"
-                          : "#666666",
+                        ? "#858585"
+                        : "#666666",
                       cursor: "pointer",
                     }}
                     onClick={() => {
@@ -300,20 +392,24 @@ const AppLayout: React.FC = () => {
                 <Tooltip
                   title={item.label}
                   placement="right"
-                  overlayClassName="activity-tooltip"
+                  classNames={{ root: "activity-tooltip" }}
                   mouseEnterDelay={0.5}
-                  overlayInnerStyle={{
-                    backgroundColor:
-                      actualTheme === "dark" ? "#252526" : "#ffffff",
-                    color: actualTheme === "dark" ? "#cccccc" : "#000000",
-                    border: `1px solid ${actualTheme === "dark" ? "#454545" : "#d9d9d9"}`,
-                    borderRadius: "2px",
-                    fontSize: "12px",
-                    padding: "4px 8px",
-                    boxShadow:
-                      actualTheme === "dark"
-                        ? "0 2px 8px rgba(0, 0, 0, 0.5)"
-                        : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                  styles={{
+                    body: {
+                      backgroundColor:
+                        actualTheme === "dark" ? "#252526" : "#ffffff",
+                      color: actualTheme === "dark" ? "#cccccc" : "#000000",
+                      border: `1px solid ${
+                        actualTheme === "dark" ? "#454545" : "#d9d9d9"
+                      }`,
+                      borderRadius: "2px",
+                      fontSize: "12px",
+                      padding: "4px 8px",
+                      boxShadow:
+                        actualTheme === "dark"
+                          ? "0 2px 8px rgba(0, 0, 0, 0.5)"
+                          : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                    },
                   }}
                 >
                   {React.cloneElement(item.icon, {
@@ -325,8 +421,8 @@ const AppLayout: React.FC = () => {
                             ? "#ffffff"
                             : "#000000"
                           : actualTheme === "dark"
-                            ? "#858585"
-                            : "#666666",
+                          ? "#858585"
+                          : "#666666",
                     },
                   })}
                 </Tooltip>
@@ -338,48 +434,118 @@ const AppLayout: React.FC = () => {
                       ? "#444444"
                       : "#e6f7ff"
                     : actualTheme === "dark"
-                      ? "#333333"
-                      : "#f3f3f3",
+                    ? "#333333"
+                    : "#f3f3f3",
                 height: "50px",
               },
             }))}
           />
+
+          {/* 用户头像 */}
+          <div
+            style={{
+              marginTop: "20px",
+              marginBottom: "10px",
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <Dropdown
+              menu={{
+                items: [
+                  {
+                    key: "changePassword",
+                    label: "修改密码",
+                    icon: <KeyOutlined />,
+                    onClick: handleChangePassword,
+                  },
+                  {
+                    key: "logout",
+                    label: "退出登录",
+                    icon: <LogoutOutlined />,
+                    onClick: handleLogout,
+                  },
+                ],
+              }}
+              placement="topRight"
+              trigger={["click"]}
+            >
+              <Avatar
+                style={{
+                  cursor: "pointer",
+                  backgroundColor:
+                    actualTheme === "dark" ? "#1890ff" : "#1890ff",
+                }}
+                icon={<UserOutlined />}
+              />
+            </Dropdown>
+          </div>
         </div>
       </div>{" "}
       {/* 侧边栏 - 导航菜单 */}
-      <div
-        ref={sidebarRef}
-        className={`sidebar ${isDragging ? "dragging" : ""}`}
-        style={{
-          width: `${sidebarWidth}px`,
-          backgroundColor: actualTheme === "dark" ? "#252526" : "#f8f8f8",
-          position: "relative",
-          flexShrink: 0,
-        }}
-      >
-        <Menu
-          mode="inline"
-          theme={actualTheme === "dark" ? "dark" : "light"}
-          className="explorer-tree"
+      {shouldShowSidebar && (
+        <div
+          ref={sidebarRef}
+          className={`sidebar ${isDragging ? "dragging" : ""}`}
           style={{
-            height: "calc(100% - 35px)",
-            borderRight: 0,
+            width: `${sidebarWidth}px`,
             backgroundColor: actualTheme === "dark" ? "#252526" : "#f8f8f8",
+            position: "relative",
+            flexShrink: 0,
           }}
-          selectedKeys={[selectedActivityItem]} // 使用selectedActivityItem保持一致
-          items={[
-            {
-              key: selectedActivityItem,
-              label:
-                routes.find((route) => route.path === selectedActivityItem)
-                  ?.name || "仪表盘",
-              icon: routes.find((route) => route.path === selectedActivityItem)
-                ?.icon,
-              children: [],
-              className: "sidebar-menu-item",
-            },
-          ]}
-        />{" "}
+        >
+        {" "}
+        {shouldShowHierarchicalSidebar ? (
+          <HierarchicalSidebar
+            data={sidebarData}
+            onSelect={(
+              selectedKeys: string[],
+              info: Record<string, unknown>
+            ) => {
+              // 处理树节点选择事件，传递选择信息到主内容区域
+              const selectedKey = selectedKeys[0];
+              const nodeInfo = info.node as { type?: string; data?: unknown };
+
+              if (nodeInfo && nodeInfo.data) {
+                // 通过自定义事件传递选择信息到页面组件
+                window.dispatchEvent(
+                  new CustomEvent("hierarchical-sidebar-select", {
+                    detail: {
+                      selectedKey,
+                      nodeType: nodeInfo.type,
+                      nodeData: nodeInfo.data,
+                    },
+                  })
+                );
+              }
+            }}
+          />
+        ) : (
+          <Menu
+            mode="inline"
+            theme={actualTheme === "dark" ? "dark" : "light"}
+            className="explorer-tree"
+            style={{
+              height: "calc(100% - 35px)",
+              borderRight: 0,
+              backgroundColor: actualTheme === "dark" ? "#252526" : "#f8f8f8",
+            }}
+            selectedKeys={[selectedActivityItem]} // 使用selectedActivityItem保持一致
+            items={[
+              {
+                key: selectedActivityItem,
+                label:
+                  routes.find((route) => route.path === selectedActivityItem)
+                    ?.name || "仪表盘",
+                icon: routes.find(
+                  (route) => route.path === selectedActivityItem
+                )?.icon,
+                children: [],
+                className: "sidebar-menu-item",
+              },
+            ]}
+          />
+        )}{" "}
         {/* 拖拽手柄 */}
         <div
           className="sidebar-resize-handle"
@@ -408,7 +574,7 @@ const AppLayout: React.FC = () => {
                 if (now - lastUpdateTime > throttleDelay) {
                   originalWidthRef.current = Math.max(
                     200,
-                    Math.min(newWidth, 400),
+                    Math.min(newWidth, 400)
                   );
                   lastUpdateTime = now;
                 }
@@ -434,7 +600,8 @@ const AppLayout: React.FC = () => {
             document.addEventListener("mouseup", handleMouseUp);
           }}
         />
-      </div>{" "}
+        </div>
+      )}{" "}
       {/* 内容区域 */}
       <Layout
         style={{
@@ -442,8 +609,11 @@ const AppLayout: React.FC = () => {
           minWidth: 0,
           height: "100vh",
           overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
+        {/* 主内容区域 */}
         <TaskDrawer
           visible={taskDrawerVisible}
           onClose={() => setTaskDrawerVisible(false)}
@@ -452,16 +622,77 @@ const AppLayout: React.FC = () => {
             className="editor-content"
             style={{
               padding: "20px",
-              height: "100%",
+              height: "100vh", // 减去头部高度
               overflow: "auto",
               width: "100%",
               boxSizing: "border-box",
+              backgroundColor: actualTheme === "dark" ? "#1e1e1e" : "#ffffff",
             }}
           >
             <Outlet />
           </div>
         </TaskDrawer>
       </Layout>
+      {/* 修改密码模态框 */}
+      <Modal
+        title="修改密码"
+        open={passwordModalVisible}
+        onOk={handlePasswordSubmit}
+        onCancel={() => {
+          setPasswordModalVisible(false);
+          passwordForm.resetFields();
+        }}
+        okText="确认"
+        cancelText="取消"
+      >
+        <Form form={passwordForm} layout="vertical">
+          <Form.Item
+            name="oldPassword"
+            label="当前密码"
+            rules={[{ required: true, message: "请输入当前密码" }]}
+          >
+            <Input.Password placeholder="请输入当前密码" />
+          </Form.Item>
+          <Form.Item
+            name="newPassword"
+            label="新密码"
+            rules={[
+              { required: true, message: "请输入新密码" },
+              { min: 6, message: "密码长度不能少于6位" },
+            ]}
+          >
+            <Input.Password placeholder="请输入新密码" />
+          </Form.Item>
+          <Form.Item
+            name="confirmPassword"
+            label="确认新密码"
+            rules={[
+              { required: true, message: "请确认新密码" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("newPassword") === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error("两次输入的密码不一致"));
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="请确认新密码" />
+          </Form.Item>
+        </Form>
+      </Modal>
+      {/* 退出登录确认模态框 */}
+      <Modal
+        title="确认退出"
+        open={logoutModalVisible}
+        onOk={confirmLogout}
+        onCancel={() => setLogoutModalVisible(false)}
+        okText="确认"
+        cancelText="取消"
+      >
+        <p>确定要退出登录吗？</p>
+      </Modal>
     </Layout>
   );
 };

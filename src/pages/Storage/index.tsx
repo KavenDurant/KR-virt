@@ -345,9 +345,7 @@ const StorageManagement: React.FC = () => {
   }
 
   return (
-    <div
-      style={{ padding: "24px", background: themeConfig.token.colorBgLayout }}
-    >
+    <div style={{ background: themeConfig.token.colorBgLayout }}>
       <Card
         title={
           <Space>

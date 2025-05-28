@@ -578,7 +578,6 @@ const SystemSettings: React.FC = () => {
         style={{
           minHeight: loading ? "400px" : "auto",
           backgroundColor: themeConfig.token.colorBgContainer,
-          padding: loading ? "20px" : "0",
         }}
       >
         <Layout className="system-settings">

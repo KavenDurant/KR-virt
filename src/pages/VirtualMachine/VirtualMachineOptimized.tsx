@@ -60,7 +60,7 @@ import type {
   VMManagementData,
 } from "../../services/mockData";
 import { mockVMManagementData } from "../../services/mockData";
-import { ClusterStats, VMDetails, CreateVMModal } from "./components";
+import { ClusterStats, VMDetails } from "./components";
 
 const { TabPane } = Tabs;
 
@@ -78,7 +78,7 @@ interface VMStats {
   storageUsage: number;
 }
 
-const VirtualMachineManagement: React.FC = () => {
+const VirtualMachineOptimized: React.FC = () => {
   const { themeConfig } = useTheme();
   const [loading, setLoading] = useState(false);
   const [vmList, setVmList] = useState<VirtualMachine[]>([]);
@@ -91,7 +91,6 @@ const VirtualMachineManagement: React.FC = () => {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [detailModal, setDetailModal] = useState(false);
   const [selectedVM, setSelectedVM] = useState<VirtualMachine | null>(null);
-  const [createVMModal, setCreateVMModal] = useState(false);
 
   // 添加侧边栏选择状态
   const [selectedNodeType, setSelectedNodeType] = useState<
@@ -122,6 +121,22 @@ const VirtualMachineManagement: React.FC = () => {
     };
   }, []);
 
+  // 刷新数据函数
+  const handleRefresh = useCallback(() => {
+    setLoading(true);
+    setTimeout(() => {
+      // 模拟数据变化
+      const updatedData = mockVMManagementData.map((vm) => ({
+        ...vm,
+        cpuUsage: `${Math.floor(Math.random() * 100)}%`,
+        memoryUsage: `${Math.floor(Math.random() * 100)}%`,
+      }));
+      setVmList(updatedData);
+      setLoading(false);
+      message.success("数据刷新成功");
+    }, 800);
+  }, []);
+
   // 数据加载effect
   useEffect(() => {
     const loadVmData = () => {
@@ -133,7 +148,22 @@ const VirtualMachineManagement: React.FC = () => {
     };
 
     loadVmData();
-  }, []); // 使用统一的数据源
+  }, []);
+
+  // 自动刷新
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (autoRefresh) {
+      interval = setInterval(() => {
+        handleRefresh();
+      }, 30000); // 30秒刷新一次
+    }
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [autoRefresh, handleRefresh]);
 
   // 计算统计信息
   const vmStats: VMStats = useMemo(() => {
@@ -192,36 +222,14 @@ const VirtualMachineManagement: React.FC = () => {
     ownerFilter,
   ]);
 
-  // 刷新数据函数
-  const handleRefresh = useCallback(() => {
-    setLoading(true);
-    setTimeout(() => {
-      // 模拟数据变化
-      const updatedData = mockVMManagementData.map((vm) => ({
-        ...vm,
-        cpuUsage: `${Math.floor(Math.random() * 100)}%`,
-        memoryUsage: `${Math.floor(Math.random() * 100)}%`,
-      }));
-      setVmList(updatedData);
-      setLoading(false);
-      message.success("数据刷新成功");
-    }, 800);
-  }, []); // 移除mockVmData依赖，因为它是组件外部的常量
-
-  // 自动刷新
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (autoRefresh) {
-      interval = setInterval(() => {
-        handleRefresh();
-      }, 30000); // 30秒刷新一次
+  // 如果有选中的节点，显示相应的组件
+  if (selectedNodeData) {
+    if (selectedNodeType === "cluster") {
+      return <ClusterStats cluster={selectedNodeData as ClusterData} />;
+    } else if (selectedNodeType === "vm") {
+      return <VMDetails vm={selectedNodeData as VMData} />;
     }
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [autoRefresh, handleRefresh]);
+  }
 
   // 虚拟机操作
   const handleVMAction = (action: string, vm: VirtualMachine) => {
@@ -246,20 +254,13 @@ const VirtualMachineManagement: React.FC = () => {
     setDetailModal(true);
   };
 
-  // 创建虚拟机
-  const handleCreateVM = (values: Record<string, unknown>) => {
-    console.log("创建虚拟机:", values);
-    setCreateVMModal(false);
-    // 这里可以调用API创建虚拟机
-  };
-
   // 表格列定义
   const columns: ColumnsType<VirtualMachine> = [
     {
       title: "虚拟机",
       key: "vm",
       width: 200,
-      render: (_, record) => (
+      render: (_: unknown, record: VirtualMachine) => (
         <div>
           <div style={{ fontWeight: "bold", fontSize: "14px" }}>
             {record.name}
@@ -267,7 +268,7 @@ const VirtualMachineManagement: React.FC = () => {
           <div style={{ color: "#666", fontSize: "12px" }}>{record.id}</div>
           <div style={{ fontSize: "12px" }}>
             <Tag>{record.platform}</Tag>
-            {record.tags.map((tag) => (
+            {record.tags.map((tag: string) => (
               <Tag key={tag} color="blue">
                 {tag}
               </Tag>
@@ -307,7 +308,7 @@ const VirtualMachineManagement: React.FC = () => {
       title: "网络",
       key: "network",
       width: 130,
-      render: (_, record) => (
+      render: (_: unknown, record: VirtualMachine) => (
         <div>
           <div style={{ fontSize: "12px" }}>
             <WifiOutlined style={{ marginRight: 4 }} />
@@ -323,7 +324,7 @@ const VirtualMachineManagement: React.FC = () => {
       title: "规格配置",
       key: "spec",
       width: 150,
-      render: (_, record) => (
+      render: (_: unknown, record: VirtualMachine) => (
         <div style={{ fontSize: "12px" }}>
           <div>
             <ThunderboltOutlined style={{ marginRight: 4 }} />
@@ -356,7 +357,7 @@ const VirtualMachineManagement: React.FC = () => {
       title: "位置信息",
       key: "location",
       width: 140,
-      render: (_, record) => (
+      render: (_: unknown, record: VirtualMachine) => (
         <div style={{ fontSize: "12px" }}>
           <div>
             <ClusterOutlined style={{ marginRight: 4 }} />
@@ -399,7 +400,7 @@ const VirtualMachineManagement: React.FC = () => {
       key: "action",
       fixed: "right" as const,
       width: 200,
-      render: (_, record) => (
+      render: (_: unknown, record: VirtualMachine) => (
         <Space size="small">
           <Tooltip title="查看详情">
             <Button
@@ -556,15 +557,6 @@ const VirtualMachineManagement: React.FC = () => {
     },
   ];
 
-  // 如果有选中的节点，显示相应的组件
-  if (selectedNodeData) {
-    if (selectedNodeType === "cluster") {
-      return <ClusterStats cluster={selectedNodeData as ClusterData} />;
-    } else if (selectedNodeType === "vm") {
-      return <VMDetails vm={selectedNodeData as VMData} />;
-    }
-  }
-
   return (
     <div style={{ width: "100%" }}>
       <div
@@ -637,11 +629,7 @@ const VirtualMachineManagement: React.FC = () => {
           defaultActiveKey="list"
           tabBarExtraContent={
             <Space>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setCreateVMModal(true)}
-              >
+              <Button type="primary" icon={<PlusOutlined />}>
                 创建虚拟机
               </Button>
               <Button icon={<SyncOutlined />} onClick={handleRefresh}>
@@ -917,15 +905,8 @@ const VirtualMachineManagement: React.FC = () => {
           </Tabs>
         )}
       </Modal>
-
-      {/* 创建虚拟机模态框 */}
-      <CreateVMModal
-        visible={createVMModal}
-        onCancel={() => setCreateVMModal(false)}
-        onFinish={handleCreateVM}
-      />
     </div>
   );
 };
 
-export default VirtualMachineManagement;
+export default VirtualMachineOptimized;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Card,
   Row,
@@ -19,8 +19,8 @@ import {
   PauseCircleOutlined,
   CloudServerOutlined,
 } from "@ant-design/icons";
-import type { Cluster, VirtualMachine } from "../../services/mockData";
-import { useTheme } from "../../hooks/useTheme";
+import type { Cluster, VirtualMachine } from "../../../services/mockData";
+import { useTheme } from "../../../hooks/useTheme";
 
 const { Title, Text } = Typography;
 
@@ -35,7 +35,6 @@ interface VMDetailsProps {
 // 集群统计组件
 export const ClusterStats: React.FC<ClusterStatsProps> = ({ cluster }) => {
   const { actualTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('overview');
 
   // 计算集群统计信息
   const totalVMs = cluster.nodes.reduce(
@@ -56,16 +55,17 @@ export const ClusterStats: React.FC<ClusterStatsProps> = ({ cluster }) => {
     (sum, node) =>
       sum + node.vms.filter((vm) => vm.status === "suspended").length,
     0
-  );  const pausedVMs = cluster.nodes.reduce(
-    (sum, node) =>
-      sum + node.vms.filter((vm) => vm.status === "error").length,
+  );
+  const pausedVMs = cluster.nodes.reduce(
+    (sum, node) => sum + node.vms.filter((vm) => vm.status === "error").length,
     0
   );
 
   // 收集所有虚拟机
-  const allVMs = cluster.nodes.flatMap(node => 
-    node.vms.map(vm => ({ ...vm, nodeName: node.name }))
+  const allVMs = cluster.nodes.flatMap((node) =>
+    node.vms.map((vm) => ({ ...vm, nodeName: node.name }))
   );
+  console.log("All VMs:", allVMs); // 保留用于未来功能
 
   const totalCpu =
     cluster.nodes.reduce((sum, node) => sum + node.cpu, 0) /
@@ -109,7 +109,8 @@ export const ClusterStats: React.FC<ClusterStatsProps> = ({ cluster }) => {
           </Tag>
         </Title>
         <Text type="secondary">集群概览 · {cluster.nodes.length} 个节点</Text>
-      </div>      {/* 集群统计卡片 */}
+      </div>{" "}
+      {/* 集群统计卡片 */}
       <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
         <Col xs={24} sm={12} md={8} lg={6} xl={4}>
           <Card>
@@ -150,7 +151,8 @@ export const ClusterStats: React.FC<ClusterStatsProps> = ({ cluster }) => {
               valueStyle={{ color: "#faad14" }}
             />
           </Card>
-        </Col>        <Col xs={24} sm={12} md={8} lg={6} xl={4}>
+        </Col>{" "}
+        <Col xs={24} sm={12} md={8} lg={6} xl={4}>
           <Card>
             <Statistic
               title="错误状态"
@@ -171,7 +173,6 @@ export const ClusterStats: React.FC<ClusterStatsProps> = ({ cluster }) => {
           </Card>
         </Col>
       </Row>
-
       {/* 资源使用情况 */}
       <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
         <Col xs={24} md={12}>
@@ -223,7 +224,6 @@ export const ClusterStats: React.FC<ClusterStatsProps> = ({ cluster }) => {
           </Card>
         </Col>
       </Row>
-
       {/* 节点列表 */}
       <Card title="节点详情" size="small">
         <Row gutter={[8, 8]}>
@@ -252,9 +252,8 @@ export const ClusterStats: React.FC<ClusterStatsProps> = ({ cluster }) => {
                       color: node.status === "online" ? "#52c41a" : "#f5222d",
                     }}
                   />
-                  <Text strong>{node.name}</Text>                  <Tag
-                    color={node.status === "online" ? "green" : "red"}
-                  >
+                  <Text strong>{node.name}</Text>{" "}
+                  <Tag color={node.status === "online" ? "green" : "red"}>
                     {node.status}
                   </Tag>
                 </div>

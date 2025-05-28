@@ -32,12 +32,11 @@ import {
   InfoCircleOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
-import { useTheme } from "../../hooks/useTheme";
 import type {
   Cluster as ClusterData,
   VirtualMachine as VMData,
 } from "../../services/mockData";
-import { ClusterStats, VMDetails } from "../../components/ClusterVMDisplay";
+import { ClusterStats, VMDetails } from "../VirtualMachine/components/ClusterVMDisplay";
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -335,8 +334,6 @@ const ClusterManagement: React.FC = () => {
   const [clusterForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { themeConfig } = useTheme();
 
   // 添加侧边栏选择状态
   const [selectedNodeType, setSelectedNodeType] = useState<

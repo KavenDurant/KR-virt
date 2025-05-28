@@ -104,6 +104,12 @@ const AppLayout: React.FC = () => {
   const shouldShowHierarchicalSidebar =
     selectedActivityItem === "/virtual-machine" ||
     selectedActivityItem === "/cluster";
+  
+  // 判断是否需要显示侧边栏（只有虚拟机、集群、物理机模块显示侧边栏）
+  const shouldShowSidebar = 
+    selectedActivityItem === "/virtual-machine" ||
+    selectedActivityItem === "/cluster" ||
+    selectedActivityItem === "/physical-machine";
 
   // 当路由变化时更新选中的菜单项
   useEffect(() => {
@@ -477,16 +483,17 @@ const AppLayout: React.FC = () => {
         </div>
       </div>{" "}
       {/* 侧边栏 - 导航菜单 */}
-      <div
-        ref={sidebarRef}
-        className={`sidebar ${isDragging ? "dragging" : ""}`}
-        style={{
-          width: `${sidebarWidth}px`,
-          backgroundColor: actualTheme === "dark" ? "#252526" : "#f8f8f8",
-          position: "relative",
-          flexShrink: 0,
-        }}
-      >
+      {shouldShowSidebar && (
+        <div
+          ref={sidebarRef}
+          className={`sidebar ${isDragging ? "dragging" : ""}`}
+          style={{
+            width: `${sidebarWidth}px`,
+            backgroundColor: actualTheme === "dark" ? "#252526" : "#f8f8f8",
+            position: "relative",
+            flexShrink: 0,
+          }}
+        >
         {" "}
         {shouldShowHierarchicalSidebar ? (
           <HierarchicalSidebar
@@ -497,7 +504,7 @@ const AppLayout: React.FC = () => {
             ) => {
               // 处理树节点选择事件，传递选择信息到主内容区域
               const selectedKey = selectedKeys[0];
-              const nodeInfo = info.node as any;
+              const nodeInfo = info.node as { type?: string; data?: unknown };
 
               if (nodeInfo && nodeInfo.data) {
                 // 通过自定义事件传递选择信息到页面组件
@@ -593,7 +600,8 @@ const AppLayout: React.FC = () => {
             document.addEventListener("mouseup", handleMouseUp);
           }}
         />
-      </div>{" "}
+        </div>
+      )}{" "}
       {/* 内容区域 */}
       <Layout
         style={{

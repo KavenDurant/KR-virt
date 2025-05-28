@@ -279,3 +279,201 @@ export const getStatusIcon = (type: string) => {
   }
   return '📁';
 };
+
+// 虚拟机管理页面数据类型
+export interface VMManagementData {
+  id: string;
+  name: string;
+  status: string;
+  ip: string;
+  cpu: string | number;
+  memory: string | number;
+  storage: string | number;
+  createTime: string;
+  os: string;
+  hypervisor: string;
+  zone: string;
+  cluster: string;
+  host: string;
+  description: string;
+  owner: string;
+  cpuUsage: string;
+  memoryUsage: string;
+  rootDisk: string;
+  dataDisk: string;
+  instanceType: string;
+  networkType: string;
+  securityGroup: string;
+  hostName: string;
+  expireTime: string;
+  tags: string[];
+  platform: string;
+  uptime?: string;
+  powerState?: string;
+  tools?: string;
+  snapshots?: number;
+}
+
+// 虚拟机管理页面模拟数据
+export const mockVMManagementData: VMManagementData[] = [
+  {
+    id: "vm-001",
+    name: "Web服务器01",
+    status: "运行中",
+    ip: "192.168.1.101",
+    cpu: "4核",
+    memory: "8GB",
+    storage: "100GB",
+    createTime: "2025-05-10",
+    os: "CentOS 8.4",
+    hypervisor: "KVM",
+    zone: "可用区A",
+    cluster: "集群-01",
+    host: "物理主机-01",
+    description: "主要Web服务",
+    owner: "系统管理员",
+    cpuUsage: "25%",
+    memoryUsage: "45%",
+    rootDisk: "100GB / 系统盘",
+    dataDisk: "无",
+    instanceType: "通用型m1.large",
+    networkType: "经典网络",
+    securityGroup: "默认安全组",
+    hostName: "web-server-01",
+    expireTime: "永久",
+    tags: ["生产环境", "Web服务"],
+    platform: "Linux",
+    uptime: "15天8小时",
+    powerState: "开机",
+    tools: "已安装",
+    snapshots: 3,
+  },
+  {
+    id: "vm-002",
+    name: "DB服务器01",
+    status: "已停止",
+    ip: "192.168.1.102",
+    cpu: "8核",
+    memory: "16GB",
+    storage: "500GB",
+    createTime: "2025-05-12",
+    os: "Oracle Linux 8",
+    hypervisor: "KVM",
+    zone: "可用区A",
+    cluster: "集群-01",
+    host: "物理主机-02",
+    description: "主数据库服务器",
+    owner: "DBA团队",
+    cpuUsage: "0%",
+    memoryUsage: "0%",
+    rootDisk: "100GB / 系统盘",
+    dataDisk: "400GB / 数据盘",
+    instanceType: "内存优化型r1.large",
+    networkType: "经典网络",
+    securityGroup: "数据库安全组",
+    hostName: "db-server-01",
+    expireTime: "永久",
+    tags: ["生产环境", "数据库"],
+    platform: "Linux",
+    uptime: "0天0小时",
+    powerState: "关机",
+    tools: "已安装",
+    snapshots: 1,
+  },
+  {
+    id: "vm-003",
+    name: "应用服务器01",
+    status: "运行中",
+    ip: "192.168.1.103",
+    cpu: "8核",
+    memory: "32GB",
+    storage: "200GB",
+    createTime: "2025-05-15",
+    os: "Ubuntu 20.04",
+    hypervisor: "KVM",
+    zone: "可用区B",
+    cluster: "集群-02",
+    host: "物理主机-03",
+    description: "应用服务器",
+    owner: "开发团队",
+    cpuUsage: "60%",
+    memoryUsage: "75%",
+    rootDisk: "100GB / 系统盘",
+    dataDisk: "100GB / 数据盘",
+    instanceType: "计算优化型c1.xlarge",
+    networkType: "VPC网络",
+    securityGroup: "应用安全组",
+    hostName: "app-server-01",
+    expireTime: "2025-12-31",
+    tags: ["测试环境", "应用服务"],
+    platform: "Linux",
+    uptime: "10天12小时",
+    powerState: "开机",
+    tools: "已安装",
+    snapshots: 5,
+  },
+  {
+    id: "vm-004",
+    name: "Windows服务器01",
+    status: "运行中",
+    ip: "192.168.1.104",
+    cpu: "4核",
+    memory: "16GB",
+    storage: "150GB",
+    createTime: "2025-05-18",
+    os: "Windows Server 2019",
+    hypervisor: "KVM",
+    zone: "可用区A",
+    cluster: "集群-01",
+    host: "物理主机-01",
+    description: "Windows应用服务器",
+    owner: "运维团队",
+    cpuUsage: "35%",
+    memoryUsage: "55%",
+    rootDisk: "150GB / 系统盘",
+    dataDisk: "无",
+    instanceType: "通用型m1.large",
+    networkType: "经典网络",
+    securityGroup: "默认安全组",
+    hostName: "win-server-01",
+    expireTime: "永久",
+    tags: ["生产环境", "Windows"],
+    platform: "Windows",
+    uptime: "8天6小时",
+    powerState: "开机",
+    tools: "已安装",
+    snapshots: 2,
+  },
+  {
+    id: "vm-005",
+    name: "缓存服务器01",
+    status: "异常",
+    ip: "192.168.1.105",
+    cpu: "2核",
+    memory: "8GB",
+    storage: "50GB",
+    createTime: "2025-05-20",
+    os: "CentOS 7.9",
+    hypervisor: "KVM",
+    zone: "可用区B",
+    cluster: "集群-02",
+    host: "物理主机-04",
+    description: "Redis缓存服务器",
+    owner: "开发团队",
+    cpuUsage: "15%",
+    memoryUsage: "80%",
+    rootDisk: "50GB / 系统盘",
+    dataDisk: "无",
+    instanceType: "内存优化型r1.medium",
+    networkType: "VPC网络",
+    securityGroup: "缓存安全组",
+    hostName: "cache-server-01",
+    expireTime: "2025-10-31",
+    tags: ["开发环境", "缓存"],
+    platform: "Linux",
+    uptime: "2天4小时",
+    powerState: "开机",
+    tools: "未安装",
+    snapshots: 0,
+  },
+];

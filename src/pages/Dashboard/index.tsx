@@ -295,7 +295,6 @@ const Dashboard: React.FC = () => {
         style={{
           minHeight: loading ? "600px" : "auto",
           backgroundColor: themeConfig.token.colorBgContainer,
-          padding: loading ? "20px" : "0",
         }}
       >
         <div className="dashboard-container">

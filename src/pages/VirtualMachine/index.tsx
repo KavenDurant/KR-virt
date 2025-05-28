@@ -259,19 +259,15 @@ const VirtualMachineManagement: React.FC = () => {
       title: "虚拟机",
       key: "vm",
       width: 200,
+      fixed: "left",
       render: (_, record) => (
         <div>
           <div style={{ fontWeight: "bold", fontSize: "14px" }}>
             {record.name}
           </div>
           <div style={{ color: "#666", fontSize: "12px" }}>{record.id}</div>
-          <div style={{ fontSize: "12px" }}>
+          <div style={{ fontSize: "12px", marginBottom: "4px" }}>
             <Tag>{record.platform}</Tag>
-            {record.tags.map((tag) => (
-              <Tag key={tag} color="blue">
-                {tag}
-              </Tag>
-            ))}
           </div>
         </div>
       ),
@@ -336,6 +332,24 @@ const VirtualMachineManagement: React.FC = () => {
           <div>
             <HddOutlined style={{ marginRight: 4 }} />
             存储: {record.storage}
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "标签",
+      key: "tags",
+      width: 160,
+      render: (_, record) => (
+        <div>
+          <div
+            style={{ fontSize: "12px", display: "flex", flexWrap: "nowrap" }}
+          >
+            {record.tags.map((tag) => (
+              <Tag key={tag} color="blue" style={{ marginBottom: "2px" }}>
+                {tag}
+              </Tag>
+            ))}
           </div>
         </div>
       ),
@@ -774,11 +788,6 @@ const VirtualMachineManagement: React.FC = () => {
                 columnWidth: 48,
                 selectedRowKeys,
                 onChange: setSelectedRowKeys,
-                selections: [
-                  Table.SELECTION_ALL,
-                  Table.SELECTION_INVERT,
-                  Table.SELECTION_NONE,
-                ],
               }}
             />
           </TabPane>

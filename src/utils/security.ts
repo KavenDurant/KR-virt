@@ -7,12 +7,13 @@
 // 密码强度等级
 export const PasswordStrength = {
   WEAK: "weak",
-  MEDIUM: "medium", 
+  MEDIUM: "medium",
   STRONG: "strong",
   VERY_STRONG: "very_strong",
 } as const;
 
-export type PasswordStrength = typeof PasswordStrength[keyof typeof PasswordStrength];
+export type PasswordStrength =
+  (typeof PasswordStrength)[keyof typeof PasswordStrength];
 
 // 密码验证结果
 export interface PasswordValidationResult {

@@ -124,6 +124,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       root.style.setProperty("--bg-color", "#1e1e1e");
       root.style.setProperty("--text-color", "#cccccc");
       root.style.setProperty("--border-color", "#3c3c3c");
+      root.style.setProperty("--resize-handle-color", "#2d2d2d");
       root.style.setProperty("--hover-bg", "#2a2d2e");
       root.style.setProperty("--selected-bg", "#37373d");
       root.style.setProperty("--sidebar-bg", "#252526");
@@ -139,6 +140,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       root.style.setProperty("--bg-color", "#ffffff");
       root.style.setProperty("--text-color", "#000000");
       root.style.setProperty("--border-color", "#d9d9d9");
+      root.style.setProperty("--resize-handle-color", "#ccc");
       root.style.setProperty("--hover-bg", "#f5f5f5");
       root.style.setProperty("--selected-bg", "#e6f7ff");
       root.style.setProperty("--sidebar-bg", "#f8f8f8");

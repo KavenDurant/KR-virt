@@ -32,11 +32,6 @@ import {
   InfoCircleOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
-import type {
-  Cluster as ClusterData,
-  VirtualMachine as VMData,
-} from "../../services/mockData";
-import { ClusterStats, VMDetails } from "../VirtualMachine/components/ClusterVMDisplay";
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -335,34 +330,6 @@ const ClusterManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
 
-  // 添加侧边栏选择状态
-  const [selectedNodeType, setSelectedNodeType] = useState<
-    "cluster" | "vm" | null
-  >(null);
-  const [selectedNodeData, setSelectedNodeData] = useState<
-    ClusterData | VMData | null
-  >(null);
-  // 监听侧边栏选择事件
-  useEffect(() => {
-    const handleSidebarSelect = (event: CustomEvent) => {
-      const { nodeType, nodeData } = event.detail;
-      setSelectedNodeType(nodeType);
-      setSelectedNodeData(nodeData);
-    };
-
-    window.addEventListener(
-      "hierarchical-sidebar-select",
-      handleSidebarSelect as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        "hierarchical-sidebar-select",
-        handleSidebarSelect as EventListener
-      );
-    };
-  }, []);
-
   // 获取进度条颜色的函数
   const getProgressColor = (percent: number) => {
     if (percent > 80) return "#ff4d4f"; // 保留语义颜色：危险/错误
@@ -379,15 +346,6 @@ const ClusterManagement: React.FC = () => {
       setLoading(false);
     }, 500);
   }, []);
-
-  // 如果有选中的节点，显示相应的组件
-  if (selectedNodeData) {
-    if (selectedNodeType === "cluster") {
-      return <ClusterStats cluster={selectedNodeData as ClusterData} />;
-    } else if (selectedNodeType === "vm") {
-      return <VMDetails vm={selectedNodeData as VMData} />;
-    }
-  }
 
   // 处理创建/编辑集群
   const handleClusterModalOk = () => {

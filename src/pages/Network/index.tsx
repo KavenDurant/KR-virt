@@ -1015,7 +1015,7 @@ const NetworkManagement: React.FC = () => {
           onOk={handleNetworkModalOk}
           onCancel={handleNetworkModalCancel}
           width={700}
-          destroyOnClose
+          destroyOnHidden
         >
           <Form form={networkForm} layout="vertical">
             <Row gutter={16}>

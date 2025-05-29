@@ -144,14 +144,22 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
   // 创建树数据 - 直接显示集群列表
   const treeData: TreeNodeData[] = data.clusters.map(createClusterNode);
   const handleSelect = (
-    selectedKeys: React.Key[],
+    newSelectedKeys: React.Key[],
     info: Record<string, unknown>
   ) => {
-    const newSelectedKeys = selectedKeys.map(String);
-    setSelectedKeys(newSelectedKeys);
+    const selectedKeysAsStrings = newSelectedKeys.map(String);
+    
+    // 检查是否尝试取消选择当前已选中的节点（重复点击相同节点）
+    if (selectedKeysAsStrings.length === 0 && selectedKeys.length > 0) {
+      // 如果新的选择为空但之前有选择，说明用户点击了已选中的节点
+      // 忽略这次操作，保持当前选择
+      return;
+    }
+    
+    setSelectedKeys(selectedKeysAsStrings);
 
     if (onSelect) {
-      onSelect(newSelectedKeys, info);
+      onSelect(selectedKeysAsStrings, info);
     }
   };
 

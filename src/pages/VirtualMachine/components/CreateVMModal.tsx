@@ -31,10 +31,21 @@ const { Step } = Steps;
 const { TextArea } = Input;
 const { Option } = Select;
 
+interface CreateVMFormValues {
+  name: string;
+  template?: string;
+  cpu: number;
+  memory: number;
+  storage: number;
+  os: string;
+  network?: string;
+  [key: string]: unknown;
+}
+
 interface CreateVMModalProps {
   visible: boolean;
   onCancel: () => void;
-  onFinish: (values: any) => void;
+  onFinish: (values: CreateVMFormValues) => void;
 }
 
 interface VMTemplate {
@@ -57,6 +68,9 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [customConfig, setCustomConfig] = useState(false);
+  
+  // 使用 Form.useWatch 来安全地监听表单值变化
+  const formValues = Form.useWatch([], form);
 
   // 虚拟机模板
   const vmTemplates: VMTemplate[] = [
@@ -591,30 +605,30 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
             <Row gutter={16}>
               <Col span={12}>
                 <p>
-                  <strong>虚拟机名称:</strong> {form.getFieldValue("name")}
+                  <strong>虚拟机名称:</strong> {formValues?.name || '未设置'}
                 </p>
                 <p>
-                  <strong>操作系统:</strong> {form.getFieldValue("os")}
+                  <strong>操作系统:</strong> {formValues?.os || '未设置'}
                 </p>
                 <p>
-                  <strong>目标集群:</strong> {form.getFieldValue("cluster")}
+                  <strong>目标集群:</strong> {formValues?.cluster || '未设置'}
                 </p>
                 <p>
-                  <strong>网络:</strong> {form.getFieldValue("network")}
+                  <strong>网络:</strong> {formValues?.network || '未设置'}
                 </p>
               </Col>
               <Col span={12}>
                 <p>
-                  <strong>CPU:</strong> {form.getFieldValue("cpu")}核
+                  <strong>CPU:</strong> {formValues?.cpu || 0}核
                 </p>
                 <p>
-                  <strong>内存:</strong> {form.getFieldValue("memory")}GB
+                  <strong>内存:</strong> {formValues?.memory || 0}GB
                 </p>
                 <p>
-                  <strong>存储:</strong> {form.getFieldValue("storage")}GB
+                  <strong>存储:</strong> {formValues?.storage || 0}GB
                 </p>
                 <p>
-                  <strong>负责人:</strong> {form.getFieldValue("owner")}
+                  <strong>负责人:</strong> {formValues?.owner || '未设置'}
                 </p>
               </Col>
             </Row>
@@ -648,7 +662,7 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
           </Space>
         </div>
       }
-      destroyOnClose
+      destroyOnHidden
     >
       <Steps current={currentStep} style={{ marginBottom: 24 }}>
         {steps.map((step) => (

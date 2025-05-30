@@ -136,6 +136,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       root.style.setProperty("--tooltip-bg", "#252526");
       root.style.setProperty("--tooltip-text", "#cccccc");
       root.style.setProperty("--tooltip-border", "#454545");
+      // 滚动条主题变量
+      root.style.setProperty("--scrollbar-thumb", "#424242");
+      root.style.setProperty("--scrollbar-thumb-hover", "#616161");
+      root.style.setProperty("--scrollbar-track", "#1e1e1e");
+      root.style.setProperty("--scrollbar-corner", "#252526");
     } else {
       root.style.setProperty("--bg-color", "#ffffff");
       root.style.setProperty("--text-color", "#000000");
@@ -152,6 +157,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       root.style.setProperty("--tooltip-bg", "#ffffff");
       root.style.setProperty("--tooltip-text", "#000000");
       root.style.setProperty("--tooltip-border", "#d9d9d9");
+      // 滚动条主题变量
+      root.style.setProperty("--scrollbar-thumb", "#c1c1c1");
+      root.style.setProperty("--scrollbar-thumb-hover", "#a8a8a8");
+      root.style.setProperty("--scrollbar-track", "#f1f1f1");
+      root.style.setProperty("--scrollbar-corner", "#f8f8f8");
     }
   }, [actualTheme]);
 

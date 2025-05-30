@@ -119,7 +119,7 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({
   onClose,
   children,
 }) => {
-  const { themeConfig } = useTheme();
+  const { themeConfig, actualTheme } = useTheme();
   const panelRef = useRef<HTMLDivElement>(null);
 
   // 渲染任务状态图标
@@ -295,7 +295,10 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({
   ];
 
   return (
-    <div className="task-drawer-container" ref={panelRef}>
+    <div 
+      className={`task-drawer-container ${actualTheme === 'dark' ? 'dark-theme' : 'light-theme'}`} 
+      ref={panelRef}
+    >
       {visible ? (
         <PanelGroup autoSaveId="task-panel" direction="vertical">
           <Panel defaultSize={70} minSize={30} className="main-content-panel">

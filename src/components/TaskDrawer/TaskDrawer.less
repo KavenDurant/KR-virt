@@ -1,22 +1,55 @@
 @import "../../styles/variables.less";
 
+// 自定义滚动条样式
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+
+  /* WebKit 滚动条样式 */
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background: var(--scrollbar-thumb-hover);
+    }
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: var(--scrollbar-corner);
+  }
+}
+
 .task-drawer-container {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .resize-handle {
   height: 6px;
-  background-color: @border-color;
+  background-color: var(--border-color);
   cursor: row-resize;
   position: relative;
   transition: background-color 0.2s;
-  border-top: 1px solid darken(@border-color, 10%);
+  border-top: 1px solid var(--border-color);
 
   &:hover {
-    background-color: @primary-color;
+    background-color: var(--scrollbar-thumb-hover);
     height: 8px;
   }
 
@@ -31,7 +64,7 @@
       width: 60px;
       height: 2px;
       border-radius: 2px;
-      background-color: #999;
+      background-color: var(--scrollbar-thumb);
       position: relative;
 
       &::after,
@@ -41,7 +74,7 @@
         width: 40px;
         height: 2px;
         border-radius: 2px;
-        background-color: #999;
+        background-color: var(--scrollbar-thumb);
         left: 50%;
         transform: translateX(-50%);
       }
@@ -86,8 +119,8 @@
 }
 
 .drawer-panel {
-  background-color: @sidebar-bg;
-  border-top: 1px solid @border-color;
+  background-color: var(--sidebar-bg);
+  border-top: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -97,12 +130,13 @@
     justify-content: space-between;
     align-items: center;
     padding: 8px 16px;
-    border-bottom: 1px solid @border-color;
-    background-color: lighten(@sidebar-bg, 3%);
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--sidebar-bg);
+    flex-shrink: 0;
 
     h3 {
       margin: 0;
-      color: @text-color;
+      color: var(--text-color);
       font-size: 14px;
     }
 
@@ -114,12 +148,12 @@
       align-items: center;
       justify-content: center;
       font-size: 14px;
-      color: @text-color;
+      color: var(--text-color);
       border-radius: 3px;
       transition: all 0.3s;
 
       &:hover {
-        background-color: @hover-bg;
+        background-color: var(--hover-bg);
       }
     }
   }
@@ -127,17 +161,36 @@
   .drawer-content {
     flex: 1;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; // 防止内容撑开容器
 
     .drawer-tabs {
       height: 100%;
+      display: flex;
+      flex-direction: column;
 
-      .ant-tabs-content {
-        height: calc(100% - 46px);
-        overflow-y: auto;
+      .ant-tabs-nav {
+        flex-shrink: 0;
+        margin-bottom: 0;
+        background-color: var(--sidebar-bg);
+        border-bottom: 1px solid var(--border-color);
       }
 
-      .ant-tabs-tabpane {
-        padding: 0;
+      .ant-tabs-content-holder {
+        flex: 1;
+        overflow: hidden;
+
+        .ant-tabs-content {
+          height: 100%;
+
+          .ant-tabs-tabpane {
+            padding: 0;
+            height: 100%;
+            overflow-y: auto;
+            @extend .custom-scrollbar;
+          }
+        }
       }
     }
   }
@@ -148,30 +201,54 @@
 .log-list {
   .ant-list-item {
     padding: 10px 16px;
-    border-bottom: 1px solid @border-color !important;
+    border-bottom: 1px solid var(--border-color) !important;
     transition: background-color 0.2s;
+    background-color: transparent;
 
     &:hover {
-      background-color: @hover-bg;
+      background-color: var(--hover-bg);
+    }
+
+    &:last-child {
+      border-bottom: none !important;
+      margin-bottom: 0;
     }
 
     .ant-list-item-meta-title {
       margin-bottom: 4px;
+      color: var(--text-color);
+    }
+
+    .ant-list-item-meta-description {
+      color: var(--text-color);
+      opacity: 0.7;
     }
   }
 
   .task-time,
   .alert-time,
   .log-time {
-    color: #8c8c8c;
+    color: var(--text-color);
+    opacity: 0.6;
     font-size: 12px;
+  }
+
+  // 移除底部多余空白
+  .ant-list-items {
+    margin-bottom: 0;
+  }
+
+  // 确保列表项紧密排列
+  &.ant-list {
+    margin-bottom: 0;
+    padding-bottom: 0;
   }
 }
 
 .task-progress-wrapper {
   position: relative;
   height: 16px;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: var(--scrollbar-track);
   border-radius: 4px;
   overflow: hidden;
 
@@ -212,8 +289,9 @@
     right: 8px;
     top: 0;
     font-size: 12px;
-    color: white;
+    color: var(--text-color);
     text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+    z-index: 1;
   }
 }
 
@@ -233,10 +311,12 @@
   .log-user {
     margin-right: 12px;
     font-weight: 500;
+    color: var(--text-color);
   }
 
   .log-detail {
-    color: #8c8c8c;
+    color: var(--text-color);
+    opacity: 0.7;
   }
 }
 
@@ -244,19 +324,24 @@
 .drawer-tabs {
   .ant-tabs-nav {
     margin-bottom: 0;
-    background-color: lighten(@sidebar-bg, 3%);
+    background-color: var(--sidebar-bg);
+    border-bottom: 1px solid var(--border-color);
   }
 
   .ant-tabs-tab {
     padding: 12px 16px;
     transition: background-color 0.2s;
     margin: 0 !important;
+    color: var(--text-color);
 
     &:hover {
-      color: @primary-color;
+      color: var(--text-color);
+      background-color: var(--hover-bg);
     }
 
     .ant-tabs-tab-btn {
+      color: inherit;
+
       .anticon {
         margin-right: 8px;
       }
@@ -264,14 +349,120 @@
   }
 
   .ant-tabs-tab-active {
-    background-color: @selected-bg !important;
+    background-color: var(--selected-bg) !important;
 
     .ant-tabs-tab-btn {
-      color: white !important;
+      color: var(--text-color) !important;
+      font-weight: 500;
+    }
+
+    &:hover {
+      background-color: var(--selected-bg) !important;
     }
   }
 
   .ant-tabs-ink-bar {
-    background-color: @primary-color;
+    background-color: var(--scrollbar-thumb-hover);
+    height: 3px;
+  }
+
+  // 确保内容区域填充整个可用空间
+  .ant-tabs-content-holder {
+    .ant-tabs-content {
+      .ant-tabs-tabpane-active {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+    }
+  }
+}
+
+// 主题特定样式
+.task-drawer-container.dark-theme {
+  .ant-list-item {
+    background-color: transparent;
+    color: var(--text-color);
+  }
+
+  .ant-badge {
+    .ant-badge-count {
+      background-color: var(--scrollbar-thumb-hover);
+      color: var(--text-color);
+    }
+  }
+}
+
+.task-drawer-container.light-theme {
+  .ant-list-item {
+    background-color: transparent;
+    color: var(--text-color);
+  }
+
+  .ant-badge {
+    .ant-badge-count {
+      background-color: #ff4d4f;
+      color: white;
+    }
+  }
+}
+
+// 减少底部空白的全局样式
+.drawer-content {
+  .ant-tabs-content-holder {
+    .ant-tabs-content {
+      padding-bottom: 0 !important;
+
+      .ant-tabs-tabpane {
+        padding-bottom: 0 !important;
+
+        .ant-list {
+          margin-bottom: 0 !important;
+
+          .ant-list-items {
+            margin-bottom: 0 !important;
+          }
+
+          // 最后一个列表项移除下边距
+          .ant-list-item:last-child {
+            margin-bottom: 0 !important;
+            padding-bottom: 8px !important;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 自定义滚动条在不同主题下的样式
+[data-theme="dark"] {
+  .custom-scrollbar {
+    &::-webkit-scrollbar-thumb {
+      background: #424242;
+
+      &:hover {
+        background: #616161;
+      }
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #1e1e1e;
+    }
+  }
+}
+
+[data-theme="light"] {
+  .custom-scrollbar {
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+
+      &:hover {
+        background: #a8a8a8;
+      }
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
   }
 }

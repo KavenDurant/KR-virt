@@ -316,17 +316,16 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({
             className="drawer-panel"
             style={{ overflow: "hidden" }}
           >
-            <div className="drawer-header">
-              <h3>消息中心</h3>
-              <span className="close-button" onClick={onClose}>
-                ✕
-              </span>
-            </div>
             <div className="drawer-content">
               <Tabs
                 defaultActiveKey="1"
                 items={items}
                 className="drawer-tabs"
+                tabBarExtraContent={
+                  <span className="close-button" onClick={onClose}>
+                    ✕
+                  </span>
+                }
               />
             </div>
           </Panel>

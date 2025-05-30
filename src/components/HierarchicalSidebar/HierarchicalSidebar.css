@@ -252,3 +252,90 @@
     display: none;
   }
 }
+
+/* 虚拟机右键菜单样式 */
+.vm-context-menu .ant-dropdown-menu {
+  border-radius: 6px;
+  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08),
+    0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+  padding: 4px 0;
+}
+
+.vm-context-menu .ant-dropdown-menu-item {
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 1px 4px;
+  border-radius: 4px;
+}
+
+.vm-context-menu .ant-dropdown-menu-item:hover {
+  background-color: rgba(24, 144, 255, 0.1);
+}
+
+.vm-context-menu .ant-dropdown-menu-item-disabled {
+  opacity: 0.5;
+}
+
+.vm-context-menu .ant-dropdown-menu-item-disabled:hover {
+  background-color: transparent;
+}
+
+.vm-context-menu .ant-dropdown-menu-item .anticon {
+  margin-right: 8px;
+  font-size: 12px;
+}
+
+.vm-context-menu .ant-dropdown-menu-item-divider {
+  margin: 4px 8px;
+}
+
+/* 暗色主题下的右键菜单 */
+[data-theme="dark"] .vm-context-menu .ant-dropdown-menu {
+  background-color: #2f2f2f;
+  border-color: #404040;
+}
+
+[data-theme="dark"] .vm-context-menu .ant-dropdown-menu-item {
+  color: #cccccc;
+}
+
+[data-theme="dark"] .vm-context-menu .ant-dropdown-menu-item:hover {
+  background-color: rgba(24, 144, 255, 0.15);
+}
+
+[data-theme="dark"] .vm-context-menu .ant-dropdown-menu-item-divider {
+  border-color: #404040;
+}
+
+/* 虚拟机节点右键菜单交互优化 */
+.tree-node-content {
+  cursor: pointer;
+  user-select: none;
+}
+
+.tree-node-content:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* 右键菜单图标颜色 */
+.vm-context-menu .ant-dropdown-menu-item .anticon-play-circle {
+  color: #52c41a;
+}
+
+.vm-context-menu .ant-dropdown-menu-item .anticon-poweroff {
+  color: #faad14;
+}
+
+.vm-context-menu .ant-dropdown-menu-item .anticon-stop {
+  color: #ff4d4f;
+}
+
+.vm-context-menu .ant-dropdown-menu-item .anticon-reload {
+  color: #1890ff;
+}
+
+.vm-context-menu .ant-dropdown-menu-item .anticon-monitor {
+  color: #722ed1;
+}

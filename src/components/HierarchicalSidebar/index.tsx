@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Tree } from "antd";
-import type { TreeDataNode } from "antd";
-import { DesktopOutlined, ClusterOutlined } from "@ant-design/icons";
+import { Tree, Dropdown, message } from "antd";
+import type { TreeDataNode, MenuProps } from "antd";
+import {
+  DesktopOutlined,
+  ClusterOutlined,
+  PlayCircleOutlined,
+  PoweroffOutlined,
+  StopOutlined,
+  ReloadOutlined,
+  MonitorOutlined,
+} from "@ant-design/icons";
 import { useTheme } from "../../hooks/useTheme";
 import type {
   DataCenter,
@@ -29,6 +37,197 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
   const { actualTheme } = useTheme();
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+
+  // 虚拟机操作处理函数
+  const handleVMAction = (action: string, vm: VirtualMachine) => {
+    const statusMap = {
+      running: "运行中",
+      stopped: "已停止",
+      suspended: "已挂起",
+      error: "错误",
+    };
+
+    const currentStatus = statusMap[vm.status] || vm.status;
+
+    switch (action) {
+      case "start":
+        if (vm.status === "running") {
+          message.warning(`虚拟机 ${vm.name} 已经在运行中`);
+          return;
+        }
+        message.loading({
+          content: `正在启动虚拟机 ${vm.name}...`,
+          key: "vm-action",
+          duration: 2,
+        });
+        setTimeout(() => {
+          message.success({
+            content: `虚拟机 ${vm.name} 启动成功`,
+            key: "vm-action",
+            duration: 2,
+          });
+        }, 2000);
+        break;
+      case "shutdown":
+        if (vm.status === "stopped") {
+          message.warning(`虚拟机 ${vm.name} 已经是停止状态`);
+          return;
+        }
+        message.loading({
+          content: `正在关机虚拟机 ${vm.name}...`,
+          key: "vm-action",
+          duration: 2,
+        });
+        setTimeout(() => {
+          message.success({
+            content: `虚拟机 ${vm.name} 关机成功`,
+            key: "vm-action",
+            duration: 2,
+          });
+        }, 2000);
+        break;
+      case "stop":
+        if (vm.status === "stopped") {
+          message.warning(`虚拟机 ${vm.name} 已经是停止状态`);
+          return;
+        }
+        message.loading({
+          content: `正在强制停止虚拟机 ${vm.name}...`,
+          key: "vm-action",
+          duration: 1,
+        });
+        setTimeout(() => {
+          message.success({
+            content: `虚拟机 ${vm.name} 强制停止成功`,
+            key: "vm-action",
+            duration: 2,
+          });
+        }, 1000);
+        break;
+      case "restart":
+        if (vm.status === "stopped") {
+          message.warning(`虚拟机 ${vm.name} 当前是停止状态，无法重启`);
+          return;
+        }
+        message.loading({
+          content: `正在重启虚拟机 ${vm.name}...`,
+          key: "vm-action",
+          duration: 3,
+        });
+        setTimeout(() => {
+          message.success({
+            content: `虚拟机 ${vm.name} 重启成功`,
+            key: "vm-action",
+            duration: 2,
+          });
+        }, 3000);
+        break;
+      case "console":
+        message.loading({
+          content: `正在连接虚拟机 ${vm.name} 控制台...`,
+          key: "vm-action",
+          duration: 1,
+        });
+        setTimeout(() => {
+          message.success({
+            content: `虚拟机 ${vm.name} 控制台已打开`,
+            key: "vm-action",
+            duration: 2,
+          });
+          // 这里可以实际打开控制台窗口
+        }, 1000);
+        break;
+      default:
+        message.info(`执行操作: ${action} - ${vm.name} (${currentStatus})`);
+    }
+  };
+
+  // 获取虚拟机右键菜单项
+  const getVMContextMenu = (vm: VirtualMachine): MenuProps["items"] => {
+    const isRunning = vm.status === "running";
+    const isStopped = vm.status === "stopped";
+    const isError = vm.status === "error";
+
+    return [
+      {
+        key: "start",
+        icon: <PlayCircleOutlined />,
+        label: (
+          <span>
+            开机
+            {isStopped && (
+              <span
+                style={{ color: "#52c41a", marginLeft: 8, fontSize: "11px" }}
+              >
+                可用
+              </span>
+            )}
+          </span>
+        ),
+        disabled: isRunning,
+        onClick: () => handleVMAction("start", vm),
+      },
+      {
+        key: "shutdown",
+        icon: <PoweroffOutlined />,
+        label: (
+          <span>
+            关机
+            {isRunning && (
+              <span
+                style={{ color: "#faad14", marginLeft: 8, fontSize: "11px" }}
+              >
+                推荐
+              </span>
+            )}
+          </span>
+        ),
+        disabled: isStopped,
+        onClick: () => handleVMAction("shutdown", vm),
+      },
+      {
+        key: "stop",
+        icon: <StopOutlined />,
+        label: (
+          <span>
+            强制停止
+            {isError && (
+              <span
+                style={{ color: "#ff4d4f", marginLeft: 8, fontSize: "11px" }}
+              >
+                可用
+              </span>
+            )}
+          </span>
+        ),
+        disabled: isStopped,
+        onClick: () => handleVMAction("stop", vm),
+      },
+      {
+        key: "restart",
+        icon: <ReloadOutlined />,
+        label: "重启",
+        disabled: isStopped,
+        onClick: () => handleVMAction("restart", vm),
+      },
+      {
+        type: "divider",
+      },
+      {
+        key: "console",
+        icon: <MonitorOutlined />,
+        label: (
+          <span>
+            打开控制台
+            <span style={{ color: "#722ed1", marginLeft: 8, fontSize: "11px" }}>
+              {isRunning ? "VNC" : "SPICE"}
+            </span>
+          </span>
+        ),
+        onClick: () => handleVMAction("console", vm),
+      },
+    ];
+  };
 
   // 当数据加载时，默认选中第一个集群
   useEffect(() => {
@@ -71,31 +270,37 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
     return {
       key: vm.id,
       title: (
-        <div className="tree-node-content">
-          <span className="tree-node-icon" style={{ color: statusColor }}>
-            {statusIcon}
-          </span>
-          <span className="tree-node-title">
-            {vm.name} ({vm.vmid})
-          </span>
-          <span
-            className="tree-node-subtitle"
-            style={{
-              fontSize: "11px",
-              color: actualTheme === "dark" ? "#888" : "#999",
-              marginLeft: "4px",
-            }}
-          >
-            @ {vm.node}
-          </span>
-          <div className="tree-node-status">
+        <Dropdown
+          menu={{ items: getVMContextMenu(vm) }}
+          trigger={["contextMenu"]}
+          overlayClassName="vm-context-menu"
+        >
+          <div className="tree-node-content">
+            <span className="tree-node-icon" style={{ color: statusColor }}>
+              {statusIcon}
+            </span>
+            <span className="tree-node-title">
+              {vm.name} ({vm.vmid})
+            </span>
             <span
-              className="status-dot"
-              style={{ backgroundColor: statusColor }}
-            />
-            <span className="status-text">{vm.status}</span>
+              className="tree-node-subtitle"
+              style={{
+                fontSize: "11px",
+                color: actualTheme === "dark" ? "#888" : "#999",
+                marginLeft: "4px",
+              }}
+            >
+              @ {vm.node}
+            </span>
+            <div className="tree-node-status">
+              <span
+                className="status-dot"
+                style={{ backgroundColor: statusColor }}
+              />
+              <span className="status-text">{vm.status}</span>
+            </div>
           </div>
-        </div>
+        </Dropdown>
       ),
       type: "vm",
       status: vm.status,
@@ -148,14 +353,14 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
     info: Record<string, unknown>
   ) => {
     const selectedKeysAsStrings = newSelectedKeys.map(String);
-    
+
     // 检查是否尝试取消选择当前已选中的节点（重复点击相同节点）
     if (selectedKeysAsStrings.length === 0 && selectedKeys.length > 0) {
       // 如果新的选择为空但之前有选择，说明用户点击了已选中的节点
       // 忽略这次操作，保持当前选择
       return;
     }
-    
+
     setSelectedKeys(selectedKeysAsStrings);
 
     if (onSelect) {

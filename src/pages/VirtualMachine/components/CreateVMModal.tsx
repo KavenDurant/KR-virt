@@ -68,7 +68,7 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [customConfig, setCustomConfig] = useState(false);
-  
+
   // 使用 Form.useWatch 来安全地监听表单值变化
   const formValues = Form.useWatch([], form);
 
@@ -605,16 +605,16 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
             <Row gutter={16}>
               <Col span={12}>
                 <p>
-                  <strong>虚拟机名称:</strong> {formValues?.name || '未设置'}
+                  <strong>虚拟机名称:</strong> {formValues?.name || "未设置"}
                 </p>
                 <p>
-                  <strong>操作系统:</strong> {formValues?.os || '未设置'}
+                  <strong>操作系统:</strong> {formValues?.os || "未设置"}
                 </p>
                 <p>
-                  <strong>目标集群:</strong> {formValues?.cluster || '未设置'}
+                  <strong>目标集群:</strong> {formValues?.cluster || "未设置"}
                 </p>
                 <p>
-                  <strong>网络:</strong> {formValues?.network || '未设置'}
+                  <strong>网络:</strong> {formValues?.network || "未设置"}
                 </p>
               </Col>
               <Col span={12}>
@@ -628,7 +628,7 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
                   <strong>存储:</strong> {formValues?.storage || 0}GB
                 </p>
                 <p>
-                  <strong>负责人:</strong> {formValues?.owner || '未设置'}
+                  <strong>负责人:</strong> {formValues?.owner || "未设置"}
                 </p>
               </Col>
             </Row>

@@ -656,128 +656,6 @@ const VirtualMachineManagement: React.FC = () => {
         label: "基本信息",
         children: (
           <div>
-            {/* 虚拟机操作区域 */}
-            <Card
-              style={{
-                marginBottom: "16px",
-              }}
-            >
-              <Space wrap>
-                {sidebarSelectedVM.status === "running" ? (
-                  <>
-                    <Button
-                      icon={<PoweroffOutlined />}
-                      danger
-                      onClick={() => handleVMAction("stop")}
-                    >
-                      关机
-                    </Button>
-                    <Button
-                      icon={<ReloadOutlined />}
-                      onClick={() => handleVMAction("restart")}
-                    >
-                      重启
-                    </Button>
-                    <Button
-                      icon={<PauseOutlined />}
-                      onClick={() => handleVMAction("suspend")}
-                    >
-                      挂起
-                    </Button>
-                  </>
-                ) : sidebarSelectedVM.status === "stopped" ? (
-                  <>
-                    <Button
-                      type="primary"
-                      icon={<PlayCircleOutlined />}
-                      onClick={() => handleVMAction("start")}
-                    >
-                      开机
-                    </Button>
-                    <Button
-                      icon={<CopyOutlined />}
-                      onClick={() => handleVMAction("clone")}
-                    >
-                      克隆
-                    </Button>
-                    <Button
-                      icon={<FileImageOutlined />}
-                      onClick={() => handleVMAction("template")}
-                    >
-                      转换为模板
-                    </Button>
-                  </>
-                ) : sidebarSelectedVM.status === "suspended" ? (
-                  <>
-                    <Button
-                      type="primary"
-                      icon={<PlayCircleOutlined />}
-                      onClick={() => handleVMAction("resume")}
-                    >
-                      继续
-                    </Button>
-                    <Button
-                      icon={<PoweroffOutlined />}
-                      danger
-                      onClick={() => handleVMAction("stop")}
-                    >
-                      关机
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    type="primary"
-                    icon={<PlayCircleOutlined />}
-                    onClick={() => handleVMAction("start")}
-                  >
-                    开机
-                  </Button>
-                )}
-                <Button
-                  icon={<SettingOutlined />}
-                  onClick={() => message.info("修改计算规格")}
-                >
-                  修改规格
-                </Button>
-                <Button
-                  icon={<WifiOutlined />}
-                  onClick={() => message.info("修改IP地址")}
-                >
-                  修改IP
-                </Button>
-                <Button
-                  icon={<SyncOutlined />}
-                  onClick={() => message.info("更新操作系统")}
-                >
-                  更新系统
-                </Button>
-                <Button
-                  icon={<TagOutlined />}
-                  onClick={() => message.info("标签配置")}
-                >
-                  标签配置
-                </Button>
-                <Button
-                  icon={<ThunderboltOutlined />}
-                  onClick={() => message.info("高可用设置")}
-                >
-                  高可用
-                </Button>
-                <Button
-                  icon={<MenuOutlined />}
-                  onClick={() => message.info("引导项设置")}
-                >
-                  引导设置
-                </Button>
-                <Button
-                  icon={<DeleteOutlined />}
-                  danger
-                  onClick={() => handleVMAction("delete")}
-                >
-                  删除
-                </Button>
-              </Space>
-            </Card>
             <Row gutter={[16, 16]}>
               <Col xs={24} md={12}>
                 <Card title="基本配置" size="small">
@@ -1640,6 +1518,130 @@ const VirtualMachineManagement: React.FC = () => {
             返回列表
           </Button>
         </div>
+
+        {/* 虚拟机操作区域 */}
+        <Card
+          title="虚拟机操作"
+          style={{
+            marginBottom: "16px",
+          }}
+        >
+          <Space wrap>
+            {sidebarSelectedVM.status === "running" ? (
+              <>
+                <Button
+                  icon={<PoweroffOutlined />}
+                  danger
+                  onClick={() => handleVMAction("stop")}
+                >
+                  关机
+                </Button>
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={() => handleVMAction("restart")}
+                >
+                  重启
+                </Button>
+                <Button
+                  icon={<PauseOutlined />}
+                  onClick={() => handleVMAction("suspend")}
+                >
+                  挂起
+                </Button>
+              </>
+            ) : sidebarSelectedVM.status === "stopped" ? (
+              <>
+                <Button
+                  type="primary"
+                  icon={<PlayCircleOutlined />}
+                  onClick={() => handleVMAction("start")}
+                >
+                  开机
+                </Button>
+                <Button
+                  icon={<CopyOutlined />}
+                  onClick={() => handleVMAction("clone")}
+                >
+                  克隆
+                </Button>
+                <Button
+                  icon={<FileImageOutlined />}
+                  onClick={() => handleVMAction("template")}
+                >
+                  转换为模板
+                </Button>
+              </>
+            ) : sidebarSelectedVM.status === "suspended" ? (
+              <>
+                <Button
+                  type="primary"
+                  icon={<PlayCircleOutlined />}
+                  onClick={() => handleVMAction("resume")}
+                >
+                  继续
+                </Button>
+                <Button
+                  icon={<PoweroffOutlined />}
+                  danger
+                  onClick={() => handleVMAction("stop")}
+                >
+                  关机
+                </Button>
+              </>
+            ) : (
+              <Button
+                type="primary"
+                icon={<PlayCircleOutlined />}
+                onClick={() => handleVMAction("start")}
+              >
+                开机
+              </Button>
+            )}
+            <Button
+              icon={<SettingOutlined />}
+              onClick={() => message.info("修改计算规格")}
+            >
+              修改规格
+            </Button>
+            <Button
+              icon={<WifiOutlined />}
+              onClick={() => message.info("修改IP地址")}
+            >
+              修改IP
+            </Button>
+            <Button
+              icon={<SyncOutlined />}
+              onClick={() => message.info("更新操作系统")}
+            >
+              更新系统
+            </Button>
+            <Button
+              icon={<TagOutlined />}
+              onClick={() => message.info("标签配置")}
+            >
+              标签配置
+            </Button>
+            <Button
+              icon={<ThunderboltOutlined />}
+              onClick={() => message.info("高可用设置")}
+            >
+              高可用
+            </Button>
+            <Button
+              icon={<MenuOutlined />}
+              onClick={() => message.info("引导项设置")}
+            >
+              引导设置
+            </Button>
+            <Button
+              icon={<DeleteOutlined />}
+              danger
+              onClick={() => handleVMAction("delete")}
+            >
+              删除
+            </Button>
+          </Space>
+        </Card>
 
         <Card>
           <Tabs defaultActiveKey="basic" items={vmDetailTabs} />

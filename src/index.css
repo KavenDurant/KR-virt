@@ -61,7 +61,17 @@ button:hover {
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: none; /* 移除默认的focus边框 */
+}
+
+/* 为Ant Design Button组件移除focus边框 */
+.ant-btn:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.ant-btn:active {
+  box-shadow: none !important;
 }
 
 @media (prefers-color-scheme: light) {

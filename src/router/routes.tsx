@@ -2,7 +2,6 @@ import React from "react";
 import {
   DesktopOutlined,
   ClusterOutlined,
-  SaveOutlined,
   GlobalOutlined,
   HddOutlined,
   UserOutlined,
@@ -14,7 +13,6 @@ import {
 // 导入页面组件
 import VirtualMachineManagement from "../pages/VirtualMachine";
 import ClusterManagement from "../pages/Cluster";
-import PhysicalMachineManagement from "../pages/PhysicalMachine";
 import NetworkManagement from "../pages/Network";
 import StorageManagement from "../pages/Storage";
 import UserManagement from "../pages/User";
@@ -58,12 +56,7 @@ const routes: RouteConfig[] = [
     element: <ClusterManagement />,
     icon: <ClusterOutlined />,
   },
-  {
-    path: "/physical-machine",
-    name: "物理机管理",
-    element: <PhysicalMachineManagement />,
-    icon: <SaveOutlined />,
-  },
+
   {
     path: "/network",
     name: "网络管理",

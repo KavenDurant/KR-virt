@@ -65,6 +65,7 @@ import { useTheme } from "../../hooks/useTheme";
 import type {
   VirtualMachine as VMData,
   VMManagementData,
+  Node,
 } from "../../services/mockData";
 import { mockVMManagementData } from "../../services/mockData";
 import { CreateVMModal } from "./components";
@@ -138,18 +139,26 @@ const VirtualMachineManagement: React.FC = () => {
   const [sidebarSelectedVM, setSidebarSelectedVM] = useState<VMData | null>(
     null
   );
+  
+  // 侧边栏选择的物理机状态
+  const [sidebarSelectedHost, setSidebarSelectedHost] = useState<Node | null>(null);
 
   // 监听侧边栏选择事件
   useEffect(() => {
     const handleSidebarSelect = (event: CustomEvent) => {
       const { nodeType, nodeData } = event.detail;
 
-      // 只处理虚拟机选择
+      // 处理不同类型的节点选择
       if (nodeType === "vm") {
         setSidebarSelectedVM(nodeData as VMData);
-      } else {
-        // 选择集群时清空虚拟机选择
+        setSidebarSelectedHost(null);
+      } else if (nodeType === "host") {
+        setSidebarSelectedHost(nodeData);
         setSidebarSelectedVM(null);
+      } else {
+        // 选择集群时清空选择
+        setSidebarSelectedVM(null);
+        setSidebarSelectedHost(null);
       }
     };
 
@@ -647,6 +656,274 @@ const VirtualMachineManagement: React.FC = () => {
       ),
     },
   ];
+
+  // 如果从侧边栏选中了物理机，显示物理机详情
+  if (sidebarSelectedHost) {
+    const hostDetailTabs = [
+      {
+        key: "basic",
+        label: "基本信息",
+        children: (
+          <div>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12}>
+                <Card title="主机配置" size="small">
+                  <Row>
+                    <Col span={12}>
+                      <Statistic
+                        title="CPU 使用率"
+                        value={sidebarSelectedHost.cpu}
+                        suffix="%"
+                        valueStyle={{
+                          color: sidebarSelectedHost.cpu > 80 ? "#ff4d4f" : "#3f8600",
+                        }}
+                      />
+                    </Col>
+                    <Col span={12}>
+                      <Statistic
+                        title="内存使用率"
+                        value={sidebarSelectedHost.memory}
+                        suffix="%"
+                        valueStyle={{
+                          color: sidebarSelectedHost.memory > 80 ? "#ff4d4f" : "#3f8600",
+                        }}
+                      />
+                    </Col>
+                  </Row>
+                  <div style={{ margin: "16px 0" }}>
+                    <Row>
+                      <Col span={24}>
+                        <Statistic
+                          title="虚拟机数量"
+                          value={sidebarSelectedHost.vms.length}
+                          suffix="台"
+                        />
+                      </Col>
+                    </Row>
+                  </div>
+                </Card>
+              </Col>
+
+              <Col xs={24} md={12}>
+                <Card title="运行状态" size="small">
+                  <div style={{ marginBottom: "16px" }}>
+                    <strong>主机名:</strong>
+                    <Tag style={{ marginLeft: "8px" }}>
+                      {sidebarSelectedHost.name}
+                    </Tag>
+                  </div>
+                  <div style={{ marginBottom: "16px" }}>
+                    <strong>运行时间:</strong>
+                    <span style={{ marginLeft: "8px", color: "#52c41a" }}>
+                      {sidebarSelectedHost.uptime}
+                    </span>
+                  </div>
+                  <div>
+                    <strong>主机状态:</strong>
+                    <Tag 
+                      color={sidebarSelectedHost.status === "online" ? "success" : "error"} 
+                      style={{ marginLeft: "8px" }}
+                    >
+                      {sidebarSelectedHost.status === "online" ? "在线" : "离线"}
+                    </Tag>
+                  </div>
+                </Card>
+              </Col>
+            </Row>
+
+            {/* 详细信息面板 */}
+            <Card title="详细信息" style={{ marginTop: "16px" }} size="small">
+              <Row gutter={[24, 16]}>
+                <Col xs={24} sm={8}>
+                  <div>
+                    <strong>主机ID:</strong>
+                    <br />
+                    <span>{sidebarSelectedHost.id}</span>
+                  </div>
+                </Col>
+                <Col xs={24} sm={8}>
+                  <div>
+                    <strong>状态:</strong>
+                    <br />
+                    <Tag
+                      color={
+                        sidebarSelectedHost.status === "online"
+                          ? "success"
+                          : "error"
+                      }
+                    >
+                      {sidebarSelectedHost.status === "online" ? "在线" : "离线"}
+                    </Tag>
+                  </div>
+                </Col>
+                <Col xs={24} sm={8}>
+                  <div>
+                    <strong>主机类型:</strong>
+                    <br />
+                    <span>{sidebarSelectedHost.type}</span>
+                  </div>
+                </Col>
+              </Row>
+            </Card>
+          </div>
+        ),
+      },
+      {
+        key: "performance",
+        label: "性能监控",
+        children: (
+          <div>
+            <Row gutter={[16, 16]}>
+              <Col span={8}>
+                <Card>
+                  <Statistic
+                    title="CPU 使用率"
+                    value={sidebarSelectedHost.cpu}
+                    precision={0}
+                    valueStyle={{
+                      color: sidebarSelectedHost.cpu > 80 ? "#ff4d4f" : "#3f8600",
+                    }}
+                    prefix={<ThunderboltOutlined />}
+                    suffix="%"
+                  />
+                  <Progress percent={sidebarSelectedHost.cpu} size="small" />
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card>
+                  <Statistic
+                    title="内存使用率"
+                    value={sidebarSelectedHost.memory}
+                    precision={0}
+                    valueStyle={{
+                      color: sidebarSelectedHost.memory > 80 ? "#ff4d4f" : "#3f8600",
+                    }}
+                    prefix={<DatabaseOutlined />}
+                    suffix="%"
+                  />
+                  <Progress percent={sidebarSelectedHost.memory} size="small" />
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card>
+                  <Statistic
+                    title="虚拟机数量"
+                    value={sidebarSelectedHost.vms.length}
+                    prefix={<DesktopOutlined />}
+                    suffix="台"
+                  />
+                </Card>
+              </Col>
+            </Row>
+          </div>
+        ),
+      },
+      {
+        key: "vms",
+        label: "虚拟机列表",
+        children: (
+          <div>
+            <Card title="该主机上的虚拟机" size="small">
+              <Table
+                size="small"
+                dataSource={sidebarSelectedHost.vms}
+                columns={[
+                  { 
+                    title: "虚拟机名称", 
+                    dataIndex: "name", 
+                    key: "name",
+                    render: (name: string, record: VMData) => (
+                      <div>
+                        <div style={{ fontWeight: "bold" }}>{name}</div>
+                        <div style={{ fontSize: "12px", color: "#666" }}>
+                          ID: {record.vmid}
+                        </div>
+                      </div>
+                    ),
+                  },
+                  {
+                    title: "状态",
+                    dataIndex: "status",
+                    key: "status",
+                    render: (status: string) => (
+                      <Tag color={status === "running" ? "success" : status === "stopped" ? "default" : "error"}>
+                        {status === "running" ? "运行中" : status === "stopped" ? "已停止" : status}
+                      </Tag>
+                    ),
+                  },
+                  {
+                    title: "配置",
+                    key: "config",
+                    render: (_, record: VMData) => (
+                      <div style={{ fontSize: "12px" }}>
+                        <div>CPU: {record.cpu}核</div>
+                        <div>内存: {record.memory}GB</div>
+                        <div>磁盘: {record.diskSize}GB</div>
+                      </div>
+                    ),
+                  },
+                  {
+                    title: "运行时间",
+                    dataIndex: "uptime",
+                    key: "uptime",
+                    render: (uptime: string) => uptime || "未运行",
+                  },
+                ]}
+                pagination={false}
+              />
+            </Card>
+          </div>
+        ),
+      },
+      {
+        key: "events",
+        label: "事件日志",
+        children: (
+          <Alert
+            message="主机事件日志"
+            description="此功能将显示物理主机的操作日志和系统事件记录。"
+            type="info"
+            showIcon
+          />
+        ),
+      },
+    ];
+
+    return (
+      <div>
+        <Card 
+          title={
+            <Space>
+              <HddOutlined />
+              <span>物理主机详情 - {sidebarSelectedHost.name}</span>
+              <Tag color={sidebarSelectedHost.status === "online" ? "success" : "error"}>
+                {sidebarSelectedHost.status === "online" ? "在线" : "离线"}
+              </Tag>
+            </Space>
+          }
+          extra={
+            <Space>
+              <Button 
+                type="primary" 
+                icon={<SyncOutlined />}
+                onClick={() => message.info("正在刷新主机信息...")}
+              >
+                刷新状态
+              </Button>
+              <Button 
+                icon={<MonitorOutlined />}
+                onClick={() => message.info("正在打开主机控制台...")}
+              >
+                控制台
+              </Button>
+            </Space>
+          }
+        >
+          <Tabs items={hostDetailTabs} />
+        </Card>
+      </div>
+    );
+  }
 
   // 如果从侧边栏选中了虚拟机，显示虚拟机详情
   if (sidebarSelectedVM) {

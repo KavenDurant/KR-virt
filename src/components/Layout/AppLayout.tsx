@@ -15,7 +15,6 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   DesktopOutlined,
   ClusterOutlined,
-  DatabaseOutlined,
   GlobalOutlined,
   HddOutlined,
   UserOutlined,
@@ -104,12 +103,11 @@ const AppLayout: React.FC = () => {
   const shouldShowHierarchicalSidebar =
     selectedActivityItem === "/virtual-machine" ||
     selectedActivityItem === "/cluster";
-  
-  // 判断是否需要显示侧边栏（只有虚拟机、集群、物理机模块显示侧边栏）
-  const shouldShowSidebar = 
+
+  // 判断是否需要显示侧边栏（只有虚拟机、集群模块显示侧边栏）
+  const shouldShowSidebar =
     selectedActivityItem === "/virtual-machine" ||
-    selectedActivityItem === "/cluster" ||
-    selectedActivityItem === "/physical-machine";
+    selectedActivityItem === "/cluster";
 
   // 当路由变化时更新选中的菜单项
   useEffect(() => {
@@ -212,11 +210,6 @@ const AppLayout: React.FC = () => {
     { key: "/dashboard", icon: <DashboardOutlined />, label: "仪表盘" },
     { key: "/virtual-machine", icon: <DesktopOutlined />, label: "虚拟机管理" },
     { key: "/cluster", icon: <ClusterOutlined />, label: "集群管理" },
-    {
-      key: "/physical-machine",
-      icon: <DatabaseOutlined />,
-      label: "物理机管理",
-    },
     { key: "/network", icon: <GlobalOutlined />, label: "网络管理" },
     { key: "/storage", icon: <HddOutlined />, label: "存储管理" },
     { key: "/user", icon: <UserOutlined />, label: "用户管理" },
@@ -494,112 +487,112 @@ const AppLayout: React.FC = () => {
             flexShrink: 0,
           }}
         >
-        {" "}
-        {shouldShowHierarchicalSidebar ? (
-          <HierarchicalSidebar
-            data={sidebarData}
-            onSelect={(
-              selectedKeys: string[],
-              info: Record<string, unknown>
-            ) => {
-              // 处理树节点选择事件，传递选择信息到主内容区域
-              const selectedKey = selectedKeys[0];
-              const nodeInfo = info.node as { type?: string; data?: unknown };
+          {" "}
+          {shouldShowHierarchicalSidebar ? (
+            <HierarchicalSidebar
+              data={sidebarData}
+              onSelect={(
+                selectedKeys: string[],
+                info: Record<string, unknown>
+              ) => {
+                // 处理树节点选择事件，传递选择信息到主内容区域
+                const selectedKey = selectedKeys[0];
+                const nodeInfo = info.node as { type?: string; data?: unknown };
 
-              if (nodeInfo && nodeInfo.data) {
-                // 通过自定义事件传递选择信息到页面组件
-                window.dispatchEvent(
-                  new CustomEvent("hierarchical-sidebar-select", {
-                    detail: {
-                      selectedKey,
-                      nodeType: nodeInfo.type,
-                      nodeData: nodeInfo.data,
-                    },
-                  })
-                );
-              }
-            }}
-          />
-        ) : (
-          <Menu
-            mode="inline"
-            theme={actualTheme === "dark" ? "dark" : "light"}
-            className="explorer-tree"
-            style={{
-              height: "calc(100% - 35px)",
-              borderRight: 0,
-              backgroundColor: actualTheme === "dark" ? "#252526" : "#f8f8f8",
-            }}
-            selectedKeys={[selectedActivityItem]} // 使用selectedActivityItem保持一致
-            items={[
-              {
-                key: selectedActivityItem,
-                label:
-                  routes.find((route) => route.path === selectedActivityItem)
-                    ?.name || "仪表盘",
-                icon: routes.find(
-                  (route) => route.path === selectedActivityItem
-                )?.icon,
-                children: [],
-                className: "sidebar-menu-item",
-              },
-            ]}
-          />
-        )}{" "}
-        {/* 拖拽手柄 */}
-        <div
-          className="sidebar-resize-handle"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-
-            const startX = e.clientX;
-            const startWidth = originalWidthRef.current;
-            let lastUpdateTime = 0;
-            const throttleDelay = 16; // 约60FPS
-
-            // 添加拖拽类到body，禁用文本选择
-            document.body.classList.add("sidebar-dragging");
-
-            const handleMouseMove = (moveEvent: MouseEvent) => {
-              const now = Date.now();
-              const newWidth = startWidth + (moveEvent.clientX - startX);
-
-              // 确保在有效范围内
-              if (newWidth >= 200 && newWidth <= 400) {
-                // 立即更新DOM，提供流畅的视觉反馈
-                handleSidebarResize(newWidth, false);
-
-                // 节流状态更新，减少重新渲染
-                if (now - lastUpdateTime > throttleDelay) {
-                  originalWidthRef.current = Math.max(
-                    200,
-                    Math.min(newWidth, 400)
+                if (nodeInfo && nodeInfo.data) {
+                  // 通过自定义事件传递选择信息到页面组件
+                  window.dispatchEvent(
+                    new CustomEvent("hierarchical-sidebar-select", {
+                      detail: {
+                        selectedKey,
+                        nodeType: nodeInfo.type,
+                        nodeData: nodeInfo.data,
+                      },
+                    })
                   );
-                  lastUpdateTime = now;
                 }
-              }
-            };
+              }}
+            />
+          ) : (
+            <Menu
+              mode="inline"
+              theme={actualTheme === "dark" ? "dark" : "light"}
+              className="explorer-tree"
+              style={{
+                height: "calc(100% - 35px)",
+                borderRight: 0,
+                backgroundColor: actualTheme === "dark" ? "#252526" : "#f8f8f8",
+              }}
+              selectedKeys={[selectedActivityItem]} // 使用selectedActivityItem保持一致
+              items={[
+                {
+                  key: selectedActivityItem,
+                  label:
+                    routes.find((route) => route.path === selectedActivityItem)
+                      ?.name || "仪表盘",
+                  icon: routes.find(
+                    (route) => route.path === selectedActivityItem
+                  )?.icon,
+                  children: [],
+                  className: "sidebar-menu-item",
+                },
+              ]}
+            />
+          )}{" "}
+          {/* 拖拽手柄 */}
+          <div
+            className="sidebar-resize-handle"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
 
-            const handleMouseUp = () => {
-              setIsDragging(false);
+              const startX = e.clientX;
+              const startWidth = originalWidthRef.current;
+              let lastUpdateTime = 0;
+              const throttleDelay = 16; // 约60FPS
 
-              // 移除拖拽类
-              document.body.classList.remove("sidebar-dragging");
+              // 添加拖拽类到body，禁用文本选择
+              document.body.classList.add("sidebar-dragging");
 
-              // 拖拽结束时，最终更新状态和localStorage
-              const finalWidth = originalWidthRef.current;
-              setSidebarWidth(finalWidth);
-              localStorage.setItem("sidebarWidth", finalWidth.toString());
+              const handleMouseMove = (moveEvent: MouseEvent) => {
+                const now = Date.now();
+                const newWidth = startWidth + (moveEvent.clientX - startX);
 
-              document.removeEventListener("mousemove", handleMouseMove);
-              document.removeEventListener("mouseup", handleMouseUp);
-            };
+                // 确保在有效范围内
+                if (newWidth >= 200 && newWidth <= 400) {
+                  // 立即更新DOM，提供流畅的视觉反馈
+                  handleSidebarResize(newWidth, false);
 
-            document.addEventListener("mousemove", handleMouseMove);
-            document.addEventListener("mouseup", handleMouseUp);
-          }}
-        />
+                  // 节流状态更新，减少重新渲染
+                  if (now - lastUpdateTime > throttleDelay) {
+                    originalWidthRef.current = Math.max(
+                      200,
+                      Math.min(newWidth, 400)
+                    );
+                    lastUpdateTime = now;
+                  }
+                }
+              };
+
+              const handleMouseUp = () => {
+                setIsDragging(false);
+
+                // 移除拖拽类
+                document.body.classList.remove("sidebar-dragging");
+
+                // 拖拽结束时，最终更新状态和localStorage
+                const finalWidth = originalWidthRef.current;
+                setSidebarWidth(finalWidth);
+                localStorage.setItem("sidebarWidth", finalWidth.toString());
+
+                document.removeEventListener("mousemove", handleMouseMove);
+                document.removeEventListener("mouseup", handleMouseUp);
+              };
+
+              document.addEventListener("mousemove", handleMouseMove);
+              document.addEventListener("mouseup", handleMouseUp);
+            }}
+          />
         </div>
       )}{" "}
       {/* 内容区域 */}

@@ -246,6 +246,54 @@
   font-size: 11px;
 }
 
+/* 物理机（主机）节点特殊样式 */
+.resource-tree
+  .ant-tree-treenode[data-node-type="host"]
+  .ant-tree-node-content-wrapper {
+  background-color: rgba(255, 255, 255, 0.02);
+  border-left: 2px solid #1890ff;
+  margin-left: 2px;
+  padding-left: 8px;
+}
+
+.resource-tree
+  .ant-tree-treenode[data-node-type="host"]
+  .ant-tree-node-content-wrapper:hover {
+  background-color: rgba(24, 144, 255, 0.08) !important;
+}
+
+.resource-tree
+  .ant-tree-treenode[data-node-type="host"]
+  .ant-tree-node-content-wrapper.ant-tree-node-selected {
+  background-color: rgba(24, 144, 255, 0.12) !important;
+  border-left-color: #40a9ff;
+}
+
+/* 主机节点标题样式 */
+.resource-tree .ant-tree-treenode[data-node-type="host"] .tree-node-title {
+  font-weight: 500;
+  color: #1890ff;
+}
+
+[data-theme="dark"]
+  .resource-tree
+  .ant-tree-treenode[data-node-type="host"]
+  .tree-node-title {
+  color: #40a9ff;
+}
+
+/* 主机节点图标样式 */
+.resource-tree .ant-tree-treenode[data-node-type="host"] .tree-node-icon {
+  color: #1890ff !important;
+}
+
+[data-theme="dark"]
+  .resource-tree
+  .ant-tree-treenode[data-node-type="host"]
+  .tree-node-icon {
+  color: #40a9ff !important;
+}
+
 /* 响应式调整 */
 @media (max-width: 1200px) {
   .tree-node-status {

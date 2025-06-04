@@ -62,7 +62,7 @@ class PasswordValidator {
       suggestions.push("包含数字");
     }
 
-    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\?]/.test(password)) {
+    if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>?]/.test(password)) {
       score += 1;
     } else {
       suggestions.push("包含特殊字符");

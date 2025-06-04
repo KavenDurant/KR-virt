@@ -54,9 +54,7 @@ import {
   StopOutlined,
 } from "@ant-design/icons";
 import { useTheme } from "../../hooks/useTheme";
-import type {
-  VMManagementData,
-} from "../../services/mockData";
+import type { VMManagementData } from "../../services/mockData";
 import { mockVMManagementData } from "../../services/mockData";
 
 // 使用统一的虚拟机数据类型
@@ -200,7 +198,7 @@ const VirtualMachineOptimized: React.FC = () => {
       return;
     }
     message.success(
-      `批量${action}操作已执行，影响${selectedRowKeys.length}台虚拟机`
+      `批量${action}操作已执行，影响${selectedRowKeys.length}台虚拟机`,
     );
     setSelectedRowKeys([]);
   };
@@ -739,8 +737,7 @@ const VirtualMachineOptimized: React.FC = () => {
               children: item.children,
             })),
           ]}
-        >
-        </Tabs>
+        ></Tabs>
       </Card>
 
       {/* 虚拟机详情模态框 */}
@@ -752,7 +749,7 @@ const VirtualMachineOptimized: React.FC = () => {
         width={800}
       >
         {selectedVM && (
-          <Tabs 
+          <Tabs
             defaultActiveKey="basic"
             items={[
               {
@@ -768,7 +765,9 @@ const VirtualMachineOptimized: React.FC = () => {
                     </Descriptions.Item>
                     <Descriptions.Item label="状态">
                       <Tag
-                        color={selectedVM.status === "运行中" ? "success" : "error"}
+                        color={
+                          selectedVM.status === "运行中" ? "success" : "error"
+                        }
                       >
                         {selectedVM.status}
                       </Tag>

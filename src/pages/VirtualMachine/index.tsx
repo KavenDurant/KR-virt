@@ -137,11 +137,13 @@ const VirtualMachineManagement: React.FC = () => {
 
   // 侧边栏选择的虚拟机状态
   const [sidebarSelectedVM, setSidebarSelectedVM] = useState<VMData | null>(
-    null
+    null,
   );
-  
+
   // 侧边栏选择的物理机状态
-  const [sidebarSelectedHost, setSidebarSelectedHost] = useState<Node | null>(null);
+  const [sidebarSelectedHost, setSidebarSelectedHost] = useState<Node | null>(
+    null,
+  );
 
   // 监听侧边栏选择事件
   useEffect(() => {
@@ -164,13 +166,13 @@ const VirtualMachineManagement: React.FC = () => {
 
     window.addEventListener(
       "hierarchical-sidebar-select",
-      handleSidebarSelect as EventListener
+      handleSidebarSelect as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "hierarchical-sidebar-select",
-        handleSidebarSelect as EventListener
+        handleSidebarSelect as EventListener,
       );
     };
   }, []);
@@ -322,7 +324,7 @@ const VirtualMachineManagement: React.FC = () => {
       return;
     }
     message.success(
-      `批量${action}操作已执行，影响${selectedRowKeys.length}台虚拟机`
+      `批量${action}操作已执行，影响${selectedRowKeys.length}台虚拟机`,
     );
     setSelectedRowKeys([]);
   };
@@ -675,7 +677,10 @@ const VirtualMachineManagement: React.FC = () => {
                         value={sidebarSelectedHost.cpu}
                         suffix="%"
                         valueStyle={{
-                          color: sidebarSelectedHost.cpu > 80 ? "#ff4d4f" : "#3f8600",
+                          color:
+                            sidebarSelectedHost.cpu > 80
+                              ? "#ff4d4f"
+                              : "#3f8600",
                         }}
                       />
                     </Col>
@@ -685,7 +690,10 @@ const VirtualMachineManagement: React.FC = () => {
                         value={sidebarSelectedHost.memory}
                         suffix="%"
                         valueStyle={{
-                          color: sidebarSelectedHost.memory > 80 ? "#ff4d4f" : "#3f8600",
+                          color:
+                            sidebarSelectedHost.memory > 80
+                              ? "#ff4d4f"
+                              : "#3f8600",
                         }}
                       />
                     </Col>
@@ -720,11 +728,17 @@ const VirtualMachineManagement: React.FC = () => {
                   </div>
                   <div>
                     <strong>主机状态:</strong>
-                    <Tag 
-                      color={sidebarSelectedHost.status === "online" ? "success" : "error"} 
+                    <Tag
+                      color={
+                        sidebarSelectedHost.status === "online"
+                          ? "success"
+                          : "error"
+                      }
                       style={{ marginLeft: "8px" }}
                     >
-                      {sidebarSelectedHost.status === "online" ? "在线" : "离线"}
+                      {sidebarSelectedHost.status === "online"
+                        ? "在线"
+                        : "离线"}
                     </Tag>
                   </div>
                 </Card>
@@ -752,7 +766,9 @@ const VirtualMachineManagement: React.FC = () => {
                           : "error"
                       }
                     >
-                      {sidebarSelectedHost.status === "online" ? "在线" : "离线"}
+                      {sidebarSelectedHost.status === "online"
+                        ? "在线"
+                        : "离线"}
                     </Tag>
                   </div>
                 </Col>
@@ -781,7 +797,8 @@ const VirtualMachineManagement: React.FC = () => {
                     value={sidebarSelectedHost.cpu}
                     precision={0}
                     valueStyle={{
-                      color: sidebarSelectedHost.cpu > 80 ? "#ff4d4f" : "#3f8600",
+                      color:
+                        sidebarSelectedHost.cpu > 80 ? "#ff4d4f" : "#3f8600",
                     }}
                     prefix={<ThunderboltOutlined />}
                     suffix="%"
@@ -796,7 +813,8 @@ const VirtualMachineManagement: React.FC = () => {
                     value={sidebarSelectedHost.memory}
                     precision={0}
                     valueStyle={{
-                      color: sidebarSelectedHost.memory > 80 ? "#ff4d4f" : "#3f8600",
+                      color:
+                        sidebarSelectedHost.memory > 80 ? "#ff4d4f" : "#3f8600",
                     }}
                     prefix={<DatabaseOutlined />}
                     suffix="%"
@@ -828,9 +846,9 @@ const VirtualMachineManagement: React.FC = () => {
                 size="small"
                 dataSource={sidebarSelectedHost.vms}
                 columns={[
-                  { 
-                    title: "虚拟机名称", 
-                    dataIndex: "name", 
+                  {
+                    title: "虚拟机名称",
+                    dataIndex: "name",
                     key: "name",
                     render: (name: string, record: VMData) => (
                       <div>
@@ -846,8 +864,20 @@ const VirtualMachineManagement: React.FC = () => {
                     dataIndex: "status",
                     key: "status",
                     render: (status: string) => (
-                      <Tag color={status === "running" ? "success" : status === "stopped" ? "default" : "error"}>
-                        {status === "running" ? "运行中" : status === "stopped" ? "已停止" : status}
+                      <Tag
+                        color={
+                          status === "running"
+                            ? "success"
+                            : status === "stopped"
+                              ? "default"
+                              : "error"
+                        }
+                      >
+                        {status === "running"
+                          ? "运行中"
+                          : status === "stopped"
+                            ? "已停止"
+                            : status}
                       </Tag>
                     ),
                   },
@@ -891,26 +921,30 @@ const VirtualMachineManagement: React.FC = () => {
 
     return (
       <div>
-        <Card 
+        <Card
           title={
             <Space>
               <HddOutlined />
               <span>物理主机详情 - {sidebarSelectedHost.name}</span>
-              <Tag color={sidebarSelectedHost.status === "online" ? "success" : "error"}>
+              <Tag
+                color={
+                  sidebarSelectedHost.status === "online" ? "success" : "error"
+                }
+              >
                 {sidebarSelectedHost.status === "online" ? "在线" : "离线"}
               </Tag>
             </Space>
           }
           extra={
             <Space>
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 icon={<SyncOutlined />}
                 onClick={() => message.info("正在刷新主机信息...")}
               >
                 刷新状态
               </Button>
-              <Button 
+              <Button
                 icon={<MonitorOutlined />}
                 onClick={() => message.info("正在打开主机控制台...")}
               >
@@ -1535,7 +1569,7 @@ const VirtualMachineManagement: React.FC = () => {
                     key: "name",
                     render: (
                       name: string,
-                      record: Snapshot & { current?: boolean }
+                      record: Snapshot & { current?: boolean },
                     ) => (
                       <div>
                         <strong>{name}</strong>
@@ -1664,8 +1698,8 @@ const VirtualMachineManagement: React.FC = () => {
                         type === "完整备份"
                           ? "blue"
                           : type === "增量备份"
-                          ? "green"
-                          : "orange";
+                            ? "green"
+                            : "orange";
                       return <Tag color={color}>{type}</Tag>;
                     },
                   },
@@ -1684,8 +1718,8 @@ const VirtualMachineManagement: React.FC = () => {
                         status === "完成"
                           ? "success"
                           : status === "进行中"
-                          ? "processing"
-                          : "error";
+                            ? "processing"
+                            : "error";
                       return <Tag color={color}>{status}</Tag>;
                     },
                   },

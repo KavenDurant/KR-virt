@@ -551,7 +551,7 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
   const treeData: TreeNodeData[] = data.clusters.map(createClusterNode);
   const handleSelect = (
     newSelectedKeys: React.Key[],
-    info: Record<string, unknown>
+    info: Record<string, unknown>,
   ) => {
     const selectedKeysAsStrings = newSelectedKeys.map(String);
 

@@ -47,9 +47,9 @@ import ReactFlow, {
   ConnectionMode,
   Controls,
   MiniMap,
-} from 'reactflow';
-import type { Node, Edge, Connection } from 'reactflow';
-import 'reactflow/dist/style.css';
+} from "reactflow";
+import type { Node, Edge, Connection } from "reactflow";
+import "reactflow/dist/style.css";
 
 const { Content } = Layout;
 const { TabPane } = Tabs;
@@ -352,323 +352,341 @@ const NetworkManagement: React.FC = () => {
   // 定义拓扑图节点数据
   const initialNodes: Node[] = [
     {
-      id: 'router',
-      type: 'default',
+      id: "router",
+      type: "default",
       position: { x: 536, y: 124 },
       data: {
         label: (
-          <div style={{ textAlign: 'center' }}>
-            <CloudOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+          <div style={{ textAlign: "center" }}>
+            <CloudOutlined style={{ fontSize: "24px", color: "#1890ff" }} />
             <div>主路由器</div>
-            <div style={{ fontSize: '12px', color: '#666' }}>IP: 192.168.1.1</div>
+            <div style={{ fontSize: "12px", color: "#666" }}>
+              IP: 192.168.1.1
+            </div>
           </div>
-        )
+        ),
       },
       style: {
-        background: '#fff',
-        border: '2px solid #1890ff',
-        borderRadius: '8px',
-        padding: '10px',
+        background: "#fff",
+        border: "2px solid #1890ff",
+        borderRadius: "8px",
+        padding: "10px",
         width: 120,
-        height: 80
-      }
+        height: 80,
+      },
     },
     {
-      id: 'switch-core',
-      type: 'default',
+      id: "switch-core",
+      type: "default",
       position: { x: 408, y: 378 },
       data: {
         label: (
-          <div style={{ textAlign: 'center' }}>
-            <ShareAltOutlined style={{ fontSize: '20px', color: '#52c41a' }} />
+          <div style={{ textAlign: "center" }}>
+            <ShareAltOutlined style={{ fontSize: "20px", color: "#52c41a" }} />
             <div>核心交换机</div>
-            <div style={{ fontSize: '12px', color: '#666' }}>连接所有网络</div>
+            <div style={{ fontSize: "12px", color: "#666" }}>连接所有网络</div>
           </div>
-        )
+        ),
       },
       style: {
-        background: '#fff',
-        border: '2px solid #52c41a',
-        borderRadius: '8px',
-        padding: '8px',
+        background: "#fff",
+        border: "2px solid #52c41a",
+        borderRadius: "8px",
+        padding: "8px",
         width: 100,
-        height: 70
-      }
+        height: 70,
+      },
     },
     {
-      id: 'switch-prod',
-      type: 'default',
+      id: "switch-prod",
+      type: "default",
       position: { x: 536, y: 378 },
       data: {
         label: (
-          <div style={{ textAlign: 'center' }}>
-            <ShareAltOutlined style={{ fontSize: '20px', color: '#52c41a' }} />
+          <div style={{ textAlign: "center" }}>
+            <ShareAltOutlined style={{ fontSize: "20px", color: "#52c41a" }} />
             <div>生产交换机</div>
-            <div style={{ fontSize: '12px', color: '#666' }}>连接生产网络</div>
+            <div style={{ fontSize: "12px", color: "#666" }}>连接生产网络</div>
           </div>
-        )
+        ),
       },
       style: {
-        background: '#fff',
-        border: '2px solid #52c41a',
-        borderRadius: '8px',
-        padding: '8px',
+        background: "#fff",
+        border: "2px solid #52c41a",
+        borderRadius: "8px",
+        padding: "8px",
         width: 100,
-        height: 70
-      }
+        height: 70,
+      },
     },
     {
-      id: 'network-nat',
-      type: 'default',
+      id: "network-nat",
+      type: "default",
       position: { x: 177, y: 280 },
       data: {
         label: (
-          <div style={{ textAlign: 'center' }}>
-            <ApartmentOutlined style={{ fontSize: '16px', color: '#722ed1' }} />
+          <div style={{ textAlign: "center" }}>
+            <ApartmentOutlined style={{ fontSize: "16px", color: "#722ed1" }} />
             <div>默认网络</div>
-            <div style={{ fontSize: '10px', color: '#666' }}>NAT | 192.168.122.0/24</div>
+            <div style={{ fontSize: "10px", color: "#666" }}>
+              NAT | 192.168.122.0/24
+            </div>
           </div>
-        )
+        ),
       },
       style: {
-        background: '#fff',
-        border: '1px solid #722ed1',
-        borderRadius: '6px',
-        padding: '6px',
+        background: "#fff",
+        border: "1px solid #722ed1",
+        borderRadius: "6px",
+        padding: "6px",
         width: 120,
-        height: 60
-      }
+        height: 60,
+      },
     },
     {
-      id: 'network-prod',
-      type: 'default',
+      id: "network-prod",
+      type: "default",
       position: { x: 496, y: 280 },
       data: {
         label: (
-          <div style={{ textAlign: 'center' }}>
-            <ApartmentOutlined style={{ fontSize: '16px', color: '#1890ff' }} />
+          <div style={{ textAlign: "center" }}>
+            <ApartmentOutlined style={{ fontSize: "16px", color: "#1890ff" }} />
             <div>生产网络</div>
-            <div style={{ fontSize: '10px', color: '#666' }}>BRIDGE | 10.0.0.0/24</div>
+            <div style={{ fontSize: "10px", color: "#666" }}>
+              BRIDGE | 10.0.0.0/24
+            </div>
           </div>
-        )
+        ),
       },
       style: {
-        background: '#fff',
-        border: '1px solid #1890ff',
-        borderRadius: '6px',
-        padding: '6px',
+        background: "#fff",
+        border: "1px solid #1890ff",
+        borderRadius: "6px",
+        padding: "6px",
         width: 120,
-        height: 60
-      }
+        height: 60,
+      },
     },
     {
-      id: 'network-isolated',
-      type: 'default',
+      id: "network-isolated",
+      type: "default",
       position: { x: 810, y: 280 },
       data: {
         label: (
-          <div style={{ textAlign: 'center' }}>
-            <ApartmentOutlined style={{ fontSize: '16px', color: '#fa8c16' }} />
+          <div style={{ textAlign: "center" }}>
+            <ApartmentOutlined style={{ fontSize: "16px", color: "#fa8c16" }} />
             <div>隔离网络</div>
-            <div style={{ fontSize: '10px', color: '#666' }}>ISOLATED | 192.168.200.0/24</div>
+            <div style={{ fontSize: "10px", color: "#666" }}>
+              ISOLATED | 192.168.200.0/24
+            </div>
           </div>
-        )
+        ),
       },
       style: {
-        background: '#fff',
-        border: '1px solid #fa8c16',
-        borderRadius: '6px',
-        padding: '6px',
+        background: "#fff",
+        border: "1px solid #fa8c16",
+        borderRadius: "6px",
+        padding: "6px",
         width: 120,
-        height: 60
-      }
+        height: 60,
+      },
     },
     {
-      id: 'network-direct',
-      type: 'default',
+      id: "network-direct",
+      type: "default",
       position: { x: 1135, y: 280 },
       data: {
         label: (
-          <div style={{ textAlign: 'center' }}>
-            <ApartmentOutlined style={{ fontSize: '16px', color: '#13c2c2' }} />
+          <div style={{ textAlign: "center" }}>
+            <ApartmentOutlined style={{ fontSize: "16px", color: "#13c2c2" }} />
             <div>直连网络</div>
-            <div style={{ fontSize: '10px', color: '#666' }}>DIRECT | 无子网</div>
+            <div style={{ fontSize: "10px", color: "#666" }}>
+              DIRECT | 无子网
+            </div>
           </div>
-        )
+        ),
       },
       style: {
-        background: '#fff',
-        border: '1px solid #13c2c2',
-        borderRadius: '6px',
-        padding: '6px',
+        background: "#fff",
+        border: "1px solid #13c2c2",
+        borderRadius: "6px",
+        padding: "6px",
         width: 120,
-        height: 60
-      }
+        height: 60,
+      },
     },
     {
-      id: 'vm-web-01',
-      type: 'default',
+      id: "vm-web-01",
+      type: "default",
       position: { x: 202, y: 507 },
       data: {
         label: (
-          <div style={{ textAlign: 'center' }}>
-            <RocketOutlined style={{ fontSize: '16px', color: '#1890ff' }} />
+          <div style={{ textAlign: "center" }}>
+            <RocketOutlined style={{ fontSize: "16px", color: "#1890ff" }} />
             <div>Web服务器-01</div>
-            <div style={{ fontSize: '10px', color: '#666' }}>IP: 192.168.122.101 | 在线</div>
+            <div style={{ fontSize: "10px", color: "#666" }}>
+              IP: 192.168.122.101 | 在线
+            </div>
           </div>
-        )
+        ),
       },
       style: {
-        background: '#f6ffed',
-        border: '1px solid #b7eb8f',
-        borderRadius: '6px',
-        padding: '6px',
+        background: "#f6ffed",
+        border: "1px solid #b7eb8f",
+        borderRadius: "6px",
+        padding: "6px",
         width: 140,
-        height: 60
-      }
+        height: 60,
+      },
     },
     {
-      id: 'vm-db-02',
-      type: 'default',
+      id: "vm-db-02",
+      type: "default",
       position: { x: 438, y: 507 },
       data: {
         label: (
-          <div style={{ textAlign: 'center' }}>
-            <RocketOutlined style={{ fontSize: '16px', color: '#1890ff' }} />
+          <div style={{ textAlign: "center" }}>
+            <RocketOutlined style={{ fontSize: "16px", color: "#1890ff" }} />
             <div>数据库服务器-02</div>
-            <div style={{ fontSize: '10px', color: '#666' }}>IP: 10.0.0.10 | 在线</div>
+            <div style={{ fontSize: "10px", color: "#666" }}>
+              IP: 10.0.0.10 | 在线
+            </div>
           </div>
-        )
+        ),
       },
       style: {
-        background: '#f6ffed',
-        border: '1px solid #b7eb8f',
-        borderRadius: '6px',
-        padding: '6px',
+        background: "#f6ffed",
+        border: "1px solid #b7eb8f",
+        borderRadius: "6px",
+        padding: "6px",
         width: 140,
-        height: 60
-      }
+        height: 60,
+      },
     },
     {
-      id: 'vm-db-03',
-      type: 'default',
+      id: "vm-db-03",
+      type: "default",
       position: { x: 848, y: 507 },
       data: {
         label: (
-          <div style={{ textAlign: 'center' }}>
-            <RocketOutlined style={{ fontSize: '16px', color: '#1890ff' }} />
+          <div style={{ textAlign: "center" }}>
+            <RocketOutlined style={{ fontSize: "16px", color: "#1890ff" }} />
             <div>数据库服务器-03</div>
-            <div style={{ fontSize: '10px', color: '#666' }}>IP: 192.168.200.10 | 在线</div>
+            <div style={{ fontSize: "10px", color: "#666" }}>
+              IP: 192.168.200.10 | 在线
+            </div>
           </div>
-        )
+        ),
       },
       style: {
-        background: '#f6ffed',
-        border: '1px solid #b7eb8f',
-        borderRadius: '6px',
-        padding: '6px',
+        background: "#f6ffed",
+        border: "1px solid #b7eb8f",
+        borderRadius: "6px",
+        padding: "6px",
         width: 140,
-        height: 60
-      }
+        height: 60,
+      },
     },
     {
-      id: 'vm-test-04',
-      type: 'default',
+      id: "vm-test-04",
+      type: "default",
       position: { x: 1158, y: 507 },
       data: {
         label: (
-          <div style={{ textAlign: 'center' }}>
-            <RocketOutlined style={{ fontSize: '16px', color: '#1890ff' }} />
+          <div style={{ textAlign: "center" }}>
+            <RocketOutlined style={{ fontSize: "16px", color: "#1890ff" }} />
             <div>测试服务器-04</div>
-            <div style={{ fontSize: '10px', color: '#666' }}>IP: 192.168.122.102 | 离线</div>
+            <div style={{ fontSize: "10px", color: "#666" }}>
+              IP: 192.168.122.102 | 离线
+            </div>
           </div>
-        )
+        ),
       },
       style: {
-        background: '#fff2e8',
-        border: '1px solid #ffbb96',
-        borderRadius: '6px',
-        padding: '6px',
+        background: "#fff2e8",
+        border: "1px solid #ffbb96",
+        borderRadius: "6px",
+        padding: "6px",
         width: 140,
-        height: 60
-      }
-    }
+        height: 60,
+      },
+    },
   ];
 
   // 定义拓扑图边数据
   const initialEdges: Edge[] = [
     {
-      id: 'router-core',
-      source: 'router',
-      target: 'switch-core',
-      type: 'default',
-      style: { stroke: '#1890ff', strokeWidth: 2 },
-      animated: true
+      id: "router-core",
+      source: "router",
+      target: "switch-core",
+      type: "default",
+      style: { stroke: "#1890ff", strokeWidth: 2 },
+      animated: true,
     },
     {
-      id: 'router-prod',
-      source: 'router',
-      target: 'switch-prod',
-      type: 'default',
-      style: { stroke: '#1890ff', strokeWidth: 2 },
-      animated: true
+      id: "router-prod",
+      source: "router",
+      target: "switch-prod",
+      type: "default",
+      style: { stroke: "#1890ff", strokeWidth: 2 },
+      animated: true,
     },
     {
-      id: 'core-nat',
-      source: 'switch-core',
-      target: 'network-nat',
-      type: 'default',
-      style: { stroke: '#722ed1', strokeWidth: 2, strokeDasharray: '5,5' }
+      id: "core-nat",
+      source: "switch-core",
+      target: "network-nat",
+      type: "default",
+      style: { stroke: "#722ed1", strokeWidth: 2, strokeDasharray: "5,5" },
     },
     {
-      id: 'prod-bridge',
-      source: 'switch-prod',
-      target: 'network-prod',
-      type: 'default',
-      style: { stroke: '#1890ff', strokeWidth: 2, strokeDasharray: '5,5' }
+      id: "prod-bridge",
+      source: "switch-prod",
+      target: "network-prod",
+      type: "default",
+      style: { stroke: "#1890ff", strokeWidth: 2, strokeDasharray: "5,5" },
     },
     {
-      id: 'core-isolated',
-      source: 'switch-core',
-      target: 'network-isolated',
-      type: 'default',
-      style: { stroke: '#fa8c16', strokeWidth: 2, strokeDasharray: '5,5' }
+      id: "core-isolated",
+      source: "switch-core",
+      target: "network-isolated",
+      type: "default",
+      style: { stroke: "#fa8c16", strokeWidth: 2, strokeDasharray: "5,5" },
     },
     {
-      id: 'core-direct',
-      source: 'switch-core',
-      target: 'network-direct',
-      type: 'default',
-      style: { stroke: '#13c2c2', strokeWidth: 2, strokeDasharray: '5,5' }
+      id: "core-direct",
+      source: "switch-core",
+      target: "network-direct",
+      type: "default",
+      style: { stroke: "#13c2c2", strokeWidth: 2, strokeDasharray: "5,5" },
     },
     {
-      id: 'nat-web01',
-      source: 'network-nat',
-      target: 'vm-web-01',
-      type: 'default',
-      style: { stroke: '#52c41a', strokeWidth: 1 }
+      id: "nat-web01",
+      source: "network-nat",
+      target: "vm-web-01",
+      type: "default",
+      style: { stroke: "#52c41a", strokeWidth: 1 },
     },
     {
-      id: 'prod-db02',
-      source: 'network-prod',
-      target: 'vm-db-02',
-      type: 'default',
-      style: { stroke: '#52c41a', strokeWidth: 1 }
+      id: "prod-db02",
+      source: "network-prod",
+      target: "vm-db-02",
+      type: "default",
+      style: { stroke: "#52c41a", strokeWidth: 1 },
     },
     {
-      id: 'isolated-db03',
-      source: 'network-isolated',
-      target: 'vm-db-03',
-      type: 'default',
-      style: { stroke: '#52c41a', strokeWidth: 1 }
+      id: "isolated-db03",
+      source: "network-isolated",
+      target: "vm-db-03",
+      type: "default",
+      style: { stroke: "#52c41a", strokeWidth: 1 },
     },
     {
-      id: 'direct-test04',
-      source: 'network-direct',
-      target: 'vm-test-04',
-      type: 'default',
-      style: { stroke: '#ff7875', strokeWidth: 1 }
-    }
+      id: "direct-test04",
+      source: "network-direct",
+      target: "vm-test-04",
+      type: "default",
+      style: { stroke: "#ff7875", strokeWidth: 1 },
+    },
   ];
 
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
@@ -676,7 +694,7 @@ const NetworkManagement: React.FC = () => {
 
   const onConnect = useCallback(
     (params: Edge | Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
+    [setEdges],
   );
 
   // 加载网络数据
@@ -1280,8 +1298,8 @@ const NetworkManagement: React.FC = () => {
             </TabPane>
 
             <TabPane tab="网络拓扑" key="topology">
-              <Card style={{ height: '600px' }}>
-                <div style={{ height: '500px', width: '100%' }}>
+              <Card style={{ height: "600px" }}>
+                <div style={{ height: "500px", width: "100%" }}>
                   <ReactFlow
                     nodes={nodes}
                     edges={edges}
@@ -1293,7 +1311,7 @@ const NetworkManagement: React.FC = () => {
                     attributionPosition="top-right"
                   >
                     <Controls />
-                    <MiniMap 
+                    <MiniMap
                       nodeStrokeColor="#333"
                       nodeColor="#fff"
                       nodeBorderRadius={2}
@@ -1302,33 +1320,131 @@ const NetworkManagement: React.FC = () => {
                     <Background gap={12} size={1} />
                   </ReactFlow>
                 </div>
-                <div style={{ marginTop: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '16px', height: '16px', background: '#1890ff', borderRadius: '2px' }}></div>
+                <div
+                  style={{
+                    marginTop: "16px",
+                    display: "flex",
+                    gap: "16px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        background: "#1890ff",
+                        borderRadius: "2px",
+                      }}
+                    ></div>
                     <span>路由器/交换机</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '16px', height: '16px', background: '#722ed1', borderRadius: '2px' }}></div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        background: "#722ed1",
+                        borderRadius: "2px",
+                      }}
+                    ></div>
                     <span>NAT网络</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '16px', height: '16px', background: '#1890ff', borderRadius: '2px' }}></div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        background: "#1890ff",
+                        borderRadius: "2px",
+                      }}
+                    ></div>
                     <span>桥接网络</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '16px', height: '16px', background: '#fa8c16', borderRadius: '2px' }}></div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        background: "#fa8c16",
+                        borderRadius: "2px",
+                      }}
+                    ></div>
                     <span>隔离网络</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '16px', height: '16px', background: '#13c2c2', borderRadius: '2px' }}></div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        background: "#13c2c2",
+                        borderRadius: "2px",
+                      }}
+                    ></div>
                     <span>直连网络</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '16px', height: '16px', background: '#52c41a', borderRadius: '2px' }}></div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        background: "#52c41a",
+                        borderRadius: "2px",
+                      }}
+                    ></div>
                     <span>在线虚拟机</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '16px', height: '16px', background: '#ff7875', borderRadius: '2px' }}></div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        background: "#ff7875",
+                        borderRadius: "2px",
+                      }}
+                    ></div>
                     <span>离线虚拟机</span>
                   </div>
                 </div>
@@ -1623,4 +1739,3 @@ const NetworkManagement: React.FC = () => {
 };
 
 export default NetworkManagement;
-

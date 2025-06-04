@@ -132,7 +132,7 @@ const mockResourceData = {
     { id: 1, level: "error", message: "物理机 host-03 离线", time: "10分钟前" },
     {
       id: 2,
-      level: "warning", 
+      level: "warning",
       message: "物理机 host-02 CPU使用率超过85%",
       time: "20分钟前",
     },
@@ -148,11 +148,11 @@ const mockResourceData = {
       message: "虚拟机 vm-12 内存使用率高",
       time: "1小时前",
     },
-    { 
-      id: 5, 
-      level: "info", 
-      message: "物理机 host-01 重启完成", 
-      time: "2小时前" 
+    {
+      id: 5,
+      level: "info",
+      message: "物理机 host-01 重启完成",
+      time: "2小时前",
     },
     { id: 6, level: "info", message: "系统自动备份完成", time: "3小时前" },
   ],
@@ -260,53 +260,53 @@ const mockVMData = [
 
 // 物理机数据
 const mockHostData = [
-  { 
-    key: "1", 
-    name: "host-prod-01", 
-    status: "connected", 
-    cpu: 65, 
+  {
+    key: "1",
+    name: "host-prod-01",
+    status: "connected",
+    cpu: 65,
     memory: 70,
     vms: 8,
     uptime: "25天",
-    temperature: 42
+    temperature: 42,
   },
-  { 
-    key: "2", 
-    name: "host-prod-02", 
-    status: "connected", 
-    cpu: 72, 
+  {
+    key: "2",
+    name: "host-prod-02",
+    status: "connected",
+    cpu: 72,
     memory: 75,
     vms: 10,
     uptime: "30天",
-    temperature: 45
+    temperature: 45,
   },
-  { 
-    key: "3", 
-    name: "host-prod-03", 
-    status: "disconnected", 
-    cpu: 0, 
+  {
+    key: "3",
+    name: "host-prod-03",
+    status: "disconnected",
+    cpu: 0,
     memory: 0,
     vms: 0,
     uptime: "离线",
-    temperature: 0
+    temperature: 0,
   },
-  { 
-    key: "4", 
-    name: "host-test-01", 
-    status: "connected", 
-    cpu: 45, 
+  {
+    key: "4",
+    name: "host-test-01",
+    status: "connected",
+    cpu: 45,
     memory: 55,
     vms: 5,
     uptime: "15天",
-    temperature: 38
+    temperature: 38,
   },
 ];
 
 // 物理机表格列定义
 const hostColumns = [
-  { 
-    title: "主机名", 
-    dataIndex: "name", 
+  {
+    title: "主机名",
+    dataIndex: "name",
     key: "name",
     width: 120,
   },
@@ -365,9 +365,7 @@ const hostColumns = [
     dataIndex: "vms",
     key: "vms",
     width: 80,
-    render: (vms: number) => (
-      <span style={{ fontSize: "12px" }}>{vms}</span>
-    ),
+    render: (vms: number) => <span style={{ fontSize: "12px" }}>{vms}</span>,
   },
 ];
 
@@ -681,8 +679,8 @@ const Dashboard: React.FC = () => {
                               item.trend === "up"
                                 ? "上升"
                                 : item.trend === "down"
-                                ? "下降"
-                                : "稳定"
+                                  ? "下降"
+                                  : "稳定"
                             }`}
                           >
                             <span
@@ -708,7 +706,7 @@ const Dashboard: React.FC = () => {
                               style={{
                                 height: `${val / 6}%`,
                                 backgroundColor: getPerformanceColor(
-                                  item.trend
+                                  item.trend,
                                 ),
                                 opacity: 0.3 + i * 0.1,
                               }}
@@ -721,7 +719,6 @@ const Dashboard: React.FC = () => {
                 </Row>
               </Card>
             </div>
-            
             {/* 物理机详细统计 */}
             <div style={{ marginBottom: 24 }}>
               <Card title="物理主机详细统计" className="resource-overview-card">
@@ -787,7 +784,8 @@ const Dashboard: React.FC = () => {
                   </Col>
                 </Row>
               </Card>
-            </div>                {/* 详细信息部分 */}
+            </div>{" "}
+            {/* 详细信息部分 */}
             <div style={{ marginBottom: 24 }}>
               <Row gutter={[16, 16]}>
                 {/* 物理机监控表格 */}
@@ -801,7 +799,13 @@ const Dashboard: React.FC = () => {
                       <Row gutter={16}>
                         <Col span={8}>
                           <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: "20px", fontWeight: "bold", color: "#52c41a" }}>
+                            <div
+                              style={{
+                                fontSize: "20px",
+                                fontWeight: "bold",
+                                color: "#52c41a",
+                              }}
+                            >
                               {data.host.connected}
                             </div>
                             <div style={{ fontSize: "12px", color: "#666" }}>
@@ -811,7 +815,13 @@ const Dashboard: React.FC = () => {
                         </Col>
                         <Col span={8}>
                           <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: "20px", fontWeight: "bold", color: "#ff4d4f" }}>
+                            <div
+                              style={{
+                                fontSize: "20px",
+                                fontWeight: "bold",
+                                color: "#ff4d4f",
+                              }}
+                            >
                               {data.host.disconnected}
                             </div>
                             <div style={{ fontSize: "12px", color: "#666" }}>
@@ -821,7 +831,13 @@ const Dashboard: React.FC = () => {
                         </Col>
                         <Col span={8}>
                           <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: "14px", fontWeight: "bold", color: "#1890ff" }}>
+                            <div
+                              style={{
+                                fontSize: "14px",
+                                fontWeight: "bold",
+                                color: "#1890ff",
+                              }}
+                            >
                               {data.host.totalMemory}
                             </div>
                             <div style={{ fontSize: "12px", color: "#666" }}>

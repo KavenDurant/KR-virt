@@ -137,7 +137,7 @@ const ColumnDrawer: React.FC<ColumnDrawerProps> = ({
         // 合并默认配置和保存的配置，确保新增的列也会显示
         const mergedConfig = DEFAULT_COLUMNS.map((defaultCol) => {
           const savedCol = parsedConfig.find(
-            (col: ColumnConfig) => col.key === defaultCol.key
+            (col: ColumnConfig) => col.key === defaultCol.key,
           );
           return savedCol
             ? { ...defaultCol, visible: savedCol.visible }
@@ -154,7 +154,7 @@ const ColumnDrawer: React.FC<ColumnDrawerProps> = ({
   // 检测是否有变更
   useEffect(() => {
     const hasChanged = columns.some(
-      (col, index) => col.visible !== originalColumns[index]?.visible
+      (col, index) => col.visible !== originalColumns[index]?.visible,
     );
     setHasChanges(hasChanged);
   }, [columns, originalColumns]);
@@ -163,8 +163,8 @@ const ColumnDrawer: React.FC<ColumnDrawerProps> = ({
   const toggleColumnVisibility = (key: string) => {
     setColumns((prev) =>
       prev.map((col) =>
-        col.key === key ? { ...col, visible: !col.visible } : col
-      )
+        col.key === key ? { ...col, visible: !col.visible } : col,
+      ),
     );
   };
 
@@ -206,19 +206,22 @@ const ColumnDrawer: React.FC<ColumnDrawerProps> = ({
       prev.map((col) => ({
         ...col,
         visible: col.fixed || false,
-      }))
+      })),
     );
   };
 
   // 按分组组织列
-  const groupedColumns = columns.reduce((groups, column) => {
-    const group = column.group || "其他";
-    if (!groups[group]) {
-      groups[group] = [];
-    }
-    groups[group].push(column);
-    return groups;
-  }, {} as Record<string, ColumnConfig[]>);
+  const groupedColumns = columns.reduce(
+    (groups, column) => {
+      const group = column.group || "其他";
+      if (!groups[group]) {
+        groups[group] = [];
+      }
+      groups[group].push(column);
+      return groups;
+    },
+    {} as Record<string, ColumnConfig[]>,
+  );
 
   // 统计信息
   const visibleCount = columns.filter((col) => col.visible).length;

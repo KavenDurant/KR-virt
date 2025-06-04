@@ -29,7 +29,7 @@ export interface LoginData {
 class AuthService {
   private readonly TOKEN_KEY = "kr_virt_token";
   private readonly USER_KEY = "kr_virt_user";
-  
+
   // 模拟用户数据库
   private mockUsers = [
     {
@@ -66,7 +66,7 @@ class AuthService {
 
       // 验证用户名密码
       const user = this.mockUsers.find(
-        (u) => u.username === data.username && u.password === data.password
+        (u) => u.username === data.username && u.password === data.password,
       );
 
       if (!user) {

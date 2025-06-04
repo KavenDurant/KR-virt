@@ -360,17 +360,17 @@ const ClusterManagement: React.FC = () => {
   const [sidebarSelectedCluster, setSidebarSelectedCluster] =
     useState<ClusterData | null>(null);
   const [sidebarSelectedHost, setSidebarSelectedHost] = useState<Node | null>(
-    null
+    null,
   );
   const [sidebarSelectedVM, setSidebarSelectedVM] = useState<VMData | null>(
-    null
+    null,
   );
 
   // 监听侧边栏选择事件
   useEffect(() => {
     const handleSidebarSelect = (event: CustomEvent) => {
       const { nodeType, nodeData } = event.detail;
-      console.log('集群页面收到侧边栏选择事件:', { nodeType, nodeData });
+      console.log("集群页面收到侧边栏选择事件:", { nodeType, nodeData });
 
       // 清空所有选择状态
       setSidebarSelectedCluster(null);
@@ -389,13 +389,13 @@ const ClusterManagement: React.FC = () => {
 
     window.addEventListener(
       "hierarchical-sidebar-select",
-      handleSidebarSelect as EventListener
+      handleSidebarSelect as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "hierarchical-sidebar-select",
-        handleSidebarSelect as EventListener
+        handleSidebarSelect as EventListener,
       );
     };
   }, []);
@@ -427,7 +427,7 @@ const ClusterManagement: React.FC = () => {
         const updatedClusters = clusterList.map((cluster) =>
           cluster.id === selectedCluster.id
             ? { ...cluster, ...values }
-            : cluster
+            : cluster,
         );
         setClusterList(updatedClusters);
       } else {
@@ -718,7 +718,7 @@ const ClusterManagement: React.FC = () => {
 
   // 如果从侧边栏选中了集群，显示集群详情
   if (sidebarSelectedCluster) {
-    console.log('显示集群详情:', sidebarSelectedCluster);
+    console.log("显示集群详情:", sidebarSelectedCluster);
     const clusterDetailTabs = [
       {
         key: "basic",
@@ -744,7 +744,7 @@ const ClusterManagement: React.FC = () => {
                     <Descriptions.Item label="虚拟机总数">
                       {sidebarSelectedCluster.nodes.reduce(
                         (acc, node) => acc + node.vms.length,
-                        0
+                        0,
                       )}{" "}
                       台
                     </Descriptions.Item>
@@ -761,8 +761,8 @@ const ClusterManagement: React.FC = () => {
                         value={Math.round(
                           sidebarSelectedCluster.nodes.reduce(
                             (acc, node) => acc + node.cpu,
-                            0
-                          ) / sidebarSelectedCluster.nodes.length
+                            0,
+                          ) / sidebarSelectedCluster.nodes.length,
                         )}
                         suffix="%"
                         prefix={<ThunderboltOutlined />}
@@ -774,8 +774,8 @@ const ClusterManagement: React.FC = () => {
                         value={Math.round(
                           sidebarSelectedCluster.nodes.reduce(
                             (acc, node) => acc + node.memory,
-                            0
-                          ) / sidebarSelectedCluster.nodes.length
+                            0,
+                          ) / sidebarSelectedCluster.nodes.length,
                         )}
                         suffix="%"
                         prefix={<DatabaseOutlined />}
@@ -867,7 +867,7 @@ const ClusterManagement: React.FC = () => {
               <Table
                 size="small"
                 dataSource={sidebarSelectedCluster.nodes.flatMap((node) =>
-                  node.vms.map((vm) => ({ ...vm, nodeName: node.name }))
+                  node.vms.map((vm) => ({ ...vm, nodeName: node.name })),
                 )}
                 columns={[
                   {
@@ -876,7 +876,7 @@ const ClusterManagement: React.FC = () => {
                     key: "name",
                     render: (
                       name: string,
-                      record: VMData & { nodeName?: string }
+                      record: VMData & { nodeName?: string },
                     ) => (
                       <div>
                         <div style={{ fontWeight: "bold" }}>{name}</div>
@@ -1352,7 +1352,7 @@ const ClusterManagement: React.FC = () => {
                             title="主机总数"
                             value={mockClusters.reduce(
                               (acc, curr) => acc + curr.hosts,
-                              0
+                              0,
                             )}
                             prefix={<CloudOutlined />}
                           />
@@ -1364,7 +1364,7 @@ const ClusterManagement: React.FC = () => {
                             title="虚拟机总数"
                             value={mockClusters.reduce(
                               (acc, curr) => acc + curr.vms,
-                              0
+                              0,
                             )}
                             prefix={<DesktopOutlined />}
                           />
@@ -1377,8 +1377,8 @@ const ClusterManagement: React.FC = () => {
                             value={Math.round(
                               mockClusters.reduce(
                                 (acc, curr) => acc + curr.cpuUsage,
-                                0
-                              ) / mockClusters.length
+                                0,
+                              ) / mockClusters.length,
                             )}
                             suffix="%"
                             prefix={<ApiOutlined />}
@@ -1628,7 +1628,7 @@ const ClusterManagement: React.FC = () => {
                       <Table
                         columns={hostColumns}
                         dataSource={mockHosts.filter(
-                          (host) => host.clusterId === selectedCluster.id
+                          (host) => host.clusterId === selectedCluster.id,
                         )}
                         rowKey="id"
                         pagination={false}
@@ -1642,7 +1642,7 @@ const ClusterManagement: React.FC = () => {
                       <Table
                         columns={storageColumns}
                         dataSource={mockStorage.filter(
-                          (storage) => storage.clusterId === selectedCluster.id
+                          (storage) => storage.clusterId === selectedCluster.id,
                         )}
                         rowKey="id"
                         pagination={false}
@@ -1656,7 +1656,7 @@ const ClusterManagement: React.FC = () => {
                       <Table
                         columns={networkColumns}
                         dataSource={mockNetworks.filter(
-                          (network) => network.clusterId === selectedCluster.id
+                          (network) => network.clusterId === selectedCluster.id,
                         )}
                         rowKey="id"
                         pagination={false}

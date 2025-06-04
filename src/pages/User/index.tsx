@@ -240,7 +240,7 @@ const UserManagement: React.FC = () => {
   const handleToggleStatus = (user: User) => {
     const newStatus = user.status === "active" ? "disabled" : "active";
     setUsers(
-      users.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u))
+      users.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u)),
     );
     message.success(`用户状态已${newStatus === "active" ? "启用" : "禁用"}`);
   };

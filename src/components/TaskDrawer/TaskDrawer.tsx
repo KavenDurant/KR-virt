@@ -295,8 +295,8 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({
   ];
 
   return (
-    <div 
-      className={`task-drawer-container ${actualTheme === 'dark' ? 'dark-theme' : 'light-theme'}`} 
+    <div
+      className={`task-drawer-container ${actualTheme === "dark" ? "dark-theme" : "light-theme"}`}
       ref={panelRef}
     >
       {visible ? (

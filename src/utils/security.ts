@@ -77,7 +77,7 @@ class PasswordValidator {
 
     if (
       !/123|234|345|456|567|678|789|890|abc|bcd|cde/.test(
-        password.toLowerCase()
+        password.toLowerCase(),
       )
     ) {
       score += 1; // 无常见序列
@@ -211,7 +211,7 @@ export class SecurityUtils {
   // 验证文件签名
   static async validateFileSignature(
     file: File,
-    expectedHash?: string
+    expectedHash?: string,
   ): Promise<boolean> {
     try {
       const buffer = await file.arrayBuffer();

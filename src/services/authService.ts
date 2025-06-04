@@ -79,7 +79,7 @@ class AuthService {
 
       // 验证用户名密码
       const user = this.mockUsers.find(
-        (u) => u.username === data.username && u.password === data.password
+        (u) => u.username === data.username && u.password === data.password,
       );
 
       if (!user) {
@@ -117,7 +117,7 @@ class AuthService {
     }
   }
   async changePassword(
-    data: ChangePasswordData
+    data: ChangePasswordData,
   ): Promise<ChangePasswordResponse> {
     try {
       // 模拟网络延迟
@@ -127,7 +127,7 @@ class AuthService {
 
       // 查找用户
       const userIndex = this.mockUsers.findIndex(
-        (u) => u.username === data.username
+        (u) => u.username === data.username,
       );
 
       if (userIndex === -1) {

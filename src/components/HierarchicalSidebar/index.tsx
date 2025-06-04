@@ -375,9 +375,7 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
           <span>
             迁移虚拟机
             {!hasVMs && (
-              <span
-                style={{ color: "#999", marginLeft: 8, fontSize: "11px" }}
-              >
+              <span style={{ color: "#999", marginLeft: 8, fontSize: "11px" }}>
                 无虚拟机
               </span>
             )}
@@ -388,19 +386,6 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
       },
       {
         type: "divider",
-      },
-      {
-        key: "console",
-        icon: <MonitorOutlined />,
-        label: (
-          <span>
-            打开控制台
-            <span style={{ color: "#722ed1", marginLeft: 8, fontSize: "11px" }}>
-              IPMI
-            </span>
-          </span>
-        ),
-        onClick: () => handleHostAction("console", host),
       },
     ];
   };
@@ -489,7 +474,7 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
   // 创建物理机（主机）节点
   const createHostNode = (node: Node): TreeNodeData => {
     const statusColor = getStatusColor(node.status);
-    
+
     return {
       key: node.id,
       title: (

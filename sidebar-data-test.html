@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>侧边栏数据测试</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .section {
+        background: white;
+        margin: 20px 0;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .data-tree {
+        font-family: "Courier New", monospace;
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        overflow-x: auto;
+      }
+      .cluster {
+        color: #1890ff;
+        font-weight: bold;
+      }
+      .node {
+        color: #52c41a;
+        margin-left: 20px;
+      }
+      .vm {
+        color: #722ed1;
+        margin-left: 40px;
+      }
+      .status {
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        margin-left: 8px;
+      }
+      .status.running {
+        background: #f6ffed;
+        color: #52c41a;
+      }
+      .status.stopped {
+        background: #fff2f0;
+        color: #ff4d4f;
+      }
+      .status.online {
+        background: #f6ffed;
+        color: #52c41a;
+      }
+      .status.offline {
+        background: #fff2f0;
+        color: #ff4d4f;
+      }
+      .status.healthy {
+        background: #f6ffed;
+        color: #52c41a;
+      }
+      .status.warning {
+        background: #fffbe6;
+        color: #faad14;
+      }
+      h1 {
+        color: #1890ff;
+      }
+      h2 {
+        color: #722ed1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔄 侧边栏数据结构测试</h1>
+
+      <div class="section">
+        <h2>📊 集群页面侧边栏数据 (mockClusterDataCenter)</h2>
+        <p>
+          <strong>用途：</strong>集群管理页面，重点展示集群状态和物理主机管理
+        </p>
+        <div class="data-tree" id="cluster-data"></div>
+      </div>
+
+      <div class="section">
+        <h2>🖥️ 虚拟机页面侧边栏数据 (mockVMDataCenter)</h2>
+        <p>
+          <strong>用途：</strong>虚拟机管理页面，重点展示虚拟机状态和应用服务
+        </p>
+        <div class="data-tree" id="vm-data"></div>
+      </div>
+
+      <div class="section">
+        <h2>📝 关键差异说明</h2>
+        <ul>
+          <li>
+            <strong>集群页面数据：</strong
+            >侧重于生产环境、基础设施管理，包含更多系统级服务
+          </li>
+          <li>
+            <strong>虚拟机页面数据：</strong
+            >侧重于应用服务、开发环境，包含更多应用级服务
+          </li>
+          <li>
+            <strong>命名规范：</strong>集群页面使用 prod/test/backup
+            前缀，虚拟机页面使用 app/dev 前缀
+          </li>
+          <li>
+            <strong>服务类型：</strong>不同的虚拟机配置和用途，适应不同管理场景
+          </li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>🔧 侧边栏组件封装情况</h2>
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 4px">
+          <p><strong>✅ 是的，侧边栏已经封装：</strong></p>
+          <ul>
+            <li>
+              <strong>组件位置：</strong>
+              <code>src/components/HierarchicalSidebar/index.tsx</code>
+            </li>
+            <li>
+              <strong>数据服务：</strong>
+              <code>src/services/mockData.ts</code> 中的
+              <code>getSidebarData()</code> 函数
+            </li>
+            <li>
+              <strong>布局集成：</strong>
+              <code>src/components/Layout/AppLayout.tsx</code> 中统一调用
+            </li>
+            <li>
+              <strong>路由感知：</strong> 根据当前路径 (<code>/cluster</code> 或
+              <code>/virtual-machine</code>) 自动加载对应数据
+            </li>
+            <li>
+              <strong>事件系统：</strong> 使用自定义事件
+              <code>hierarchical-sidebar-select</code> 进行通信
+            </li>
+          </ul>
+          <p><strong>🎯 设计优势：</strong></p>
+          <ul>
+            <li>高度复用：同一个侧边栏组件适用于不同页面</li>
+            <li>数据隔离：不同模块使用专属的数据结构</li>
+            <li>松耦合：通过事件系统进行页面间通信</li>
+            <li>
+              易扩展：新增模块只需在
+              <code>getSidebarData()</code> 中添加新的数据即可
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 模拟集群页面数据
+      const clusterData = {
+        name: "Cluster-DataCenter",
+        clusters: [
+          {
+            name: "生产环境集群",
+            status: "healthy",
+            nodes: [
+              {
+                name: "prod-host-01",
+                status: "online",
+                vms: [
+                  { name: "web-frontend-01", status: "running", vmid: 1001 },
+                  { name: "api-backend-01", status: "running", vmid: 1002 },
+                  { name: "database-master", status: "running", vmid: 1003 },
+                ],
+              },
+              {
+                name: "prod-host-02",
+                status: "online",
+                vms: [
+                  { name: "web-frontend-02", status: "running", vmid: 1004 },
+                  { name: "redis-cluster-01", status: "running", vmid: 1005 },
+                  { name: "monitoring-stack", status: "running", vmid: 1006 },
+                ],
+              },
+            ],
+          },
+          {
+            name: "测试环境集群",
+            status: "healthy",
+            nodes: [
+              {
+                name: "test-host-01",
+                status: "online",
+                vms: [
+                  { name: "test-web-server", status: "running", vmid: 2001 },
+                  { name: "test-database", status: "stopped", vmid: 2002 },
+                ],
+              },
+            ],
+          },
+          {
+            name: "备份集群",
+            status: "warning",
+            nodes: [
+              {
+                name: "backup-host-01",
+                status: "offline",
+                vms: [{ name: "backup-storage", status: "error", vmid: 3001 }],
+              },
+            ],
+          },
+        ],
+      };
+
+      // 模拟虚拟机页面数据
+      const vmData = {
+        name: "VM-DataCenter",
+        clusters: [
+          {
+            name: "虚拟机集群-01",
+            status: "healthy",
+            nodes: [
+              {
+                name: "vm-host-01",
+                status: "online",
+                vms: [
+                  {
+                    name: "application-server-01",
+                    status: "running",
+                    vmid: 101,
+                  },
+                  { name: "mysql-database-01", status: "running", vmid: 102 },
+                  { name: "file-storage-01", status: "running", vmid: 103 },
+                  { name: "redis-cache-server", status: "stopped", vmid: 104 },
+                ],
+              },
+              {
+                name: "vm-host-02",
+                status: "online",
+                vms: [
+                  {
+                    name: "application-server-02",
+                    status: "running",
+                    vmid: 201,
+                  },
+                  { name: "nginx-proxy-01", status: "running", vmid: 202 },
+                  { name: "log-collector-01", status: "suspended", vmid: 203 },
+                ],
+              },
+            ],
+          },
+          {
+            name: "虚拟机集群-02",
+            status: "healthy",
+            nodes: [
+              {
+                name: "vm-host-03",
+                status: "online",
+                vms: [
+                  { name: "dev-environment-01", status: "running", vmid: 301 },
+                  { name: "jenkins-ci-server", status: "running", vmid: 302 },
+                  { name: "gitlab-server", status: "running", vmid: 303 },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      function renderDataTree(data, containerId) {
+        const container = document.getElementById(containerId);
+        let html = `<div class="cluster">📊 ${data.name}</div>\n`;
+
+        data.clusters.forEach((cluster) => {
+          html += `<div class="cluster">  🔗 ${cluster.name} <span class="status ${cluster.status}">${cluster.status}</span></div>\n`;
+
+          cluster.nodes.forEach((node) => {
+            html += `<div class="node">    🖲️ ${node.name} <span class="status ${node.status}">${node.status}</span></div>\n`;
+
+            node.vms.forEach((vm) => {
+              const icon = vm.vmid < 200 ? "🖥️" : "📦";
+              html += `<div class="vm">      ${icon} ${vm.name} (${vm.vmid}) <span class="status ${vm.status}">${vm.status}</span></div>\n`;
+            });
+          });
+        });
+
+        container.innerHTML = html;
+      }
+
+      // 渲染数据树
+      renderDataTree(clusterData, "cluster-data");
+      renderDataTree(vmData, "vm-data");
+    </script>
+  </body>
+</html>

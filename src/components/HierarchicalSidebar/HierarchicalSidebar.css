@@ -387,3 +387,79 @@
 .vm-context-menu .ant-dropdown-menu-item .anticon-monitor {
   color: #722ed1;
 }
+
+/* 物理机右键菜单样式 */
+.host-context-menu .ant-dropdown-menu {
+  border-radius: 6px;
+  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08),
+    0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+  padding: 4px 0;
+}
+
+.host-context-menu .ant-dropdown-menu-item {
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 1px 4px;
+  border-radius: 4px;
+}
+
+.host-context-menu .ant-dropdown-menu-item:hover {
+  background-color: rgba(24, 144, 255, 0.1);
+}
+
+.host-context-menu .ant-dropdown-menu-item-disabled {
+  opacity: 0.5;
+}
+
+.host-context-menu .ant-dropdown-menu-item-disabled:hover {
+  background-color: transparent;
+}
+
+.host-context-menu .ant-dropdown-menu-item .anticon {
+  margin-right: 8px;
+  font-size: 12px;
+}
+
+.host-context-menu .ant-dropdown-menu-item-divider {
+  margin: 4px 8px;
+}
+
+/* 暗色主题下的物理机右键菜单 */
+[data-theme="dark"] .host-context-menu .ant-dropdown-menu {
+  background-color: #2f2f2f;
+  border-color: #404040;
+}
+
+[data-theme="dark"] .host-context-menu .ant-dropdown-menu-item {
+  color: #cccccc;
+}
+
+[data-theme="dark"] .host-context-menu .ant-dropdown-menu-item:hover {
+  background-color: rgba(24, 144, 255, 0.15);
+}
+
+[data-theme="dark"] .host-context-menu .ant-dropdown-menu-item-divider {
+  border-color: #404040;
+}
+
+/* 物理机右键菜单图标颜色 */
+.host-context-menu .ant-dropdown-menu-item .anticon-reload {
+  color: #1890ff;
+}
+
+.host-context-menu .ant-dropdown-menu-item .anticon-poweroff {
+  color: #ff4d4f;
+}
+
+.host-context-menu .ant-dropdown-menu-item .anticon-stop {
+  color: #faad14;
+}
+
+.host-context-menu .ant-dropdown-menu-item .anticon-play-circle {
+  color: #52c41a;
+}
+
+.host-context-menu .ant-dropdown-menu-item .anticon-monitor {
+  color: #722ed1;
+}

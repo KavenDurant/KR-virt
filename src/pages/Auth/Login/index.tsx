@@ -5,7 +5,8 @@
  */
 
 import React, { useState } from "react";
-import { Form, Input, Button, Card, Typography, message } from "antd";
+import { App } from "antd";
+import { Form, Input, Button, Card, Typography, Modal } from "antd";
 import {
   UserOutlined,
   LockOutlined,
@@ -28,22 +29,47 @@ interface LoginFormData {
 }
 
 const Login: React.FC = () => {
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
   const [passwordValidation, setPasswordValidation] = useState(
-    SecurityUtils.validatePassword(""),
+    SecurityUtils.validatePassword("")
   );
-
+  const [newPasswordValue, setNewPasswordValue] = useState("");
+  const [newPasswordValidation, setNewPasswordValidation] = useState(
+    SecurityUtils.validatePassword("")
+  );
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+  const [changePasswordForm] = Form.useForm();
+  interface ChangePasswordFormData {
+    newPassword: string;
+    confirmPassword: string;
+  }
+  interface CurrentUserType {
+    username: string;
+    role: string;
+    permissions: string[];
+    lastLogin: string;
+    isFirstLogin?: boolean;
+  }
+  // 修改用户：用来判断是否为第一次登录
+  const [currentUser, setCurrentUser] = useState<CurrentUserType | null>(null);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   // 监听密码变化
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPasswordValue(value);
     setPasswordValidation(SecurityUtils.validatePassword(value));
   };
-
+  // 监听新密码变化
+  const handleNewPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewPasswordValue(value);
+    setNewPasswordValidation(SecurityUtils.validatePassword(value));
+  };
   // 处理登录提交
   const handleLogin = async (values: LoginFormData) => {
     setLoading(true);
@@ -53,12 +79,20 @@ const Login: React.FC = () => {
         password: values.password,
       };
       const result = await authService.login(loginData);
+      console.log(result, "----");
 
       if (result.success && result.user) {
-        message.success("登录成功！正在跳转...");
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 1000);
+        if (result.user.isFirstLogin) {
+          // 如果是第一次登录，跳转到修改密码页面
+          setCurrentUser(result.user);
+          setShowChangePasswordModal(true);
+          message.info("检测到您是首次登录，请修改密码以确保账户安全");
+        } else {
+          message.success("登录成功！正在跳转...");
+          setTimeout(() => {
+            navigate("/dashboard");
+          }, 1000);
+        }
       } else if (!result.success) {
         console.error("登录失败原因:", result.message);
         message.error(result.message);
@@ -69,7 +103,37 @@ const Login: React.FC = () => {
       setLoading(false);
     }
   };
+  const handleChangePassword = async (values: ChangePasswordFormData) => {
+    setChangePasswordLoading(true);
+    try {
+      if (!currentUser) {
+        message.error("用户信息不存在");
+        setChangePasswordLoading(false);
+        return;
+      }
 
+      const result = await authService.changePassword({
+        username: currentUser.username,
+        oldPassword: form.getFieldValue("password"),
+        newPassword: values.newPassword,
+      });
+
+      if (result.success) {
+        message.success("密码修改成功！正在跳转...");
+        setShowChangePasswordModal(false);
+        changePasswordForm.resetFields();
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1000);
+      } else {
+        message.error(result.message || "密码修改失败");
+      }
+    } catch {
+      message.error("密码修改失败，请稍后重试");
+    } finally {
+      setChangePasswordLoading(false);
+    }
+  };
   // 渲染主登录界面
   return (
     <div className="login-container">
@@ -125,7 +189,7 @@ const Login: React.FC = () => {
                     return Promise.resolve();
                   }
                   return Promise.reject(
-                    new Error("密码强度不足，请参考安全建议"),
+                    new Error("密码强度不足，请参考安全建议")
                   );
                 },
               },
@@ -195,6 +259,96 @@ const Login: React.FC = () => {
           </div>
         </div>
       </Card>
+      <Modal
+        title="首次登录 - 修改密码"
+        footer={null}
+        loading={loading}
+        open={showChangePasswordModal}
+        onCancel={() => setShowChangePasswordModal(false)}
+        centered
+      >
+        <div style={{ marginBottom: 16 }}>
+          <Text type="warning">
+            为了您的账户安全，首次登录需要修改默认密码。
+          </Text>
+        </div>
+        <Form
+          form={changePasswordForm}
+          onFinish={handleChangePassword}
+          layout="vertical"
+          autoComplete="off"
+        >
+          <Form.Item
+            name="newPassword"
+            label="新密码"
+            rules={[
+              { required: true, message: "请输入新密码" },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  const validation = SecurityUtils.validatePassword(value);
+                  if (validation.isValid) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(
+                    new Error("密码强度不足，请参考安全建议")
+                  );
+                },
+              },
+            ]}
+          >
+            <div>
+              <Input.Password
+                size="large"
+                prefix={<LockOutlined />}
+                placeholder="请输入新密码"
+                onChange={handleNewPasswordChange}
+                value={newPasswordValue}
+              />
+              {newPasswordValue && (
+                <PasswordStrengthIndicator
+                  password={newPasswordValue}
+                  validation={newPasswordValidation}
+                  showSuggestions={true}
+                />
+              )}
+            </div>
+          </Form.Item>
+          <Form.Item
+            name="confirmPassword"
+            label="确认新密码"
+            dependencies={["newPassword"]}
+            rules={[
+              { required: true, message: "请确认新密码" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("newPassword") === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error("两次输入的密码不一致"));
+                },
+              }),
+            ]}
+          >
+            <Input.Password
+              size="large"
+              prefix={<LockOutlined />}
+              placeholder="请再次输入新密码"
+            />
+          </Form.Item>
+          <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              loading={changePasswordLoading}
+              block
+            >
+              确认修改
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

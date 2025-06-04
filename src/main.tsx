@@ -5,13 +5,15 @@ import { store } from "./store";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import "./index.css";
 import Router from "./router";
-
+import { App } from "antd";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
       <ThemeProvider>
-        <Router />
+        <App>
+          <Router />
+        </App>
       </ThemeProvider>
     </Provider>
-  </StrictMode>,
+  </StrictMode>
 );

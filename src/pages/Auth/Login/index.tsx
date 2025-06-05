@@ -29,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 import PasswordStrengthIndicator from "../../../components/PasswordStrengthIndicator";
 import { authService } from "../../../services/authService";
 import type { LoginData } from "../../../services/authService";
+import { totpService } from "../../../services/totpService";
 import { SecurityUtils } from "../../../utils/security";
 import "./Login.less";
 
@@ -47,11 +48,11 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
   const [passwordValidation, setPasswordValidation] = useState(
-    SecurityUtils.validatePassword("")
+    SecurityUtils.validatePassword(""),
   );
   const [newPasswordValue, setNewPasswordValue] = useState("");
   const [newPasswordValidation, setNewPasswordValidation] = useState(
-    SecurityUtils.validatePassword("")
+    SecurityUtils.validatePassword(""),
   );
   const [changePasswordLoading, setChangePasswordLoading] = useState(false);
   const [changePasswordForm] = Form.useForm();
@@ -78,6 +79,25 @@ const Login: React.FC = () => {
 
   // TOTP密钥 - 使用提供的真实密钥
   const TOTP_SECRET = "TA2SS5UUTTFSHBELVGVO53NRIR7AQHFM";
+
+  // 在组件挂载时验证TOTP服务
+  React.useEffect(() => {
+    const validateTOTPService = async () => {
+      console.log("验证TOTP服务...");
+      console.log("TOTP密钥:", TOTP_SECRET);
+      console.log("密钥是否有效:", totpService.isValidSecret(TOTP_SECRET));
+
+      try {
+        const currentToken =
+          await totpService.generateCurrentToken(TOTP_SECRET);
+        console.log("当前生成的TOTP代码:", currentToken);
+      } catch (error) {
+        console.error("TOTP服务验证失败:", error);
+      }
+    };
+
+    validateTOTPService();
+  }, []);
   // 监听密码变化
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -167,22 +187,54 @@ const Login: React.FC = () => {
   const handleTOTPVerify = async (values: { verificationCode: string }) => {
     setTotpLoading(true);
     try {
-      // 这里可以添加真实的TOTP验证逻辑
-      // 目前为演示目的，接受任意6位数字
-      if (values.verificationCode && values.verificationCode.length === 6) {
+      console.log("开始验证TOTP代码:", values.verificationCode);
+
+      // 使用真实的TOTP验证
+      const result = await totpService.verifyToken(
+        TOTP_SECRET,
+        values.verificationCode,
+      );
+
+      if (result.success) {
         message.success("双因子认证设置完成！正在跳转到系统...");
         setShowTOTPModal(false);
         totpForm.resetFields();
+
+        // 更新用户状态，标记TOTP已设置
+        if (currentUser) {
+          // 这里可以调用API更新用户的TOTP状态
+          console.log("TOTP设置成功，用户:", currentUser.username);
+        }
+
         setTimeout(() => {
           navigate("/dashboard");
         }, 1000);
       } else {
-        message.error("请输入6位验证码");
+        message.error(result.message);
       }
-    } catch {
+    } catch (error) {
+      console.error("TOTP验证异常:", error);
       message.error("验证失败，请稍后重试");
     } finally {
       setTotpLoading(false);
+    }
+  };
+
+  // 生成当前正确的验证码（开发测试用）
+  const generateTestCode = async () => {
+    try {
+      const currentCode = await totpService.generateCurrentToken(TOTP_SECRET);
+      const nextCode = await totpService.generateNextToken(TOTP_SECRET);
+      const timeRemaining = totpService.getTimeRemaining();
+
+      console.log("当前正确的验证码:", currentCode);
+      console.log("下一个验证码:", nextCode);
+      console.log("剩余时间:", timeRemaining, "秒");
+
+      message.info(`当前验证码: ${currentCode} (${timeRemaining}秒后过期)`);
+    } catch (error) {
+      console.error("生成测试验证码失败:", error);
+      message.error("生成测试验证码失败");
     }
   };
 
@@ -241,7 +293,7 @@ const Login: React.FC = () => {
                     return Promise.resolve();
                   }
                   return Promise.reject(
-                    new Error("密码强度不足，请参考安全建议")
+                    new Error("密码强度不足，请参考安全建议"),
                   );
                 },
               },
@@ -343,7 +395,7 @@ const Login: React.FC = () => {
                     return Promise.resolve();
                   }
                   return Promise.reject(
-                    new Error("密码强度不足，请参考安全建议")
+                    new Error("密码强度不足，请参考安全建议"),
                   );
                 },
               },
@@ -443,10 +495,18 @@ const Login: React.FC = () => {
                     src="/QRCode.png"
                     alt="TOTP QR Code"
                     width={200}
-                    height={200}
                     preview={false}
                     style={{ border: "1px solid #f0f0f0", borderRadius: 8 }}
                   />
+                  <div style={{ marginTop: 12, textAlign: "center" }}>
+                    <Typography.Text
+                      type="secondary"
+                      style={{ fontSize: "12px" }}
+                    >
+                      支持 Google Authenticator、Authy、Microsoft Authenticator
+                      等应用
+                    </Typography.Text>
+                  </div>
                 </div>
                 <div className="totp-manual-entry">
                   <Typography.Text type="secondary">
@@ -477,6 +537,43 @@ const Login: React.FC = () => {
                 >
                   输入认证器生成的验证码
                 </Typography.Title>
+
+                <div style={{ textAlign: "center", marginBottom: 16 }}>
+                  <Typography.Text type="secondary">
+                    验证码每30秒更新一次，请输入当前显示的6位数字
+                  </Typography.Text>
+                </div>
+
+                {/* 开发测试工具 */}
+                {process.env.NODE_ENV === "development" && (
+                  <div
+                    style={{
+                      marginBottom: 16,
+                      padding: 12,
+                      background: "#f0f8ff",
+                      border: "1px solid #d4edda",
+                      borderRadius: 6,
+                      textAlign: "center",
+                    }}
+                  >
+                    <Typography.Text
+                      type="secondary"
+                      style={{ fontSize: "12px", color: "#155724" }}
+                    >
+                      process.env.NODE_ENV === "development"
+                    </Typography.Text>
+                    <br />
+                    <Button
+                      type="link"
+                      onClick={generateTestCode}
+                      size="small"
+                      style={{ fontSize: "12px" }}
+                    >
+                      🔧 获取当前正确验证码
+                    </Button>
+                  </div>
+                )}
+
                 <Form
                   form={totpForm}
                   onFinish={handleTOTPVerify}

@@ -96,7 +96,7 @@ class AuthService {
         role: user.role,
         permissions: user.permissions,
         lastLogin: new Date().toISOString(),
-        isFirstLogin: true, // 默认不是第一次登录
+        isFirstLogin: user.isFirstLogin, // 使用用户数据中的实际值
       };
 
       // 保存登录状态

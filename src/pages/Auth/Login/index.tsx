@@ -6,13 +6,24 @@
 
 import React, { useState } from "react";
 import { App } from "antd";
-import { Form, Input, Button, Card, Typography, Modal } from "antd";
+import {
+  Form,
+  Input,
+  Button,
+  Card,
+  Typography,
+  Modal,
+  Steps,
+  Image,
+} from "antd";
 import {
   UserOutlined,
   LockOutlined,
   SafetyOutlined,
   SecurityScanOutlined,
   CheckCircleOutlined,
+  QrcodeOutlined,
+  CheckOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import PasswordStrengthIndicator from "../../../components/PasswordStrengthIndicator";
@@ -36,11 +47,11 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
   const [passwordValidation, setPasswordValidation] = useState(
-    SecurityUtils.validatePassword(""),
+    SecurityUtils.validatePassword("")
   );
   const [newPasswordValue, setNewPasswordValue] = useState("");
   const [newPasswordValidation, setNewPasswordValidation] = useState(
-    SecurityUtils.validatePassword(""),
+    SecurityUtils.validatePassword("")
   );
   const [changePasswordLoading, setChangePasswordLoading] = useState(false);
   const [changePasswordForm] = Form.useForm();
@@ -58,6 +69,15 @@ const Login: React.FC = () => {
   // 修改用户：用来判断是否为第一次登录
   const [currentUser, setCurrentUser] = useState<CurrentUserType | null>(null);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+
+  // TOTP相关状态
+  const [showTOTPModal, setShowTOTPModal] = useState(false);
+  const [totpStep, setTotpStep] = useState(0); // 0: 扫码, 1: 验证
+  const [totpLoading, setTotpLoading] = useState(false);
+  const [totpForm] = Form.useForm();
+
+  // TOTP密钥 - 使用提供的真实密钥
+  const TOTP_SECRET = "TA2SS5UUTTFSHBELVGVO53NRIR7AQHFM";
   // 监听密码变化
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -119,12 +139,12 @@ const Login: React.FC = () => {
       });
 
       if (result.success) {
-        message.success("密码修改成功！正在跳转...");
+        message.success("密码修改成功！接下来需要设置双因子认证");
         setShowChangePasswordModal(false);
         changePasswordForm.resetFields();
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 1000);
+        // 显示TOTP设置模态框
+        setShowTOTPModal(true);
+        setTotpStep(0);
       } else {
         message.error(result.message || "密码修改失败");
       }
@@ -134,6 +154,38 @@ const Login: React.FC = () => {
       setChangePasswordLoading(false);
     }
   };
+
+  // TOTP相关处理函数
+  const handleTOTPNext = () => {
+    setTotpStep(1);
+  };
+
+  const handleTOTPBack = () => {
+    setTotpStep(0);
+  };
+
+  const handleTOTPVerify = async (values: { verificationCode: string }) => {
+    setTotpLoading(true);
+    try {
+      // 这里可以添加真实的TOTP验证逻辑
+      // 目前为演示目的，接受任意6位数字
+      if (values.verificationCode && values.verificationCode.length === 6) {
+        message.success("双因子认证设置完成！正在跳转到系统...");
+        setShowTOTPModal(false);
+        totpForm.resetFields();
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1000);
+      } else {
+        message.error("请输入6位验证码");
+      }
+    } catch {
+      message.error("验证失败，请稍后重试");
+    } finally {
+      setTotpLoading(false);
+    }
+  };
+
   // 渲染主登录界面
   return (
     <div className="login-container">
@@ -189,7 +241,7 @@ const Login: React.FC = () => {
                     return Promise.resolve();
                   }
                   return Promise.reject(
-                    new Error("密码强度不足，请参考安全建议"),
+                    new Error("密码强度不足，请参考安全建议")
                   );
                 },
               },
@@ -291,7 +343,7 @@ const Login: React.FC = () => {
                     return Promise.resolve();
                   }
                   return Promise.reject(
-                    new Error("密码强度不足，请参考安全建议"),
+                    new Error("密码强度不足，请参考安全建议")
                   );
                 },
               },
@@ -348,6 +400,122 @@ const Login: React.FC = () => {
             </Button>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* TOTP设置模态框 */}
+      <Modal
+        title="设置双因子认证"
+        open={showTOTPModal}
+        onCancel={() => setShowTOTPModal(false)}
+        footer={null}
+        centered
+        width={500}
+        className="totp-modal"
+      >
+        <div className="totp-modal-content">
+          <Steps
+            current={totpStep}
+            size="small"
+            style={{ marginBottom: 24 }}
+            items={[
+              {
+                title: "扫描二维码",
+                icon: <QrcodeOutlined />,
+              },
+              {
+                title: "输入验证码",
+                icon: <CheckOutlined />,
+              },
+            ]}
+          />
+
+          {totpStep === 0 && (
+            <div>
+              <div className="totp-step-content">
+                <Typography.Title
+                  level={4}
+                  style={{ textAlign: "center", marginBottom: 16 }}
+                >
+                  使用认证器应用扫描二维码
+                </Typography.Title>
+                <div className="totp-qr-code">
+                  <Image
+                    src="/QRCode.png"
+                    alt="TOTP QR Code"
+                    width={200}
+                    height={200}
+                    preview={false}
+                    style={{ border: "1px solid #f0f0f0", borderRadius: 8 }}
+                  />
+                </div>
+                <div className="totp-manual-entry">
+                  <Typography.Text type="secondary">
+                    如果无法扫描二维码，请手动输入以下密钥：
+                  </Typography.Text>
+                  <div className="totp-secret-key">
+                    <Typography.Text code copyable>
+                      {TOTP_SECRET}
+                    </Typography.Text>
+                  </div>
+                </div>
+              </div>
+              <div className="totp-modal-actions">
+                <Button onClick={() => setShowTOTPModal(false)}>取消</Button>
+                <Button type="primary" onClick={handleTOTPNext}>
+                  下一步
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {totpStep === 1 && (
+            <div>
+              <div className="totp-step-content">
+                <Typography.Title
+                  level={4}
+                  style={{ textAlign: "center", marginBottom: 16 }}
+                >
+                  输入认证器生成的验证码
+                </Typography.Title>
+                <Form
+                  form={totpForm}
+                  onFinish={handleTOTPVerify}
+                  layout="vertical"
+                >
+                  <Form.Item
+                    name="verificationCode"
+                    label="6位验证码"
+                    rules={[
+                      { required: true, message: "请输入验证码" },
+                      { pattern: /^\d{6}$/, message: "请输入6位数字验证码" },
+                    ]}
+                  >
+                    <Input
+                      size="large"
+                      placeholder="请输入6位数字验证码"
+                      maxLength={6}
+                      style={{
+                        textAlign: "center",
+                        fontSize: "18px",
+                        letterSpacing: "4px",
+                      }}
+                    />
+                  </Form.Item>
+                </Form>
+              </div>
+              <div className="totp-modal-actions">
+                <Button onClick={handleTOTPBack}>上一步</Button>
+                <Button
+                  type="primary"
+                  loading={totpLoading}
+                  onClick={() => totpForm.submit()}
+                >
+                  验证并完成设置
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );

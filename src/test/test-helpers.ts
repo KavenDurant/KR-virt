@@ -1,8 +1,8 @@
 import { vi } from "vitest";
 
 // 通用的mock函数
-export const createMockFunction = <T extends (...args: any[]) => any>(
-  implementation?: T,
+export const createMockFunction = <T extends (...args: unknown[]) => unknown>(
+  implementation?: T
 ) => {
   return vi.fn(implementation);
 };

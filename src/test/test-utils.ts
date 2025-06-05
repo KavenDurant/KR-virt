@@ -3,38 +3,20 @@
  * @Date: 2025-06-05 16:39:28
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
  * @LastEditTime: 2025-06-05 16:44:36
- * @FilePath: /KR-virt/src/test/test-utils.tsx
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ * @FilePath: /KR-virt/src/test/test-utils.ts
+ * @Description: 测试工具函数，重新导出 testing-library 功能
  */
-import { ReactElement } from "react";
-import { render, RenderOptions } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
-import { ConfigProvider } from "antd";
-import zhCN from "antd/locale/zh_CN";
 
-// 创建一个简单的测试包装器
-const TestWrapper = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <BrowserRouter>
-      <ConfigProvider locale={zhCN}>{children}</ConfigProvider>
-    </BrowserRouter>
-  );
-};
-
-// 自定义渲染函数
-const customRender = (
-  ui: ReactElement,
-  options?: Omit<RenderOptions, "wrapper">
-) => render(ui, { wrapper: TestWrapper, ...options });
-
-// 重新导出所有 testing-library 工具，但不包含组件
+// 重新导出 testing-library 的所有功能
 export {
+  render,
   screen,
   fireEvent,
   waitFor,
   act,
   cleanup,
   within,
+  createEvent,
   getByRole,
   getByText,
   getByLabelText,
@@ -85,4 +67,5 @@ export {
   findAllByTestId,
 } from "@testing-library/react";
 
-export { customRender as render };
+// 重新导出 user-event
+export { default as userEvent } from "@testing-library/user-event";

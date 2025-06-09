@@ -222,11 +222,9 @@ export const ClusterStats: React.FC<ClusterStatsProps> = ({ cluster }) => {
                     style={{
                       color: node.status === "online" ? "#52c41a" : "#f5222d",
                     }}
-                  />
-                  <Text strong>{node.name}</Text>
+                  />                  <Text strong>{node.name}</Text>
                   <Tag
                     color={node.status === "online" ? "green" : "red"}
-                    size="small"
                   >
                     {node.status}
                   </Tag>

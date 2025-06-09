@@ -4,6 +4,11 @@
  * @Description: 认证服务 - 简化版
  */
 
+import request from "../utils/request";
+
+// 配置开关：true=使用模拟数据，false=使用真实API
+const USE_MOCK_DATA = true;
+
 // 用户信息接口
 export interface UserInfo {
   username: string;
@@ -25,11 +30,7 @@ export interface AuthResponse {
 export interface LoginData {
   username: string;
   password: string;
-}
-interface ChangePasswordData {
-  username: string;
-  oldPassword: string;
-  newPassword: string;
+  verificationCode?: string; // 验证码
 }
 export interface ChangePasswordResponse {
   success: boolean;
@@ -38,7 +39,6 @@ export interface ChangePasswordResponse {
 class AuthService {
   private readonly TOKEN_KEY = "kr_virt_token";
   private readonly USER_KEY = "kr_virt_user";
-
   // 模拟用户数据库
   private mockUsers = [
     {
@@ -49,43 +49,44 @@ class AuthService {
       isFirstLogin: false,
     },
     {
-      username: "test",
-      password: "123456",
+      username: "test_user",
+      password: "-p0-p0-p0",
       role: "administrator",
       permissions: ["*"],
-      isFirstLogin: true,
+      isFirstLogin: false, // 设置为false，直接登录不需要修改密码
     },
-    {
-      username: "operator",
-      password: "Operator123!@#",
-      role: "operator",
-      permissions: ["vm:read", "vm:create", "network:read"],
-      isFirstLogin: true,
-    },
-    {
-      username: "auditor",
-      password: "Auditor123!@#",
-      role: "auditor",
-      permissions: ["audit:read", "log:read"],
-      isFirstLogin: true,
-    },
-  ];
-
-  // 登录验证
+  ]; // 登录验证
   async login(data: LoginData): Promise<AuthResponse> {
+    if (USE_MOCK_DATA) {
+      return this.mockLogin(data);
+    } else {
+      return this.apiLogin(data);
+    }
+  }
+
+  // 模拟登录（开发模式）
+  private async mockLogin(data: LoginData): Promise<AuthResponse> {
     try {
       // 模拟网络延迟
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // 验证用户名密码
       const user = this.mockUsers.find(
-        (u) => u.username === data.username && u.password === data.password,
+        (u) => u.username === data.username && u.password === data.password
       );
 
       if (!user) {
         return {
           success: false,
           message: "用户名或密码错误",
+        };
+      }
+
+      // 验证验证码（如果提供了验证码）
+      if (data.verificationCode && data.verificationCode !== "123456") {
+        return {
+          success: false,
+          message: "验证码错误",
         };
       }
 
@@ -96,7 +97,7 @@ class AuthService {
         role: user.role,
         permissions: user.permissions,
         lastLogin: new Date().toISOString(),
-        isFirstLogin: user.isFirstLogin, // 使用用户数据中的实际值
+        isFirstLogin: user.isFirstLogin,
       };
 
       // 保存登录状态
@@ -116,75 +117,24 @@ class AuthService {
       };
     }
   }
-  async changePassword(
-    data: ChangePasswordData,
-  ): Promise<ChangePasswordResponse> {
+  // API登录（生产模式）
+  private async apiLogin(data: LoginData): Promise<AuthResponse> {
     try {
-      // 模拟网络延迟
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const response = await request.post("/auth/login", data);
+      const result = response.data || response; // 处理不同的响应格式
 
-      console.log("模拟修改密码请求:", data);
-
-      // 查找用户
-      const userIndex = this.mockUsers.findIndex(
-        (u) => u.username === data.username,
-      );
-
-      if (userIndex === -1) {
-        return {
-          success: false,
-          message: "用户不存在",
-        };
+      if (result.success && result.token && result.user) {
+        // 保存登录状态
+        localStorage.setItem(this.TOKEN_KEY, result.token);
+        localStorage.setItem(this.USER_KEY, JSON.stringify(result.user));
       }
 
-      const user = this.mockUsers[userIndex];
-
-      // 验证旧密码
-      if (user.password !== data.oldPassword) {
-        return {
-          success: false,
-          message: "原密码不正确",
-        };
-      }
-
-      // 验证新密码不能与旧密码相同
-      if (data.newPassword === data.oldPassword) {
-        return {
-          success: false,
-          message: "新密码不能与原密码相同",
-        };
-      }
-
-      // 模拟密码强度验证
-      if (data.newPassword.length < 6) {
-        return {
-          success: false,
-          message: "新密码长度不能少于6位",
-        };
-      }
-
-      // 更新模拟数据库中的密码
-      this.mockUsers[userIndex].password = data.newPassword;
-      this.mockUsers[userIndex].isFirstLogin = false; // 修改密码后不再是第一次登录
-
-      // 更新本地存储的用户信息
-      const currentUser = this.getCurrentUser();
-      if (currentUser) {
-        currentUser.isFirstLogin = false;
-        localStorage.setItem(this.USER_KEY, JSON.stringify(currentUser));
-      }
-
-      console.log("密码修改成功，新的用户数据:", this.mockUsers[userIndex]);
-
-      return {
-        success: true,
-        message: "密码修改成功",
-      };
+      return result as AuthResponse;
     } catch (error) {
-      console.error("修改密码失败:", error);
+      console.error("API登录失败:", error);
       return {
         success: false,
-        message: "网络错误，请稍后重试",
+        message: "登录失败，请稍后重试",
       };
     }
   }

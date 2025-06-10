@@ -10,8 +10,8 @@ import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
-import { PasswordStrength } from "../../utils/security";
-import type { PasswordValidationResult } from "../../utils/security";
+import { PasswordStrength } from "@/utils/security";
+import type { PasswordValidationResult } from "@/utils/security";
 
 const { Text } = Typography;
 

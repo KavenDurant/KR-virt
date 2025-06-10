@@ -5,19 +5,19 @@
  */
 
 import React, { useState } from "react";
-import { Form, Input, Button, Card, Typography, message } from "antd";
+import { App } from "antd";
+import { Form, Input, Button, Card, Typography } from "antd";
 import {
   UserOutlined,
   LockOutlined,
   SafetyOutlined,
   SecurityScanOutlined,
-  CheckCircleOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import PasswordStrengthIndicator from "../../../components/PasswordStrengthIndicator";
-import { authService } from "../../../services/authService";
-import type { LoginData } from "../../../services/authService";
-import { SecurityUtils } from "../../../utils/security";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
+import { loginService } from "@/services/login";
+import type { LoginData } from "@/services/login/types";
+import { SecurityUtils } from "@/utils/security";
 import "./Login.less";
 
 const { Title, Text } = Typography;
@@ -25,9 +25,10 @@ const { Title, Text } = Typography;
 interface LoginFormData {
   username: string;
   password: string;
+  verificationCode: string;
 }
-
 const Login: React.FC = () => {
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const navigate = useNavigate();
 
@@ -36,6 +37,14 @@ const Login: React.FC = () => {
   const [passwordValidation, setPasswordValidation] = useState(
     SecurityUtils.validatePassword("")
   );
+
+  // 在组件挂载时可以添加一些初始化逻辑（如果需要）
+  React.useEffect(() => {
+    console.log("登录页面已加载");
+    console.log("测试账号：test_user");
+    console.log("测试密码：-p-p-p");
+    console.log("固定验证码：123456");
+  }, []);
 
   // 监听密码变化
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,20 +58,19 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       const loginData: LoginData = {
-        username: values.username,
+        login_name: values.username,    // 映射到后端期望的字段名
         password: values.password,
+        two_factor: values.verificationCode,  // 映射到后端期望的字段名
       };
-      const result = await authService.login(loginData);
-
-      if (result.success && result.user) {
-        message.success("登录成功！正在跳转...");
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 1000);
-      } else if (!result.success) {
-        console.error("登录失败原因:", result.message);
-        message.error(result.message);
+      const result = await loginService.login(loginData);
+      if (!result.success) {
+        message.error(result.message || "登录失败，请检查用户名和密码");
+        return;
       }
+      message.success("登录成功！正在跳转...");
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
     } catch {
       message.error("登录失败，请稍后重试");
     } finally {
@@ -81,6 +89,7 @@ const Login: React.FC = () => {
           </Title>
           <Text className="login-subtitle">安全认证 · 信创合规 · 国保三级</Text>
         </div>
+
         <Form
           form={form}
           onFinish={handleLogin}
@@ -108,10 +117,11 @@ const Login: React.FC = () => {
             <Input
               size="large"
               prefix={<UserOutlined />}
-              placeholder="请输入用户名"
+              placeholder="请输入用户名 (test_user)"
               autoComplete="username"
             />
           </Form.Item>
+
           <Form.Item
             name="password"
             label="密码"
@@ -135,7 +145,7 @@ const Login: React.FC = () => {
               <Input.Password
                 size="large"
                 prefix={<LockOutlined />}
-                placeholder="请输入密码"
+                placeholder="请输入密码 (-p0-p0-p0)"
                 autoComplete="current-password"
                 onChange={handlePasswordChange}
                 value={passwordValue}
@@ -149,6 +159,28 @@ const Login: React.FC = () => {
               )}
             </div>
           </Form.Item>
+
+          <Form.Item
+            name="verificationCode"
+            label="验证码"
+            rules={[
+              { required: true, message: "请输入验证码" },
+              { pattern: /^\d{6}$/, message: "请输入6位数字验证码" },
+            ]}
+          >
+            <Input
+              size="large"
+              prefix={<SecurityScanOutlined />}
+              placeholder="请输入6位验证码 (123456)"
+              maxLength={6}
+              style={{
+                textAlign: "center",
+                fontSize: "16px",
+                letterSpacing: "2px",
+              }}
+            />
+          </Form.Item>
+
           <Form.Item className="login-actions">
             <Button
               type="primary"
@@ -161,28 +193,7 @@ const Login: React.FC = () => {
             </Button>
           </Form.Item>
         </Form>
-        <div className="security-notice">
-          <CheckCircleOutlined />
-          <div>
-            <Text strong style={{ color: "#389e0d", fontSize: "13px" }}>
-              测试账户信息：
-            </Text>
-            <ul>
-              <li>
-                <strong>管理员：</strong>用户名: admin，密码: Admin123!@#
-              </li>
-              <li>
-                <strong>操作员：</strong>用户名: operator，密码: Operator123!@#
-              </li>
-              <li>
-                <strong>审计员：</strong>用户名: auditor，密码: Auditor123!@#
-              </li>
-              <li>
-                <strong>测试用户：</strong>用户名: test，密码: 123456
-              </li>
-            </ul>
-          </div>
-        </div>
+
         <div className="compliance-info">
           <div className="compliance-badge">
             <SecurityScanOutlined />

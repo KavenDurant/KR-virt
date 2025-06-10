@@ -148,8 +148,6 @@ body.login-page {
   }
 }
 
-
-
 .login-actions {
   margin-top: 24px;
 
@@ -174,29 +172,6 @@ body.login-page {
   }
 }
 
-.security-notice {
-  background: #f6ffed;
-  border: 1px solid #b7eb8f;
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-top: 20px;
-  display: flex;
-  align-items: flex-start;
-
-  .anticon {
-    color: #52c41a;
-    margin-right: 8px;
-    margin-top: 2px;
-  }
-
-  ul {
-    margin: 0;
-    padding-left: 16px;
-    color: #389e0d;
-    font-size: 12px;
-    line-height: 1.6;
-  }
-}
 
 .compliance-info {
   text-align: center;
@@ -229,7 +204,53 @@ body.login-page {
   }
 }
 
+// TOTP 模态框样式
+.totp-modal-content {
+  .totp-qr-code {
+    text-align: center;
+    padding: 20px 0;
 
+    .ant-image {
+      border: 1px solid #f0f0f0;
+      border-radius: 8px;
+      background: #fafafa;
+      padding: 16px;
+    }
+
+    .totp-manual-entry {
+      margin-top: 16px;
+      text-align: center;
+
+      .totp-secret-key {
+        margin-top: 8px;
+        padding: 12px;
+        background: #f5f5f5;
+        border-radius: 6px;
+        border: 1px solid #d9d9d9;
+        word-break: break-all;
+        font-family: "Courier New", monospace;
+      }
+    }
+  }
+
+  .totp-modal-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  .ant-steps {
+    .ant-steps-item-title {
+      font-size: 14px;
+    }
+
+    .ant-steps-item-description {
+      font-size: 12px;
+    }
+  }
+}
 
 // 响应式设计
 @media (max-width: 576px) {

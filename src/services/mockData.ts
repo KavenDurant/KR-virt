@@ -2,7 +2,7 @@
 export interface VirtualMachine {
   id: string;
   name: string;
-  status: 'running' | 'stopped' | 'suspended' | 'error';
+  status: "running" | "stopped" | "suspended" | "error";
   type: string;
   vmid: number;
   cpu: number;
@@ -15,8 +15,8 @@ export interface VirtualMachine {
 export interface Node {
   id: string;
   name: string;
-  type: 'node';
-  status: 'online' | 'offline';
+  type: "node";
+  status: "online" | "offline";
   cpu: number;
   memory: number;
   uptime: string;
@@ -26,219 +26,390 @@ export interface Node {
 export interface Cluster {
   id: string;
   name: string;
-  type: 'cluster';
-  status: 'healthy' | 'warning' | 'error';
+  type: "cluster";
+  status: "healthy" | "warning" | "error";
   nodes: Node[];
 }
 
 export interface DataCenter {
   id: string;
   name: string;
-  type: 'datacenter';
+  type: "datacenter";
   clusters: Cluster[];
 }
 
-// Mock数据
-export const mockDataCenter: DataCenter = {
-  id: 'datacenter-1',
-  name: 'DataCenter-Main',
-  type: 'datacenter',
+// 集群页面专用的侧边栏数据
+
+// 集群页面专用的侧边栏数据
+export const mockClusterDataCenter: DataCenter = {
+  id: "datacenter-cluster",
+  name: "Cluster-DataCenter",
+  type: "datacenter",
   clusters: [
     {
-      id: 'cluster-1',
-      name: 'Production-Cluster',
-      type: 'cluster',
-      status: 'healthy',
+      id: "cluster-prod",
+      name: "生产环境集群",
+      type: "cluster",
+      status: "healthy",
       nodes: [
         {
-          id: 'node-1',
-          name: 'pve-node-01',
-          type: 'node',
-          status: 'online',
-          cpu: 85,
-          memory: 78,
-          uptime: '15 天',
+          id: "node-prod-01",
+          name: "prod-host-01",
+          type: "node",
+          status: "online",
+          cpu: 75,
+          memory: 85,
+          uptime: "25 天",
           vms: [
             {
-              id: 'vm-101',
-              name: 'web-server-01',
-              status: 'running',
-              type: 'qemu',
-              vmid: 101,
+              id: "vm-web-01",
+              name: "web-frontend-01",
+              status: "running",
+              type: "qemu",
+              vmid: 1001,
+              cpu: 8,
+              memory: 16,
+              diskSize: 200,
+              node: "prod-host-01",
+              uptime: "25 天 10 小时",
+            },
+            {
+              id: "vm-api-01",
+              name: "api-backend-01",
+              status: "running",
+              type: "qemu",
+              vmid: 1002,
+              cpu: 12,
+              memory: 32,
+              diskSize: 500,
+              node: "prod-host-01",
+              uptime: "25 天 10 小时",
+            },
+            {
+              id: "vm-db-master",
+              name: "database-master",
+              status: "running",
+              type: "qemu",
+              vmid: 1003,
+              cpu: 16,
+              memory: 64,
+              diskSize: 2000,
+              node: "prod-host-01",
+              uptime: "25 天 10 小时",
+            },
+          ],
+        },
+        {
+          id: "node-prod-02",
+          name: "prod-host-02",
+          type: "node",
+          status: "online",
+          cpu: 60,
+          memory: 70,
+          uptime: "25 天",
+          vms: [
+            {
+              id: "vm-web-02",
+              name: "web-frontend-02",
+              status: "running",
+              type: "qemu",
+              vmid: 1004,
+              cpu: 8,
+              memory: 16,
+              diskSize: 200,
+              node: "prod-host-02",
+              uptime: "25 天 10 小时",
+            },
+            {
+              id: "vm-cache-01",
+              name: "redis-cluster-01",
+              status: "running",
+              type: "lxc",
+              vmid: 1005,
               cpu: 4,
               memory: 8,
               diskSize: 100,
-              node: 'pve-node-01',
-              uptime: '12 天 8 小时'
+              node: "prod-host-02",
+              uptime: "20 天 5 小时",
             },
             {
-              id: 'vm-102',
-              name: 'database-01',
-              status: 'running',
-              type: 'qemu',
+              id: "vm-monitor",
+              name: "monitoring-stack",
+              status: "running",
+              type: "qemu",
+              vmid: 1006,
+              cpu: 4,
+              memory: 16,
+              diskSize: 300,
+              node: "prod-host-02",
+              uptime: "25 天 10 小时",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "cluster-test",
+      name: "测试环境集群",
+      type: "cluster",
+      status: "healthy",
+      nodes: [
+        {
+          id: "node-test-01",
+          name: "test-host-01",
+          type: "node",
+          status: "online",
+          cpu: 45,
+          memory: 55,
+          uptime: "12 天",
+          vms: [
+            {
+              id: "vm-test-web",
+              name: "test-web-server",
+              status: "running",
+              type: "qemu",
+              vmid: 2001,
+              cpu: 4,
+              memory: 8,
+              diskSize: 100,
+              node: "test-host-01",
+              uptime: "8 天 3 小时",
+            },
+            {
+              id: "vm-test-db",
+              name: "test-database",
+              status: "stopped",
+              type: "qemu",
+              vmid: 2002,
+              cpu: 4,
+              memory: 8,
+              diskSize: 200,
+              node: "test-host-01",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "cluster-backup",
+      name: "备份集群",
+      type: "cluster",
+      status: "warning",
+      nodes: [
+        {
+          id: "node-backup-01",
+          name: "backup-host-01",
+          type: "node",
+          status: "offline",
+          cpu: 0,
+          memory: 0,
+          uptime: "离线",
+          vms: [
+            {
+              id: "vm-backup-01",
+              name: "backup-storage",
+              status: "error",
+              type: "qemu",
+              vmid: 3001,
+              cpu: 2,
+              memory: 4,
+              diskSize: 5000,
+              node: "backup-host-01",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+// 虚拟机页面专用的侧边栏数据
+export const mockVMDataCenter: DataCenter = {
+  id: "datacenter-vm",
+  name: "VM-DataCenter",
+  type: "datacenter",
+  clusters: [
+    {
+      id: "cluster-vm-01",
+      name: "虚拟机集群-01",
+      type: "cluster",
+      status: "healthy",
+      nodes: [
+        {
+          id: "node-vm-01",
+          name: "vm-host-01",
+          type: "node",
+          status: "online",
+          cpu: 55,
+          memory: 68,
+          uptime: "18 天",
+          vms: [
+            {
+              id: "vm-app-01",
+              name: "application-server-01",
+              status: "running",
+              type: "qemu",
+              vmid: 101,
+              cpu: 6,
+              memory: 12,
+              diskSize: 150,
+              node: "vm-host-01",
+              uptime: "15 天 6 小时",
+            },
+            {
+              id: "vm-db-01",
+              name: "mysql-database-01",
+              status: "running",
+              type: "qemu",
               vmid: 102,
               cpu: 8,
-              memory: 16,
-              diskSize: 500,
-              node: 'pve-node-01',
-              uptime: '12 天 8 小时'
+              memory: 24,
+              diskSize: 1000,
+              node: "vm-host-01",
+              uptime: "18 天 2 小时",
             },
             {
-              id: 'vm-103',
-              name: 'app-server-01',
-              status: 'stopped',
-              type: 'qemu',
+              id: "vm-file-01",
+              name: "file-storage-01",
+              status: "running",
+              type: "qemu",
               vmid: 103,
+              cpu: 2,
+              memory: 8,
+              diskSize: 3000,
+              node: "vm-host-01",
+              uptime: "18 天 2 小时",
+            },
+            {
+              id: "vm-cache-redis",
+              name: "redis-cache-server",
+              status: "stopped",
+              type: "lxc",
+              vmid: 104,
               cpu: 2,
               memory: 4,
               diskSize: 50,
-              node: 'pve-node-01'
+              node: "vm-host-01",
             },
-            {
-              id: 'vm-104',
-              name: 'redis-cache',
-              status: 'running',
-              type: 'lxc',
-              vmid: 104,
-              cpu: 1,
-              memory: 2,
-              diskSize: 20,
-              node: 'pve-node-01',
-              uptime: '8 天 15 小时'
-            },
-            {
-              id: 'vm-105',
-              name: 'file-server',
-              status: 'running',
-              type: 'qemu',
-              vmid: 105,
-              cpu: 2,
-              memory: 8,
-              diskSize: 2000,
-              node: 'pve-node-01',
-              uptime: '20 天 4 小时'
-            }
-          ]
+          ],
         },
         {
-          id: 'node-2',
-          name: 'pve-node-02',
-          type: 'node',
-          status: 'online',
-          cpu: 65,
-          memory: 45,
-          uptime: '15 天',
+          id: "node-vm-02",
+          name: "vm-host-02",
+          type: "node",
+          status: "online",
+          cpu: 40,
+          memory: 50,
+          uptime: "18 天",
           vms: [
             {
-              id: 'vm-201',
-              name: 'backup-server',
-              status: 'running',
-              type: 'qemu',
+              id: "vm-app-02",
+              name: "application-server-02",
+              status: "running",
+              type: "qemu",
               vmid: 201,
-              cpu: 2,
-              memory: 8,
-              diskSize: 1000,
-              node: 'pve-node-02',
-              uptime: '10 天 3 小时'
+              cpu: 6,
+              memory: 12,
+              diskSize: 150,
+              node: "vm-host-02",
+              uptime: "15 天 6 小时",
             },
             {
-              id: 'vm-202',
-              name: 'monitoring-01',
-              status: 'running',
-              type: 'lxc',
+              id: "vm-nginx-01",
+              name: "nginx-proxy-01",
+              status: "running",
+              type: "lxc",
               vmid: 202,
               cpu: 1,
               memory: 2,
               diskSize: 20,
-              node: 'pve-node-02',
-              uptime: '15 天 1 小时'
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'cluster-2',
-      name: 'Development-Cluster',
-      type: 'cluster',
-      status: 'healthy',
-      nodes: [
-        {
-          id: 'node-3',
-          name: 'dev-node-01',
-          type: 'node',
-          status: 'online',
-          cpu: 45,
-          memory: 60,
-          uptime: '7 天',
-          vms: [
-            {
-              id: 'vm-301',
-              name: 'dev-web-01',
-              status: 'running',
-              type: 'qemu',
-              vmid: 301,
-              cpu: 2,
-              memory: 4,
-              diskSize: 50,
-              node: 'dev-node-01',
-              uptime: '5 天 12 小时'
+              node: "vm-host-02",
+              uptime: "18 天 2 小时",
             },
             {
-              id: 'vm-302',
-              name: 'test-env-01',
-              status: 'suspended',
-              type: 'qemu',
-              vmid: 302,
-              cpu: 1,
-              memory: 2,
-              diskSize: 30,
-              node: 'dev-node-01'
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'cluster-3',
-      name: 'Testing-Cluster',
-      type: 'cluster',
-      status: 'warning',
-      nodes: [
-        {
-          id: 'node-4',
-          name: 'test-node-01',
-          type: 'node',
-          status: 'offline',
-          cpu: 0,
-          memory: 0,
-          uptime: '离线',
-          vms: [
-            {
-              id: 'vm-401',
-              name: 'test-vm-01',
-              status: 'error',
-              type: 'qemu',
-              vmid: 401,
+              id: "vm-log-01",
+              name: "log-collector-01",
+              status: "suspended",
+              type: "lxc",
+              vmid: 203,
               cpu: 2,
               memory: 4,
-              diskSize: 40,
-              node: 'test-node-01'
-            }
-          ]
-        }
-      ]
-    }
-  ]
+              diskSize: 200,
+              node: "vm-host-02",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "cluster-vm-02",
+      name: "虚拟机集群-02",
+      type: "cluster",
+      status: "healthy",
+      nodes: [
+        {
+          id: "node-vm-03",
+          name: "vm-host-03",
+          type: "node",
+          status: "online",
+          cpu: 25,
+          memory: 35,
+          uptime: "10 天",
+          vms: [
+            {
+              id: "vm-dev-01",
+              name: "dev-environment-01",
+              status: "running",
+              type: "qemu",
+              vmid: 301,
+              cpu: 4,
+              memory: 8,
+              diskSize: 100,
+              node: "vm-host-03",
+              uptime: "5 天 12 小时",
+            },
+            {
+              id: "vm-jenkins",
+              name: "jenkins-ci-server",
+              status: "running",
+              type: "qemu",
+              vmid: 302,
+              cpu: 4,
+              memory: 8,
+              diskSize: 200,
+              node: "vm-host-03",
+              uptime: "10 天 1 小时",
+            },
+            {
+              id: "vm-git-01",
+              name: "gitlab-server",
+              status: "running",
+              type: "qemu",
+              vmid: 303,
+              cpu: 4,
+              memory: 16,
+              diskSize: 500,
+              node: "vm-host-03",
+              uptime: "10 天 1 小时",
+            },
+          ],
+        },
+      ],
+    },
+  ],
 };
 
 // 获取侧边栏数据的服务
+// 根据不同的模块路径返回对应的侧边栏数据
+// 集群页面和虚拟机页面使用不同的数据结构
 export const getSidebarData = (modulePath: string) => {
   switch (modulePath) {
-    case '/virtual-machine':
-      return mockDataCenter;
-    case '/cluster':
-      return mockDataCenter;
+    case "/virtual-machine":
+      // 虚拟机页面：显示以虚拟机管理为主的层次结构
+      return mockVMDataCenter;
+    case "/cluster":
+      // 集群页面：显示以集群管理为主的层次结构
+      return mockClusterDataCenter;
     default:
       return null;
   }
@@ -247,37 +418,37 @@ export const getSidebarData = (modulePath: string) => {
 // 获取状态颜色
 export const getStatusColor = (status: string) => {
   switch (status) {
-    case 'running':
-    case 'online':
-    case 'healthy':
-      return '#52c41a';
-    case 'stopped':
-    case 'offline':
-      return '#ff4d4f';
-    case 'suspended':
-    case 'warning':
-      return '#faad14';
-    case 'error':
-      return '#ff4d4f';
+    case "running":
+    case "online":
+    case "healthy":
+      return "#52c41a";
+    case "stopped":
+    case "offline":
+      return "#ff4d4f";
+    case "suspended":
+    case "warning":
+      return "#faad14";
+    case "error":
+      return "#ff4d4f";
     default:
-      return '#d9d9d9';
+      return "#d9d9d9";
   }
 };
 
 // 获取状态图标
 export const getStatusIcon = (type: string) => {
-  if (type === 'qemu') {
-    return '🖥️';
-  } else if (type === 'lxc') {
-    return '📦';
-  } else if (type === 'node') {
-    return '🖲️';
-  } else if (type === 'cluster') {
-    return '🔗';
-  } else if (type === 'datacenter') {
-    return '🏢';
+  if (type === "qemu") {
+    return "🖥️";
+  } else if (type === "lxc") {
+    return "📦";
+  } else if (type === "node") {
+    return "🖲️";
+  } else if (type === "cluster") {
+    return "🔗";
+  } else if (type === "datacenter") {
+    return "🏢";
   }
-  return '📁';
+  return "📁";
 };
 
 // 虚拟机管理页面数据类型

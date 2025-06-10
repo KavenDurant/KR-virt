@@ -9,14 +9,16 @@ import {
   StopOutlined,
   ReloadOutlined,
   MonitorOutlined,
+  HddOutlined,
 } from "@ant-design/icons";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 import type {
   DataCenter,
   Cluster,
+  Node,
   VirtualMachine,
-} from "../../services/mockData";
-import { getStatusColor, getStatusIcon } from "../../services/mockData";
+} from "@/services/mockData";
+import { getStatusColor, getStatusIcon } from "@/services/mockData";
 import "./HierarchicalSidebar.css";
 
 export interface HierarchicalSidebarProps {
@@ -25,9 +27,9 @@ export interface HierarchicalSidebarProps {
 }
 
 interface TreeNodeData extends TreeDataNode {
-  type: "cluster" | "vm";
+  type: "cluster" | "host" | "vm";
   status?: string;
-  data?: Cluster | VirtualMachine;
+  data?: Cluster | Node | VirtualMachine;
 }
 
 const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
@@ -229,6 +231,165 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
     ];
   };
 
+  // 物理机操作处理函数
+  const handleHostAction = (action: string, host: Node) => {
+    const statusMap = {
+      online: "在线",
+      offline: "离线",
+    };
+
+    const currentStatus = statusMap[host.status] || host.status;
+
+    switch (action) {
+      case "reboot":
+        message.loading({
+          content: `正在重启物理主机 ${host.name}...`,
+          key: "host-action",
+          duration: 3,
+        });
+        setTimeout(() => {
+          message.success({
+            content: `物理主机 ${host.name} 重启成功`,
+            key: "host-action",
+            duration: 2,
+          });
+        }, 3000);
+        break;
+      case "shutdown":
+        message.loading({
+          content: `正在关闭物理主机 ${host.name}...`,
+          key: "host-action",
+          duration: 3,
+        });
+        setTimeout(() => {
+          message.success({
+            content: `物理主机 ${host.name} 关闭成功`,
+            key: "host-action",
+            duration: 2,
+          });
+        }, 3000);
+        break;
+      case "maintenance":
+        message.loading({
+          content: `正在进入维护模式 ${host.name}...`,
+          key: "host-action",
+          duration: 2,
+        });
+        setTimeout(() => {
+          message.success({
+            content: `物理主机 ${host.name} 已进入维护模式`,
+            key: "host-action",
+            duration: 2,
+          });
+        }, 2000);
+        break;
+      case "migrate":
+        message.loading({
+          content: `正在迁移 ${host.name} 上的虚拟机...`,
+          key: "host-action",
+          duration: 4,
+        });
+        setTimeout(() => {
+          message.success({
+            content: `虚拟机迁移完成`,
+            key: "host-action",
+            duration: 2,
+          });
+        }, 4000);
+        break;
+      case "console":
+        message.loading({
+          content: `正在连接物理主机 ${host.name} 控制台...`,
+          key: "host-action",
+          duration: 1,
+        });
+        setTimeout(() => {
+          message.success({
+            content: `物理主机 ${host.name} 控制台已打开`,
+            key: "host-action",
+            duration: 2,
+          });
+        }, 1000);
+        break;
+      default:
+        message.info(`执行操作: ${action} - ${host.name} (${currentStatus})`);
+    }
+  };
+
+  // 获取物理机右键菜单项
+  const getHostContextMenu = (host: Node): MenuProps["items"] => {
+    const isOnline = host.status === "online";
+    const hasVMs = host.vms.length > 0;
+
+    return [
+      {
+        key: "reboot",
+        icon: <ReloadOutlined />,
+        label: (
+          <span>
+            重启主机
+            {hasVMs && (
+              <span
+                style={{ color: "#faad14", marginLeft: 8, fontSize: "11px" }}
+              >
+                需先迁移VM
+              </span>
+            )}
+          </span>
+        ),
+        disabled: !isOnline,
+        onClick: () => handleHostAction("reboot", host),
+      },
+      {
+        key: "shutdown",
+        icon: <PoweroffOutlined />,
+        label: (
+          <span>
+            关闭主机
+            {hasVMs && (
+              <span
+                style={{ color: "#ff4d4f", marginLeft: 8, fontSize: "11px" }}
+              >
+                需先迁移VM
+              </span>
+            )}
+          </span>
+        ),
+        disabled: !isOnline,
+        onClick: () => handleHostAction("shutdown", host),
+      },
+      {
+        type: "divider",
+      },
+      {
+        key: "maintenance",
+        icon: <StopOutlined />,
+        label: "进入维护模式",
+        disabled: !isOnline,
+        onClick: () => handleHostAction("maintenance", host),
+      },
+      {
+        key: "migrate",
+        icon: <PlayCircleOutlined />,
+        label: (
+          <span>
+            迁移虚拟机
+            {!hasVMs && (
+              <span style={{ color: "#999", marginLeft: 8, fontSize: "11px" }}>
+                无虚拟机
+              </span>
+            )}
+          </span>
+        ),
+        disabled: !hasVMs || !isOnline,
+        onClick: () => handleHostAction("migrate", host),
+      },
+      {
+        type: "divider",
+      },
+    ];
+  };
+
   // 当数据加载时，默认选中第一个集群
   useEffect(() => {
     if (data && data.clusters.length > 0) {
@@ -310,16 +471,56 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
     };
   };
 
-  // 创建集群节点 - 直接包含所有虚拟机
+  // 创建物理机（主机）节点
+  const createHostNode = (node: Node): TreeNodeData => {
+    const statusColor = getStatusColor(node.status);
+
+    return {
+      key: node.id,
+      title: (
+        <Dropdown
+          menu={{ items: getHostContextMenu(node) }}
+          trigger={["contextMenu"]}
+          overlayClassName="host-context-menu"
+        >
+          <div className="tree-node-content">
+            <span className="tree-node-icon" style={{ color: statusColor }}>
+              <HddOutlined />
+            </span>
+            <span className="tree-node-title">{node.name}</span>
+            <span
+              className="tree-node-subtitle"
+              style={{
+                fontSize: "11px",
+                color: actualTheme === "dark" ? "#888" : "#999",
+                marginLeft: "4px",
+              }}
+            >
+              ({node.vms.length} VMs)
+            </span>
+            <div className="tree-node-status">
+              <span
+                className="status-dot"
+                style={{ backgroundColor: statusColor }}
+              />
+              <span className="status-text">{node.status}</span>
+            </div>
+          </div>
+        </Dropdown>
+      ),
+      type: "host",
+      status: node.status,
+      data: node,
+      children: node.vms.map(createVMNode),
+      icon: <HddOutlined style={{ color: statusColor }} />,
+      className: "host-node",
+    };
+  };
+
+  // 创建集群节点 - 包含物理机节点
   const createClusterNode = (cluster: Cluster): TreeNodeData => {
     const statusColor = getStatusColor(cluster.status);
     const statusIcon = getStatusIcon(cluster.type);
-
-    // 收集集群下所有节点的虚拟机
-    const allVMs: VirtualMachine[] = [];
-    cluster.nodes.forEach((node) => {
-      allVMs.push(...node.vms);
-    });
 
     return {
       key: cluster.id,
@@ -341,7 +542,7 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
       type: "cluster",
       status: cluster.status,
       data: cluster,
-      children: allVMs.map(createVMNode),
+      children: cluster.nodes.map(createHostNode),
       icon: <ClusterOutlined style={{ color: statusColor }} />,
     };
   };
@@ -350,7 +551,7 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
   const treeData: TreeNodeData[] = data.clusters.map(createClusterNode);
   const handleSelect = (
     newSelectedKeys: React.Key[],
-    info: Record<string, unknown>
+    info: Record<string, unknown>,
   ) => {
     const selectedKeysAsStrings = newSelectedKeys.map(String);
 

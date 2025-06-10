@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-05-22 16:33:12
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-05-23 14:50:17
+ * @LastEditTime: 2025-06-10 11:15:17
  * @FilePath: /KR-virt/vite.config.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -32,7 +32,7 @@ export default defineConfig({
     proxy: {
       // 配置代理
       "/api": {
-        target: "http://localhost:8080",
+        target: "http://192.168.1.187:8001",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },

@@ -7,7 +7,7 @@
 import React, { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Spin } from "antd";
-import { authService } from "../../services/authService";
+import { loginService } from "@/services/login";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -25,19 +25,19 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const checkAuthStatus = async () => {
     try {
       // 检查认证状态
-      const authenticated = authService.isAuthenticated();
+      const authenticated = loginService.isAuthenticated();
 
       // 验证token的有效性（这里可以添加更复杂的验证逻辑）
       if (authenticated) {
-        const user = authService.getCurrentUser();
-        const token = authService.getToken();
+        const user = loginService.getCurrentUser();
+        const token = loginService.getToken();
 
         // 检查用户信息和token是否存在
         if (user && token) {
           setIsAuthenticated(true);
         } else {
           // 清除无效的认证信息
-          authService.logout();
+          loginService.logoutSync();
           setIsAuthenticated(false);
         }
       } else {
@@ -45,7 +45,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       }
     } catch (error) {
       console.error("认证检查失败:", error);
-      authService.logout();
+      loginService.logoutSync();
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);

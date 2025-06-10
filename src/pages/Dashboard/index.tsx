@@ -28,7 +28,7 @@ import {
   AreaChartOutlined,
 } from "@ant-design/icons";
 import "./Dashboard.less";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 
 const { Title, Text } = Typography;
 
@@ -47,8 +47,15 @@ const mockResourceData = {
     total: 8,
     connected: 7,
     disconnected: 1,
+    maintenance: 0,
     cpuUsage: 58,
     memoryUsage: 65,
+    storageUsage: 42,
+    avgCpuCores: 32,
+    totalMemory: "1024GB",
+    totalStorage: "80TB",
+    networkBandwidth: "10Gbps",
+    uptime: "平均运行时间: 25天",
   },
   storage: {
     total: "24 TB",
@@ -69,6 +76,7 @@ const mockResourceData = {
   systemHealth: {
     overall: "normal", // normal, warning, critical
     components: [
+      { name: "物理主机", status: "warning", message: "1台主机离线，需要检查" },
       { name: "计算资源", status: "normal", message: "所有计算资源运行正常" },
       {
         name: "存储资源",
@@ -81,7 +89,13 @@ const mockResourceData = {
   },
   performance: [
     {
-      name: "CPU使用率",
+      name: "物理机CPU",
+      current: 58,
+      trend: "stable",
+      history: [52, 55, 53, 56, 59, 57, 58],
+    },
+    {
+      name: "虚拟机CPU",
       current: 68,
       trend: "up",
       history: [45, 52, 49, 55, 59, 66, 68],
@@ -106,47 +120,80 @@ const mockResourceData = {
       trend: "up",
       history: [85, 90, 95, 105, 110, 115, 120],
     },
+    {
+      name: "主机温度",
+      current: 42,
+      unit: "°C",
+      trend: "stable",
+      history: [40, 41, 43, 42, 44, 41, 42],
+    },
   ],
   alerts: [
     { id: 1, level: "error", message: "物理机 host-03 离线", time: "10分钟前" },
     {
       id: 2,
       level: "warning",
-      message: "存储池 pool-02 使用率超过75%",
-      time: "30分钟前",
+      message: "物理机 host-02 CPU使用率超过85%",
+      time: "20分钟前",
     },
     {
       id: 3,
       level: "warning",
+      message: "存储池 pool-02 使用率超过75%",
+      time: "30分钟前",
+    },
+    {
+      id: 4,
+      level: "warning",
       message: "虚拟机 vm-12 内存使用率高",
       time: "1小时前",
     },
-    { id: 4, level: "info", message: "系统自动备份完成", time: "3小时前" },
+    {
+      id: 5,
+      level: "info",
+      message: "物理机 host-01 重启完成",
+      time: "2小时前",
+    },
+    { id: 6, level: "info", message: "系统自动备份完成", time: "3小时前" },
   ],
   recentEvents: [
     {
       id: 1,
+      operation: "物理机重启",
+      target: "host-prod-01",
+      user: "admin",
+      time: "1小时前",
+    },
+    {
+      id: 2,
       operation: "创建虚拟机",
       target: "vm-48",
       user: "admin",
       time: "2小时前",
     },
     {
-      id: 2,
+      id: 3,
+      operation: "物理机维护",
+      target: "host-prod-03",
+      user: "operator",
+      time: "4小时前",
+    },
+    {
+      id: 4,
       operation: "修改网络配置",
       target: "network-06",
       user: "operator",
       time: "5小时前",
     },
     {
-      id: 3,
+      id: 5,
       operation: "存储迁移",
       target: "volume-23",
       user: "admin",
       time: "1天前",
     },
     {
-      id: 4,
+      id: 6,
       operation: "系统升级",
       target: "全局",
       user: "admin",
@@ -209,7 +256,117 @@ const mockVMData = [
   { key: "2", name: "vm-db-01", status: "running", cpu: 65, memory: 82 },
   { key: "3", name: "vm-app-01", status: "running", cpu: 45, memory: 62 },
   { key: "4", name: "vm-test-01", status: "stopped", cpu: 0, memory: 0 },
-  { key: "5", name: "vm-dev-01", status: "error", cpu: 95, memory: 90 },
+];
+
+// 物理机数据
+const mockHostData = [
+  {
+    key: "1",
+    name: "host-prod-01",
+    status: "connected",
+    cpu: 65,
+    memory: 70,
+    vms: 8,
+    uptime: "25天",
+    temperature: 42,
+  },
+  {
+    key: "2",
+    name: "host-prod-02",
+    status: "connected",
+    cpu: 72,
+    memory: 75,
+    vms: 10,
+    uptime: "30天",
+    temperature: 45,
+  },
+  {
+    key: "3",
+    name: "host-prod-03",
+    status: "disconnected",
+    cpu: 0,
+    memory: 0,
+    vms: 0,
+    uptime: "离线",
+    temperature: 0,
+  },
+  {
+    key: "4",
+    name: "host-test-01",
+    status: "connected",
+    cpu: 45,
+    memory: 55,
+    vms: 5,
+    uptime: "15天",
+    temperature: 38,
+  },
+];
+
+// 物理机表格列定义
+const hostColumns = [
+  {
+    title: "主机名",
+    dataIndex: "name",
+    key: "name",
+    width: 120,
+  },
+  {
+    title: "状态",
+    dataIndex: "status",
+    key: "status",
+    width: 80,
+    render: (status: string) => {
+      const statusMap: Record<string, React.ReactNode> = {
+        connected: (
+          <Text type="success">
+            在线 <CheckCircleOutlined />
+          </Text>
+        ),
+        disconnected: (
+          <Text type="danger">
+            离线 <WarningOutlined />
+          </Text>
+        ),
+        maintenance: <Text type="warning">维护中</Text>,
+      };
+      return statusMap[status] || status;
+    },
+  },
+  {
+    title: "CPU",
+    dataIndex: "cpu",
+    key: "cpu",
+    width: 80,
+    render: (cpu: number) => (
+      <Progress
+        percent={cpu}
+        size="small"
+        status={cpu > 80 ? "exception" : "normal"}
+        format={(percent) => `${percent}%`}
+      />
+    ),
+  },
+  {
+    title: "内存",
+    dataIndex: "memory",
+    key: "memory",
+    width: 80,
+    render: (memory: number) => (
+      <Progress
+        percent={memory}
+        size="small"
+        status={memory > 80 ? "exception" : "normal"}
+        format={(percent) => `${percent}%`}
+      />
+    ),
+  },
+  {
+    title: "虚拟机数",
+    dataIndex: "vms",
+    key: "vms",
+    width: 80,
+    render: (vms: number) => <span style={{ fontSize: "12px" }}>{vms}</span>,
+  },
 ];
 
 const Dashboard: React.FC = () => {
@@ -383,6 +540,44 @@ const Dashboard: React.FC = () => {
             <div style={{ marginBottom: 24 }}>
               <Card title="资源概览" className="resource-overview-card">
                 <Row gutter={[16, 16]}>
+                  {/* 物理机统计 */}
+                  <Col xs={24} sm={12} md={12} lg={8} xl={6}>
+                    <Card className="resource-card">
+                      <Statistic
+                        title="物理主机"
+                        value={data.host.total}
+                        prefix={<HddOutlined />}
+                        suffix={`在线: ${data.host.connected}`}
+                      />
+                      <div className="resource-details">
+                        <div style={{ fontSize: "12px", marginBottom: "8px" }}>
+                          <Text>离线: {data.host.disconnected}</Text>
+                          {data.host.maintenance > 0 && (
+                            <Text style={{ marginLeft: "8px" }}>
+                              维护: {data.host.maintenance}
+                            </Text>
+                          )}
+                        </div>
+                        <Progress
+                          percent={data.host.cpuUsage}
+                          size="small"
+                          status={
+                            data.host.cpuUsage > 80 ? "exception" : "normal"
+                          }
+                          format={(percent) => `CPU ${percent}%`}
+                        />
+                        <Progress
+                          percent={data.host.memoryUsage}
+                          size="small"
+                          status={
+                            data.host.memoryUsage > 80 ? "exception" : "normal"
+                          }
+                          format={(percent) => `内存 ${percent}%`}
+                        />
+                      </div>
+                    </Card>
+                  </Col>
+
                   <Col xs={24} sm={12} md={12} lg={8} xl={6}>
                     <Card className="resource-card">
                       <Statistic
@@ -406,29 +601,6 @@ const Dashboard: React.FC = () => {
                           status={
                             data.vm.memoryUsage > 80 ? "exception" : "normal"
                           }
-                          format={(percent) => `内存 ${percent}%`}
-                        />
-                      </div>
-                    </Card>
-                  </Col>
-
-                  <Col xs={24} sm={12} md={12} lg={8} xl={6}>
-                    <Card className="resource-card">
-                      <Statistic
-                        title="物理机"
-                        value={data.host.total}
-                        prefix={<HddOutlined />}
-                        suffix={`在线: ${data.host.connected}`}
-                      />
-                      <div className="resource-details">
-                        <Progress
-                          percent={data.host.cpuUsage}
-                          size="small"
-                          format={(percent) => `CPU ${percent}%`}
-                        />
-                        <Progress
-                          percent={data.host.memoryUsage}
-                          size="small"
                           format={(percent) => `内存 ${percent}%`}
                         />
                       </div>
@@ -496,7 +668,7 @@ const Dashboard: React.FC = () => {
               <Card title="系统性能" className="performance-overview-card">
                 <Row gutter={[16, 16]}>
                   {data.performance.map((item, index) => (
-                    <Col xs={24} sm={12} md={6} key={index}>
+                    <Col xs={24} sm={12} md={6} lg={4} key={index}>
                       <Card className="performance-card">
                         <div className="performance-header">
                           <div className="performance-title">
@@ -507,8 +679,8 @@ const Dashboard: React.FC = () => {
                               item.trend === "up"
                                 ? "上升"
                                 : item.trend === "down"
-                                ? "下降"
-                                : "稳定"
+                                  ? "下降"
+                                  : "稳定"
                             }`}
                           >
                             <span
@@ -534,7 +706,7 @@ const Dashboard: React.FC = () => {
                               style={{
                                 height: `${val / 6}%`,
                                 backgroundColor: getPerformanceColor(
-                                  item.trend
+                                  item.trend,
                                 ),
                                 opacity: 0.3 + i * 0.1,
                               }}
@@ -547,21 +719,156 @@ const Dashboard: React.FC = () => {
                 </Row>
               </Card>
             </div>
+            {/* 物理机详细统计 */}
+            <div style={{ marginBottom: 24 }}>
+              <Card title="物理主机详细统计" className="resource-overview-card">
+                <Row gutter={[16, 16]}>
+                  <Col xs={24} sm={12} md={6}>
+                    <Card className="resource-card">
+                      <Statistic
+                        title="总计算能力"
+                        value={data.host.avgCpuCores * data.host.total}
+                        suffix="核心"
+                        prefix={<HddOutlined />}
+                      />
+                      <div className="resource-details">
+                        <Text>平均每台: {data.host.avgCpuCores}核心</Text>
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Card className="resource-card">
+                      <Statistic
+                        title="总内存容量"
+                        value={data.host.totalMemory}
+                        prefix={<GlobalOutlined />}
+                      />
+                      <div className="resource-details">
+                        <Progress
+                          percent={data.host.memoryUsage}
+                          size="small"
+                          format={(percent) => `已使用 ${percent}%`}
+                        />
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Card className="resource-card">
+                      <Statistic
+                        title="存储容量"
+                        value={data.host.totalStorage}
+                        prefix={<HddOutlined />}
+                      />
+                      <div className="resource-details">
+                        <Progress
+                          percent={data.host.storageUsage}
+                          size="small"
+                          format={(percent) => `已使用 ${percent}%`}
+                        />
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Card className="resource-card">
+                      <Statistic
+                        title="网络带宽"
+                        value={data.host.networkBandwidth}
+                        prefix={<GlobalOutlined />}
+                      />
+                      <div className="resource-details">
+                        <Text style={{ fontSize: "12px" }}>
+                          {data.host.uptime}
+                        </Text>
+                      </div>
+                    </Card>
+                  </Col>
+                </Row>
+              </Card>
+            </div>{" "}
             {/* 详细信息部分 */}
             <div style={{ marginBottom: 24 }}>
               <Row gutter={[16, 16]}>
-                {/* 虚拟机监控表格 */}
-                <Col xs={24} lg={16}>
+                {/* 物理机监控表格 */}
+                <Col xs={24} lg={8}>
                   <Card
-                    title="热点虚拟机监控"
+                    title="物理主机状态"
+                    className="detail-card"
+                    extra={<a href="#">查看全部</a>}
+                  >
+                    <div style={{ marginBottom: 16 }}>
+                      <Row gutter={16}>
+                        <Col span={8}>
+                          <div style={{ textAlign: "center" }}>
+                            <div
+                              style={{
+                                fontSize: "20px",
+                                fontWeight: "bold",
+                                color: "#52c41a",
+                              }}
+                            >
+                              {data.host.connected}
+                            </div>
+                            <div style={{ fontSize: "12px", color: "#666" }}>
+                              在线主机
+                            </div>
+                          </div>
+                        </Col>
+                        <Col span={8}>
+                          <div style={{ textAlign: "center" }}>
+                            <div
+                              style={{
+                                fontSize: "20px",
+                                fontWeight: "bold",
+                                color: "#ff4d4f",
+                              }}
+                            >
+                              {data.host.disconnected}
+                            </div>
+                            <div style={{ fontSize: "12px", color: "#666" }}>
+                              离线主机
+                            </div>
+                          </div>
+                        </Col>
+                        <Col span={8}>
+                          <div style={{ textAlign: "center" }}>
+                            <div
+                              style={{
+                                fontSize: "14px",
+                                fontWeight: "bold",
+                                color: "#1890ff",
+                              }}
+                            >
+                              {data.host.totalMemory}
+                            </div>
+                            <div style={{ fontSize: "12px", color: "#666" }}>
+                              总内存
+                            </div>
+                          </div>
+                        </Col>
+                      </Row>
+                    </div>
+                    <Table
+                      columns={hostColumns}
+                      dataSource={mockHostData.slice(0, 3)}
+                      pagination={false}
+                      size="small"
+                      scroll={{ x: true }}
+                    />
+                  </Card>
+                </Col>
+
+                {/* 虚拟机监控表格 */}
+                <Col xs={24} lg={8}>
+                  <Card
+                    title="虚拟机监控"
                     className="detail-card"
                     extra={<a href="#">查看全部</a>}
                   >
                     <Table
                       columns={vmColumns}
-                      dataSource={mockVMData}
+                      dataSource={mockVMData.slice(0, 4)}
                       pagination={false}
-                      size="middle"
+                      size="small"
                       scroll={{ x: true }}
                     />
                   </Card>

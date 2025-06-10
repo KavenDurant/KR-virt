@@ -11,7 +11,7 @@ import {
   FileTextOutlined,
 } from "@ant-design/icons";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 import "./TaskDrawer.less";
 
 interface TaskDrawerProps {
@@ -295,8 +295,8 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({
   ];
 
   return (
-    <div 
-      className={`task-drawer-container ${actualTheme === 'dark' ? 'dark-theme' : 'light-theme'}`} 
+    <div
+      className={`task-drawer-container ${actualTheme === "dark" ? "dark-theme" : "light-theme"}`}
       ref={panelRef}
     >
       {visible ? (

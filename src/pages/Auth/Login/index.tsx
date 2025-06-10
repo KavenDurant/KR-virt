@@ -27,7 +27,12 @@ interface LoginFormData {
   password: string;
   verificationCode: string;
 }
-const Login: React.FC = () => {
+
+interface LoginProps {
+  onLoginSuccess?: () => void;
+}
+
+const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const navigate = useNavigate();
@@ -58,9 +63,9 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       const loginData: LoginData = {
-        login_name: values.username,    // 映射到后端期望的字段名
+        login_name: values.username, // 映射到后端期望的字段名
         password: values.password,
-        two_factor: values.verificationCode,  // 映射到后端期望的字段名
+        two_factor: values.verificationCode, // 映射到后端期望的字段名
       };
       const result = await loginService.login(loginData);
       if (!result.success) {
@@ -69,7 +74,11 @@ const Login: React.FC = () => {
       }
       message.success("登录成功！正在跳转...");
       setTimeout(() => {
-        navigate("/dashboard");
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        } else {
+          navigate("/dashboard");
+        }
       }, 1000);
     } catch {
       message.error("登录失败，请稍后重试");

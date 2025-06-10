@@ -103,31 +103,13 @@ const ClusterProcessingPage: React.FC<ClusterProcessingPageProps> = ({
       return (
         <Space direction="vertical" style={{ width: "100%" }}>
           <div>
-            <Text strong>集群名称：</Text>
-            <Text>{createConfig.clusterName}</Text>
+            <Text strong>选择的IP地址：</Text>
+            <Text>{createConfig.selectedIp}</Text>
           </div>
           <div>
             <Text strong>节点角色：</Text>
-            <Text>
-              {createConfig.nodeRole === "master" ? "主节点" : "工作节点"}
-            </Text>
+            <Text>主节点 (Master)</Text>
           </div>
-          <div>
-            <Text strong>网络接口：</Text>
-            <Text>{createConfig.networkInterface}</Text>
-          </div>
-          <div>
-            <Text strong>存储类型：</Text>
-            <Text>
-              {createConfig.storageType === "local" ? "本地存储" : "共享存储"}
-            </Text>
-          </div>
-          {createConfig.description && (
-            <div>
-              <Text strong>描述：</Text>
-              <Text>{createConfig.description}</Text>
-            </div>
-          )}
         </Space>
       );
     } else {

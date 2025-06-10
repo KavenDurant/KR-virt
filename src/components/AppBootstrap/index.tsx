@@ -10,19 +10,22 @@ import { useNavigate } from "react-router-dom";
 import ClusterInitPage from "@/pages/ClusterInit";
 import Login from "@/pages/Auth/Login";
 import { clusterInitService } from "@/services/cluster";
+import type { ClusterStatusResponse } from "@/services/cluster/types";
 
 type AppState = "loading" | "cluster-init" | "login" | "app";
 
 const AppBootstrap: React.FC = () => {
   const [appState, setAppState] = useState<AppState>("loading");
+  const [clusterStatus, setClusterStatus] = useState<ClusterStatusResponse | null>(null);
   const navigate = useNavigate();
 
   const checkApplicationState = React.useCallback(async () => {
     try {
       // 检查集群状态
-      const clusterStatus = await clusterInitService.checkClusterStatus();
+      const status = await clusterInitService.checkClusterStatus();
+      setClusterStatus(status); // 保存状态
 
-      if (!clusterStatus.is_ready) {
+      if (!status.is_ready) {
         // 集群未就绪，需要初始化
         setAppState("cluster-init");
         return;
@@ -86,7 +89,12 @@ const AppBootstrap: React.FC = () => {
       return renderLoadingPage();
 
     case "cluster-init":
-      return <ClusterInitPage onComplete={handleClusterInitComplete} />;
+      return (
+        <ClusterInitPage 
+          onComplete={handleClusterInitComplete} 
+          initialStatus={clusterStatus || undefined}
+        />
+      );
 
     case "login":
       return <Login onLoginSuccess={handleLoginSuccess} />;

@@ -4,7 +4,7 @@
  * @Description: 集群配置页面 - 创建或加入集群
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Tabs,
@@ -18,13 +18,14 @@ import {
   Col,
   Alert,
   App,
+  Spin,
 } from "antd";
 import {
   ClusterOutlined,
   PlusOutlined,
   LinkOutlined,
-  LockOutlined,
 } from "@ant-design/icons";
+import { clusterInitService } from "@/services/cluster";
 import type {
   CreateClusterConfig,
   JoinClusterConfig,
@@ -32,7 +33,6 @@ import type {
 } from "@/services/cluster/types";
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
 
 interface ClusterConfigPageProps {
   initialType?: ClusterConfigType;
@@ -40,7 +40,8 @@ interface ClusterConfigPageProps {
   isJoining?: boolean;
   onSubmit: (
     type: ClusterConfigType,
-    config: CreateClusterConfig | JoinClusterConfig
+    config: CreateClusterConfig | JoinClusterConfig,
+    additionalData?: { hostname?: string }
   ) => void;
   loading?: boolean;
 }
@@ -56,6 +57,63 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
   const [configType, setConfigType] = useState<ClusterConfigType>(initialType);
   const [createForm] = Form.useForm();
   const [joinForm] = Form.useForm();
+  
+  // 节点信息状态
+  const [nodeInfo, setNodeInfo] = useState({
+    hostname: "",
+    ipAddresses: [] as string[],
+    selectedIp: "",
+    loading: true,
+  });
+
+  // 获取节点信息
+  useEffect(() => {
+    const fetchNodeInfo = async () => {
+      try {
+        setNodeInfo(prev => ({ ...prev, loading: true }));
+
+        // 并行获取主机名和IP地址
+        const [hostnameResult, ipResult] = await Promise.all([
+          clusterInitService.getNodeHostname(),
+          clusterInitService.getNodeIpAddresses(),
+        ]);
+
+        let hostname = "";
+        let ipAddresses: string[] = [];
+
+        if (hostnameResult.success && hostnameResult.hostname) {
+          hostname = hostnameResult.hostname;
+        } else {
+          message.warning(hostnameResult.message);
+        }
+
+        if (ipResult.success && ipResult.ipAddresses) {
+          ipAddresses = ipResult.ipAddresses;
+        } else {
+          message.warning(ipResult.message);
+        }
+
+        setNodeInfo({
+          hostname,
+          ipAddresses,
+          selectedIp: ipAddresses[0] || "", // 默认选择第一个IP
+          loading: false,
+        });
+
+        // 更新表单的初始值
+        createForm.setFieldsValue({
+          selectedIp: ipAddresses[0] || "",
+        });
+
+      } catch (error) {
+        console.error("获取节点信息失败:", error);
+        message.error("获取节点信息失败，请稍后重试");
+        setNodeInfo(prev => ({ ...prev, loading: false }));
+      }
+    };
+
+    fetchNodeInfo();
+  }, [createForm, message]);
 
   // 根据当前状态确定默认tab
   const getDefaultActiveKey = () => {
@@ -70,7 +128,9 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
 
   const handleCreateSubmit = async (values: CreateClusterConfig) => {
     try {
-      onSubmit("create", values);
+      onSubmit("create", values, {
+        hostname: nodeInfo.hostname,
+      });
     } catch (error) {
       console.error("提交创建配置失败:", error);
       message.error("提交失败，请稍后重试");
@@ -79,7 +139,7 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
 
   const handleJoinSubmit = async (values: JoinClusterConfig) => {
     try {
-      onSubmit("join", { ...values, nodeRole: "worker" });
+      onSubmit("join", values);
     } catch (error) {
       console.error("提交加入配置失败:", error);
       message.error("提交失败，请稍后重试");
@@ -91,15 +151,10 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
       form={createForm}
       layout="vertical"
       onFinish={handleCreateSubmit}
-      initialValues={{
-        nodeRole: "master",
-        networkInterface: "eth0",
-        storageType: "local",
-      }}
     >
       <Alert
         message="创建新集群"
-        description="您将创建一个新的集群，此节点将作为集群的控制节点"
+        description="系统将自动获取节点信息并创建集群，请选择要使用的IP地址"
         type="info"
         showIcon
         style={{ marginBottom: "24px" }}
@@ -108,50 +163,16 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
       <Row gutter={16}>
         <Col span={24}>
           <Form.Item
-            name="clusterName"
-            label="集群名称"
-            rules={[
-              { required: true, message: "请输入集群名称" },
-              { min: 3, message: "集群名称至少3个字符" },
-              {
-                pattern: /^[a-zA-Z0-9-_]+$/,
-                message: "集群名称只能包含字母、数字、连字符和下划线",
-              },
-            ]}
+            label="节点名称"
           >
-            <Input
-              size="large"
-              placeholder="请输入集群名称，如：production-cluster"
-              prefix={<ClusterOutlined />}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item
-            name="nodeRole"
-            label="节点角色"
-            rules={[{ required: true, message: "请选择节点角色" }]}
-          >
-            <Select size="large" placeholder="选择节点角色">
-              <Select.Option value="master">主节点 (Master)</Select.Option>
-              <Select.Option value="worker">工作节点 (Worker)</Select.Option>
-            </Select>
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item
-            name="networkInterface"
-            label="网络接口"
-            rules={[{ required: true, message: "请输入网络接口" }]}
-          >
-            <Input
-              size="large"
-              placeholder="如：eth0, ens33"
-              prefix={<LinkOutlined />}
-            />
+            <Spin spinning={nodeInfo.loading} size="small">
+              <Input
+                size="large"
+                disabled
+                value={nodeInfo.hostname}
+                placeholder={nodeInfo.loading ? "获取中..." : "自动获取"}
+              />
+            </Spin>
           </Form.Item>
         </Col>
       </Row>
@@ -159,26 +180,25 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
       <Row gutter={16}>
         <Col span={24}>
           <Form.Item
-            name="storageType"
-            label="存储类型"
-            rules={[{ required: true, message: "请选择存储类型" }]}
+            name="selectedIp"
+            label="节点IP地址"
+            rules={[{ required: true, message: "请选择节点IP地址" }]}
           >
-            <Select size="large" placeholder="选择存储类型">
-              <Select.Option value="local">本地存储</Select.Option>
-              <Select.Option value="shared">共享存储</Select.Option>
+            <Select
+              size="large"
+              placeholder="选择IP地址"
+              loading={nodeInfo.loading}
+              disabled={nodeInfo.loading || nodeInfo.ipAddresses.length === 0}
+            >
+              {nodeInfo.ipAddresses.map((ip) => (
+                <Select.Option key={ip} value={ip}>
+                  {ip}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
         </Col>
       </Row>
-
-      <Form.Item name="description" label="描述 (可选)">
-        <TextArea
-          rows={3}
-          placeholder="请输入集群描述信息"
-          maxLength={200}
-          showCount
-        />
-      </Form.Item>
 
       <Form.Item style={{ marginBottom: 0 }}>
         <Button
@@ -200,25 +220,22 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
       form={joinForm}
       layout="vertical"
       onFinish={handleJoinSubmit}
-      initialValues={{
-        masterNodePort: 6443,
-      }}
     >
       <Alert
         message="加入现有集群"
-        description="您将加入一个现有的集群，请确保已从集群管理员获取必要的连接信息"
+        description="请填写节点信息以加入现有集群"
         type="warning"
         showIcon
         style={{ marginBottom: "24px" }}
       />
 
       <Row gutter={16}>
-        <Col span={16}>
+        <Col span={24}>
           <Form.Item
-            name="masterNodeIp"
-            label="主节点IP地址"
+            name="ip"
+            label="节点IP地址"
             rules={[
-              { required: true, message: "请输入主节点IP地址" },
+              { required: true, message: "请输入节点IP地址" },
               {
                 pattern:
                   /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
@@ -233,48 +250,45 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
             />
           </Form.Item>
         </Col>
-        <Col span={8}>
+      </Row>
+
+      <Row gutter={16}>
+        <Col span={24}>
           <Form.Item
-            name="masterNodePort"
-            label="端口"
+            name="hostname"
+            label="节点主机名"
             rules={[
-              { required: true, message: "请输入端口" },
-              {
-                type: "number",
-                min: 1,
-                max: 65535,
-                message: "端口范围：1-65535",
-              },
+              { required: true, message: "请输入节点主机名" },
+              { min: 3, message: "主机名至少3个字符" },
             ]}
           >
-            <Input size="large" type="number" placeholder="6443" />
+            <Input
+              size="large"
+              placeholder="如：worker-node-01"
+              prefix={<ClusterOutlined />}
+            />
           </Form.Item>
         </Col>
       </Row>
 
-      <Form.Item
-        name="joinToken"
-        label="加入令牌"
-        rules={[
-          { required: true, message: "请输入加入令牌" },
-          { min: 10, message: "令牌长度不能少于10位" },
-        ]}
-      >
-        <Input.Password
-          size="large"
-          placeholder="请输入从管理员获取的加入令牌"
-          prefix={<LockOutlined />}
-        />
-      </Form.Item>
-
-      <Form.Item name="description" label="描述 (可选)">
-        <TextArea
-          rows={3}
-          placeholder="请输入节点描述信息"
-          maxLength={200}
-          showCount
-        />
-      </Form.Item>
+      <Row gutter={16}>
+        <Col span={24}>
+          <Form.Item
+            name="pub_key"
+            label="公钥"
+            rules={[
+              { required: true, message: "请输入公钥" },
+              { min: 10, message: "公钥长度不能少于10位" },
+            ]}
+          >
+            <Input.TextArea
+              rows={4}
+              placeholder="请输入节点的公钥"
+              style={{ fontFamily: 'monospace' }}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
 
       <Form.Item style={{ marginBottom: 0 }}>
         <Button

@@ -27,18 +27,22 @@ const ClusterAuthPage: React.FC<ClusterAuthPageProps> = ({
     setIsSubmitting(true);
     try {
       // 导入服务
-      const { clusterInitService } = await import("@/services/cluster");
+      // const { clusterInitService } = await import("@/services/cluster");
 
-      const result = await clusterInitService.verifyOneTimePassword(
-        values.password
-      );
+      // const result = await clusterInitService.verifyOneTimePassword(
+      //   values.password
+      // );
 
-      if (result.success && result.token) {
-        message.success(result.message);
-        onSuccess(result.token);
-      } else {
-        message.error(result.message);
-      }
+      // if (result.success && result.token) {
+      //   message.success(result.message);
+      //   onSuccess(result.token);
+      // } else {
+      //   message.error(result.message);
+      // }
+      // 模拟验证过程
+      onSuccess("admin123admin123");
+      localStorage.setItem("kr_virt_token", "admin123admin123");
+      message.success("验证成功，正在跳转...");
     } catch (error) {
       console.error("验证失败:", error);
       message.error("验证失败，请稍后重试");

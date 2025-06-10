@@ -10,21 +10,114 @@ import type {
   ClusterStatusResponse,
   CreateClusterConfig,
   JoinClusterConfig,
+  CreateClusterRequest,
+  JoinClusterRequest,
+  CreateClusterResponse,
+  ValidationErrorResponse,
+  HostnameResponse,
+  IpAddressesResponse,
 } from "./types";
 
 // 配置区域
-const CLUSTER_API_BASE = "http://192.168.1.187:8001";
-const USE_MOCK_DATA = true; // 开发时可以设置为true使用模拟数据
+const USE_MOCK_DATA = false; // 开发时可以设置为true使用模拟数据
 
 class ClusterInitService {
   private readonly AUTH_TOKEN_KEY = "kr_virt_cluster_auth_token";
+  private statusCache: {
+    data: ClusterStatusResponse;
+    timestamp: number;
+  } | null = null;
+  private readonly CACHE_DURATION = 5000; // 5秒缓存
+
+  /**
+   * 获取节点主机名
+   */
+  async getNodeHostname(): Promise<{
+    success: boolean;
+    hostname?: string;
+    message: string;
+  }> {
+    if (USE_MOCK_DATA) {
+      return this.mockGetNodeHostname();
+    }
+
+    try {
+      const response = await request.get<HostnameResponse>(`/node/hostname`, {
+        skipAuth: true,
+        showErrorMessage: false,
+      } as RequestConfig);
+
+      const result = response.data;
+      return {
+        success: true,
+        hostname: result.hostname,
+        message: "获取主机名成功",
+      };
+    } catch (error) {
+      console.error("获取节点主机名失败:", error);
+      return {
+        success: false,
+        message: "获取主机名失败，请稍后重试",
+      };
+    }
+  }
+
+  /**
+   * 获取节点IP地址列表
+   */
+  async getNodeIpAddresses(): Promise<{
+    success: boolean;
+    ipAddresses?: string[];
+    message: string;
+  }> {
+    if (USE_MOCK_DATA) {
+      return this.mockGetNodeIpAddresses();
+    }
+
+    try {
+      const response = await request.get<IpAddressesResponse>(`/node/ips`, {
+        skipAuth: true,
+        showErrorMessage: false,
+      } as RequestConfig);
+
+      const result = response.data;
+      return {
+        success: true,
+        ipAddresses: result.ip_addresses,
+        message: "获取IP地址列表成功",
+      };
+    } catch (error) {
+      console.error("获取节点IP地址失败:", error);
+      return {
+        success: false,
+        message: "获取IP地址列表失败，请稍后重试",
+      };
+    }
+  }
 
   /**
    * 检查集群状态
    */
   async checkClusterStatus(): Promise<ClusterStatusResponse> {
+    console.log(
+      "🔍 checkClusterStatus API调用 - 来源:",
+      new Error().stack?.split("\n")[2]?.trim()
+    );
+
+    // 检查缓存
+    if (
+      this.statusCache &&
+      Date.now() - this.statusCache.timestamp < this.CACHE_DURATION
+    ) {
+      console.log("📋 使用缓存的集群状态");
+      return this.statusCache.data;
+    }
+
     if (USE_MOCK_DATA) {
-      return this.mockCheckClusterStatus();
+      const result = await this.mockCheckClusterStatus();
+      // 缓存结果
+      this.statusCache = { data: result, timestamp: Date.now() };
+      return result;
     }
 
     try {
@@ -32,7 +125,10 @@ class ClusterInitService {
         skipAuth: true,
       } as RequestConfig);
 
-      return response.data || response;
+      const result = response.data || response;
+      // 缓存结果
+      this.statusCache = { data: result, timestamp: Date.now() };
+      return result;
     } catch (error) {
       console.error("检查集群状态失败:", error);
       throw new Error("无法获取集群状态，请检查网络连接");
@@ -89,39 +185,75 @@ class ClusterInitService {
    * 创建集群
    */
   async createCluster(
-    config: CreateClusterConfig
+    config: CreateClusterConfig,
+    hostname: string
   ): Promise<{ success: boolean; message: string }> {
     if (USE_MOCK_DATA) {
       return this.mockCreateCluster(config);
     }
 
     try {
-      const token = this.getAuthToken();
-      if (!token) {
-        throw new Error("缺少认证token");
-      }
+      // 获取一次性密钥（从localStorage）
+      const requestPayload: CreateClusterRequest = {
+        ip: config.selectedIp,
+        hostname: hostname,
+        disposable_secret_key: 'moke_disposable_secret_key', // 模拟一次性密钥
+      };
 
-      const response = await request.post(
-        `${CLUSTER_API_BASE}/cluster/create`,
-        config,
+      const response = await request.post<CreateClusterResponse>(
+        `/cluster/create`,
+        requestPayload,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          skipAuth: true,
+          skipAuth: true, // 不需要token认证
+          showErrorMessage: false, // 手动处理错误
         } as RequestConfig
       );
 
-      const result = response.data || response;
+      const result = response.data;
       return {
-        success: result.success || true,
+        success: true,
         message: result.message || "集群创建请求已提交",
       };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("创建集群失败:", error);
+
+      // 处理422验证错误
+      if (error && typeof error === "object" && "response" in error) {
+        const httpError = error as {
+          response?: { status?: number; data?: unknown };
+        };
+        if (httpError.response?.status === 422) {
+          const validationError = httpError.response
+            .data as ValidationErrorResponse;
+          const errorMessages = validationError.detail
+            .map((err) => `${err.loc.join(".")}: ${err.msg}`)
+            .join("; ");
+
+          return {
+            success: false,
+            message: `数据验证失败: ${errorMessages}`,
+          };
+        }
+      }
+
+      // 处理其他错误
+      let errorMessage = "创建集群失败，请稍后重试";
+
+      if (error && typeof error === "object") {
+        if ("response" in error) {
+          const httpError = error as {
+            response?: { data?: { message?: string } };
+          };
+          errorMessage = httpError.response?.data?.message || errorMessage;
+        } else if ("message" in error) {
+          const messageError = error as { message: string };
+          errorMessage = messageError.message;
+        }
+      }
+
       return {
         success: false,
-        message: "创建集群失败，请稍后重试",
+        message: errorMessage,
       };
     }
   }
@@ -137,19 +269,25 @@ class ClusterInitService {
     }
 
     try {
-      const token = this.getAuthToken();
-      if (!token) {
-        throw new Error("缺少认证token");
+      // 获取一次性密钥（从localStorage）
+      const disposableKey = this.getAuthToken();
+      if (!disposableKey) {
+        throw new Error("缺少一次性密钥，请先进行身份验证");
       }
 
+      const requestPayload: JoinClusterRequest = {
+        ip: config.ip,
+        hostname: config.hostname,
+        pub_key: config.pub_key,
+        disposable_secret_key: disposableKey,
+      };
+
       const response = await request.post(
-        `${CLUSTER_API_BASE}/cluster/join`,
-        config,
+        `/cluster/join`,
+        requestPayload,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          skipAuth: true,
+          skipAuth: true, // 不需要token认证
+          showErrorMessage: false, // 手动处理错误
         } as RequestConfig
       );
 
@@ -234,6 +372,32 @@ class ClusterInitService {
     return {
       success: true,
       message: "加入集群请求已提交",
+    };
+  }
+
+  private async mockGetNodeHostname(): Promise<{
+    success: boolean;
+    hostname?: string;
+    message: string;
+  }> {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return {
+      success: true,
+      hostname: "cluster-master-node",
+      message: "获取主机名成功",
+    };
+  }
+
+  private async mockGetNodeIpAddresses(): Promise<{
+    success: boolean;
+    ipAddresses?: string[];
+    message: string;
+  }> {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return {
+      success: true,
+      ipAddresses: ["192.168.1.100", "192.168.1.101", "10.0.0.100"],
+      message: "获取IP地址列表成功",
     };
   }
 }

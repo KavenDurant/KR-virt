@@ -4,7 +4,7 @@
  * @Description: 集群初始化主页面 - 协调整个初始化流程
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Spin, App } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 import ClusterAuthPage from "./ClusterAuthPage";
@@ -21,54 +21,80 @@ import type {
 
 interface ClusterInitPageProps {
   onComplete: () => void;
+  initialStatus?: ClusterStatusResponse; // 从AppBootstrap传入的初始状态
 }
 
-const ClusterInitPage: React.FC<ClusterInitPageProps> = ({ onComplete }) => {
+const ClusterInitPage: React.FC<ClusterInitPageProps> = ({ onComplete, initialStatus }) => {
   const { message } = App.useApp();
   const [currentStep, setCurrentStep] = useState<ClusterInitStep>("checking");
   const [clusterStatus, setClusterStatus] =
-    useState<ClusterStatusResponse | null>(null);
+    useState<ClusterStatusResponse | null>(initialStatus || null);
   const [configType, setConfigType] = useState<ClusterConfigType>("create");
   const [clusterConfig, setClusterConfig] = useState<
     CreateClusterConfig | JoinClusterConfig | null
   >(null);
   const [loading, setLoading] = useState(false);
+  const hasCheckedStatus = useRef(false);
 
   // 检查集群状态
-  const checkClusterStatus = React.useCallback(async () => {
-    try {
-      setLoading(true);
-      const status = await clusterInitService.checkClusterStatus();
-      setClusterStatus(status);
-
-      if (status.is_ready) {
-        // 如果集群已就绪，直接完成初始化
+  useEffect(() => {
+    // 如果有初始状态，直接处理，不需要再次调用API
+    if (initialStatus) {
+      console.log("使用AppBootstrap传入的初始状态:", initialStatus);
+      setClusterStatus(initialStatus);
+      
+      if (initialStatus.is_ready) {
         onComplete();
-      } else if (status.is_creating) {
-        // 如果正在创建，跳转到处理页面
+      } else if (initialStatus.is_creating) {
         setCurrentStep("processing");
         setConfigType("create");
-      } else if (status.is_joining) {
-        // 如果正在加入，跳转到处理页面
+      } else if (initialStatus.is_joining) {
         setCurrentStep("processing");
         setConfigType("join");
       } else {
-        // 需要进行配置
         setCurrentStep("auth");
       }
-    } catch (error) {
-      console.error("检查集群状态失败:", error);
-      message.error("无法获取集群状态，请检查网络连接");
-      // 即使失败也允许用户进行配置
-      setCurrentStep("auth");
-    } finally {
-      setLoading(false);
+      return;
     }
-  }, [onComplete, message]);
 
-  useEffect(() => {
-    checkClusterStatus();
-  }, [checkClusterStatus]);
+    // 只有在没有初始状态时才调用API
+    if (hasCheckedStatus.current) return;
+    
+    const checkStatus = async () => {
+      try {
+        hasCheckedStatus.current = true;
+        setLoading(true);
+        console.log("ClusterInitPage: 调用checkClusterStatus API");
+        const status = await clusterInitService.checkClusterStatus();
+        setClusterStatus(status);
+
+        if (status.is_ready) {
+          // 如果集群已就绪，直接完成初始化
+          onComplete();
+        } else if (status.is_creating) {
+          // 如果正在创建，跳转到处理页面
+          setCurrentStep("processing");
+          setConfigType("create");
+        } else if (status.is_joining) {
+          // 如果正在加入，跳转到处理页面
+          setCurrentStep("processing");
+          setConfigType("join");
+        } else {
+          // 需要进行配置
+          setCurrentStep("auth");
+        }
+      } catch (error) {
+        console.error("检查集群状态失败:", error);
+        message.error("无法获取集群状态，请检查网络连接");
+        // 即使失败也允许用户进行配置
+        setCurrentStep("auth");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkStatus();
+  }, [initialStatus, onComplete, message]); // 添加必要的依赖
 
   const handleAuthSuccess = (token: string) => {
     console.log("认证成功，token:", token);
@@ -77,7 +103,8 @@ const ClusterInitPage: React.FC<ClusterInitPageProps> = ({ onComplete }) => {
 
   const handleConfigSubmit = async (
     type: ClusterConfigType,
-    config: CreateClusterConfig | JoinClusterConfig
+    config: CreateClusterConfig | JoinClusterConfig,
+    additionalData?: { hostname?: string }
   ) => {
     try {
       setLoading(true);
@@ -88,7 +115,8 @@ const ClusterInitPage: React.FC<ClusterInitPageProps> = ({ onComplete }) => {
       let result;
       if (type === "create") {
         result = await clusterInitService.createCluster(
-          config as CreateClusterConfig
+          config as CreateClusterConfig,
+          additionalData?.hostname || ""
         );
       } else {
         result = await clusterInitService.joinCluster(

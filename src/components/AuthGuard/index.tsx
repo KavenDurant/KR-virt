@@ -37,7 +37,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
           setIsAuthenticated(true);
         } else {
           // 清除无效的认证信息
-          loginService.logout();
+          loginService.logoutSync();
           setIsAuthenticated(false);
         }
       } else {
@@ -45,7 +45,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       }
     } catch (error) {
       console.error("认证检查失败:", error);
-      loginService.logout();
+      loginService.logoutSync();
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);

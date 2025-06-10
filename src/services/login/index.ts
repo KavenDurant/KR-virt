@@ -240,9 +240,80 @@ class LoginService {
   }
 
   /**
-   * 登出
+   * 登出 - 调用后端API并清除本地数据
    */
-  logout(): void {
+  async logout(): Promise<{ success: boolean; message: string }> {
+    try {
+      const token = this.getToken();
+      console.log("开始登出流程...");
+      console.log(
+        "当前token:",
+        token ? `${token.substring(0, 20)}...` : "null"
+      );
+
+      // 如果有token，尝试调用后端登出API
+      if (token) {
+        try {
+          console.log("正在调用登出API:", "/user/logout");
+          console.log("请求配置: GET /user/logout");
+
+          const response = await request.get("/user/logout");
+
+          console.log("登出API调用成功:", response);
+        } catch (error: unknown) {
+          console.error("后端登出API调用失败:", error);
+
+          // 详细记录错误信息
+          if (error && typeof error === "object" && "response" in error) {
+            const responseError = error as {
+              response?: { status?: number; data?: unknown; headers?: unknown };
+            };
+            console.error("响应状态:", responseError.response?.status);
+            console.error("响应数据:", responseError.response?.data);
+            console.error("响应头:", responseError.response?.headers);
+          } else if (error && typeof error === "object" && "request" in error) {
+            const requestError = error as { request?: unknown };
+            console.error("请求失败，没有收到响应:", requestError.request);
+          } else if (error instanceof Error) {
+            console.error("请求配置错误:", error.message);
+          } else {
+            console.error("未知错误:", error);
+          }
+
+          // 即使后端API失败，也要清除本地数据
+        }
+      } else {
+        console.warn("没有找到token，跳过API调用");
+      }
+
+      // 清除本地存储的认证数据
+      console.log("清除本地认证数据...");
+      localStorage.removeItem(this.TOKEN_KEY);
+      localStorage.removeItem(this.USER_KEY);
+      console.log("本地数据清除完成");
+
+      return {
+        success: true,
+        message: "登出成功",
+      };
+    } catch (error) {
+      console.error("登出过程中发生未预期错误:", error);
+
+      // 即使出错，也要清除本地数据
+      localStorage.removeItem(this.TOKEN_KEY);
+      localStorage.removeItem(this.USER_KEY);
+
+      return {
+        success: false,
+        message: "登出时发生错误，但已清除本地数据",
+      };
+    }
+  }
+
+  /**
+   * 同步登出 - 仅清除本地数据（兼容旧代码）
+   */
+  logoutSync(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
   }
@@ -250,8 +321,15 @@ class LoginService {
   /**
    * 清空所有认证数据
    */
-  clearAuthData(): void {
-    this.logout();
+  async clearAuthData(): Promise<{ success: boolean; message: string }> {
+    return this.logout();
+  }
+
+  /**
+   * 同步清空认证数据（兼容旧代码）
+   */
+  clearAuthDataSync(): void {
+    this.logoutSync();
   }
 
   /**

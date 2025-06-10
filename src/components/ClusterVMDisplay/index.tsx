@@ -17,7 +17,7 @@ import {
   WarningOutlined,
   StopOutlined,
 } from "@ant-design/icons";
-import type { Cluster, VirtualMachine } from "../../services/mockData";
+import type { Cluster, VirtualMachine } from "@/services/mockData";
 import { useTheme } from "../../hooks/useTheme";
 
 const { Title, Text } = Typography;

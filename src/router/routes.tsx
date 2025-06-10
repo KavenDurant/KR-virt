@@ -19,14 +19,14 @@ import {
 } from "@ant-design/icons";
 
 // 导入页面组件
-import VirtualMachineManagement from "../pages/VirtualMachine";
-import ClusterManagement from "../pages/Cluster";
-import NetworkManagement from "../pages/Network";
-import StorageManagement from "../pages/Storage";
-import UserManagement from "../pages/User";
-import SystemSettings from "../pages/System";
-import Dashboard from "../pages/Dashboard";
-import AuditManagement from "../pages/Audit";
+import VirtualMachineManagement from "@/pages/VirtualMachine";
+import ClusterManagement from "@/pages/Cluster";
+import NetworkManagement from "@/pages/Network";
+import StorageManagement from "@/pages/Storage";
+import UserManagement from "@/pages/User";
+import SystemSettings from "@/pages/System";
+import Dashboard from "@/pages/Dashboard";
+import AuditManagement from "@/pages/Audit";
 
 // 定义路由
 export interface RouteConfig {

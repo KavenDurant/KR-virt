@@ -14,10 +14,10 @@ import {
   SecurityScanOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import PasswordStrengthIndicator from "../../../components/PasswordStrengthIndicator";
-import { authService } from "../../../services/authService";
-import type { LoginData } from "../../../services/authService";
-import { SecurityUtils } from "../../../utils/security";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
+import { loginService } from "@/services/login";
+import type { LoginData } from "@/services/login/types";
+import { SecurityUtils } from "@/utils/security";
 import "./Login.less";
 
 const { Title, Text } = Typography;
@@ -58,11 +58,11 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       const loginData: LoginData = {
-        username: values.username,
+        login_name: values.username,    // 映射到后端期望的字段名
         password: values.password,
-        verificationCode: values.verificationCode,
+        two_factor: values.verificationCode,  // 映射到后端期望的字段名
       };
-      const result = await authService.login(loginData);
+      const result = await loginService.login(loginData);
       if (!result.success) {
         message.error(result.message || "登录失败，请检查用户名和密码");
         return;
@@ -88,22 +88,6 @@ const Login: React.FC = () => {
             KR虚拟化管理系统
           </Title>
           <Text className="login-subtitle">安全认证 · 信创合规 · 国保三级</Text>
-        </div>
-
-        {/* 添加测试提示信息 */}
-        <div
-          style={{
-            marginBottom: 16,
-            padding: 12,
-            background: "#f0f8ff",
-            border: "1px solid #d4edda",
-            borderRadius: 6,
-            textAlign: "center",
-          }}
-        >
-          <Text type="secondary" style={{ fontSize: "12px" }}>
-            测试账号：test_user | 密码：-p-p-p | 验证码：123456
-          </Text>
         </div>
 
         <Form

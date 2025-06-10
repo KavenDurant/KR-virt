@@ -28,7 +28,7 @@ import {
   AreaChartOutlined,
 } from "@ant-design/icons";
 import "./Dashboard.less";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 
 const { Title, Text } = Typography;
 

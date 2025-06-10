@@ -25,13 +25,13 @@ import {
   LogoutOutlined,
   KeyOutlined,
 } from "@ant-design/icons";
-import routes from "../../router/routes";
-import TaskDrawer from "../TaskDrawer";
-import HierarchicalSidebar from "../HierarchicalSidebar";
-import { useTheme } from "../../hooks/useTheme";
-import { authService } from "../../services/authService";
-import type { UserInfo } from "../../services/authService";
-import { getSidebarData } from "../../services/mockData";
+import routes from "@/router/routes";
+import TaskDrawer from "@/components/TaskDrawer";
+import HierarchicalSidebar from "@/components/HierarchicalSidebar";
+import { useTheme } from "@/hooks/useTheme";
+import { loginService } from "@/services/login";
+import type { UserInfo } from "@/services/login";
+import { getSidebarData } from "@/services/mockData";
 import "./AppLayout.css";
 
 const AppLayout: React.FC = () => {
@@ -49,7 +49,7 @@ const AppLayout: React.FC = () => {
 
   // 初始化用户信息
   useEffect(() => {
-    const user = authService.getCurrentUser();
+    const user = loginService.getCurrentUser();
     setCurrentUser(user);
   }, []);
 
@@ -172,7 +172,7 @@ const AppLayout: React.FC = () => {
   const confirmLogout = () => {
     try {
       // 清除认证信息
-      authService.logout();
+      loginService.logout();
       console.log("已清除登录信息");
 
       // 直接使用window.location进行页面跳转和刷新

@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { ThemeContext, type ThemeContextType } from "../contexts/ThemeContext";
+import { ThemeContext, type ThemeContextType } from "@/contexts/ThemeContext";
 
 // 主题 Hook
 export const useTheme = (): ThemeContextType => {

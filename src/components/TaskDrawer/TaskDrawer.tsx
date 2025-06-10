@@ -11,7 +11,7 @@ import {
   FileTextOutlined,
 } from "@ant-design/icons";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 import "./TaskDrawer.less";
 
 interface TaskDrawerProps {

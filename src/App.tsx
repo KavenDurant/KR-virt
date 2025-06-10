@@ -10,10 +10,10 @@ import {
   FileTextOutlined,
 } from "@ant-design/icons";
 import { useSelector } from "react-redux";
-import type { RootState } from "./store";
+import type { RootState } from "@/store";
 import "./App.css";
 // 引入Less样式文件
-import "./styles/theme.less";
+import "@/styles/theme.less";
 
 const { DirectoryTree } = Tree;
 

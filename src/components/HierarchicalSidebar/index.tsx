@@ -11,14 +11,14 @@ import {
   MonitorOutlined,
   HddOutlined,
 } from "@ant-design/icons";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 import type {
   DataCenter,
   Cluster,
   Node,
   VirtualMachine,
-} from "../../services/mockData";
-import { getStatusColor, getStatusIcon } from "../../services/mockData";
+} from "@/services/mockData";
+import { getStatusColor, getStatusIcon } from "@/services/mockData";
 import "./HierarchicalSidebar.css";
 
 export interface HierarchicalSidebarProps {

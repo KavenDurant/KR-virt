@@ -77,6 +77,17 @@ export interface IpAddressesResponse {
   ip_addresses: string[];
 }
 
+// 解散集群响应
+export interface DissolveClusterResponse {
+  message: string;
+}
+
+// 解散集群错误响应 (500)
+export interface DissolveClusterErrorResponse {
+  detail: string;
+  error: string;
+}
+
 // 集群初始化状态
 export interface ClusterInitState {
   step: ClusterInitStep;

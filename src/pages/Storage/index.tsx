@@ -17,6 +17,7 @@ import {
   Form,
   message,
   Alert,
+  App,
 } from "antd";
 import {
   HddOutlined,
@@ -120,6 +121,7 @@ const mockStorages: Storage[] = [
 ];
 
 const StorageManagement: React.FC = () => {
+  const { modal } = App.useApp();
   const { themeConfig } = useTheme();
   const [loading, setLoading] = useState(true);
   const [storages, setStorages] = useState<Storage[]>([]);
@@ -293,7 +295,7 @@ const StorageManagement: React.FC = () => {
 
   // 处理删除
   const handleDelete = (storage: Storage) => {
-    Modal.confirm({
+    modal.confirm({
       title: "确认删除",
       content: `确定要删除存储 "${storage.name}" 吗？`,
       onOk: () => {

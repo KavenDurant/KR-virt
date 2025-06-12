@@ -17,6 +17,8 @@ import type {
   ValidationErrorResponse,
   HostnameResponse,
   IpAddressesResponse,
+  DissolveClusterResponse,
+  DissolveClusterErrorResponse,
 } from "./types";
 
 // 配置区域
@@ -198,7 +200,7 @@ class ClusterInitService {
       const requestPayload: CreateClusterRequest = {
         ip: config.selectedIp,
         hostname: hostname,
-        disposable_secret_key: 'moke_disposable_secret_key', // 模拟一次性密钥
+        disposable_secret_key: "moke_disposable_secret_key", // 模拟一次性密钥
       };
 
       const response = await request.post<CreateClusterResponse>(
@@ -283,14 +285,10 @@ class ClusterInitService {
         disposable_secret_key: disposableKey,
       };
 
-      const response = await request.post(
-        `/cluster/join`,
-        requestPayload,
-        {
-          skipAuth: true, // 不需要token认证
-          showErrorMessage: false, // 手动处理错误
-        } as RequestConfig
-      );
+      const response = await request.post(`/cluster/join`, requestPayload, {
+        skipAuth: true, // 不需要token认证
+        showErrorMessage: false, // 手动处理错误
+      } as RequestConfig);
 
       const result = response.data || response;
       return {
@@ -318,6 +316,70 @@ class ClusterInitService {
    */
   clearAuthToken(): void {
     CookieUtils.remove(this.AUTH_TOKEN_KEY);
+  }
+
+  /**
+   * 解散集群
+   */
+  async dissolveCluster(): Promise<{ success: boolean; message: string }> {
+    if (USE_MOCK_DATA) {
+      return this.mockDissolveCluster();
+    }
+
+    try {
+      console.log("调用解散集群API: POST /cluster/dissolve");
+      const response = await request.post<DissolveClusterResponse>(
+        `/cluster/dissolve`,
+        {},
+        {
+          skipAuth: false, // 需要认证
+          showErrorMessage: false, // 手动处理错误
+        } as RequestConfig
+      );
+
+      console.log("解散集群API响应成功:", response);
+      return {
+        success: true,
+        message: response.data.message || "集群解散成功",
+      };
+    } catch (error: unknown) {
+      console.error("解散集群API调用失败:", error);
+
+      // 处理500错误
+      if (error && typeof error === "object" && "response" in error) {
+        const httpError = error as {
+          response?: { status?: number; data?: DissolveClusterErrorResponse };
+        };
+        
+        console.log("HTTP错误状态码:", httpError.response?.status);
+        console.log("HTTP错误数据:", httpError.response?.data);
+
+        if (httpError.response?.status === 500) {
+          const errorData = httpError.response.data;
+          const errorMessage = errorData?.detail || "解散集群失败";
+          console.log("处理500错误，返回消息:", errorMessage);
+          return {
+            success: false,
+            message: errorMessage,
+          };
+        }
+      }
+
+      // 处理其他错误
+      let errorMessage = "解散集群失败，请稍后重试";
+      if (error && typeof error === "object") {
+        if ("message" in error) {
+          const messageError = error as { message: string };
+          errorMessage = messageError.message;
+        }
+      }
+
+      console.log("处理其他错误，返回消息:", errorMessage);
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    }
   }
 
   // ===== 模拟数据方法 =====
@@ -400,6 +462,27 @@ class ClusterInitService {
       ipAddresses: ["192.168.1.100", "192.168.1.101", "10.0.0.100"],
       message: "获取IP地址列表成功",
     };
+  }
+
+  private async mockDissolveCluster(): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // 90%成功率，10%失败率来模拟真实场景
+    const isSuccess = Math.random() > 0.1;
+
+    if (isSuccess) {
+      return {
+        success: true,
+        message: "集群解散成功",
+      };
+    } else {
+      return {
+        success: false,
+        message: "服务端失败信息",
+      };
+    }
   }
 }
 

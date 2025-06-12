@@ -5,6 +5,7 @@
  */
 
 import { http } from "@/utils/request";
+import { CookieUtils } from "@/utils/cookies";
 import type { RequestConfig } from "@/utils/request";
 import type {
   AuthResponse,
@@ -37,9 +38,6 @@ const mockUsers: MockUser[] = [
 ];
 
 class LoginService {
-  private readonly TOKEN_KEY = "kr_virt_token";
-  private readonly USER_KEY = "kr_virt_user";
-
   /**
    * 统一登录入口
    */
@@ -91,8 +89,8 @@ class LoginService {
       };
 
       // 保存登录状态
-      localStorage.setItem(this.TOKEN_KEY, token);
-      localStorage.setItem(this.USER_KEY, JSON.stringify(userInfo));
+      CookieUtils.setToken(token);
+      CookieUtils.setUser(userInfo);
 
       // 模拟登录成功后也启动Token自动刷新
       console.log("🚀 模拟登录成功，启动Token自动刷新");
@@ -147,8 +145,8 @@ class LoginService {
         };
 
         // 保存登录状态
-        localStorage.setItem(this.TOKEN_KEY, result.access_token);
-        localStorage.setItem(this.USER_KEY, JSON.stringify(userInfo));
+        CookieUtils.setToken(result.access_token);
+        CookieUtils.setUser(userInfo);
 
         // 登录成功后立即启动Token自动刷新
         console.log("🚀 登录成功，启动Token自动刷新");
@@ -340,36 +338,28 @@ class LoginService {
    * 获取当前用户信息
    */
   getCurrentUser(): UserInfo | null {
-    const userStr = localStorage.getItem(this.USER_KEY);
-    if (userStr) {
-      try {
-        return JSON.parse(userStr);
-      } catch {
-        return null;
-      }
-    }
-    return null;
+    return CookieUtils.getUser<UserInfo>();
   }
 
   /**
    * 获取token
    */
   getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
+    return CookieUtils.getToken();
   }
 
   /**
    * 设置用户信息
    */
   setUser(user: UserInfo): void {
-    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    CookieUtils.setUser(user);
   }
 
   /**
    * 设置token
    */
   setToken(token: string): void {
-    localStorage.setItem(this.TOKEN_KEY, token);
+    CookieUtils.setToken(token);
   }
 
   /**
@@ -421,8 +411,7 @@ class LoginService {
 
       // 清除本地存储的认证数据
       console.log("清除本地认证数据...");
-      localStorage.removeItem(this.TOKEN_KEY);
-      localStorage.removeItem(this.USER_KEY);
+      CookieUtils.clearAuth();
 
       // 停止Token自动刷新
       console.log("🛑 登出时停止Token自动刷新");
@@ -438,8 +427,7 @@ class LoginService {
       console.error("登出过程中发生未预期错误:", error);
 
       // 即使出错，也要清除本地数据
-      localStorage.removeItem(this.TOKEN_KEY);
-      localStorage.removeItem(this.USER_KEY);
+      CookieUtils.clearAuth();
 
       return {
         success: false,
@@ -452,8 +440,7 @@ class LoginService {
    * 同步登出 - 仅清除本地数据（兼容旧代码）
    */
   logoutSync(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.USER_KEY);
+    CookieUtils.clearAuth();
   }
 
   /**

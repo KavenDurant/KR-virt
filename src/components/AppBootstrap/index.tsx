@@ -11,6 +11,7 @@ import ClusterInitPage from "@/pages/ClusterInit";
 import Login from "@/pages/Auth/Login";
 import { clusterInitService } from "@/services/cluster";
 import { loginService } from "@/services/login";
+import { CookieUtils } from "@/utils/cookies";
 // 在开发环境中加载测试工具
 if (import.meta.env.DEV) {
   import("@/utils/tokenRefreshTestUtils");
@@ -67,7 +68,7 @@ const AppBootstrap: React.FC = () => {
       }
 
       // 集群已就绪，检查用户认证状态
-      const token = localStorage.getItem("kr_virt_token");
+      const token = CookieUtils.getToken();
       if (!token) {
         // 未登录，跳转到登录页
         setAppState("login");

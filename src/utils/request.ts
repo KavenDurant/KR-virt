@@ -5,6 +5,7 @@ import type {
   InternalAxiosRequestConfig,
 } from "axios";
 import { message } from "antd";
+import { CookieUtils } from "./cookies";
 
 // 环境配置
 const isDevelopment = import.meta.env.DEV;
@@ -84,35 +85,35 @@ class RequestQueue {
 
 // Token 管理
 class TokenManager {
-  private static readonly TOKEN_KEY = "kr_virt_token";
   private static readonly REFRESH_TOKEN_KEY = "kr_virt_refresh_token";
   private static readonly TOKEN_EXPIRES_KEY = "kr_virt_token_expires";
   private static refreshPromise: Promise<string> | null = null;
 
   static getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
+    return CookieUtils.getToken();
   }
 
   static setToken(token: string, expiresIn?: number): void {
-    localStorage.setItem(this.TOKEN_KEY, token);
+    const options = expiresIn ? { maxAge: expiresIn } : {};
+    CookieUtils.setToken(token, options);
     if (expiresIn) {
       const expiresAt = Date.now() + expiresIn * 1000;
-      localStorage.setItem(this.TOKEN_EXPIRES_KEY, expiresAt.toString());
+      CookieUtils.set(this.TOKEN_EXPIRES_KEY, expiresAt.toString(), options);
     }
   }
 
   static getRefreshToken(): string | null {
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    return CookieUtils.get(this.REFRESH_TOKEN_KEY);
   }
 
   static setRefreshToken(token: string): void {
-    localStorage.setItem(this.REFRESH_TOKEN_KEY, token);
+    CookieUtils.set(this.REFRESH_TOKEN_KEY, token);
   }
 
   static clearTokens(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-    localStorage.removeItem(this.TOKEN_EXPIRES_KEY);
+    CookieUtils.removeToken();
+    CookieUtils.remove(this.REFRESH_TOKEN_KEY);
+    CookieUtils.remove(this.TOKEN_EXPIRES_KEY);
     this.refreshPromise = null;
   }
 
@@ -122,7 +123,7 @@ class TokenManager {
 
     try {
       // 检查存储的过期时间
-      const expiresAt = localStorage.getItem(this.TOKEN_EXPIRES_KEY);
+      const expiresAt = CookieUtils.get(this.TOKEN_EXPIRES_KEY);
       if (expiresAt && parseInt(expiresAt) < Date.now()) {
         return false;
       }

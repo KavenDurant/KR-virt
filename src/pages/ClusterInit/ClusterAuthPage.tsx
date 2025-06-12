@@ -7,6 +7,7 @@
 import React, { useState } from "react";
 import { Card, Form, Input, Button, Typography, Alert, Space, App } from "antd";
 import { SafetyOutlined, LockOutlined } from "@ant-design/icons";
+import { CookieUtils } from "@/utils/cookies";
 
 const { Title, Text } = Typography;
 
@@ -40,8 +41,9 @@ const ClusterAuthPage: React.FC<ClusterAuthPageProps> = ({
       //   message.error(result.message);
       // }
       // 模拟验证过程
+      console.log("输入的密码:", values.password); // 使用values参数
       onSuccess("admin123admin123");
-      localStorage.setItem("kr_virt_token", "admin123admin123");
+      CookieUtils.setToken("admin123admin123");
       message.success("验证成功，正在跳转...");
     } catch (error) {
       console.error("验证失败:", error);

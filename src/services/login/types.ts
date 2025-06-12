@@ -49,3 +49,16 @@ export interface MockUser {
   permissions: string[];
   isFirstLogin: boolean;
 }
+
+// API 响应类型定义
+export interface LoginApiResponse {
+  access_token: string;
+  permission: unknown;
+  is_first_time_login: boolean;
+  [key: string]: unknown;
+}
+
+export interface RefreshTokenApiResponse {
+  access_token: string;
+  [key: string]: unknown;
+}

@@ -8,6 +8,7 @@
  */
 import React from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { CookieUtils } from "@/utils/cookies";
 import routes from "./routes";
 import AppBootstrap from "@/components/AppBootstrap";
 import AppLayout from "@/components/Layout";
@@ -16,7 +17,7 @@ import Login from "@/pages/Auth/Login";
 
 // 验证用户是否已登录的函数
 const isUserAuthenticated = () => {
-  const token = localStorage.getItem("kr_virt_token");
+  const token = CookieUtils.getToken();
   return !!token;
 };
 

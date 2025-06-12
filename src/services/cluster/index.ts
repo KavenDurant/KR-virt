@@ -5,6 +5,7 @@
  */
 
 import request from "@/utils/request";
+import { CookieUtils } from "@/utils/cookies";
 import type { RequestConfig } from "@/utils/request";
 import type {
   ClusterStatusResponse,
@@ -160,7 +161,7 @@ class ClusterInitService {
 
       if (result.success && result.token) {
         // 保存认证token
-        localStorage.setItem(this.AUTH_TOKEN_KEY, result.token);
+        CookieUtils.set(this.AUTH_TOKEN_KEY, result.token);
         return {
           success: true,
           message: "验证成功",
@@ -309,14 +310,14 @@ class ClusterInitService {
    * 获取认证token
    */
   getAuthToken(): string | null {
-    return localStorage.getItem(this.AUTH_TOKEN_KEY);
+    return CookieUtils.get(this.AUTH_TOKEN_KEY);
   }
 
   /**
    * 清除认证token
    */
   clearAuthToken(): void {
-    localStorage.removeItem(this.AUTH_TOKEN_KEY);
+    CookieUtils.remove(this.AUTH_TOKEN_KEY);
   }
 
   // ===== 模拟数据方法 =====
@@ -339,7 +340,7 @@ class ClusterInitService {
 
     if (password === "testCluster") {
       const token = `mock_token_${Date.now()}`;
-      localStorage.setItem(this.AUTH_TOKEN_KEY, token);
+      CookieUtils.set(this.AUTH_TOKEN_KEY, token);
       return {
         success: true,
         message: "验证成功",

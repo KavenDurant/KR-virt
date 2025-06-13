@@ -13,7 +13,6 @@ import {
   SafetyOutlined,
   SecurityScanOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import { loginService } from "@/services/login";
 import type { LoginData } from "@/services/login/types";
@@ -35,7 +34,6 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const { message } = App.useApp();
   const [form] = Form.useForm();
-  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
@@ -77,7 +75,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         if (onLoginSuccess) {
           onLoginSuccess();
         } else {
-          navigate("/dashboard");
+          // 使用正确的Hash路由格式跳转到仪表盘
+          window.location.hash = "#/dashboard";
         }
       }, 1000);
     } catch {

@@ -728,28 +728,36 @@ class TokenRefreshManager {
         ) {
           console.log("🛑 Token已失效，停止自动刷新");
           this.stopAutoRefresh();
-          
+
           // 通知用户并强制退出登录
-          this.handleAuthFailure("Token自动刷新失败，为了您的账户安全，系统将自动退出登录");
+          this.handleAuthFailure(
+            "Token自动刷新失败，为了您的账户安全，系统将自动退出登录"
+          );
         }
       }
     } catch (error) {
       console.error("❌ Token自动刷新出错:", error);
-      
+
       // 如果是网络错误或其他关键错误，也考虑强制退出登录
       if (error && typeof error === "object") {
-        const errorObj = error as { status?: number; code?: string; message?: string };
-        
+        const errorObj = error as {
+          status?: number;
+          code?: string;
+          message?: string;
+        };
+
         // 401未授权或403禁止访问，直接强制退出
         if (errorObj.status === 401 || errorObj.status === 403) {
           console.log("🛑 收到认证错误响应，强制退出登录");
           this.handleAuthFailure("身份验证失败，系统将自动退出登录");
         }
         // Token相关错误
-        else if (errorObj.message && 
-                (errorObj.message.includes("token") || 
-                 errorObj.message.includes("unauthorized") || 
-                 errorObj.message.includes("expired"))) {
+        else if (
+          errorObj.message &&
+          (errorObj.message.includes("token") ||
+            errorObj.message.includes("unauthorized") ||
+            errorObj.message.includes("expired"))
+        ) {
           console.log("🛑 Token相关错误，强制退出登录");
           this.handleAuthFailure("Token验证失败，系统将自动退出登录");
         }
@@ -775,17 +783,17 @@ class TokenRefreshManager {
   private async handleAuthFailure(message: string): Promise<void> {
     try {
       console.error("🚨 认证失败，强制退出登录:", message);
-      
+
       // 停止自动刷新
       this.stopAutoRefresh();
-      
+
       // 清除本地认证数据
       if (this.loginServiceInstance) {
         this.loginServiceInstance.clearAuthDataSync();
       }
-      
+
       // 显示通知
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         // 尝试使用全局通知组件
         try {
           const globalWindow = window as unknown as {
@@ -795,7 +803,7 @@ class TokenRefreshManager {
               };
             };
           };
-          
+
           if (globalWindow.antd && globalWindow.antd.message) {
             globalWindow.antd.message.error(message);
           } else {
@@ -806,12 +814,16 @@ class TokenRefreshManager {
           console.warn("显示通知失败，使用alert:", notificationError);
           alert(message);
         }
-        
+
         // 延迟后重定向到登录页面
         setTimeout(() => {
-          if (window.location.pathname !== '/login') {
+          if (
+            window.location.pathname !== "/login" &&
+            !window.location.hash.includes("/login")
+          ) {
             console.log("🔄 重定向到登录页面");
-            window.location.href = '/login';
+            // 使用正确的Hash路由格式
+            window.location.hash = "/login";
           }
         }, 2000);
       }

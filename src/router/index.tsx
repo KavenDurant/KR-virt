@@ -9,7 +9,6 @@
 import React from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CookieUtils } from "@/utils/cookies";
-import routes from "./routes";
 import AppBootstrap from "@/components/AppBootstrap";
 import AppLayout from "@/components/Layout";
 import AuthGuard from "@/components/AuthGuard";
@@ -31,27 +30,18 @@ const Router: React.FC = () => {
         {/* 独立的登录路由 */}
         <Route path="/login" element={<Login />} />
 
-        {/* 根路由 - 重定向到启动页面或主应用 */}
+        {/* 根路由 - 重定向到启动页面 */}
         <Route path="/" element={<Navigate to="/bootstrap" replace />} />
 
-        {/* 受保护的应用路由 */}
+        {/* 受保护的应用路由 - 这些路由都在AppLayout内部 */}
         <Route
-          path="/"
+          path="/*"
           element={
             <AuthGuard>
               <AppLayout />
             </AuthGuard>
           }
-        >
-          {/* 应用子路由 */}
-          {routes.map((route) => (
-            <Route
-              key={route.path}
-              path={route.path}
-              element={<AuthGuard>{route.element}</AuthGuard>}
-            />
-          ))}
-        </Route>
+        />
 
         {/* 兜底重定向 */}
         <Route

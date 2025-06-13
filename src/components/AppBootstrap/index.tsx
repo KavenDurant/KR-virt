@@ -93,8 +93,8 @@ const AppBootstrap: React.FC = () => {
   };
 
   const handleLoginSuccess = () => {
-    // 登录成功，跳转到主应用
-    navigate("/dashboard");
+    // 登录成功，重新检查应用状态并跳转
+    checkApplicationState();
   };
 
   const renderLoadingPage = () => (

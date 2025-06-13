@@ -11,7 +11,7 @@ import {
   Input,
   message,
 } from "antd";
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import {
   DesktopOutlined,
   ClusterOutlined,
@@ -113,12 +113,7 @@ const AppLayout: React.FC = () => {
   useEffect(() => {
     const currentPath = getCurrentSelectedPath();
     setSelectedActivityItem(currentPath);
-
-    // 如果当前是根路径，自动跳转到仪表盘
-    if (location.pathname === "/") {
-      navigate("/dashboard");
-    }
-  }, [location.pathname, getCurrentSelectedPath, navigate]);
+  }, [location.pathname, getCurrentSelectedPath]);
 
   // 初始加载时设置侧边栏宽度
   useEffect(() => {
@@ -175,14 +170,12 @@ const AppLayout: React.FC = () => {
       const result = await loginService.logout();
       console.log("登出结果:", result.message);
 
-      // 直接使用window.location进行页面跳转和刷新
-      window.location.href = "#/login";
-      window.location.reload();
+      // 使用React Router进行导航，避免URL问题
+      navigate("/login", { replace: true });
     } catch (error) {
       console.error("退出登录出错:", error);
       // 即使出错也要跳转到登录页
-      window.location.href = "#/login";
-      window.location.reload();
+      navigate("/login", { replace: true });
     } finally {
       setLogoutModalVisible(false);
     }
@@ -625,7 +618,17 @@ const AppLayout: React.FC = () => {
               backgroundColor: actualTheme === "dark" ? "#1e1e1e" : "#ffffff",
             }}
           >
-            <Outlet />
+            <Routes>
+              {/* 默认路径重定向到仪表盘 */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              {routes.map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={route.element}
+                />
+              ))}
+            </Routes>
           </div>
         </TaskDrawer>
       </Layout>

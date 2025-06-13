@@ -113,3 +113,38 @@ export interface ClusterNode {
 export interface ClusterNodesResponse {
   nodes: ClusterNode[];
 }
+
+// === 集群概览相关类型 ===
+
+// 集群概览节点信息
+export interface ClusterSummaryNode {
+  name: string;
+  status: string;
+}
+
+// 集群概览资源信息
+export interface ClusterSummaryResource {
+  name: string;
+  type: string;
+  status: string;
+  node: string;
+}
+
+// 集群概览响应
+export interface ClusterSummaryResponse {
+  cluster_name: string;
+  stack: string;
+  dc_node: string;
+  dc_version: string;
+  dc_quorum: string;
+  last_updated: string;
+  last_change_time: string;
+  last_change_user: string;
+  last_change_via: string;
+  last_change_node: string;
+  nodes_configured: number;
+  resources_configured: number;
+  nodes: ClusterSummaryNode[];
+  resources: ClusterSummaryResource[];
+  daemons: Record<string, string>;
+}

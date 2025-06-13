@@ -16,7 +16,6 @@ import {
   Row,
   Col,
   Progress,
-  Divider,
   Typography,
   Descriptions,
   Alert,
@@ -29,7 +28,6 @@ import {
   CheckCircleOutlined,
   WarningOutlined,
   ApiOutlined,
-  CloudOutlined,
   DesktopOutlined,
   InfoCircleOutlined,
   ExclamationCircleOutlined,
@@ -45,6 +43,7 @@ import type {
 } from "../../services/mockData";
 import { clusterInitService } from "@/services/cluster";
 import type { ClusterNodesResponse } from "@/services/cluster";
+import type { ClusterSummaryResponse } from "@/services/cluster";
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -343,6 +342,22 @@ const getStatusTag = (status: string) => {
       return <Tag color="default">已停止</Tag>;
     case "suspended":
       return <Tag color="warning">已挂起</Tag>;
+    case "standby":
+      return <Tag color="orange">待机</Tag>;
+    case "started":
+      return (
+        <Tag icon={<CheckCircleOutlined />} color="success">
+          已启动
+        </Tag>
+      );
+    case "failed":
+      return (
+        <Tag icon={<WarningOutlined />} color="error">
+          失败
+        </Tag>
+      );
+    case "inactive":
+      return <Tag color="default">未激活</Tag>;
     default:
       return <Tag color="default">{status}</Tag>;
   }
@@ -362,6 +377,14 @@ const ClusterManagement: React.FC = () => {
     useState<ClusterNodesResponse | null>(null);
   const [realClusterLoading, setRealClusterLoading] = useState(false);
   const [realClusterError, setRealClusterError] = useState<string | null>(null);
+
+  // 集群概览数据状态
+  const [clusterSummaryData, setClusterSummaryData] =
+    useState<ClusterSummaryResponse | null>(null);
+  const [clusterSummaryLoading, setClusterSummaryLoading] = useState(false);
+  const [clusterSummaryError, setClusterSummaryError] = useState<string | null>(
+    null
+  );
 
   // 侧边栏选择的节点状态
   const [sidebarSelectedCluster, setSidebarSelectedCluster] =
@@ -439,6 +462,35 @@ const ClusterManagement: React.FC = () => {
     }
   }, [message, setRealClusterData, setRealClusterLoading, setRealClusterError]);
 
+  // 获取集群概览数据
+  const fetchClusterSummaryData = useCallback(async () => {
+    setClusterSummaryLoading(true);
+    setClusterSummaryError(null);
+    try {
+      const result = await clusterInitService.getClusterSummary();
+      if (result.success && result.data) {
+        setClusterSummaryData(result.data);
+        console.log("获取集群概览数据成功:", result.data);
+      } else {
+        console.error("获取集群概览数据失败:", result.message);
+        setClusterSummaryError(result.message);
+        message.error(result.message);
+      }
+    } catch (error) {
+      console.error("获取集群概览数据异常:", error);
+      const errorMessage = "获取集群概览数据失败，请稍后重试";
+      setClusterSummaryError(errorMessage);
+      message.error(errorMessage);
+    } finally {
+      setClusterSummaryLoading(false);
+    }
+  }, [
+    message,
+    setClusterSummaryData,
+    setClusterSummaryLoading,
+    setClusterSummaryError,
+  ]);
+
   // 加载集群数据
   useEffect(() => {
     // 模拟API请求延迟
@@ -448,7 +500,10 @@ const ClusterManagement: React.FC = () => {
 
     // 获取真实集群数据
     fetchRealClusterData();
-  }, [fetchRealClusterData]);
+
+    // 获取集群概览数据
+    fetchClusterSummaryData();
+  }, [fetchRealClusterData, fetchClusterSummaryData]);
 
   // 处理创建/编辑集群
   const handleClusterModalOk = () => {
@@ -490,8 +545,6 @@ const ClusterManagement: React.FC = () => {
     setSelectedCluster(null);
   };
 
-
-
   // 解散集群
   const handleDissolveCluster = () => {
     modal.confirm({
@@ -521,14 +574,6 @@ const ClusterManagement: React.FC = () => {
       },
     });
   };
-
-  // 查看集群详情
-  const viewClusterDetails = (record: Cluster) => {
-    setSelectedCluster(record);
-    setDetailModalVisible(true);
-  };
-
-
 
   // 集群详情模态框内的主机表格列定义
   const hostColumns = [
@@ -679,7 +724,10 @@ const ClusterManagement: React.FC = () => {
       title: "节点名称",
       dataIndex: "name",
       key: "name",
-      render: (name: string, record: { node_id: string; name: string; ip: string }) => (
+      render: (
+        name: string,
+        record: { node_id: string; name: string; ip: string }
+      ) => (
         <div>
           <div style={{ fontWeight: "bold" }}>{name}</div>
           <div style={{ fontSize: "12px", color: "#666" }}>
@@ -697,9 +745,7 @@ const ClusterManagement: React.FC = () => {
       title: "IP地址",
       dataIndex: "ip",
       key: "ip",
-      render: (ip: string) => (
-        <Tag color="blue">{ip}</Tag>
-      ),
+      render: (ip: string) => <Tag color="blue">{ip}</Tag>,
     },
     {
       title: "状态",
@@ -713,26 +759,29 @@ const ClusterManagement: React.FC = () => {
     {
       title: "操作",
       key: "action",
-      render: (_: unknown, record: { node_id: string; name: string; ip: string }) => (
+      render: (
+        _: unknown,
+        record: { node_id: string; name: string; ip: string }
+      ) => (
         <Space size="middle">
-          <Button 
-            type="link" 
+          <Button
+            type="link"
             size="small"
             icon={<InfoCircleOutlined />}
             onClick={() => message.info(`查看节点 ${record.name} 详情`)}
           >
             详情
           </Button>
-          <Button 
-            type="link" 
+          <Button
+            type="link"
             size="small"
             icon={<MonitorOutlined />}
             onClick={() => message.info(`监控节点 ${record.name}`)}
           >
             监控
           </Button>
-          <Button 
-            type="link" 
+          <Button
+            type="link"
             size="small"
             icon={<ApiOutlined />}
             onClick={() => message.info(`管理节点 ${record.name}`)}
@@ -1328,6 +1377,7 @@ const ClusterManagement: React.FC = () => {
                 icon={<SyncOutlined />}
                 onClick={() => {
                   fetchRealClusterData(); // 刷新真实集群数据
+                  fetchClusterSummaryData(); // 刷新集群概览数据
                 }}
               >
                 刷新
@@ -1344,152 +1394,251 @@ const ClusterManagement: React.FC = () => {
                 label: "集群概览",
                 children: (
                   <div className="cluster-overview">
-                    <Row gutter={[16, 16]}>
-                      <Col xs={24} sm={12} md={8} lg={6}>
-                        <Card>
-                          <Statistic
-                            title="节点总数"
-                            value={clusterList.length}
-                            prefix={<ClusterOutlined />}
-                          />
+                    {clusterSummaryLoading ? (
+                      <div style={{ textAlign: "center", padding: "50px" }}>
+                        <SyncOutlined spin style={{ fontSize: "24px" }} />
+                        <div style={{ marginTop: "16px" }}>
+                          加载集群概览数据中...
+                        </div>
+                      </div>
+                    ) : clusterSummaryError ? (
+                      <div style={{ textAlign: "center", padding: "50px" }}>
+                        <Alert
+                          message="获取集群概览数据失败"
+                          description={clusterSummaryError}
+                          type="error"
+                          showIcon
+                          action={
+                            <Button
+                              type="primary"
+                              onClick={fetchClusterSummaryData}
+                              icon={<SyncOutlined />}
+                            >
+                              重新加载
+                            </Button>
+                          }
+                        />
+                      </div>
+                    ) : clusterSummaryData ? (
+                      <>
+                        {/* 集群基本信息 */}
+                        <Card
+                          title="集群基本信息"
+                          style={{ marginBottom: "16px" }}
+                          extra={
+                            <Button
+                              icon={<SyncOutlined />}
+                              onClick={fetchClusterSummaryData}
+                              size="small"
+                            >
+                              刷新
+                            </Button>
+                          }
+                        >
+                          <Row gutter={[16, 16]}>
+                            <Col xs={24} md={12}>
+                              <Descriptions column={1} bordered size="small">
+                                <Descriptions.Item label="集群名称">
+                                  {clusterSummaryData.cluster_name}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="技术栈">
+                                  {clusterSummaryData.stack}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="DC节点">
+                                  {clusterSummaryData.dc_node}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="DC版本">
+                                  {clusterSummaryData.dc_version}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="仲裁状态">
+                                  {clusterSummaryData.dc_quorum}
+                                </Descriptions.Item>
+                              </Descriptions>
+                            </Col>
+                            <Col xs={24} md={12}>
+                              <Descriptions column={1} bordered size="small">
+                                <Descriptions.Item label="最后更新">
+                                  {clusterSummaryData.last_updated}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="最后变更时间">
+                                  {clusterSummaryData.last_change_time}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="变更用户">
+                                  {clusterSummaryData.last_change_user}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="变更方式">
+                                  {clusterSummaryData.last_change_via}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="变更节点">
+                                  {clusterSummaryData.last_change_node}
+                                </Descriptions.Item>
+                              </Descriptions>
+                            </Col>
+                          </Row>
                         </Card>
-                      </Col>
-                      <Col xs={24} sm={12} md={8} lg={6}>
-                        <Card>
-                          <Statistic
-                            title="主机总数"
-                            value={mockClusters.reduce(
-                              (acc, curr) => acc + curr.hosts,
-                              0
-                            )}
-                            prefix={<CloudOutlined />}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={12} md={8} lg={6}>
-                        <Card>
-                          <Statistic
-                            title="虚拟机总数"
-                            value={mockClusters.reduce(
-                              (acc, curr) => acc + curr.vms,
-                              0
-                            )}
-                            prefix={<DesktopOutlined />}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={12} md={8} lg={6}>
-                        <Card>
-                          <Statistic
-                            title="平均CPU使用率"
-                            value={Math.round(
-                              mockClusters.reduce(
-                                (acc, curr) => acc + curr.cpuUsage,
-                                0
-                              ) / mockClusters.length
-                            )}
-                            suffix="%"
-                            prefix={<ApiOutlined />}
-                          />
-                        </Card>
-                      </Col>
-                    </Row>
 
-                    <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
-                      {mockClusters.map((cluster) => (
-                        <Col xs={24} sm={12} lg={8} key={cluster.id}>
-                          <Card
-                            title={
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <span>{cluster.name}</span>
-                                {getStatusTag(cluster.status)}
-                              </div>
-                            }
-                            extra={
-                              <a onClick={() => viewClusterDetails(cluster)}>
-                                详情
-                              </a>
-                            }
-                            style={{ height: "100%" }}
-                          >
-                            <Row gutter={[16, 16]}>
-                              <Col span={12}>
-                                <Statistic
-                                  title="主机数"
-                                  value={cluster.hosts}
-                                />
-                              </Col>
-                              <Col span={12}>
-                                <Statistic
-                                  title="虚拟机数"
-                                  value={cluster.vms}
-                                />
-                              </Col>
-                            </Row>
-                            <Divider style={{ margin: "12px 0" }} />
-                            <div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  marginBottom: "8px",
-                                }}
-                              >
-                                <Text>CPU</Text>
-                                <Text>{cluster.cpuUsage}%</Text>
-                              </div>
-                              <Progress
-                                percent={cluster.cpuUsage}
-                                size="small"
+                        {/* 统计信息 */}
+                        <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
+                          <Col xs={24} sm={8} md={6}>
+                            <Card>
+                              <Statistic
+                                title="配置节点数"
+                                value={clusterSummaryData.nodes_configured}
+                                prefix={<ClusterOutlined />}
+                                valueStyle={{ color: "#1890ff" }}
                               />
-                            </div>
-                            <div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  marginBottom: "8px",
-                                }}
-                              >
-                                <Text>内存</Text>
-                                <Text>{cluster.memoryUsage}%</Text>
-                              </div>
-                              <Progress
-                                percent={cluster.memoryUsage}
-                                size="small"
+                            </Card>
+                          </Col>
+                          <Col xs={24} sm={8} md={6}>
+                            <Card>
+                              <Statistic
+                                title="在线节点数"
+                                value={
+                                  clusterSummaryData.nodes.filter(
+                                    (node) => node.status === "online"
+                                  ).length
+                                }
+                                prefix={<CheckCircleOutlined />}
+                                valueStyle={{ color: "#52c41a" }}
                               />
-                            </div>
-                            <div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  marginBottom: "8px",
-                                }}
-                              >
-                                <Text>存储</Text>
-                                <Text>{cluster.storageUsage}%</Text>
-                              </div>
-                              <Progress
-                                percent={cluster.storageUsage}
-                                size="small"
+                            </Card>
+                          </Col>
+                          <Col xs={24} sm={8} md={6}>
+                            <Card>
+                              <Statistic
+                                title="配置资源数"
+                                value={clusterSummaryData.resources_configured}
+                                prefix={<DatabaseOutlined />}
+                                valueStyle={{ color: "#722ed1" }}
                               />
-                            </div>
-                            <div style={{ marginTop: "16px" }}>
-                              {cluster.tags.map((tag: string) => (
-                                <Tag key={tag}>{tag}</Tag>
-                              ))}
-                            </div>
-                          </Card>
-                        </Col>
-                      ))}
-                    </Row>
+                            </Card>
+                          </Col>
+                          <Col xs={24} sm={8} md={6}>
+                            <Card>
+                              <Statistic
+                                title="运行资源数"
+                                value={
+                                  clusterSummaryData.resources.filter(
+                                    (resource) => resource.status === "started"
+                                  ).length
+                                }
+                                prefix={<ThunderboltOutlined />}
+                                valueStyle={{ color: "#52c41a" }}
+                              />
+                            </Card>
+                          </Col>
+                        </Row>
+
+                        {/* 节点列表 */}
+                        <Card title="集群节点" style={{ marginBottom: "16px" }}>
+                          <Table
+                            dataSource={clusterSummaryData.nodes}
+                            rowKey="name"
+                            pagination={false}
+                            size="small"
+                            columns={[
+                              {
+                                title: "节点名称",
+                                dataIndex: "name",
+                                key: "name",
+                                render: (name: string) => (
+                                  <Space>
+                                    <HddOutlined />
+                                    <strong>{name}</strong>
+                                  </Space>
+                                ),
+                              },
+                              {
+                                title: "状态",
+                                dataIndex: "status",
+                                key: "status",
+                                render: (status: string) =>
+                                  getStatusTag(status),
+                              },
+                            ]}
+                          />
+                        </Card>
+
+                        {/* 资源列表 */}
+                        <Card title="集群资源">
+                          <Table
+                            dataSource={clusterSummaryData.resources}
+                            rowKey="name"
+                            pagination={false}
+                            size="small"
+                            columns={[
+                              {
+                                title: "资源名称",
+                                dataIndex: "name",
+                                key: "name",
+                                render: (name: string) => (
+                                  <Space>
+                                    <ApiOutlined />
+                                    <strong>{name}</strong>
+                                  </Space>
+                                ),
+                              },
+                              {
+                                title: "类型",
+                                dataIndex: "type",
+                                key: "type",
+                                render: (type: string) => (
+                                  <Tag color="blue">{type}</Tag>
+                                ),
+                              },
+                              {
+                                title: "状态",
+                                dataIndex: "status",
+                                key: "status",
+                                render: (status: string) =>
+                                  getStatusTag(status),
+                              },
+                              {
+                                title: "运行节点",
+                                dataIndex: "node",
+                                key: "node",
+                                render: (node: string) => (
+                                  <Tag color="geekblue">{node}</Tag>
+                                ),
+                              },
+                            ]}
+                          />
+                        </Card>
+
+                        {/* 守护进程状态 */}
+                        <Card
+                          title="守护进程状态"
+                          style={{ marginTop: "16px" }}
+                        >
+                          <Row gutter={[16, 16]}>
+                            {Object.entries(clusterSummaryData.daemons).map(
+                              ([daemon, status]) => (
+                                <Col xs={24} sm={12} md={8} lg={6} key={daemon}>
+                                  <Card size="small">
+                                    <Space
+                                      direction="vertical"
+                                      style={{ width: "100%" }}
+                                    >
+                                      <Text strong>{daemon}</Text>
+                                      {getStatusTag(status)}
+                                    </Space>
+                                  </Card>
+                                </Col>
+                              )
+                            )}
+                          </Row>
+                        </Card>
+                      </>
+                    ) : (
+                      <div style={{ textAlign: "center", padding: "50px" }}>
+                        <Alert
+                          message="暂无集群概览数据"
+                          description="请检查集群是否正常运行"
+                          type="info"
+                          showIcon
+                        />
+                      </div>
+                    )}
                   </div>
                 ),
               },
@@ -1501,7 +1650,9 @@ const ClusterManagement: React.FC = () => {
                     {realClusterLoading ? (
                       <div style={{ textAlign: "center", padding: "50px" }}>
                         <SyncOutlined spin style={{ fontSize: "24px" }} />
-                        <div style={{ marginTop: "16px" }}>加载物理机数据中...</div>
+                        <div style={{ marginTop: "16px" }}>
+                          加载物理机数据中...
+                        </div>
                       </div>
                     ) : realClusterError ? (
                       <div style={{ textAlign: "center", padding: "50px" }}>
@@ -1555,19 +1706,19 @@ const ClusterManagement: React.FC = () => {
                             </Card>
                           </Col>
                         </Row>
-                        
+
                         <Card title="物理机节点列表" size="small">
                           <Table
                             columns={realClusterNodesColumns}
                             dataSource={realClusterData.nodes}
                             rowKey="node_id"
                             loading={realClusterLoading}
-                            pagination={{ 
+                            pagination={{
                               pageSize: 10,
                               showSizeChanger: true,
                               showQuickJumper: true,
-                              showTotal: (total, range) => 
-                                `第 ${range[0]}-${range[1]} 条/共 ${total} 条`
+                              showTotal: (total, range) =>
+                                `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
                             }}
                             scroll={{ x: 800 }}
                           />

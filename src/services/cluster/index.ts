@@ -20,6 +20,7 @@ import type {
   DissolveClusterResponse,
   DissolveClusterErrorResponse,
   ClusterNodesResponse,
+  ClusterSummaryResponse,
 } from "./types";
 
 // 配置区域
@@ -477,6 +478,100 @@ class ClusterInitService {
     }
   }
 
+  /**
+   * 获取集群概览信息
+   */
+  async getClusterSummary(): Promise<{
+    success: boolean;
+    data?: ClusterSummaryResponse;
+    message: string;
+  }> {
+    if (USE_MOCK_DATA) {
+      return this.mockGetClusterSummary();
+    }
+
+    try {
+      console.log("调用集群概览API: GET /cluster/summary");
+      const response = await request.get<ClusterSummaryResponse>(
+        `/cluster/summary`,
+        {
+          skipAuth: false, // 需要认证
+          showErrorMessage: false, // 手动处理错误
+        } as RequestConfig
+      );
+
+      console.log("集群概览API响应成功:", response);
+      const data = response.data || response;
+
+      return {
+        success: true,
+        data: data,
+        message: "获取集群概览成功",
+      };
+    } catch (error: unknown) {
+      console.error("获取集群概览API调用失败:", error);
+
+      // 处理不同的HTTP错误状态码
+      if (error && typeof error === "object" && "response" in error) {
+        const httpError = error as {
+          response?: { status?: number; data?: Record<string, unknown> };
+        };
+
+        console.log("HTTP错误状态码:", httpError.response?.status);
+        console.log("HTTP错误数据:", httpError.response?.data);
+
+        switch (httpError.response?.status) {
+          case 401:
+            return {
+              success: false,
+              message: "认证失败，请重新登录",
+            };
+          case 403:
+            return {
+              success: false,
+              message: "权限不足，无法访问集群信息",
+            };
+          case 404:
+            return {
+              success: false,
+              message: "集群服务不可用",
+            };
+          case 500: {
+            const errorData = httpError.response.data;
+            const errorMessage =
+              (errorData?.detail as string) ||
+              (errorData?.message as string) ||
+              "服务器内部错误";
+            return {
+              success: false,
+              message: errorMessage,
+            };
+          }
+          default:
+            return {
+              success: false,
+              message: "获取集群概览失败",
+            };
+        }
+      }
+
+      // 处理网络错误等其他错误
+      let errorMessage = "获取集群概览失败，请检查网络连接";
+      if (error && typeof error === "object") {
+        if ("message" in error) {
+          const messageError = error as { message: string };
+          errorMessage = messageError.message;
+        }
+      }
+
+      console.log("处理其他错误，返回消息:", errorMessage);
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    }
+  }
+
   // ===== 模拟数据方法 =====
   private async mockCheckClusterStatus(): Promise<ClusterStatusResponse> {
     // 模拟网络延迟
@@ -611,6 +706,87 @@ class ClusterInitService {
       success: true,
       data: mockData,
       message: "获取集群节点列表成功",
+    };
+  }
+
+  private async mockGetClusterSummary(): Promise<{
+    success: boolean;
+    data?: ClusterSummaryResponse;
+    message: string;
+  }> {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // 模拟集群概览数据 - 匹配实际接口格式
+    const mockData: ClusterSummaryResponse = {
+      cluster_name: "KR-Virt Cluster",
+      stack: "corosync",
+      dc_node: "localhost.localdomain",
+      dc_version: "2.1.7",
+      dc_quorum: "2",
+      last_updated: "2025-06-13 14:30:15",
+      last_change_time: "2025-06-13 14:25:30",
+      last_change_user: "root",
+      last_change_via: "crmsh",
+      last_change_node: "localhost.localdomain",
+      nodes_configured: 3,
+      resources_configured: 5,
+      nodes: [
+        {
+          name: "localhost.localdomain",
+          status: "online",
+        },
+        {
+          name: "node2.localdomain",
+          status: "online",
+        },
+        {
+          name: "node3.localdomain",
+          status: "standby",
+        },
+      ],
+      resources: [
+        {
+          name: "virtual-ip",
+          type: "IPaddr2",
+          status: "started",
+          node: "localhost.localdomain",
+        },
+        {
+          name: "storage-service",
+          type: "Filesystem",
+          status: "started",
+          node: "node2.localdomain",
+        },
+        {
+          name: "web-service",
+          type: "systemd:httpd",
+          status: "stopped",
+          node: "localhost.localdomain",
+        },
+        {
+          name: "database-service",
+          type: "systemd:mysql",
+          status: "started",
+          node: "localhost.localdomain",
+        },
+        {
+          name: "backup-service",
+          type: "systemd:backup",
+          status: "failed",
+          node: "node3.localdomain",
+        },
+      ],
+      daemons: {
+        pacemaker: "active",
+        corosync: "active",
+        "pacemaker-remoted": "inactive",
+        "dlm": "active",
+      },
+    };
+
+    return {
+      success: true,
+      data: mockData,
+      message: "获取集群概览成功",
     };
   }
 }

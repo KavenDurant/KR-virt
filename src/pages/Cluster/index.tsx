@@ -43,6 +43,7 @@ import type {
 import { clusterInitService } from "@/services/cluster";
 import type { ClusterNodesResponse } from "@/services/cluster";
 import type { ClusterSummaryResponse } from "@/services/cluster";
+import type { ClusterResourcesResponse } from "@/services/cluster";
 
 const { Text } = Typography;
 
@@ -384,6 +385,14 @@ const ClusterManagement: React.FC = () => {
     null
   );
 
+  // 集群资源数据状态
+  const [clusterResourcesData, setClusterResourcesData] =
+    useState<ClusterResourcesResponse | null>(null);
+  const [clusterResourcesLoading, setClusterResourcesLoading] = useState(false);
+  const [clusterResourcesError, setClusterResourcesError] = useState<string | null>(
+    null
+  );
+
   // 侧边栏选择的节点状态
   const [sidebarSelectedCluster, setSidebarSelectedCluster] =
     useState<ClusterData | null>(null);
@@ -489,6 +498,35 @@ const ClusterManagement: React.FC = () => {
     setClusterSummaryError,
   ]);
 
+  // 获取集群资源数据
+  const fetchClusterResourcesData = useCallback(async () => {
+    setClusterResourcesLoading(true);
+    setClusterResourcesError(null);
+    try {
+      const result = await clusterInitService.getClusterResources();
+      if (result.success && result.data) {
+        setClusterResourcesData(result.data);
+        console.log("获取集群资源数据成功:", result.data);
+      } else {
+        console.error("获取集群资源数据失败:", result.message);
+        setClusterResourcesError(result.message);
+        message.error(result.message);
+      }
+    } catch (error) {
+      console.error("获取集群资源数据异常:", error);
+      const errorMessage = "获取集群资源数据失败，请稍后重试";
+      setClusterResourcesError(errorMessage);
+      message.error(errorMessage);
+    } finally {
+      setClusterResourcesLoading(false);
+    }
+  }, [
+    message,
+    setClusterResourcesData,
+    setClusterResourcesLoading,
+    setClusterResourcesError,
+  ]);
+
   // 加载集群数据
   useEffect(() => {
     // 模拟API请求延迟
@@ -501,7 +539,10 @@ const ClusterManagement: React.FC = () => {
 
     // 获取集群概览数据
     fetchClusterSummaryData();
-  }, [fetchRealClusterData, fetchClusterSummaryData]);
+
+    // 获取集群资源数据
+    fetchClusterResourcesData();
+  }, [fetchRealClusterData, fetchClusterSummaryData, fetchClusterResourcesData]);
 
   // 处理创建/编辑集群
   const handleClusterModalOk = () => {
@@ -1377,6 +1418,7 @@ const ClusterManagement: React.FC = () => {
             onClick={() => {
               fetchRealClusterData(); // 刷新真实集群数据
               fetchClusterSummaryData(); // 刷新集群概览数据
+              fetchClusterResourcesData(); // 刷新集群资源数据
             }}
           >
             刷新
@@ -1734,6 +1776,302 @@ const ClusterManagement: React.FC = () => {
                         <Button
                           type="primary"
                           onClick={fetchRealClusterData}
+                          icon={<SyncOutlined />}
+                        >
+                          获取数据
+                        </Button>
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+            ),
+          },
+          {
+            key: "resources",
+            label: "集群资源",
+            children: (
+              <div>
+                {clusterResourcesLoading ? (
+                  <div style={{ textAlign: "center", padding: "50px" }}>
+                    <SyncOutlined spin style={{ fontSize: "24px" }} />
+                    <div style={{ marginTop: "16px" }}>
+                      加载集群资源数据中...
+                    </div>
+                  </div>
+                ) : clusterResourcesError ? (
+                  <div style={{ textAlign: "center", padding: "50px" }}>
+                    <Alert
+                      message="获取集群资源数据失败"
+                      description={clusterResourcesError}
+                      type="error"
+                      showIcon
+                      action={
+                        <Button
+                          type="primary"
+                          onClick={fetchClusterResourcesData}
+                          icon={<SyncOutlined />}
+                        >
+                          重新加载
+                        </Button>
+                      }
+                    />
+                  </div>
+                ) : clusterResourcesData ? (
+                  <>
+                    {/* 资源组统计 */}
+                    <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
+                      <Col xs={24} sm={8}>
+                        <Card size="small">
+                          <Statistic
+                            title="资源组数量"
+                            value={clusterResourcesData.group.length}
+                            prefix={<DatabaseOutlined />}
+                            valueStyle={{ color: "#722ed1" }}
+                          />
+                        </Card>
+                      </Col>
+                      <Col xs={24} sm={8}>
+                        <Card size="small">
+                          <Statistic
+                            title="独立资源数量"
+                            value={clusterResourcesData.resources.length}
+                            prefix={<ApiOutlined />}
+                            valueStyle={{ color: "#1890ff" }}
+                          />
+                        </Card>
+                      </Col>
+                      <Col xs={24} sm={8}>
+                        <Card size="small">
+                          <Statistic
+                            title="资源总数"
+                            value={
+                              clusterResourcesData.group.reduce(
+                                (acc, group) => acc + group.resources.length,
+                                0
+                              ) + clusterResourcesData.resources.length
+                            }
+                            prefix={<ClusterOutlined />}
+                            valueStyle={{ color: "#52c41a" }}
+                          />
+                        </Card>
+                      </Col>
+                    </Row>
+
+                    {/* 资源组列表 */}
+                    {clusterResourcesData.group.length > 0 && (
+                      <Card title="资源组" style={{ marginBottom: "16px" }}>
+                        {clusterResourcesData.group.map((group, index) => (
+                          <Card
+                            key={index}
+                            type="inner"
+                            title={
+                              <Space>
+                                <DatabaseOutlined />
+                                <span>{group.group}</span>
+                                <Tag color="blue">{group.resources.length} 个资源</Tag>
+                              </Space>
+                            }
+                            style={{ marginBottom: "8px" }}
+                          >
+                            <Table
+                              dataSource={group.resources}
+                              rowKey="id"
+                              pagination={false}
+                              size="small"
+                              columns={[
+                                {
+                                  title: "资源ID",
+                                  dataIndex: "id",
+                                  key: "id",
+                                  render: (id: string) => (
+                                    <Space>
+                                      <ApiOutlined />
+                                      <strong>{id}</strong>
+                                    </Space>
+                                  ),
+                                },
+                                {
+                                  title: "类型",
+                                  key: "type",
+                                  render: (_, record) => (
+                                    <div>
+                                      <Tag color="geekblue">{record.type}</Tag>
+                                      <div style={{ fontSize: "12px", color: "#666" }}>
+                                        {record.class_}:{record.provider}
+                                      </div>
+                                    </div>
+                                  ),
+                                },
+                                {
+                                  title: "关键属性",
+                                  dataIndex: "attributes",
+                                  key: "attributes",
+                                  render: (attributes: Record<string, string>) => (
+                                    <div>
+                                      {Object.entries(attributes)
+                                        .slice(0, 3)
+                                        .map(([key, value]) => (
+                                          <div key={key} style={{ fontSize: "12px" }}>
+                                            <Text code>{key}</Text>: {value}
+                                          </div>
+                                        ))}
+                                      {Object.keys(attributes).length > 3 && (
+                                        <Text type="secondary" style={{ fontSize: "12px" }}>
+                                          +{Object.keys(attributes).length - 3} 更多...
+                                        </Text>
+                                      )}
+                                    </div>
+                                  ),
+                                },
+                                {
+                                  title: "监控配置",
+                                  dataIndex: "operations",
+                                  key: "operations",
+                                  render: (operations: Array<{name: string; interval: string; timeout: string}>) => (
+                                    <div>
+                                      {operations.map((op, idx) => (
+                                        <Tag key={idx}>
+                                          {op.name}: {op.interval}
+                                        </Tag>
+                                      ))}
+                                    </div>
+                                  ),
+                                },
+                              ]}
+                            />
+                          </Card>
+                        ))}
+                      </Card>
+                    )}
+
+                    {/* 独立资源列表 */}
+                    <Card title="独立资源">
+                      <Table
+                        dataSource={clusterResourcesData.resources}
+                        rowKey="id"
+                        pagination={{ pageSize: 10 }}
+                        size="small"
+                        columns={[
+                          {
+                            title: "资源ID",
+                            dataIndex: "id",
+                            key: "id",
+                            render: (id: string) => (
+                              <Space>
+                                <ApiOutlined />
+                                <strong>{id}</strong>
+                              </Space>
+                            ),
+                          },
+                          {
+                            title: "资源类型",
+                            key: "resourceType",
+                            render: (_, record) => (
+                              <div>
+                                <Tag color="green">{record.type}</Tag>
+                                <div style={{ fontSize: "12px", color: "#666" }}>
+                                  {record.class_} / {record.provider}
+                                </div>
+                              </div>
+                            ),
+                          },
+                          {
+                            title: "配置属性",
+                            dataIndex: "attributes",
+                            key: "attributes",
+                            render: (attributes: Record<string, string>) => (
+                              <Tooltip
+                                title={
+                                  <div>
+                                    {Object.entries(attributes).map(([key, value]) => (
+                                      <div key={key}>
+                                        <strong>{key}</strong>: {value}
+                                      </div>
+                                    ))}
+                                  </div>
+                                }
+                              >
+                                <div>
+                                  {Object.entries(attributes)
+                                    .slice(0, 2)
+                                    .map(([key, value]) => (
+                                      <div key={key} style={{ fontSize: "12px" }}>
+                                        <Text code>{key}</Text>: {value}
+                                      </div>
+                                    ))}
+                                  {Object.keys(attributes).length > 2 && (
+                                    <Text type="secondary" style={{ fontSize: "12px" }}>
+                                      查看全部 {Object.keys(attributes).length} 个属性...
+                                    </Text>
+                                  )}
+                                </div>
+                              </Tooltip>
+                            ),
+                          },
+                          {
+                            title: "操作配置",
+                            dataIndex: "operations",
+                            key: "operations",
+                            render: (operations: Array<{name: string; interval: string; timeout: string}>) => (
+                              <div>
+                                {operations.slice(0, 2).map((op, idx) => (
+                                  <div key={idx} style={{ fontSize: "12px" }}>
+                                    <Tag color="orange">
+                                      {op.name}
+                                    </Tag>
+                                    <span style={{ marginLeft: "4px", color: "#666" }}>
+                                      {op.interval} / {op.timeout}
+                                    </span>
+                                  </div>
+                                ))}
+                                {operations.length > 2 && (
+                                  <Text type="secondary" style={{ fontSize: "12px" }}>
+                                    +{operations.length - 2} 更多操作...
+                                  </Text>
+                                )}
+                              </div>
+                            ),
+                          },
+                          {
+                            title: "操作",
+                            key: "action",
+                            render: (_, record) => (
+                              <Space size="middle">
+                                <Button
+                                  type="link"
+                                  size="small"
+                                  icon={<InfoCircleOutlined />}
+                                  onClick={() => message.info(`查看资源 ${record.id} 详情`)}
+                                >
+                                  详情
+                                </Button>
+                                <Button
+                                  type="link"
+                                  size="small"
+                                  icon={<MonitorOutlined />}
+                                  onClick={() => message.info(`监控资源 ${record.id}`)}
+                                >
+                                  监控
+                                </Button>
+                              </Space>
+                            ),
+                          },
+                        ]}
+                      />
+                    </Card>
+                  </>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "50px" }}>
+                    <Alert
+                      message="暂无集群资源数据"
+                      description="点击下方按钮获取最新的集群资源信息"
+                      type="info"
+                      showIcon
+                      action={
+                        <Button
+                          type="primary"
+                          onClick={fetchClusterResourcesData}
                           icon={<SyncOutlined />}
                         >
                           获取数据

@@ -21,6 +21,7 @@ import type {
   DissolveClusterErrorResponse,
   ClusterNodesResponse,
   ClusterSummaryResponse,
+  ClusterResourcesResponse,
 } from "./types";
 
 // 配置区域
@@ -572,6 +573,41 @@ class ClusterInitService {
     }
   }
 
+  /**
+   * 获取集群资源
+   */
+  async getClusterResources(): Promise<{
+    success: boolean;
+    data?: ClusterResourcesResponse;
+    message: string;
+  }> {
+    if (USE_MOCK_DATA) {
+      return this.mockGetClusterResources();
+    }    try {
+      const response = await request.get<ClusterResourcesResponse>(`/cluster/resources`);
+      
+      if (response?.data) {
+        return {
+          success: true,
+          data: response.data,
+          message: "获取集群资源成功",
+        };
+      } else {
+        return {
+          success: false,
+          message: "获取集群资源失败：无响应数据",
+        };
+      }
+    } catch (error: unknown) {
+      console.error("获取集群资源异常:", error);
+      const errorMessage = error instanceof Error ? error.message : "获取集群资源失败";
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    }
+  }
+
   // ===== 模拟数据方法 =====
   private async mockCheckClusterStatus(): Promise<ClusterStatusResponse> {
     // 模拟网络延迟
@@ -787,6 +823,186 @@ class ClusterInitService {
       success: true,
       data: mockData,
       message: "获取集群概览成功",
+    };
+  }
+
+  private async mockGetClusterResources(): Promise<{
+    success: boolean;
+    data?: ClusterResourcesResponse;
+    message: string;
+  }> {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    // 模拟集群资源数据 - 参考PVE、vSphere等平台的资源展示
+    const mockData: ClusterResourcesResponse = {
+      group: [
+        {
+          group: "web-services",
+          resources: [
+            {
+              id: "nginx-service",
+              class_: "ocf",
+              provider: "heartbeat",
+              type: "nginx",
+              attributes: {
+                config: "/etc/nginx/nginx.conf",
+                pid: "/var/run/nginx.pid",
+                port: "80",
+              },
+              operations: [
+                {
+                  name: "monitor",
+                  interval: "30s",
+                  timeout: "30s",
+                },
+                {
+                  name: "start",
+                  interval: "0s",
+                  timeout: "60s",
+                },
+              ],
+            },
+            {
+              id: "apache-service",
+              class_: "ocf",
+              provider: "heartbeat",
+              type: "apache",
+              attributes: {
+                config: "/etc/httpd/conf/httpd.conf",
+                port: "8080",
+              },
+              operations: [
+                {
+                  name: "monitor",
+                  interval: "30s",
+                  timeout: "30s",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          group: "database-services",
+          resources: [
+            {
+              id: "mysql-master",
+              class_: "ocf",
+              provider: "heartbeat",
+              type: "mysql",
+              attributes: {
+                config: "/etc/mysql/my.cnf",
+                datadir: "/var/lib/mysql",
+                user: "mysql",
+              },
+              operations: [
+                {
+                  name: "monitor",
+                  interval: "20s",
+                  timeout: "30s",
+                },
+                {
+                  name: "start",
+                  interval: "0s",
+                  timeout: "120s",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      resources: [
+        {
+          id: "virtual-ip-1",
+          class_: "ocf",
+          provider: "heartbeat",
+          type: "IPaddr2",
+          attributes: {
+            ip: "192.168.1.100",
+            cidr_netmask: "24",
+            nic: "eth0",
+          },
+          operations: [
+            {
+              name: "monitor",
+              interval: "10s",
+              timeout: "20s",
+            },
+            {
+              name: "start",
+              interval: "0s",
+              timeout: "20s",
+            },
+            {
+              name: "stop",
+              interval: "0s",
+              timeout: "20s",
+            },
+          ],
+        },
+        {
+          id: "shared-storage",
+          class_: "ocf",
+          provider: "heartbeat",
+          type: "Filesystem",
+          attributes: {
+            device: "/dev/sdb1",
+            directory: "/mnt/shared",
+            fstype: "ext4",
+          },
+          operations: [
+            {
+              name: "monitor",
+              interval: "20s",
+              timeout: "40s",
+            },
+            {
+              name: "start",
+              interval: "0s",
+              timeout: "60s",
+            },
+          ],
+        },
+        {
+          id: "dlm-service",
+          class_: "ocf",
+          provider: "pacemaker",
+          type: "controld",
+          attributes: {
+            allow_stonith_disabled: "true",
+          },
+          operations: [
+            {
+              name: "monitor",
+              interval: "60s",
+              timeout: "30s",
+            },
+          ],
+        },
+        {
+          id: "fence-device",
+          class_: "stonith",
+          provider: "fence_vmware_soap",
+          type: "external/vmware",
+          attributes: {
+            ipaddr: "192.168.1.50",
+            login: "admin",
+            passwd: "******",
+          },
+          operations: [
+            {
+              name: "monitor",
+              interval: "60s",
+              timeout: "20s",
+            },
+          ],
+        },
+      ],
+    };
+
+    return {
+      success: true,
+      data: mockData,
+      message: "获取集群资源成功",
     };
   }
 }

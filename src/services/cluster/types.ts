@@ -148,3 +148,32 @@ export interface ClusterSummaryResponse {
   resources: ClusterSummaryResource[];
   daemons: Record<string, string>;
 }
+
+// 集群资源操作定义
+export interface ResourceOperation {
+  name: string;
+  interval: string;
+  timeout: string;
+}
+
+// 集群资源定义
+export interface ClusterResource {
+  id: string;
+  class_: string;
+  provider: string;
+  type: string;
+  attributes: Record<string, string>;
+  operations: ResourceOperation[];
+}
+
+// 集群资源组定义
+export interface ClusterResourceGroup {
+  group: string;
+  resources: ClusterResource[];
+}
+
+// 集群资源响应
+export interface ClusterResourcesResponse {
+  group: ClusterResourceGroup[];
+  resources: ClusterResource[];
+}

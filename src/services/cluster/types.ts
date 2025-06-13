@@ -99,3 +99,17 @@ export interface ClusterInitState {
   error: string | null;
   authToken: string | null;
 }
+
+// === 集群节点列表相关类型 ===
+
+// 集群节点信息 - 根据实际接口返回格式
+export interface ClusterNode {
+  name: string;
+  node_id: string;
+  ip: string;
+}
+
+// 集群节点列表响应 - 实际接口返回格式
+export interface ClusterNodesResponse {
+  nodes: ClusterNode[];
+}

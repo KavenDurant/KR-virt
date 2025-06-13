@@ -19,6 +19,7 @@ import type {
   IpAddressesResponse,
   DissolveClusterResponse,
   DissolveClusterErrorResponse,
+  ClusterNodesResponse,
 } from "./types";
 
 // 配置区域
@@ -350,7 +351,7 @@ class ClusterInitService {
         const httpError = error as {
           response?: { status?: number; data?: DissolveClusterErrorResponse };
         };
-        
+
         console.log("HTTP错误状态码:", httpError.response?.status);
         console.log("HTTP错误数据:", httpError.response?.data);
 
@@ -367,6 +368,100 @@ class ClusterInitService {
 
       // 处理其他错误
       let errorMessage = "解散集群失败，请稍后重试";
+      if (error && typeof error === "object") {
+        if ("message" in error) {
+          const messageError = error as { message: string };
+          errorMessage = messageError.message;
+        }
+      }
+
+      console.log("处理其他错误，返回消息:", errorMessage);
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    }
+  }
+
+  /**
+   * 获取集群节点列表
+   */
+  async getClusterNodes(): Promise<{
+    success: boolean;
+    data?: ClusterNodesResponse;
+    message: string;
+  }> {
+    if (USE_MOCK_DATA) {
+      return this.mockGetClusterNodes();
+    }
+
+    try {
+      console.log("调用集群节点列表API: GET /cluster/nodes");
+      const response = await request.get<ClusterNodesResponse>(
+        `/cluster/nodes`,
+        {
+          skipAuth: false, // 需要认证
+          showErrorMessage: false, // 手动处理错误
+        } as RequestConfig
+      );
+
+      console.log("集群节点列表API响应成功:", response);
+      const data = response.data || response;
+
+      return {
+        success: true,
+        data: data,
+        message: "获取集群节点列表成功",
+      };
+    } catch (error: unknown) {
+      console.error("获取集群节点列表API调用失败:", error);
+
+      // 处理不同的HTTP错误状态码
+      if (error && typeof error === "object" && "response" in error) {
+        const httpError = error as {
+          response?: { status?: number; data?: Record<string, unknown> };
+        };
+
+        console.log("HTTP错误状态码:", httpError.response?.status);
+        console.log("HTTP错误数据:", httpError.response?.data);
+
+        switch (httpError.response?.status) {
+          case 401:
+            return {
+              success: false,
+              message: "认证失败，请重新登录",
+            };
+          case 403:
+            return {
+              success: false,
+              message: "权限不足，无法访问集群信息",
+            };
+          case 404:
+            return {
+              success: false,
+              message: "集群服务不可用",
+            };
+          case 500: {
+            const errorData = httpError.response.data;
+            const errorMessage =
+              (errorData?.detail as string) ||
+              (errorData?.message as string) ||
+              "服务器内部错误";
+            return {
+              success: false,
+              message: errorMessage,
+            };
+          }
+          default:
+            return {
+              success: false,
+              message: "获取集群节点列表失败",
+            };
+        }
+      }
+
+      // 处理网络错误等其他错误
+      let errorMessage = "获取集群节点列表失败，请检查网络连接";
       if (error && typeof error === "object") {
         if ("message" in error) {
           const messageError = error as { message: string };
@@ -483,6 +578,40 @@ class ClusterInitService {
         message: "服务端失败信息",
       };
     }
+  }
+
+  private async mockGetClusterNodes(): Promise<{
+    success: boolean;
+    data?: ClusterNodesResponse;
+    message: string;
+  }> {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // 模拟集群节点数据 - 匹配实际接口格式
+    const mockData: ClusterNodesResponse = {
+      nodes: [
+        {
+          name: "localhost.localdomain",
+          node_id: "node-001",
+          ip: "192.168.1.101",
+        },
+        {
+          name: "node2.localdomain",
+          node_id: "node-002",
+          ip: "192.168.1.102",
+        },
+        {
+          name: "node3.localdomain",
+          node_id: "node-003",
+          ip: "192.168.1.103",
+        },
+      ],
+    };
+
+    return {
+      success: true,
+      data: mockData,
+      message: "获取集群节点列表成功",
+    };
   }
 }
 

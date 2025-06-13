@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Layout,
   Card,
@@ -10,7 +10,6 @@ import {
   Form,
   Input,
   Select,
-  Popconfirm,
   Tooltip,
   Tabs,
   Statistic,
@@ -45,6 +44,7 @@ import type {
   VirtualMachine as VMData,
 } from "../../services/mockData";
 import { clusterInitService } from "@/services/cluster";
+import type { ClusterNodesResponse } from "@/services/cluster";
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -355,8 +355,13 @@ const ClusterManagement: React.FC = () => {
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
   const [clusterModalVisible, setClusterModalVisible] = useState(false);
   const [clusterForm] = Form.useForm();
-  const [loading, setLoading] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+
+  // 真实集群数据状态
+  const [realClusterData, setRealClusterData] =
+    useState<ClusterNodesResponse | null>(null);
+  const [realClusterLoading, setRealClusterLoading] = useState(false);
+  const [realClusterError, setRealClusterError] = useState<string | null>(null);
 
   // 侧边栏选择的节点状态
   const [sidebarSelectedCluster, setSidebarSelectedCluster] =
@@ -410,15 +415,40 @@ const ClusterManagement: React.FC = () => {
     return "#52c41a"; // 保留语义颜色：成功/正常
   };
 
+  // 获取真实集群数据
+  const fetchRealClusterData = useCallback(async () => {
+    setRealClusterLoading(true);
+    setRealClusterError(null);
+    try {
+      const result = await clusterInitService.getClusterNodes();
+      if (result.success && result.data) {
+        setRealClusterData(result.data);
+        console.log("获取集群节点数据成功:", result.data);
+      } else {
+        console.error("获取集群节点数据失败:", result.message);
+        setRealClusterError(result.message);
+        message.error(result.message);
+      }
+    } catch (error) {
+      console.error("获取集群节点数据异常:", error);
+      const errorMessage = "获取集群数据失败，请稍后重试";
+      setRealClusterError(errorMessage);
+      message.error(errorMessage);
+    } finally {
+      setRealClusterLoading(false);
+    }
+  }, [message, setRealClusterData, setRealClusterLoading, setRealClusterError]);
+
   // 加载集群数据
   useEffect(() => {
     // 模拟API请求延迟
-    setLoading(true);
     setTimeout(() => {
       setClusterList(mockClusters);
-      setLoading(false);
     }, 500);
-  }, []);
+
+    // 获取真实集群数据
+    fetchRealClusterData();
+  }, [fetchRealClusterData]);
 
   // 处理创建/编辑集群
   const handleClusterModalOk = () => {
@@ -460,22 +490,7 @@ const ClusterManagement: React.FC = () => {
     setSelectedCluster(null);
   };
 
-  // 编辑集群
-  const editCluster = (record: Cluster) => {
-    setSelectedCluster(record);
-    clusterForm.setFieldsValue({
-      name: record.name,
-      type: record.type,
-      description: record.description,
-      tags: record.tags,
-    });
-    setClusterModalVisible(true);
-  };
 
-  // 删除集群
-  const deleteCluster = (id: string) => {
-    setClusterList(clusterList.filter((cluster) => cluster.id !== id));
-  };
 
   // 解散集群
   const handleDissolveCluster = () => {
@@ -494,9 +509,7 @@ const ClusterManagement: React.FC = () => {
           if (result.success) {
             console.log("解散集群成功，显示成功消息:", result.message);
             message.success(result.message);
-            // 刷新集群列表
-            setLoading(true);
-            setTimeout(() => setLoading(false), 500);
+            // 刷新集群列表 - 这里可以添加具体的刷新逻辑
           } else {
             console.log("解散集群失败，显示错误消息:", result.message);
             message.error(result.message);
@@ -515,98 +528,7 @@ const ClusterManagement: React.FC = () => {
     setDetailModalVisible(true);
   };
 
-  // 集群表格列定义
-  const clusterColumns = [
-    {
-      title: "集群名称",
-      dataIndex: "name",
-      key: "name",
-      render: (_: string, record: Cluster) => (
-        <a onClick={() => viewClusterDetails(record)}>{record.name}</a>
-      ),
-    },
-    {
-      title: "类型",
-      dataIndex: "type",
-      key: "type",
-    },
-    {
-      title: "状态",
-      dataIndex: "status",
-      key: "status",
-      render: (status: string) => getStatusTag(status),
-    },
-    {
-      title: "主机数量",
-      dataIndex: "hosts",
-      key: "hosts",
-    },
-    {
-      title: "虚拟机数量",
-      dataIndex: "vms",
-      key: "vms",
-    },
-    {
-      title: "CPU使用率",
-      dataIndex: "cpuUsage",
-      key: "cpuUsage",
-      render: (percent: number) => (
-        <Progress
-          percent={percent}
-          size="small"
-          strokeColor={getProgressColor(percent)}
-        />
-      ),
-    },
-    {
-      title: "内存使用率",
-      dataIndex: "memoryUsage",
-      key: "memoryUsage",
-      render: (percent: number) => (
-        <Progress
-          percent={percent}
-          size="small"
-          strokeColor={getProgressColor(percent)}
-        />
-      ),
-    },
-    {
-      title: "创建时间",
-      dataIndex: "createTime",
-      key: "createTime",
-    },
-    {
-      title: "操作",
-      key: "action",
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      render: (_: string, record: any) => (
-        <Space size="middle">
-          <Tooltip title="查看详情">
-            <Button
-              type="link"
-              onClick={() => viewClusterDetails(record)}
-              icon={<InfoCircleOutlined />}
-            />
-          </Tooltip>
-          <Tooltip title="编辑集群">
-            <Button
-              type="link"
-              onClick={() => editCluster(record)}
-              icon={<InfoCircleOutlined />}
-            />
-          </Tooltip>
-          <Popconfirm
-            title="确定要删除这个集群吗?"
-            onConfirm={() => deleteCluster(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" danger icon={<ExclamationCircleOutlined />} />
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+
 
   // 集群详情模态框内的主机表格列定义
   const hostColumns = [
@@ -747,6 +669,77 @@ const ClusterManagement: React.FC = () => {
             size="small"
           />
         </Tooltip>
+      ),
+    },
+  ];
+
+  // 真实集群节点列表的表格列定义
+  const realClusterNodesColumns = [
+    {
+      title: "节点名称",
+      dataIndex: "name",
+      key: "name",
+      render: (name: string, record: { node_id: string; name: string; ip: string }) => (
+        <div>
+          <div style={{ fontWeight: "bold" }}>{name}</div>
+          <div style={{ fontSize: "12px", color: "#666" }}>
+            ID: {record.node_id}
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "节点ID",
+      dataIndex: "node_id",
+      key: "node_id",
+    },
+    {
+      title: "IP地址",
+      dataIndex: "ip",
+      key: "ip",
+      render: (ip: string) => (
+        <Tag color="blue">{ip}</Tag>
+      ),
+    },
+    {
+      title: "状态",
+      key: "status",
+      render: () => (
+        <Tag icon={<CheckCircleOutlined />} color="success">
+          在线
+        </Tag>
+      ),
+    },
+    {
+      title: "操作",
+      key: "action",
+      render: (_: unknown, record: { node_id: string; name: string; ip: string }) => (
+        <Space size="middle">
+          <Button 
+            type="link" 
+            size="small"
+            icon={<InfoCircleOutlined />}
+            onClick={() => message.info(`查看节点 ${record.name} 详情`)}
+          >
+            详情
+          </Button>
+          <Button 
+            type="link" 
+            size="small"
+            icon={<MonitorOutlined />}
+            onClick={() => message.info(`监控节点 ${record.name}`)}
+          >
+            监控
+          </Button>
+          <Button 
+            type="link" 
+            size="small"
+            icon={<ApiOutlined />}
+            onClick={() => message.info(`管理节点 ${record.name}`)}
+          >
+            管理
+          </Button>
+        </Space>
       ),
     },
   ];
@@ -1334,8 +1327,7 @@ const ClusterManagement: React.FC = () => {
               <Button
                 icon={<SyncOutlined />}
                 onClick={() => {
-                  setLoading(true);
-                  setTimeout(() => setLoading(false), 500);
+                  fetchRealClusterData(); // 刷新真实集群数据
                 }}
               >
                 刷新
@@ -1503,15 +1495,104 @@ const ClusterManagement: React.FC = () => {
               },
               {
                 key: "list",
-                label: "集群列表",
+                label: "物理机列表",
                 children: (
-                  <Table
-                    columns={clusterColumns}
-                    dataSource={clusterList}
-                    rowKey="id"
-                    loading={loading}
-                    pagination={{ pageSize: 10 }}
-                  />
+                  <div>
+                    {realClusterLoading ? (
+                      <div style={{ textAlign: "center", padding: "50px" }}>
+                        <SyncOutlined spin style={{ fontSize: "24px" }} />
+                        <div style={{ marginTop: "16px" }}>加载物理机数据中...</div>
+                      </div>
+                    ) : realClusterError ? (
+                      <div style={{ textAlign: "center", padding: "50px" }}>
+                        <Alert
+                          message="获取物理机数据失败"
+                          description={realClusterError}
+                          type="error"
+                          showIcon
+                          action={
+                            <Button
+                              type="primary"
+                              onClick={fetchRealClusterData}
+                              icon={<SyncOutlined />}
+                            >
+                              重新加载
+                            </Button>
+                          }
+                        />
+                      </div>
+                    ) : realClusterData && realClusterData.nodes.length > 0 ? (
+                      <div>
+                        <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
+                          <Col xs={24} sm={8}>
+                            <Card size="small">
+                              <Statistic
+                                title="物理机总数"
+                                value={realClusterData.nodes.length}
+                                prefix={<HddOutlined />}
+                                valueStyle={{ color: "#1890ff" }}
+                              />
+                            </Card>
+                          </Col>
+                          <Col xs={24} sm={8}>
+                            <Card size="small">
+                              <Statistic
+                                title="在线节点"
+                                value={realClusterData.nodes.length}
+                                prefix={<CheckCircleOutlined />}
+                                valueStyle={{ color: "#52c41a" }}
+                              />
+                            </Card>
+                          </Col>
+                          <Col xs={24} sm={8}>
+                            <Card size="small">
+                              <Statistic
+                                title="集群状态"
+                                value="正常运行"
+                                prefix={<ClusterOutlined />}
+                                valueStyle={{ color: "#52c41a" }}
+                              />
+                            </Card>
+                          </Col>
+                        </Row>
+                        
+                        <Card title="物理机节点列表" size="small">
+                          <Table
+                            columns={realClusterNodesColumns}
+                            dataSource={realClusterData.nodes}
+                            rowKey="node_id"
+                            loading={realClusterLoading}
+                            pagination={{ 
+                              pageSize: 10,
+                              showSizeChanger: true,
+                              showQuickJumper: true,
+                              showTotal: (total, range) => 
+                                `第 ${range[0]}-${range[1]} 条/共 ${total} 条`
+                            }}
+                            scroll={{ x: 800 }}
+                          />
+                        </Card>
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: "center", padding: "50px" }}>
+                        <Alert
+                          message="暂无物理机数据"
+                          description="点击下方按钮获取最新的物理机节点信息"
+                          type="info"
+                          showIcon
+                          action={
+                            <Button
+                              type="primary"
+                              onClick={fetchRealClusterData}
+                              icon={<SyncOutlined />}
+                            >
+                              获取数据
+                            </Button>
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
                 ),
               },
             ]}

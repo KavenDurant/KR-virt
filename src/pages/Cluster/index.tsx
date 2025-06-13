@@ -381,7 +381,8 @@ const ClusterManagement: React.FC = () => {
 
       // 处理不同类型的节点选择
       if (nodeType === "cluster") {
-        setSidebarSelectedCluster(nodeData as ClusterData);
+        // 选中集群时，不设置 sidebarSelectedCluster，让它显示默认的集群管理页面
+        // setSidebarSelectedCluster(nodeData as ClusterData);
       } else if (nodeType === "host") {
         setSidebarSelectedHost(nodeData as Node);
       } else if (nodeType === "vm") {
@@ -966,6 +967,13 @@ const ClusterManagement: React.FC = () => {
           extra={
             <Space>
               <Button
+                onClick={() => {
+                  setSidebarSelectedCluster(null);
+                }}
+              >
+                返回集群管理
+              </Button>
+              <Button
                 type="primary"
                 icon={<SyncOutlined />}
                 onClick={() => message.info("正在刷新集群信息...")}
@@ -1120,59 +1128,6 @@ const ClusterManagement: React.FC = () => {
           </div>
         ),
       },
-      {
-        key: "vms",
-        label: "虚拟机列表",
-        children: (
-          <div>
-            <Card title="该主机上的虚拟机" size="small">
-              <Table
-                size="small"
-                dataSource={sidebarSelectedHost.vms}
-                columns={[
-                  {
-                    title: "虚拟机名称",
-                    dataIndex: "name",
-                    key: "name",
-                    render: (name: string, record: VMData) => (
-                      <div>
-                        <div style={{ fontWeight: "bold" }}>{name}</div>
-                        <div style={{ fontSize: "12px", color: "#666" }}>
-                          ID: {record.vmid}
-                        </div>
-                      </div>
-                    ),
-                  },
-                  {
-                    title: "状态",
-                    dataIndex: "status",
-                    key: "status",
-                    render: (status: string) => getStatusTag(status),
-                  },
-                  {
-                    title: "配置",
-                    key: "config",
-                    render: (_, record: VMData) => (
-                      <div style={{ fontSize: "12px" }}>
-                        <div>CPU: {record.cpu}核</div>
-                        <div>内存: {record.memory}GB</div>
-                        <div>磁盘: {record.diskSize}GB</div>
-                      </div>
-                    ),
-                  },
-                  {
-                    title: "运行时间",
-                    dataIndex: "uptime",
-                    key: "uptime",
-                    render: (uptime: string) => uptime || "未运行",
-                  },
-                ]}
-                pagination={false}
-              />
-            </Card>
-          </div>
-        ),
-      },
     ];
 
     return (
@@ -1187,6 +1142,13 @@ const ClusterManagement: React.FC = () => {
           }
           extra={
             <Space>
+              <Button
+                onClick={() => {
+                  setSidebarSelectedHost(null);
+                }}
+              >
+                返回集群管理
+              </Button>
               <Button
                 type="primary"
                 icon={<SyncOutlined />}
@@ -1309,6 +1271,13 @@ const ClusterManagement: React.FC = () => {
           extra={
             <Space>
               <Button
+                onClick={() => {
+                  setSidebarSelectedVM(null);
+                }}
+              >
+                返回集群管理
+              </Button>
+              <Button
                 type="primary"
                 icon={<SyncOutlined />}
                 onClick={() => message.info("正在刷新虚拟机信息...")}
@@ -1328,6 +1297,11 @@ const ClusterManagement: React.FC = () => {
         </Card>
       </div>
     );
+  }
+
+  // 只有在选择了主机或虚拟机时才不显示默认的集群管理页面
+  if (sidebarSelectedHost || sidebarSelectedVM) {
+    return null; // 这种情况已经在上面的条件中处理了
   }
 
   return (

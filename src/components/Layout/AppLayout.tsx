@@ -272,8 +272,8 @@ const AppLayout: React.FC = () => {
           zIndex: 10,
         }}
       >
-        {/* 顶部图标 */}
-        <div style={{ flex: "0 0 auto" }}>
+        {/* 主要图标 */}
+        <div style={{ flex: "1" }}>
           <Menu
             className="activity-bar-menu"
             selectedKeys={[selectedActivityItem]}
@@ -284,7 +284,7 @@ const AppLayout: React.FC = () => {
               borderRight: "none",
             }}
             onClick={(e) => handleMenuClick(e.key)}
-            items={activityItems.slice(0, 6).map((item) => ({
+            items={activityItems.map((item) => ({
               key: item.key,
               icon: (
                 <Tooltip
@@ -340,7 +340,7 @@ const AppLayout: React.FC = () => {
           />
         </div>
 
-        {/* 底部图标 - 使用弹性布局将它们推到底部 */}
+        {/* 底部图标区域 */}
         <div style={{ marginTop: "auto" }}>
           {/* 通知图标 - 非模块图标，仅用于显示 */}
           <div
@@ -379,7 +379,6 @@ const AppLayout: React.FC = () => {
                 }}
               >
                 <div style={{ position: "relative" }}>
-                  {" "}
                   <BellOutlined
                     style={{
                       fontSize: "20px",
@@ -401,71 +400,6 @@ const AppLayout: React.FC = () => {
               </Tooltip>
             </Badge>
           </div>
-
-          <Menu
-            className="activity-bar-menu"
-            selectedKeys={[selectedActivityItem]}
-            mode="vertical"
-            theme={actualTheme === "dark" ? "dark" : "light"}
-            style={{
-              backgroundColor: actualTheme === "dark" ? "#333333" : "#f3f3f3",
-              borderRight: "none",
-            }}
-            onClick={(e) => handleMenuClick(e.key)}
-            items={activityItems.slice(6).map((item) => ({
-              key: item.key,
-              icon: (
-                <Tooltip
-                  title={item.label}
-                  placement="right"
-                  classNames={{ root: "activity-tooltip" }}
-                  mouseEnterDelay={0.5}
-                  styles={{
-                    body: {
-                      backgroundColor:
-                        actualTheme === "dark" ? "#252526" : "#ffffff",
-                      color: actualTheme === "dark" ? "#cccccc" : "#000000",
-                      border: `1px solid ${
-                        actualTheme === "dark" ? "#454545" : "#d9d9d9"
-                      }`,
-                      borderRadius: "2px",
-                      fontSize: "12px",
-                      padding: "4px 8px",
-                      boxShadow:
-                        actualTheme === "dark"
-                          ? "0 2px 8px rgba(0, 0, 0, 0.5)"
-                          : "0 2px 8px rgba(0, 0, 0, 0.15)",
-                    },
-                  }}
-                >
-                  {React.cloneElement(item.icon, {
-                    style: {
-                      fontSize: "20px",
-                      color:
-                        item.key === selectedActivityItem
-                          ? actualTheme === "dark"
-                            ? "#ffffff"
-                            : "#000000"
-                          : actualTheme === "dark"
-                          ? "#858585"
-                          : "#666666",
-                    },
-                  })}
-                </Tooltip>
-              ),
-              style: {
-                backgroundColor:
-                  item.key === selectedActivityItem
-                    ? actualTheme === "dark"
-                      ? "#444444"
-                      : "#e6f7ff"
-                    : actualTheme === "dark"
-                    ? "#333333"
-                    : "#f3f3f3",
-                height: "50px",
-              },
-            }))}
-          />
 
           {/* 用户头像 */}
           <div

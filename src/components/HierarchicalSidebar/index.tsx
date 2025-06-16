@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Tree, Dropdown, message } from "antd";
 import type { TreeDataNode, MenuProps } from "antd";
 import {
-  DesktopOutlined,
-  ClusterOutlined,
   PlayCircleOutlined,
   PoweroffOutlined,
   StopOutlined,
@@ -470,7 +468,6 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
       status: vm.status,
       data: vm,
       isLeaf: true,
-      icon: <DesktopOutlined style={{ color: statusColor }} />,
     };
   };
 
@@ -515,7 +512,6 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
       status: node.status,
       data: node,
       children: node.vms.map(createVMNode),
-      icon: <HddOutlined style={{ color: statusColor }} />,
       className: "host-node",
     };
   };
@@ -554,7 +550,6 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
       type: "network",
       status: network.status,
       data: network,
-      icon: <GlobalOutlined style={{ color: statusColor }} />,
       className: "network-node",
     };
   };
@@ -594,7 +589,6 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
       type: "storage",
       status: storage.status,
       data: storage,
-      icon: <HddOutlined style={{ color: statusColor }} />,
       className: "storage-node",
     };
   };
@@ -632,7 +626,6 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
       status: cluster.status,
       data: cluster,
       children: children,
-      icon: <ClusterOutlined style={{ color: statusColor }} />,
     };
   };
 

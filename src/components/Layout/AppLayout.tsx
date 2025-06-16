@@ -11,7 +11,13 @@ import {
   Input,
   message,
 } from "antd";
-import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import {
   DesktopOutlined,
   ClusterOutlined,
@@ -31,7 +37,8 @@ import HierarchicalSidebar from "@/components/HierarchicalSidebar";
 import { useTheme } from "@/hooks/useTheme";
 import { loginService } from "@/services/login";
 import type { UserInfo } from "@/services/login";
-import { getSidebarData } from "@/services/mockData";
+import { getSidebarData, getClusterSidebarData } from "@/services/mockData";
+import type { DataCenter } from "@/services/mockData";
 import "./AppLayout.css";
 
 const AppLayout: React.FC = () => {
@@ -64,6 +71,10 @@ const AppLayout: React.FC = () => {
   const originalWidthRef = useRef(sidebarWidth);
   // 添加任务抽屉状态
   const [taskDrawerVisible, setTaskDrawerVisible] = useState(false);
+
+  // 侧边栏数据状态
+  const [sidebarData, setSidebarData] = useState<DataCenter | null>(null);
+  const [sidebarLoading, setSidebarLoading] = useState(false);
 
   // 添加拖拽状态
   const [isDragging, setIsDragging] = useState(false);
@@ -98,8 +109,27 @@ const AppLayout: React.FC = () => {
     getCurrentSelectedPath
   );
 
-  // 获取当前模块的侧边栏数据
-  const sidebarData = getSidebarData(selectedActivityItem);
+  // 获取侧边栏数据的异步函数
+  const loadSidebarData = useCallback(async (modulePath: string) => {
+    if (modulePath === "/cluster") {
+      // 集群页面使用API数据
+      setSidebarLoading(true);
+      try {
+        const clusterData = await getClusterSidebarData();
+        setSidebarData(clusterData);
+      } catch (error) {
+        console.error("获取集群侧边栏数据失败:", error);
+        // 失败时使用静态数据
+        setSidebarData(getSidebarData(modulePath));
+      } finally {
+        setSidebarLoading(false);
+      }
+    } else {
+      // 其他页面使用静态数据
+      setSidebarData(getSidebarData(modulePath));
+    }
+  }, []);
+
   const shouldShowHierarchicalSidebar =
     selectedActivityItem === "/virtual-machine" ||
     selectedActivityItem === "/cluster";
@@ -114,6 +144,13 @@ const AppLayout: React.FC = () => {
     const currentPath = getCurrentSelectedPath();
     setSelectedActivityItem(currentPath);
   }, [location.pathname, getCurrentSelectedPath]);
+
+  // 当选中的菜单项变化时加载侧边栏数据
+  useEffect(() => {
+    if (shouldShowSidebar) {
+      loadSidebarData(selectedActivityItem);
+    }
+  }, [selectedActivityItem, shouldShowSidebar, loadSidebarData]);
 
   // 初始加载时设置侧边栏宽度
   useEffect(() => {
@@ -485,30 +522,45 @@ const AppLayout: React.FC = () => {
         >
           {" "}
           {shouldShowHierarchicalSidebar ? (
-            <HierarchicalSidebar
-              data={sidebarData}
-              onSelect={(
-                selectedKeys: string[],
-                info: Record<string, unknown>
-              ) => {
-                // 处理树节点选择事件，传递选择信息到主内容区域
-                const selectedKey = selectedKeys[0];
-                const nodeInfo = info.node as { type?: string; data?: unknown };
+            sidebarLoading ? (
+              <div
+                style={{
+                  padding: "20px",
+                  textAlign: "center",
+                  color: actualTheme === "dark" ? "#cccccc" : "#666666",
+                }}
+              >
+                正在加载集群数据...
+              </div>
+            ) : (
+              <HierarchicalSidebar
+                data={sidebarData}
+                onSelect={(
+                  selectedKeys: string[],
+                  info: Record<string, unknown>
+                ) => {
+                  // 处理树节点选择事件，传递选择信息到主内容区域
+                  const selectedKey = selectedKeys[0];
+                  const nodeInfo = info.node as {
+                    type?: string;
+                    data?: unknown;
+                  };
 
-                if (nodeInfo && nodeInfo.data) {
-                  // 通过自定义事件传递选择信息到页面组件
-                  window.dispatchEvent(
-                    new CustomEvent("hierarchical-sidebar-select", {
-                      detail: {
-                        selectedKey,
-                        nodeType: nodeInfo.type,
-                        nodeData: nodeInfo.data,
-                      },
-                    })
-                  );
-                }
-              }}
-            />
+                  if (nodeInfo && nodeInfo.data) {
+                    // 通过自定义事件传递选择信息到页面组件
+                    window.dispatchEvent(
+                      new CustomEvent("hierarchical-sidebar-select", {
+                        detail: {
+                          selectedKey,
+                          nodeType: nodeInfo.type,
+                          nodeData: nodeInfo.data,
+                        },
+                      })
+                    );
+                  }
+                }}
+              />
+            )
           ) : (
             <Menu
               mode="inline"

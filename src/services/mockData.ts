@@ -1,3 +1,6 @@
+import { clusterInitService } from "./cluster";
+import type { ClusterTreeResponse } from "./cluster/types";
+
 // Mock数据服务 - 模拟PVE风格的集群和虚拟机数据
 export interface VirtualMachine {
   id: string;
@@ -23,12 +26,33 @@ export interface Node {
   vms: VirtualMachine[];
 }
 
+// 网络接口定义
+export interface Network {
+  id: string;
+  name: string;
+  type: "network";
+  status: "active" | "inactive";
+  networkType: string; // bridge, virtual, etc.
+}
+
+// 存储接口定义  
+export interface Storage {
+  id: string;
+  name: string;
+  type: "storage";
+  status: "active" | "inactive";
+  size: number;
+  used: number;
+}
+
 export interface Cluster {
   id: string;
   name: string;
   type: "cluster";
   status: "healthy" | "warning" | "error";
   nodes: Node[];
+  networks?: Network[]; // 可选，以保持向后兼容
+  storages?: Storage[];  // 可选，以保持向后兼容
 }
 
 export interface DataCenter {
@@ -415,18 +439,82 @@ export const getSidebarData = (modulePath: string) => {
   }
 };
 
+// 新增：获取集群树数据的异步函数
+export const getClusterSidebarData = async (): Promise<DataCenter | null> => {
+  try {
+    // 调用集群树API
+    const result = await clusterInitService.getClusterTree();
+    
+    if (result.success && result.data) {
+      // 将API数据转换为侧边栏数据格式
+      return convertClusterTreeToDataCenter(result.data);
+    } else {
+      console.warn("获取集群树失败，使用默认数据:", result.message);
+      return mockClusterDataCenter;
+    }
+  } catch (error) {
+    console.error("获取集群树数据异常:", error);
+    return mockClusterDataCenter;
+  }
+};
+
+// 将集群树API响应转换为DataCenter格式
+const convertClusterTreeToDataCenter = (treeData: ClusterTreeResponse): DataCenter => {
+  return {
+    id: "datacenter-real",
+    name: "实际集群环境",
+    type: "datacenter",
+    clusters: [
+      {
+        id: treeData.cluster_uuid,
+        name: treeData.cluster_name,
+        type: "cluster",
+        status: "healthy", // 可以根据节点状态推断集群状态
+        nodes: treeData.nodes.map((node) => ({
+          id: node.node_id,
+          name: node.name,
+          type: "node" as const,
+          status: node.status === "online" ? "online" as const : "offline" as const,
+          cpu: 0, // API中没有这些信息，使用默认值
+          memory: 0,
+          uptime: node.status === "online" ? "在线" : "离线",
+          vms: [], // API中没有虚拟机信息，使用空数组
+        })),
+        networks: treeData.networks?.map((network) => ({
+          id: `network-${network.name}`,
+          name: network.name,
+          type: "network" as const,
+          status: network.status === "active" ? "active" as const : "inactive" as const,
+          networkType: network.type,
+        })) || [],
+        storages: treeData.storages?.map((storage) => ({
+          id: `storage-${storage.name}`,
+          name: storage.name,
+          type: "storage" as const,
+          status: storage.status === "active" ? "active" as const : "inactive" as const,
+          size: storage.size,
+          used: storage.used,
+        })) || [],
+      },
+    ],
+  };
+};
+
 // 获取状态颜色
 export const getStatusColor = (status: string) => {
   switch (status) {
     case "running":
     case "online":
     case "healthy":
+    case "active":
       return "#52c41a";
     case "stopped":
     case "offline":
+    case "inactive":
       return "#ff4d4f";
     case "suspended":
     case "warning":
+    case "standby":
       return "#faad14";
     case "error":
       return "#ff4d4f";

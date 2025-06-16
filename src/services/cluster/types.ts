@@ -177,3 +177,38 @@ export interface ClusterResourcesResponse {
   group: ClusterResourceGroup[];
   resources: ClusterResource[];
 }
+
+// === 集群树结构相关类型 ===
+
+// 集群树节点信息 - 新的API格式
+export interface ClusterTreeNode {
+  name: string;
+  status: string;
+  ip: string;
+  node_id: string;
+  is_dc: boolean;
+}
+
+// 集群树网络信息
+export interface ClusterTreeNetwork {
+  name: string;
+  status: string;
+  type: string;
+}
+
+// 集群树存储信息
+export interface ClusterTreeStorage {
+  name: string;
+  status: string;
+  size: number;
+  used: number;
+}
+
+// 集群树响应 - 新的API格式
+export interface ClusterTreeResponse {
+  cluster_name: string;
+  cluster_uuid: string;
+  nodes: ClusterTreeNode[];
+  networks: ClusterTreeNetwork[];
+  storages: ClusterTreeStorage[];
+}

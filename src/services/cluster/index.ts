@@ -22,10 +22,11 @@ import type {
   ClusterNodesResponse,
   ClusterSummaryResponse,
   ClusterResourcesResponse,
+  ClusterTreeResponse,
 } from "./types";
 
 // 配置区域
-const USE_MOCK_DATA = false; // 开发时可以设置为true使用模拟数据
+const USE_MOCK_DATA = false; // 开发时可以设置为false使用真实API
 
 class ClusterInitService {
   private readonly AUTH_TOKEN_KEY = "kr_virt_cluster_auth_token";
@@ -608,6 +609,100 @@ class ClusterInitService {
     }
   }
 
+  /**
+   * 获取集群树结构
+   */
+  async getClusterTree(): Promise<{
+    success: boolean;
+    data?: ClusterTreeResponse;
+    message: string;
+  }> {
+    if (USE_MOCK_DATA) {
+      return this.mockGetClusterTree();
+    }
+
+    try {
+      console.log("调用集群树API: GET /cluster/tree");
+      const response = await request.get<ClusterTreeResponse>(
+        `/cluster/tree`,
+        {
+          skipAuth: false, // 需要认证
+          showErrorMessage: false, // 手动处理错误
+        } as RequestConfig
+      );
+
+      console.log("集群树API响应成功:", response);
+      const data = response.data || response;
+
+      return {
+        success: true,
+        data: data,
+        message: "获取集群树成功",
+      };
+    } catch (error: unknown) {
+      console.error("获取集群树API调用失败:", error);
+
+      // 处理不同的HTTP错误状态码
+      if (error && typeof error === "object" && "response" in error) {
+        const httpError = error as {
+          response?: { status?: number; data?: Record<string, unknown> };
+        };
+
+        console.log("HTTP错误状态码:", httpError.response?.status);
+        console.log("HTTP错误数据:", httpError.response?.data);
+
+        switch (httpError.response?.status) {
+          case 401:
+            return {
+              success: false,
+              message: "认证失败，请重新登录",
+            };
+          case 403:
+            return {
+              success: false,
+              message: "权限不足，无法访问集群信息",
+            };
+          case 404:
+            return {
+              success: false,
+              message: "集群服务不可用",
+            };
+          case 500: {
+            const errorData = httpError.response.data;
+            const errorMessage =
+              (errorData?.detail as string) ||
+              (errorData?.message as string) ||
+              "服务器内部错误";
+            return {
+              success: false,
+              message: errorMessage,
+            };
+          }
+          default:
+            return {
+              success: false,
+              message: "获取集群树失败",
+            };
+        }
+      }
+
+      // 处理网络错误等其他错误
+      let errorMessage = "获取集群树失败，请检查网络连接";
+      if (error && typeof error === "object") {
+        if ("message" in error) {
+          const messageError = error as { message: string };
+          errorMessage = messageError.message;
+        }
+      }
+
+      console.log("处理其他错误，返回消息:", errorMessage);
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    }
+  }
+
   // ===== 模拟数据方法 =====
   private async mockCheckClusterStatus(): Promise<ClusterStatusResponse> {
     // 模拟网络延迟
@@ -1003,6 +1098,86 @@ class ClusterInitService {
       success: true,
       data: mockData,
       message: "获取集群资源成功",
+    };
+  }
+
+  private async mockGetClusterTree(): Promise<{
+    success: boolean;
+    data?: ClusterTreeResponse;
+    message: string;
+  }> {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    // 模拟集群树数据 - 匹配新的API格式
+    const mockData: ClusterTreeResponse = {
+      cluster_name: "uos_cluster",
+      cluster_uuid: "e00529eda6f5412b8a881dedfdaf2271",
+      nodes: [
+        {
+          name: "localhost.localdomain",
+          status: "online",
+          ip: "192.168.1.187",
+          node_id: "1",
+          is_dc: true,
+        },
+        {
+          name: "node2.kr-virt.local", 
+          status: "online",
+          ip: "192.168.1.102",
+          node_id: "node-002",
+          is_dc: false,
+        },
+        {
+          name: "node3.kr-virt.local",
+          status: "standby",
+          ip: "192.168.1.103", 
+          node_id: "node-003",
+          is_dc: false,
+        },
+      ],
+      networks: [
+        {
+          name: "br0",
+          status: "active",
+          type: "bridge",
+        },
+        {
+          name: "virbr0",
+          status: "active",
+          type: "virtual",
+        },
+        {
+          name: "br1",
+          status: "inactive",
+          type: "bridge",
+        },
+      ],
+      storages: [
+        {
+          name: "local",
+          status: "active",
+          size: 1024000,
+          used: 102400,
+        },
+        {
+          name: "shared-storage",
+          status: "active",
+          size: 2048000,
+          used: 512000,
+        },
+        {
+          name: "backup-storage",
+          status: "inactive",
+          size: 4096000,
+          used: 0,
+        },
+      ],
+    };
+
+    return {
+      success: true,
+      data: mockData,
+      message: "获取集群树成功",
     };
   }
 }

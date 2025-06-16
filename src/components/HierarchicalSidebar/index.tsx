@@ -10,6 +10,7 @@ import {
   ReloadOutlined,
   MonitorOutlined,
   HddOutlined,
+  GlobalOutlined,
 } from "@ant-design/icons";
 import { useTheme } from "@/hooks/useTheme";
 import type {
@@ -17,6 +18,8 @@ import type {
   Cluster,
   Node,
   VirtualMachine,
+  Network,
+  Storage,
 } from "@/services/mockData";
 import { getStatusColor, getStatusIcon } from "@/services/mockData";
 import "./HierarchicalSidebar.css";
@@ -27,9 +30,9 @@ export interface HierarchicalSidebarProps {
 }
 
 interface TreeNodeData extends TreeDataNode {
-  type: "cluster" | "host" | "vm";
+  type: "cluster" | "host" | "vm" | "network" | "storage";
   status?: string;
-  data?: Cluster | Node | VirtualMachine;
+  data?: Cluster | Node | VirtualMachine | Network | Storage;
 }
 
 const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
@@ -517,10 +520,96 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
     };
   };
 
-  // 创建集群节点 - 包含物理机节点
+  // 创建网络节点
+  const createNetworkNode = (network: Network): TreeNodeData => {
+    const statusColor = getStatusColor(network.status);
+
+    return {
+      key: network.id,
+      title: (
+        <div className="tree-node-content">
+          <span className="tree-node-icon" style={{ color: statusColor }}>
+            <GlobalOutlined />
+          </span>
+          <span className="tree-node-title">{network.name}</span>
+          <span
+            className="tree-node-subtitle"
+            style={{
+              fontSize: "11px",
+              color: actualTheme === "dark" ? "#888" : "#999",
+              marginLeft: "4px",
+            }}
+          >
+            ({network.networkType})
+          </span>
+          <div className="tree-node-status">
+            <span
+              className="status-dot"
+              style={{ backgroundColor: statusColor }}
+            />
+            <span className="status-text">{network.status}</span>
+          </div>
+        </div>
+      ),
+      type: "network",
+      status: network.status,
+      data: network,
+      icon: <GlobalOutlined style={{ color: statusColor }} />,
+      className: "network-node",
+    };
+  };
+
+  // 创建存储节点
+  const createStorageNode = (storage: Storage): TreeNodeData => {
+    const statusColor = getStatusColor(storage.status);
+    const usagePercent = storage.size > 0 ? Math.round((storage.used / storage.size) * 100) : 0;
+
+    return {
+      key: storage.id,
+      title: (
+        <div className="tree-node-content">
+          <span className="tree-node-icon" style={{ color: statusColor }}>
+            <HddOutlined />
+          </span>
+          <span className="tree-node-title">{storage.name}</span>
+          <span
+            className="tree-node-subtitle"
+            style={{
+              fontSize: "11px",
+              color: actualTheme === "dark" ? "#888" : "#999",
+              marginLeft: "4px",
+            }}
+          >
+            ({usagePercent}% 已用)
+          </span>
+          <div className="tree-node-status">
+            <span
+              className="status-dot"
+              style={{ backgroundColor: statusColor }}
+            />
+            <span className="status-text">{storage.status}</span>
+          </div>
+        </div>
+      ),
+      type: "storage",
+      status: storage.status,
+      data: storage,
+      icon: <HddOutlined style={{ color: statusColor }} />,
+      className: "storage-node",
+    };
+  };
+
+  // 创建集群节点 - 包含物理机节点、网络和存储
   const createClusterNode = (cluster: Cluster): TreeNodeData => {
     const statusColor = getStatusColor(cluster.status);
     const statusIcon = getStatusIcon(cluster.type);
+
+    // 创建子节点数组，包含节点、网络和存储
+    const children: TreeNodeData[] = [
+      ...cluster.nodes.map(createHostNode),
+      ...(cluster.networks || []).map(createNetworkNode),
+      ...(cluster.storages || []).map(createStorageNode),
+    ];
 
     return {
       key: cluster.id,
@@ -542,7 +631,7 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
       type: "cluster",
       status: cluster.status,
       data: cluster,
-      children: cluster.nodes.map(createHostNode),
+      children: children,
       icon: <ClusterOutlined style={{ color: statusColor }} />,
     };
   };

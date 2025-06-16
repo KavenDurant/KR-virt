@@ -6,10 +6,11 @@ import type {
 } from "axios";
 import { message } from "antd";
 import { CookieUtils } from "./cookies";
+import { EnvConfig } from "@/config/env";
 
 // 环境配置
-const isDevelopment = import.meta.env.DEV;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+const isDevelopment = EnvConfig.IS_DEV;
+const API_BASE_URL = EnvConfig.API_BASE_URL;
 
 // 扩展的请求配置接口
 export interface RequestConfig extends AxiosRequestConfig {

@@ -56,6 +56,7 @@ import {
 import { useTheme } from "../../hooks/useTheme";
 import type { VMManagementData } from "../../services/mockData";
 import { mockVMManagementData } from "../../services/mockData";
+import { useTabSync } from "@/hooks/useTabSync";
 
 // 使用统一的虚拟机数据类型
 type VirtualMachine = VMManagementData;
@@ -73,6 +74,8 @@ interface VMStats {
 
 const VirtualMachineOptimized: React.FC = () => {
   const { themeConfig } = useTheme();
+  // 使用useTabSync Hook实现tab与URL同步
+  const { activeTab, setActiveTab } = useTabSync({ defaultTab: "list" });
   const [loading, setLoading] = useState(false);
   const [vmList, setVmList] = useState<VirtualMachine[]>([]);
   const [searchText, setSearchText] = useState("");
@@ -581,7 +584,8 @@ const VirtualMachineOptimized: React.FC = () => {
       {/* 主要内容区域 */}
       <Card>
         <Tabs
-          defaultActiveKey="list"
+          activeKey={activeTab}
+          onChange={setActiveTab}
           tabBarExtraContent={
             <Space>
               <Button type="primary" icon={<PlusOutlined />}>

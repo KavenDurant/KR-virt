@@ -29,6 +29,7 @@ import {
   ThunderboltOutlined,
   DatabaseOutlined,
 } from "@ant-design/icons";
+import { useTabSync } from "@/hooks/useTabSync";
 import type {
   Cluster as ClusterData,
   Node,
@@ -126,7 +127,8 @@ const getStatusTag = (status: string) => {
 
 const ClusterManagement: React.FC = () => {
   const { modal, message } = App.useApp();
-  const [activeTab, setActiveTab] = useState("overview");
+  // 使用useTabSync Hook实现tab与URL同步
+  const { activeTab, setActiveTab } = useTabSync({ defaultTab: "overview" });
 
   // 真实集群数据状态
   const [realClusterData, setRealClusterData] =

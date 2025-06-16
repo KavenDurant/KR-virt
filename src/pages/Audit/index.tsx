@@ -37,6 +37,7 @@ import {
   SettingOutlined,
 } from "@ant-design/icons";
 import { useTheme } from "../../hooks/useTheme";
+import { useTabSync } from "@/hooks/useTabSync";
 import AuditConfig from "./AuditConfig";
 import dayjs, { Dayjs } from "dayjs";
 
@@ -228,7 +229,8 @@ const mockLoginSessions: LoginSession[] = [
 const AuditManagement: React.FC = () => {
   const { themeConfig } = useTheme();
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("audit-logs");
+  // 使用useTabSync Hook实现tab与URL同步
+  const { activeTab, setActiveTab } = useTabSync({ defaultTab: "audit-logs" });
 
   // 审计日志状态
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);

@@ -60,6 +60,7 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTheme } from "../../hooks/useTheme";
+import { useTabSync } from "@/hooks/useTabSync";
 
 const { Content } = Layout;
 const { TabPane } = Tabs;
@@ -232,7 +233,9 @@ const mockLogs: LogEntry[] = [
 ];
 
 const SystemSettings: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("general");
+  // 使用useTabSync Hook实现tab与URL同步
+  const { activeTab, setActiveTab } = useTabSync({ defaultTab: "general" });
+
   const [loading, setLoading] = useState(true);
   const [form] = Form.useForm();
   const [userForm] = Form.useForm();
@@ -363,7 +366,7 @@ const SystemSettings: React.FC = () => {
     message.success(
       `已切换到${
         value === "auto" ? "自动" : value === "dark" ? "深色" : "浅色"
-      }主题`,
+      }主题`
     );
   };
 
@@ -719,8 +722,8 @@ const SystemSettings: React.FC = () => {
                                   {themeMode === "dark"
                                     ? "深色模式"
                                     : themeMode === "light"
-                                      ? "浅色模式"
-                                      : "自动模式"}
+                                    ? "浅色模式"
+                                    : "自动模式"}
                                 </Tag>
                               </Form.Item>
                             </Col>
@@ -817,7 +820,7 @@ const SystemSettings: React.FC = () => {
                                 percent={Math.round(
                                   (mockSystemInfo.license.usedNodes /
                                     mockSystemInfo.license.nodes) *
-                                    100,
+                                    100
                                 )}
                                 size="small"
                                 format={() =>
@@ -1077,10 +1080,10 @@ const SystemSettings: React.FC = () => {
                               title="成功率"
                               value={Math.round(
                                 (mockBackups.filter(
-                                  (b) => b.status === "completed",
+                                  (b) => b.status === "completed"
                                 ).length /
                                   mockBackups.length) *
-                                  100,
+                                  100
                               )}
                               suffix="%"
                               valueStyle={{ color: "#3f8600" }}
@@ -1358,7 +1361,7 @@ const SystemSettings: React.FC = () => {
                   console.log("User form values:", values);
                   setUserModalVisible(false);
                   message.success(
-                    selectedUser ? "用户更新成功" : "用户创建成功",
+                    selectedUser ? "用户更新成功" : "用户创建成功"
                   );
                 }}
               >
@@ -1440,7 +1443,7 @@ const SystemSettings: React.FC = () => {
                                 return Promise.resolve();
                               }
                               return Promise.reject(
-                                new Error("两次输入的密码不一致"),
+                                new Error("两次输入的密码不一致")
                               );
                             },
                           }),

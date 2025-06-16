@@ -39,6 +39,7 @@ import {
   RocketOutlined,
   ShareAltOutlined,
 } from "@ant-design/icons";
+import { useTabSync } from "@/hooks/useTabSync";
 import ReactFlow, {
   addEdge,
   Background,
@@ -339,7 +340,9 @@ const getStatusTag = (status: string) => {
 };
 
 const NetworkManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+  // 使用useTabSync Hook实现tab与URL同步
+  const { activeTab, setActiveTab } = useTabSync({ defaultTab: "overview" });
+  
   const [networkList, setNetworkList] = useState<Network[]>(mockNetworks);
   const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
   const [networkModalVisible, setNetworkModalVisible] = useState(false);

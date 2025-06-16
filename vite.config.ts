@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-05-22 16:33:12
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-06-16 11:30:00
+ * @LastEditTime: 2025-06-16 16:35:15
  * @FilePath: /KR-virt/vite.config.ts
  * @Description: Vite配置 - 支持多环境配置
  */
@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
   console.log(`🚀 构建模式: ${mode}`);
   console.log(`📡 API地址: ${env.VITE_API_BASE_URL}`);
   console.log(`🎯 代理目标: ${env.VITE_PROXY_TARGET || env.VITE_API_BASE_URL}`);
+  console.log(`🎭 Mock数据: ${env.VITE_ENABLE_MOCK === 'true' ? '启用' : '禁用'}`);
   
   return {
     plugins: [react()],

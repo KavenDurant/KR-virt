@@ -6,6 +6,7 @@
 
 import request from "@/utils/request";
 import { CookieUtils } from "@/utils/cookies";
+import { EnvConfig } from "@/config/env";
 import type { RequestConfig } from "@/utils/request";
 import type {
   ClusterStatusResponse,
@@ -26,7 +27,7 @@ import type {
 } from "./types";
 
 // 配置区域
-const USE_MOCK_DATA = false; // 开发时可以设置为false使用真实API
+const USE_MOCK_DATA = EnvConfig.ENABLE_MOCK; // 通过环境变量控制是否使用模拟数据
 
 class ClusterInitService {
   private readonly AUTH_TOKEN_KEY = "kr_virt_cluster_auth_token";

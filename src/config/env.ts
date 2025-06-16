@@ -86,6 +86,25 @@ export class EnvConfig {
   static getConfig<T>(devConfig: T, prodConfig: T): T {
     return this.IS_PROD ? prodConfig : devConfig;
   }
+
+  /**
+   * Mock数据控制助手
+   * @param mockFn Mock数据函数
+   * @param apiFn 真实API函数
+   * @returns 根据环境变量返回对应的函数结果
+   */
+  static async mockOrApi<T>(
+    mockFn: () => T | Promise<T>,
+    apiFn: () => T | Promise<T>
+  ): Promise<T> {
+    if (this.ENABLE_MOCK) {
+      console.log('🎭 使用Mock数据');
+      return await mockFn();
+    } else {
+      console.log('🌐 使用真实API');
+      return await apiFn();
+    }
+  }
 }
 
 // 开发环境自动打印环境信息

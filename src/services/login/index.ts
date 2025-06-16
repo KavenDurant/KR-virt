@@ -6,6 +6,7 @@
 
 import { http } from "@/utils/request";
 import { CookieUtils } from "@/utils/cookies";
+import { EnvConfig } from "@/config/env";
 import type { RequestConfig } from "@/utils/request";
 import type {
   AuthResponse,
@@ -17,7 +18,7 @@ import type {
 } from "./types";
 
 // ===== 配置区域 =====
-const USE_MOCK_DATA = false; // true=使用模拟数据，false=使用真实API
+const USE_MOCK_DATA = EnvConfig.ENABLE_MOCK; // 通过环境变量控制是否使用模拟数据
 
 // ===== 模拟用户数据 =====
 const mockUsers: MockUser[] = [

@@ -813,23 +813,46 @@ class ClusterInitService {
     message: string;
   }> {
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    // 模拟集群节点数据 - 匹配实际接口格式
+    // 模拟集群节点数据 - 匹配新的实际接口格式
     const mockData: ClusterNodesResponse = {
+      cluster_name: "uos_cluster",
+      cluster_uuid: "e00529eda6f5412b8a881dedfdaf2271",
       nodes: [
         {
           name: "localhost.localdomain",
-          node_id: "node-001",
-          ip: "192.168.1.101",
+          node_id: "1",
+          ip: "192.168.1.187",
+          status: "online",
+          is_dc: true,
+          cpu_total: 8,
+          mem_total: 16384,
+          cpu_used: 2,
+          mem_used: 4096,
+          pub_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC/OnZXiXMbg5IZadg/ZvKxt++Q7k5nyThvuJ4ljm7R2nBmx+9i4THeEVB/gmAcsjanLm5bC6LgNECSlJbxh6ZUwQKP7XjBQ/VDv74M3HZS0mpoQa7eZkhtjx4+Ry04x760p/YvjFmv5vycbxIDrpF/cOneOnzDv95dhliJwfxTX5w7RBG7sxVT0uocfFUdndbAYmJnZvfT5l9PH/Ru7Z094p07SFckY9MGcVZG0QFfvQ/DiP5s/CGeAVTGN/yWxRt24V0R/u0g4BytzCjP8vNB7nsuiIjG1gJux1UJ7Ze2OdBHK5gQSOOHttMn7U8lBZXfccVLBT/NKBaUWs/bt249 root@localhost.localdomain"
         },
         {
           name: "node2.localdomain",
-          node_id: "node-002",
+          node_id: "2",
           ip: "192.168.1.102",
+          status: "online",
+          is_dc: false,
+          cpu_total: 8,
+          mem_total: 16384,
+          cpu_used: 1,
+          mem_used: 2048,
+          pub_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC8eR7fJ6GGN4iHl8cBVXVDCi9mQ2pQw3Qz5FjH8QnV7x0YzKf6nqWJtC2eE8dNhQWm5vR4KmVbL9tX3U7Yd6qJ9F8vG2kH3L0nE4tS6wQ9nP7mF3bD8xY5eR9fT6cK1nV3sM7jE9tQ2nG5kH8mF4dS7wY1eZ8qP6vN9tX2cL0uI5hE7fT3nY9kJ6mG1xS4wR8qP7eN5bH9tQ3cK0uJ6fL2nV7xY8dS5wG4kH1eM9tQ6bP3cF7nY0uI2hE8fT5kJ9vN1xS6wR4qP2eL7bH0tQ3cK9uJ5fG8nV4xY1dS7wM6kH3eT0qP9vN2bL5fH8tQ7cK4uJ1fG6nY3xS0wR9qP5eL2bH7tQ8cK3uJ6fG1nV9xY4dS2wM5kH8e root@node2.localdomain"
         },
         {
-          name: "node3.localdomain",
-          node_id: "node-003",
+          name: "node3.localdomain", 
+          node_id: "3",
           ip: "192.168.1.103",
+          status: "standby",
+          is_dc: false,
+          cpu_total: 4,
+          mem_total: 8192,
+          cpu_used: null,
+          mem_used: null,
+          pub_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD1cF7nY0uI2hE8fT5kJ9vN1xS6wR4qP2eL7bH0tQ3cK9uJ5fG8nV4xY1dS7wM6kH3eT0qP9vN2bL5fH8tQ7cK4uJ1fG6nY3xS0wR9qP5eL2bH7tQ8cK3uJ6fG1nV9xY4dS2wM5kH8eR7fJ6GGN4iHl8cBVXVDCi9mQ2pQw3Qz5FjH8QnV7x0YzKf6nqWJtC2eE8dNhQWm5vR4KmVbL9tX3U7Yd6qJ9F8vG2kH3L0nE4tS6wQ9nP7mF3bD8xY5eR9fT6cK1nV3sM7jE9tQ2nG5kH8mF4dS7wY1eZ8qP6vN9tX2cL0u root@node3.localdomain"
         },
       ],
     };

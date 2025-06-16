@@ -28,7 +28,9 @@ import {
   MonitorOutlined,
   ThunderboltOutlined,
   DatabaseOutlined,
+  CopyOutlined,
 } from "@ant-design/icons";
+import { formatResourceUsage } from "../../utils/format";
 import { useTabSync } from "@/hooks/useTabSync";
 import type {
   Cluster as ClusterData,
@@ -204,6 +206,32 @@ const ClusterManagement: React.FC = () => {
     return "#52c41a"; // 保留语义颜色：成功/正常
   };
 
+  // 格式化公钥显示的函数
+  const formatPublicKey = (pubKey: string): string => {
+    if (!pubKey) return "";
+    const parts = pubKey.split(" ");
+    if (parts.length < 2) return pubKey;
+
+    const keyPart = parts[1]; // 获取实际的key部分，去掉ssh-rsa等前缀
+    if (keyPart.length <= 20) return pubKey;
+
+    // 显示前8位和后8位
+    return `${keyPart.substring(0, 8)}...${keyPart.substring(
+      keyPart.length - 8
+    )}`;
+  };
+
+  // 复制公钥到剪贴板的函数
+  const copyPublicKey = async (pubKey: string, nodeName: string) => {
+    try {
+      await navigator.clipboard.writeText(pubKey);
+      message.success(`${nodeName} 的公钥已复制到剪贴板`);
+    } catch (error) {
+      console.error("复制失败:", error);
+      message.error("复制公钥失败，请手动复制");
+    }
+  };
+
   // 获取真实集群数据
   const fetchRealClusterData = useCallback(async () => {
     setRealClusterLoading(true);
@@ -340,20 +368,22 @@ const ClusterManagement: React.FC = () => {
       key: "name",
       render: (
         name: string,
-        record: { node_id: string; name: string; ip: string }
+        record: { node_id: string; name: string; ip: string; is_dc: boolean }
       ) => (
         <div>
-          <div style={{ fontWeight: "bold" }}>{name}</div>
+          <div style={{ fontWeight: "bold" }}>
+            {name}
+            {record.is_dc && (
+              <Tag color="purple" style={{ marginLeft: "8px" }}>
+                DC
+              </Tag>
+            )}
+          </div>
           <div style={{ fontSize: "12px", color: "#666" }}>
             ID: {record.node_id}
           </div>
         </div>
       ),
-    },
-    {
-      title: "节点ID",
-      dataIndex: "node_id",
-      key: "node_id",
     },
     {
       title: "IP地址",
@@ -363,12 +393,137 @@ const ClusterManagement: React.FC = () => {
     },
     {
       title: "状态",
+      dataIndex: "status",
       key: "status",
-      render: () => (
-        <Tag icon={<CheckCircleOutlined />} color="success">
-          在线
-        </Tag>
-      ),
+      render: (status: string) => {
+        switch (status) {
+          case "online":
+            return (
+              <Tag icon={<CheckCircleOutlined />} color="success">
+                在线
+              </Tag>
+            );
+          case "offline":
+            return (
+              <Tag icon={<ExclamationCircleOutlined />} color="error">
+                离线
+              </Tag>
+            );
+          case "standby":
+            return (
+              <Tag icon={<SyncOutlined />} color="warning">
+                待机
+              </Tag>
+            );
+          default:
+            return <Tag color="default">{status}</Tag>;
+        }
+      },
+    },
+    {
+      title: "资源使用",
+      key: "resources",
+      render: (
+        _: unknown,
+        record: {
+          cpu_total: number | null;
+          cpu_used: number | null;
+          mem_total: number | null;
+          mem_used: number | null;
+        }
+      ) => {
+        // 使用格式化工具处理CPU和内存资源
+        const cpuUsage = formatResourceUsage(
+          record.cpu_used,
+          record.cpu_total,
+          "核"
+        );
+        
+        const memUsage = formatResourceUsage(
+          record.mem_used,
+          record.mem_total,
+          "GB"
+        );
+
+        return (
+          <div style={{ fontSize: "12px" }}>
+            <div style={{ marginBottom: "4px" }}>
+              <span style={{ color: "#666" }}>CPU: </span>
+              <span 
+                style={{ 
+                  color: cpuUsage.percentage !== null 
+                    ? getProgressColor(cpuUsage.percentage)
+                    : "#999"
+                }}
+              >
+                {cpuUsage.display}
+              </span>
+            </div>
+            <div>
+              <span style={{ color: "#666" }}>内存: </span>
+              <span 
+                style={{ 
+                  color: memUsage.percentage !== null 
+                    ? getProgressColor(memUsage.percentage)
+                    : "#999"
+                }}
+              >
+                {memUsage.display}
+              </span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      title: "SSH公钥",
+      dataIndex: "pub_key",
+      key: "pub_key",
+      width: "200px",
+      render: (pubKey: string, record: { name: string }) => {
+        if (!pubKey) {
+          return (
+            <span style={{ color: "#999", fontSize: "12px" }}>
+              未配置SSH公钥
+            </span>
+          );
+        }
+
+        const formattedKey = formatPublicKey(pubKey);
+
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span
+              style={{
+                fontFamily: "monospace",
+                fontSize: "12px",
+                color: "#666",
+                backgroundColor: "#f5f5f5",
+                padding: "2px 6px",
+                borderRadius: "4px",
+                border: "1px solid #d9d9d9",
+              }}
+            >
+              {formattedKey}
+            </span>
+            <Button
+              type="text"
+              size="small"
+              icon={<CopyOutlined />}
+              onClick={() => copyPublicKey(pubKey, record.name)}
+              title="复制完整公钥"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "24px",
+                height: "24px",
+                minWidth: "24px",
+              }}
+            />
+          </div>
+        );
+      },
     },
     {
       title: "操作",
@@ -1288,6 +1443,16 @@ const ClusterManagement: React.FC = () => {
                       <Col xs={24} sm={8}>
                         <Card size="small">
                           <Statistic
+                            title="集群名称"
+                            value={realClusterData.cluster_name}
+                            prefix={<ClusterOutlined />}
+                            valueStyle={{ color: "#1890ff" }}
+                          />
+                        </Card>
+                      </Col>
+                      <Col xs={24} sm={8}>
+                        <Card size="small">
+                          <Statistic
                             title="物理机总数"
                             value={realClusterData.nodes.length}
                             prefix={<HddOutlined />}
@@ -1299,25 +1464,30 @@ const ClusterManagement: React.FC = () => {
                         <Card size="small">
                           <Statistic
                             title="在线节点"
-                            value={realClusterData.nodes.length}
+                            value={
+                              realClusterData.nodes.filter(
+                                (node) => node.status === "online"
+                              ).length
+                            }
                             prefix={<CheckCircleOutlined />}
-                            valueStyle={{ color: "#52c41a" }}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={8}>
-                        <Card size="small">
-                          <Statistic
-                            title="集群状态"
-                            value="正常运行"
-                            prefix={<ClusterOutlined />}
                             valueStyle={{ color: "#52c41a" }}
                           />
                         </Card>
                       </Col>
                     </Row>
 
-                    <Card title="物理机节点列表" size="small">
+                    <Card
+                      title={
+                        <Space>
+                          <span>物理机节点列表</span>
+                          <Tag color="processing">
+                            集群UUID: {realClusterData.cluster_uuid.slice(0, 8)}
+                            ...
+                          </Tag>
+                        </Space>
+                      }
+                      size="small"
+                    >
                       <Table
                         columns={realClusterNodesColumns}
                         dataSource={realClusterData.nodes}
@@ -1580,7 +1750,13 @@ const ClusterManagement: React.FC = () => {
                                 );
                               } else {
                                 return (
-                                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      alignItems: "flex-start",
+                                    }}
+                                  >
                                     <div
                                       style={{
                                         display: "flex",

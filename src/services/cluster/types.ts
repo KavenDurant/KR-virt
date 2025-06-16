@@ -107,11 +107,20 @@ export interface ClusterNode {
   name: string;
   node_id: string;
   ip: string;
+  status: string; // 节点状态：online/offline等
+  is_dc: boolean; // 是否为DC节点
+  cpu_total: number | null; // CPU总量
+  mem_total: number | null; // 内存总量
+  cpu_used: number | null; // CPU使用量
+  mem_used: number | null; // 内存使用量
+  pub_key: string; // 公钥
 }
 
-// 集群节点列表响应 - 实际接口返回格式
+// 集群节点列表响应 - 实际接口返回格式  
 export interface ClusterNodesResponse {
-  nodes: ClusterNode[];
+  cluster_name: string; // 集群名称
+  cluster_uuid: string; // 集群UUID
+  nodes: ClusterNode[]; // 节点列表
 }
 
 // === 集群概览相关类型 ===

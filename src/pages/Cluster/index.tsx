@@ -24,6 +24,7 @@ import {
   Form,
   Input,
 } from "antd";
+import SafetyConfirmModal from "@/components/SafetyConfirmModal";
 import {
   SyncOutlined,
   ClusterOutlined,
@@ -233,6 +234,14 @@ const ClusterManagement: React.FC = () => {
   // 添加节点相关状态
   const [addNodeModalVisible, setAddNodeModalVisible] = useState(false);
   const [addNodeLoading, setAddNodeLoading] = useState(false);
+
+  // 安全确认模态框状态
+  const [safetyConfirmVisible, setSafetyConfirmVisible] = useState(false);
+  const [safetyConfirmLoading, setSafetyConfirmLoading] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    type: 'removeNode' | 'dissolveCluster';
+    data: { hostname?: string; nodeName?: string };
+  } | null>(null);
 
   // ===== 节点操作相关函数 =====
 
@@ -649,6 +658,59 @@ const ClusterManagement: React.FC = () => {
     [modal, fetchRealClusterData]
   );
 
+  // 移除节点处理函数
+  const handleRemoveNode = useCallback(
+    async (hostname: string, nodeName: string) => {
+      // 设置待处理的操作并显示安全确认模态框
+      setPendingAction({
+        type: 'removeNode',
+        data: { hostname, nodeName }
+      });
+      setSafetyConfirmVisible(true);
+    },
+    []
+  );
+
+  // 执行移除节点操作
+  const executeRemoveNode = useCallback(
+    async (hostname: string, nodeName: string) => {
+      setSafetyConfirmLoading(true);
+      try {
+        const result = await clusterInitService.removeNode({ hostname });
+        if (result.success) {
+          modal.success({
+            title: "移除节点成功",
+            content: result.message || `节点 ${nodeName} 已成功从集群中移除`,
+          });
+          // 刷新物理机列表
+          fetchRealClusterData();
+
+          // 触发侧边栏刷新事件
+          const refreshSidebarEvent = new CustomEvent("refresh-sidebar", {
+            detail: { type: "cluster", action: "node-removed" },
+          });
+          window.dispatchEvent(refreshSidebarEvent);
+        } else {
+          modal.error({
+            title: "移除节点失败",
+            content: result.message || "移除节点失败，请检查节点状态",
+          });
+        }
+      } catch (error) {
+        console.error("移除节点失败:", error);
+        modal.error({
+          title: "移除节点失败",
+          content: "移除节点过程中发生错误，请稍后重试",
+        });
+      } finally {
+        setSafetyConfirmLoading(false);
+        setSafetyConfirmVisible(false);
+        setPendingAction(null);
+      }
+    },
+    [modal, fetchRealClusterData]
+  );
+
   // 监听侧边栏主机操作事件
   useEffect(() => {
     const handleSidebarHostAction = (event: CustomEvent) => {
@@ -809,33 +871,92 @@ const ClusterManagement: React.FC = () => {
 
   // 解散集群
   const handleDissolveCluster = () => {
-    modal.confirm({
-      title: "确认解散集群",
-      content: "此操作将解散当前集群，所有数据将被清除。确定要继续吗？",
-      okText: "确定",
-      okType: "danger",
-      cancelText: "取消",
-      onOk: async () => {
-        try {
-          console.log("开始调用解散集群API...");
-          const result = await clusterInitService.dissolveCluster();
-          console.log("解散集群API返回结果:", result);
-
-          if (result.success) {
-            console.log("解散集群成功，显示成功消息:", result.message);
-            message.success(result.message);
-            // 刷新集群列表 - 这里可以添加具体的刷新逻辑
-          } else {
-            console.log("解散集群失败，显示错误消息:", result.message);
-            message.error(result.message);
-          }
-        } catch (error) {
-          console.error("解散集群异常:", error);
-          message.error("解散集群失败，请稍后重试");
-        }
-      },
+    // 设置待处理的操作并显示安全确认模态框
+    setPendingAction({
+      type: 'dissolveCluster',
+      data: {}
     });
+    setSafetyConfirmVisible(true);
   };
+
+  // 执行解散集群操作
+  const executeDissolveCluster = useCallback(
+    async () => {
+      setSafetyConfirmLoading(true);
+      try {
+        console.log("开始调用解散集群API...");
+        const result = await clusterInitService.dissolveCluster();
+        console.log("解散集群API返回结果:", result);
+
+        if (result.success) {
+          console.log("解散集群成功，显示成功消息:", result.message);
+          message.success(result.message);
+          // 刷新集群列表 - 这里可以添加具体的刷新逻辑
+        } else {
+          console.log("解散集群失败，显示错误消息:", result.message);
+          message.error(result.message);
+        }
+      } catch (error) {
+        console.error("解散集群异常:", error);
+        message.error("解散集群失败，请稍后重试");
+      } finally {
+        setSafetyConfirmLoading(false);
+        setSafetyConfirmVisible(false);
+        setPendingAction(null);
+      }
+    },
+    [message]
+  );
+
+  // 安全确认处理函数
+  const handleSafetyConfirm = useCallback(() => {
+    if (!pendingAction) return;
+
+    switch (pendingAction.type) {
+      case 'removeNode':
+        if (pendingAction.data.hostname && pendingAction.data.nodeName) {
+          executeRemoveNode(pendingAction.data.hostname, pendingAction.data.nodeName);
+        }
+        break;
+      case 'dissolveCluster':
+        executeDissolveCluster();
+        break;
+      default:
+        setSafetyConfirmVisible(false);
+        setPendingAction(null);
+    }
+  }, [pendingAction, executeRemoveNode, executeDissolveCluster]);
+
+  const handleSafetyCancel = useCallback(() => {
+    setSafetyConfirmVisible(false);
+    setPendingAction(null);
+  }, []);
+
+  // 获取确认文本和相关信息
+  const getSafetyConfirmProps = useCallback(() => {
+    if (!pendingAction) return null;
+
+    switch (pendingAction.type) {
+      case 'removeNode':
+        return {
+          title: "确认移除节点",
+          description: `您即将从集群中移除节点 "${pendingAction.data.nodeName}"。此操作将会影响集群的可用性，请确保该节点上没有重要的运行中虚拟机。`,
+          confirmText: `remove ${pendingAction.data.nodeName}`,
+          warning: "移除节点是不可逆操作，移除后节点上的数据将无法恢复。请确保已备份重要数据。",
+          confirmButtonText: "移除节点"
+        };
+      case 'dissolveCluster':
+        return {
+          title: "确认解散集群",
+          description: "您即将解散当前集群。此操作将清除所有集群配置和数据。",
+          confirmText: "dissolve cluster",
+          warning: "解散集群是极其危险的操作，所有数据将被永久删除且无法恢复。请确保已备份所有重要数据。",
+          confirmButtonText: "解散集群"
+        };
+      default:
+        return null;
+    }
+  }, [pendingAction]);
 
   // 真实集群节点列表的表格列定义
   const realClusterNodesColumns = [
@@ -1035,6 +1156,15 @@ const ClusterManagement: React.FC = () => {
             onClick={() => message.info(`管理节点 ${record.name}`)}
           >
             管理
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<ExclamationCircleOutlined />}
+            onClick={() => handleRemoveNode(record.name, record.name)}
+          >
+            移除
           </Button>
         </Space>
       ),
@@ -2373,6 +2503,7 @@ const ClusterManagement: React.FC = () => {
                       <Col xs={24} sm={8} md={6}>
                         <Card size="small">
                           <Statistic
+                           
                             title="配置节点数"
                             value={clusterSummaryData.nodes_configured}
                             prefix={<ClusterOutlined />}
@@ -3226,6 +3357,17 @@ const ClusterManagement: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* 安全确认模态框 */}
+      {safetyConfirmVisible && getSafetyConfirmProps() && (
+        <SafetyConfirmModal
+          visible={safetyConfirmVisible}
+          onConfirm={handleSafetyConfirm}
+          onCancel={handleSafetyCancel}
+          loading={safetyConfirmLoading}
+          {...getSafetyConfirmProps()!}
+        />
+      )}
     </div>
   );
 };

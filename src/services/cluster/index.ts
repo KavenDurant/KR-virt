@@ -16,6 +16,8 @@ import type {
   CreateClusterResponse,
   AddNodeRequest,
   AddNodeResponse,
+  RemoveNodeRequest,
+  RemoveNodeResponse,
   HostnameResponse,
   IpAddressesResponse,
   DissolveClusterResponse,
@@ -258,6 +260,27 @@ class ClusterInitService {
       skipAuth: false,
       defaultSuccessMessage: "节点添加成功",
       defaultErrorMessage: "添加节点失败，请检查节点信息",
+    });
+  }
+
+  /**
+   * 移除节点从集群
+   */
+  async removeNode(nodeData: RemoveNodeRequest): Promise<StandardResponse<RemoveNodeResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post('/cluster/remove', nodeData, {
+        useMock: true,
+        mockData: { 
+          message: `节点 ${nodeData.hostname} 已成功从集群中移除`
+        },
+        defaultSuccessMessage: "节点移除成功",
+      }) as Promise<StandardResponse<RemoveNodeResponse>>;
+    }
+
+    return api.post<RemoveNodeResponse>('/cluster/remove', nodeData, {
+      skipAuth: false,
+      defaultSuccessMessage: "节点移除成功",
+      defaultErrorMessage: "移除节点失败，请检查节点状态",
     });
   }
 

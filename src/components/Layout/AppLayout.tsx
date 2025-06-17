@@ -75,6 +75,7 @@ const AppLayout: React.FC = () => {
   // 侧边栏数据状态
   const [sidebarData, setSidebarData] = useState<DataCenter | null>(null);
   const [sidebarLoading, setSidebarLoading] = useState(false);
+  const [sidebarError, setSidebarError] = useState<string | null>(null);
 
   // 添加拖拽状态
   const [isDragging, setIsDragging] = useState(false);
@@ -114,18 +115,21 @@ const AppLayout: React.FC = () => {
     if (modulePath === "/cluster") {
       // 集群页面使用API数据
       setSidebarLoading(true);
+      setSidebarError(null); // 清除之前的错误
       try {
         const clusterData = await getClusterSidebarData();
         setSidebarData(clusterData);
       } catch (error) {
         console.error("获取集群侧边栏数据失败:", error);
-        // 失败时使用静态数据
-        setSidebarData(getSidebarData(modulePath));
+        // 设置错误状态，不再回退到mock数据
+        setSidebarError("获取集群数据失败，请检查网络连接或联系管理员");
+        setSidebarData(null);
       } finally {
         setSidebarLoading(false);
       }
     } else {
       // 其他页面使用静态数据
+      setSidebarError(null);
       setSidebarData(getSidebarData(modulePath));
     }
   }, []);
@@ -484,6 +488,31 @@ const AppLayout: React.FC = () => {
                 }}
               >
                 正在加载集群数据...
+              </div>
+            ) : sidebarError ? (
+              <div
+                style={{
+                  padding: "20px",
+                  textAlign: "center",
+                  color: actualTheme === "dark" ? "#ff6b6b" : "#ff4d4f",
+                }}
+              >
+                <div style={{ marginBottom: "10px" }}>❌</div>
+                <div>{sidebarError}</div>
+                <div
+                  style={{
+                    marginTop: "10px",
+                    color: actualTheme === "dark" ? "#1890ff" : "#1890ff",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                  }}
+                  onClick={() => {
+                    // 重新加载侧边栏数据
+                    loadSidebarData(selectedActivityItem);
+                  }}
+                >
+                  点击重试
+                </div>
               </div>
             ) : (
               <HierarchicalSidebar

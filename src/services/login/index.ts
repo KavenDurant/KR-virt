@@ -605,22 +605,33 @@ class TokenRefreshManager {
       return;
     }
 
+    const isDev = import.meta.env.DEV;
+    const devMode = import.meta.env.MODE;
+    const interval = isDev ? 30 * 1000 : 3 * 60 * 1000;
+    
+    console.log("🔧 环境检测信息:");
+    console.log("  - import.meta.env.DEV:", isDev);
+    console.log("  - import.meta.env.MODE:", devMode);
+    console.log("  - 刷新间隔:", interval / 1000, "秒");
+
     console.log(
       "🔄 启动Token自动刷新，间隔:",
-      import.meta.env.DEV ? "30秒 (开发模式)" : "3分钟"
+      isDev ? "30秒 (开发模式)" : "3分钟"
     );
     console.log(
       "⏰ 下次自动刷新将在",
-      import.meta.env.DEV ? "30秒" : "3分钟",
+      isDev ? "30秒" : "3分钟",
       "后执行"
     );
 
     // 设置定时器 - 等待指定时间后开始第一次自动刷新
     this.refreshTimer = setInterval(() => {
+      console.log("⏰ 触发自动刷新定时器");
       this.performRefresh();
     }, this.REFRESH_INTERVAL);
 
     console.log("✅ Token自动刷新定时器已设置");
+    console.log("✅ 定时器ID:", this.refreshTimer);
   }
 
   /**

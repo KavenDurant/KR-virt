@@ -35,7 +35,7 @@ export interface Network {
   networkType: string; // bridge, virtual, etc.
 }
 
-// 存储接口定义  
+// 存储接口定义
 export interface Storage {
   id: string;
   name: string;
@@ -52,7 +52,7 @@ export interface Cluster {
   status: "healthy" | "warning" | "error";
   nodes: Node[];
   networks?: Network[]; // 可选，以保持向后兼容
-  storages?: Storage[];  // 可选，以保持向后兼容
+  storages?: Storage[]; // 可选，以保持向后兼容
 }
 
 export interface DataCenter {
@@ -444,22 +444,26 @@ export const getClusterSidebarData = async (): Promise<DataCenter | null> => {
   try {
     // 调用集群树API
     const result = await clusterInitService.getClusterTree();
-    
+
     if (result.success && result.data) {
       // 将API数据转换为侧边栏数据格式
       return convertClusterTreeToDataCenter(result.data);
     } else {
-      console.warn("获取集群树失败，使用默认数据:", result.message);
-      return mockClusterDataCenter;
+      console.warn("获取集群树失败:", result.message);
+      // 不再回退到mock数据，抛出错误让上层处理
+      throw new Error(result.message || "获取集群树失败");
     }
   } catch (error) {
     console.error("获取集群树数据异常:", error);
-    return mockClusterDataCenter;
+    // 不再回退到mock数据，重新抛出错误
+    throw error;
   }
 };
 
 // 将集群树API响应转换为DataCenter格式
-const convertClusterTreeToDataCenter = (treeData: ClusterTreeResponse): DataCenter => {
+const convertClusterTreeToDataCenter = (
+  treeData: ClusterTreeResponse
+): DataCenter => {
   return {
     id: "datacenter-real",
     name: "实际集群环境",
@@ -474,27 +478,38 @@ const convertClusterTreeToDataCenter = (treeData: ClusterTreeResponse): DataCent
           id: node.node_id,
           name: node.name,
           type: "node" as const,
-          status: node.status === "online" ? "online" as const : "offline" as const,
+          status:
+            node.status === "online"
+              ? ("online" as const)
+              : ("offline" as const),
           cpu: 0, // API中没有这些信息，使用默认值
           memory: 0,
           uptime: node.status === "online" ? "在线" : "离线",
           vms: [], // API中没有虚拟机信息，使用空数组
         })),
-        networks: treeData.networks?.map((network) => ({
-          id: `network-${network.name}`,
-          name: network.name,
-          type: "network" as const,
-          status: network.status === "active" ? "active" as const : "inactive" as const,
-          networkType: network.type,
-        })) || [],
-        storages: treeData.storages?.map((storage) => ({
-          id: `storage-${storage.name}`,
-          name: storage.name,
-          type: "storage" as const,
-          status: storage.status === "active" ? "active" as const : "inactive" as const,
-          size: storage.size,
-          used: storage.used,
-        })) || [],
+        networks:
+          treeData.networks?.map((network) => ({
+            id: `network-${network.name}`,
+            name: network.name,
+            type: "network" as const,
+            status:
+              network.status === "active"
+                ? ("active" as const)
+                : ("inactive" as const),
+            networkType: network.type,
+          })) || [],
+        storages:
+          treeData.storages?.map((storage) => ({
+            id: `storage-${storage.name}`,
+            name: storage.name,
+            type: "storage" as const,
+            status:
+              storage.status === "active"
+                ? ("active" as const)
+                : ("inactive" as const),
+            size: storage.size,
+            used: storage.used,
+          })) || [],
       },
     ],
   };

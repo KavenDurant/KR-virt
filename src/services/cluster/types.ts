@@ -64,6 +64,16 @@ export interface AddNodeResponse {
   status?: string;
 }
 
+// 移除节点请求参数
+export interface RemoveNodeRequest {
+  hostname: string;
+}
+
+// 移除节点响应
+export interface RemoveNodeResponse {
+  message: string;
+}
+
 // 创建集群响应
 export interface CreateClusterResponse {
   message: string;

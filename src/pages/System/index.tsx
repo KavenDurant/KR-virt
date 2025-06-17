@@ -60,7 +60,6 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTheme } from "../../hooks/useTheme";
-import { useTabSync } from "@/hooks/useTabSync";
 
 const { Content } = Layout;
 const { TabPane } = Tabs;
@@ -233,8 +232,7 @@ const mockLogs: LogEntry[] = [
 ];
 
 const SystemSettings: React.FC = () => {
-  // 使用useTabSync Hook实现tab与URL同步
-  const { activeTab, setActiveTab } = useTabSync({ defaultTab: "general" });
+  const [activeTab, setActiveTab] = useState("general");
 
   const [loading, setLoading] = useState(true);
   const [form] = Form.useForm();

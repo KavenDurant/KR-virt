@@ -47,7 +47,6 @@ import {
   formatLoadAverage,
   formatPowerState,
 } from "../../utils/format";
-import { useTabSync } from "@/hooks/useTabSync";
 import type {
   Cluster as ClusterData,
   Node,
@@ -179,11 +178,7 @@ const ClusterManagement: React.FC = () => {
     []
   );
 
-  // 使用useTabSync Hook实现tab与URL同步
-  const { activeTab, setActiveTab } = useTabSync({
-    defaultTab: "overview",
-    debug: false, // 关闭调试模式
-  });
+  const [activeTab, setActiveTab] = useState("overview");
 
   // 真实集群数据状态
   const [realClusterData, setRealClusterData] =
@@ -568,7 +563,7 @@ const ClusterManagement: React.FC = () => {
         loadTabData(activeTab);
       },
       isInitialized ? 50 : 100
-    ); // 初始化时延迟更长，避免与useTabSync冲突
+    ); // 初始化时延迟更长
 
     // 清理函数
     return () => {

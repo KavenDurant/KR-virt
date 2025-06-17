@@ -47,6 +47,7 @@ import { clusterInitService } from "@/services/cluster";
 import type { ClusterNodesResponse } from "@/services/cluster";
 import type { ClusterSummaryResponse } from "@/services/cluster";
 import type { ClusterResourcesResponse } from "@/services/cluster";
+import type { NodeSummaryResponse } from "@/services/cluster";
 
 const { Text } = Typography;
 
@@ -206,6 +207,11 @@ const ClusterManagement: React.FC = () => {
     null
   );
 
+  // 节点摘要数据状态
+  const [nodeDetailData, setNodeDetailData] = useState<NodeSummaryResponse | null>(null);
+  const [nodeDetailLoading, setNodeDetailLoading] = useState(false);
+  const [nodeDetailError, setNodeDetailError] = useState<string | null>(null);
+
   // 监听侧边栏选择事件
   useEffect(() => {
     const handleSidebarSelect = (event: CustomEvent) => {
@@ -216,13 +222,20 @@ const ClusterManagement: React.FC = () => {
       setSidebarSelectedCluster(null);
       setSidebarSelectedHost(null);
       setSidebarSelectedVM(null);
+      
+      // 清空节点摘要数据
+      setNodeDetailData(null);
+      setNodeDetailError(null);
 
       // 处理不同类型的节点选择
       if (nodeType === "cluster") {
         // 选中集群时，不设置 sidebarSelectedCluster，让它显示默认的集群管理页面
         // setSidebarSelectedCluster(nodeData as ClusterData);
       } else if (nodeType === "host") {
-        setSidebarSelectedHost(nodeData as Node);
+        const hostData = nodeData as Node;
+        setSidebarSelectedHost(hostData);
+        // 这里将在稍后调用节点摘要API，在fetchNodeDetailData定义后
+        console.log(`🔍 [Node Detail] 选择了主机 ${hostData.name}，将获取详细信息`);
       } else if (nodeType === "vm") {
         setSidebarSelectedVM(nodeData as VMData);
       }
@@ -397,6 +410,55 @@ const ClusterManagement: React.FC = () => {
       withApiLock("fetchClusterResourcesData", fetchClusterResourcesDataBase),
     [withApiLock, fetchClusterResourcesDataBase]
   );
+
+  // 获取节点摘要数据基础函数
+  const fetchNodeDetailDataBase = useCallback(async (hostname: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setNodeDetailLoading(true);
+    setNodeDetailError(null);
+    try {
+      console.log(
+        `📡 [${timestamp}][API Call] 开始调用节点摘要API (/node/summary), hostname: ${hostname}`
+      );
+      const result = await clusterInitService.getNodeSummary(hostname);
+      if (result.success && result.data) {
+        setNodeDetailData(result.data);
+        console.log(`✅ [${timestamp}][API Success] 获取节点摘要数据成功`);
+      } else {
+        console.error(
+          `❌ [${timestamp}][API Error] 获取节点摘要数据失败:`,
+          result.message
+        );
+        setNodeDetailError(result.message);
+        message.error(result.message);
+      }
+    } catch (error) {
+      console.error(
+        `❌ [${timestamp}][API Exception] 获取节点摘要数据异常:`,
+        error
+      );
+      const errorMessage = "获取节点摘要数据失败，请稍后重试";
+      setNodeDetailError(errorMessage);
+      message.error(errorMessage);
+    } finally {
+      setNodeDetailLoading(false);
+      console.log(`🏁 [${timestamp}][API Complete] 节点摘要API调用完成`);
+    }
+  }, [message]);
+
+  // 使用API锁包装的函数
+  const fetchNodeDetailData = useMemo(
+    () => withApiLock("fetchNodeDetailData", fetchNodeDetailDataBase),
+    [withApiLock, fetchNodeDetailDataBase]
+  );
+
+  // 监听主机选择变化，自动获取详细信息
+  useEffect(() => {
+    if (sidebarSelectedHost) {
+      console.log(`🔍 [Node Detail] 开始获取主机 ${sidebarSelectedHost.name} 的详细信息`);
+      fetchNodeDetailData(sidebarSelectedHost.name);
+    }
+  }, [sidebarSelectedHost, fetchNodeDetailData]);
 
   // 防重复调用的标记和上一次激活的Tab追踪
   const loadingRef = useRef<Set<string>>(new Set());
@@ -978,82 +1040,130 @@ const ClusterManagement: React.FC = () => {
 
   // 如果从侧边栏选中了物理主机，显示主机详情
   if (sidebarSelectedHost) {
+    // 计算CPU和内存使用百分比
+    const cpuUsagePercent = nodeDetailData ? Math.round((nodeDetailData.cpu_used / nodeDetailData.cpu_total) * 100) : 0;
+    const memoryUsagePercent = nodeDetailData ? Math.round((nodeDetailData.mem_used / nodeDetailData.mem_total) * 100) : 0;
+    const totalVmsCount = nodeDetailData ? nodeDetailData.vms_num : sidebarSelectedHost.vms.length;
+
     const hostDetailTabs = [
       {
         key: "basic",
         label: "基本信息",
         children: (
           <div>
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <Card title="主机配置" size="small">
-                  <Row>
-                    <Col span={12}>
-                      <Statistic
-                        title="CPU 使用率"
-                        value={sidebarSelectedHost.cpu}
-                        suffix="%"
-                        valueStyle={{
-                          color:
-                            sidebarSelectedHost.cpu > 80
-                              ? "#ff4d4f"
-                              : "#3f8600",
-                        }}
-                        prefix={<ThunderboltOutlined />}
-                      />
-                    </Col>
-                    <Col span={12}>
-                      <Statistic
-                        title="内存使用率"
-                        value={sidebarSelectedHost.memory}
-                        suffix="%"
-                        valueStyle={{
-                          color:
-                            sidebarSelectedHost.memory > 80
-                              ? "#ff4d4f"
-                              : "#3f8600",
-                        }}
-                        prefix={<DatabaseOutlined />}
-                      />
-                    </Col>
-                  </Row>
-                  <div style={{ margin: "16px 0" }}>
+            {nodeDetailLoading ? (
+              <div style={{ textAlign: "center", padding: "50px" }}>
+                <SyncOutlined spin style={{ fontSize: "24px" }} />
+                <div style={{ marginTop: "16px" }}>加载节点详情中...</div>
+              </div>
+            ) : nodeDetailError ? (
+              <div style={{ textAlign: "center", padding: "50px" }}>
+                <Alert
+                  message="获取节点详情失败"
+                  description={nodeDetailError}
+                  type="error"
+                  showIcon
+                  action={
+                    <Button
+                      type="primary"
+                      onClick={() => fetchNodeDetailData(sidebarSelectedHost.name)}
+                      icon={<SyncOutlined />}
+                    >
+                      重新加载
+                    </Button>
+                  }
+                />
+              </div>
+            ) : (
+              <Row gutter={[16, 16]}>
+                <Col xs={24} md={12}>
+                  <Card title="主机配置" size="small">
                     <Row>
-                      <Col span={24}>
+                      <Col span={12}>
                         <Statistic
-                          title="虚拟机数量"
-                          value={sidebarSelectedHost.vms.length}
-                          suffix="台"
-                          prefix={<DesktopOutlined />}
+                          title="CPU 使用率"
+                          value={cpuUsagePercent}
+                          suffix="%"
+                          valueStyle={{
+                            color: cpuUsagePercent > 80 ? "#ff4d4f" : "#3f8600",
+                          }}
+                          prefix={<ThunderboltOutlined />}
                         />
+                        {nodeDetailData && (
+                          <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                            {nodeDetailData.cpu_used}核 / {nodeDetailData.cpu_total}核
+                          </div>
+                        )}
+                      </Col>
+                      <Col span={12}>
+                        <Statistic
+                          title="内存使用率"
+                          value={memoryUsagePercent}
+                          suffix="%"
+                          valueStyle={{
+                            color: memoryUsagePercent > 80 ? "#ff4d4f" : "#3f8600",
+                          }}
+                          prefix={<DatabaseOutlined />}
+                        />
+                        {nodeDetailData && (
+                          <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                            {(nodeDetailData.mem_used / 1024).toFixed(1)}GB / {(nodeDetailData.mem_total / 1024).toFixed(1)}GB
+                          </div>
+                        )}
                       </Col>
                     </Row>
-                  </div>
-                </Card>
-              </Col>
+                    <div style={{ margin: "16px 0" }}>
+                      <Row>
+                        <Col span={24}>
+                          <Statistic
+                            title="虚拟机数量"
+                            value={totalVmsCount}
+                            suffix="台"
+                            prefix={<DesktopOutlined />}
+                          />
+                          {nodeDetailData && (
+                            <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                              运行: {nodeDetailData.running_vm_num}台 | 
+                              停止: {nodeDetailData.stopped_vm_num}台 | 
+                              暂停: {nodeDetailData.paused_vm_num}台
+                            </div>
+                          )}
+                        </Col>
+                      </Row>
+                    </div>
+                  </Card>
+                </Col>
 
-              <Col xs={24} md={12}>
-                <Card title="运行状态" size="small">
-                  <Descriptions column={1} bordered>
-                    <Descriptions.Item label="主机名">
-                      {sidebarSelectedHost.name}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="主机ID">
-                      {sidebarSelectedHost.id}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="状态">
-                      {getStatusTag(sidebarSelectedHost.status)}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="主机类型">
-                      {sidebarSelectedHost.type}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="运行时间">
-                      {sidebarSelectedHost.uptime}
-                    </Descriptions.Item>
-                  </Descriptions>
-                </Card>
-              </Col>
-            </Row>
+                <Col xs={24} md={12}>
+                  <Card title="运行状态" size="small">
+                    <Descriptions column={1} bordered>
+                      <Descriptions.Item label="节点名称">
+                        {nodeDetailData ? nodeDetailData.node_name : sidebarSelectedHost.name}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="集群名称">
+                        {nodeDetailData ? nodeDetailData.cluster_name : "未知"}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="状态">
+                        {getStatusTag(sidebarSelectedHost.status)}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="运行时间">
+                        {nodeDetailData ? nodeDetailData.running_time : sidebarSelectedHost.uptime || "未知"}
+                      </Descriptions.Item>
+                      {nodeDetailData && nodeDetailData.suspended_vm_num > 0 && (
+                        <Descriptions.Item label="挂起虚拟机">
+                          {nodeDetailData.suspended_vm_num}台
+                        </Descriptions.Item>
+                      )}
+                      {nodeDetailData && nodeDetailData.error_vm_num > 0 && (
+                        <Descriptions.Item label="异常虚拟机">
+                          <span style={{ color: "#ff4d4f" }}>{nodeDetailData.error_vm_num}台</span>
+                        </Descriptions.Item>
+                      )}
+                    </Descriptions>
+                  </Card>
+                </Col>
+              </Row>
+            )}
           </div>
         ),
       },
@@ -1062,50 +1172,83 @@ const ClusterManagement: React.FC = () => {
         label: "性能监控",
         children: (
           <div>
-            <Row gutter={[16, 16]}>
-              <Col span={8}>
-                <Card>
-                  <Statistic
-                    title="CPU 使用率"
-                    value={sidebarSelectedHost.cpu}
-                    precision={0}
-                    valueStyle={{
-                      color:
-                        sidebarSelectedHost.cpu > 80 ? "#ff4d4f" : "#3f8600",
-                    }}
-                    prefix={<ThunderboltOutlined />}
-                    suffix="%"
-                  />
-                  <Progress percent={sidebarSelectedHost.cpu} size="small" />
-                </Card>
-              </Col>
-              <Col span={8}>
-                <Card>
-                  <Statistic
-                    title="内存使用率"
-                    value={sidebarSelectedHost.memory}
-                    precision={0}
-                    valueStyle={{
-                      color:
-                        sidebarSelectedHost.memory > 80 ? "#ff4d4f" : "#3f8600",
-                    }}
-                    prefix={<DatabaseOutlined />}
-                    suffix="%"
-                  />
-                  <Progress percent={sidebarSelectedHost.memory} size="small" />
-                </Card>
-              </Col>
-              <Col span={8}>
-                <Card>
-                  <Statistic
-                    title="虚拟机数量"
-                    value={sidebarSelectedHost.vms.length}
-                    prefix={<DesktopOutlined />}
-                    suffix="台"
-                  />
-                </Card>
-              </Col>
-            </Row>
+            {nodeDetailLoading ? (
+              <div style={{ textAlign: "center", padding: "50px" }}>
+                <SyncOutlined spin style={{ fontSize: "24px" }} />
+                <div style={{ marginTop: "16px" }}>加载性能数据中...</div>
+              </div>
+            ) : nodeDetailError ? (
+              <div style={{ textAlign: "center", padding: "50px" }}>
+                <Alert
+                  message="获取性能数据失败"
+                  description={nodeDetailError}
+                  type="error"
+                  showIcon
+                />
+              </div>
+            ) : (
+              <Row gutter={[16, 16]}>
+                <Col span={8}>
+                  <Card>
+                    <Statistic
+                      title="CPU 使用率"
+                      value={cpuUsagePercent}
+                      precision={0}
+                      valueStyle={{
+                        color: cpuUsagePercent > 80 ? "#ff4d4f" : "#3f8600",
+                      }}
+                      prefix={<ThunderboltOutlined />}
+                      suffix="%"
+                    />
+                    <Progress percent={cpuUsagePercent} size="small" />
+                    {nodeDetailData && (
+                      <div style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
+                        使用: {nodeDetailData.cpu_used}核 / 总计: {nodeDetailData.cpu_total}核
+                      </div>
+                    )}
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card>
+                    <Statistic
+                      title="内存使用率"
+                      value={memoryUsagePercent}
+                      precision={0}
+                      valueStyle={{
+                        color: memoryUsagePercent > 80 ? "#ff4d4f" : "#3f8600",
+                      }}
+                      prefix={<DatabaseOutlined />}
+                      suffix="%"
+                    />
+                    <Progress percent={memoryUsagePercent} size="small" />
+                    {nodeDetailData && (
+                      <div style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
+                        使用: {(nodeDetailData.mem_used / 1024).toFixed(1)}GB / 总计: {(nodeDetailData.mem_total / 1024).toFixed(1)}GB
+                      </div>
+                    )}
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card>
+                    <Statistic
+                      title="虚拟机数量"
+                      value={totalVmsCount}
+                      prefix={<DesktopOutlined />}
+                      suffix="台"
+                    />
+                    {nodeDetailData && (
+                      <div style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
+                        <div>运行: {nodeDetailData.running_vm_num}台</div>
+                        <div>停止: {nodeDetailData.stopped_vm_num}台</div>
+                        {nodeDetailData.error_vm_num > 0 && (
+                          <div style={{ color: "#ff4d4f" }}>异常: {nodeDetailData.error_vm_num}台</div>
+                        )}
+                      </div>
+                    )}
+                  </Card>
+                </Col>
+              </Row>
+            )}
           </div>
         ),
       },
@@ -1117,8 +1260,9 @@ const ClusterManagement: React.FC = () => {
           title={
             <Space>
               <HddOutlined />
-              <span>物理主机详情 - {sidebarSelectedHost.name}</span>
+              <span>物理主机详情 - {nodeDetailData ? nodeDetailData.node_name : sidebarSelectedHost.name}</span>
               {getStatusTag(sidebarSelectedHost.status)}
+              {nodeDetailLoading && <SyncOutlined spin style={{ marginLeft: "8px" }} />}
             </Space>
           }
           extra={
@@ -1126,7 +1270,11 @@ const ClusterManagement: React.FC = () => {
               <Button
                 type="primary"
                 icon={<SyncOutlined />}
-                onClick={() => message.info("正在刷新主机信息...")}
+                loading={nodeDetailLoading}
+                onClick={() => {
+                  console.log(`🔄 [Refresh] 手动刷新主机 ${sidebarSelectedHost.name} 的详细信息`);
+                  fetchNodeDetailData(sidebarSelectedHost.name);
+                }}
               >
                 刷新
               </Button>
@@ -1135,6 +1283,15 @@ const ClusterManagement: React.FC = () => {
                 onClick={() => message.info("正在打开主机控制台...")}
               >
                 控制台
+              </Button>
+              <Button
+                onClick={() => {
+                  setSidebarSelectedHost(null);
+                  setNodeDetailData(null);
+                  setNodeDetailError(null);
+                }}
+              >
+                返回集群管理
               </Button>
             </Space>
           }

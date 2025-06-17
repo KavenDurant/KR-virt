@@ -221,3 +221,28 @@ export interface ClusterTreeResponse {
   networks: ClusterTreeNetwork[];
   storages: ClusterTreeStorage[];
 }
+
+// === 节点摘要相关类型 ===
+
+// 节点摘要请求参数
+export interface NodeSummaryRequest {
+  hostname: string;
+}
+
+// 节点摘要响应
+export interface NodeSummaryResponse {
+  cluster_name: string;
+  node_name: string;
+  running_time: number;
+  cpu_total: number;
+  mem_total: number;
+  cpu_used: number;
+  mem_used: number;
+  vms_num: number;
+  running_vm_num: number;
+  stopped_vm_num: number;
+  paused_vm_num: number;
+  suspended_vm_num: number;
+  error_vm_num: number;
+  other_vm_num: number;
+}

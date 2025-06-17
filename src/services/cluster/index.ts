@@ -24,6 +24,7 @@ import type {
   ClusterSummaryResponse,
   ClusterResourcesResponse,
   ClusterTreeResponse,
+  NodeSummaryResponse,
 } from "./types";
 
 // 配置区域
@@ -704,6 +705,106 @@ class ClusterInitService {
     }
   }
 
+  /**
+   * 获取节点摘要信息
+   */
+  async getNodeSummary(hostname: string): Promise<{
+    success: boolean;
+    data?: NodeSummaryResponse;
+    message: string;
+  }> {
+    if (USE_MOCK_DATA) {
+      return this.mockGetNodeSummary(hostname);
+    }
+
+    try {
+      console.log(`调用节点摘要API: POST /node/summary, hostname: ${hostname}`);
+      const response = await request.post<NodeSummaryResponse>(
+        `/node/summary`,
+        { hostname },
+        {
+          skipAuth: false, // 需要认证
+          showErrorMessage: false, // 手动处理错误
+        } as RequestConfig
+      );
+
+      console.log("节点摘要API响应成功:", response);
+      const data = response.data || response;
+
+      return {
+        success: true,
+        data: data,
+        message: "获取节点摘要成功",
+      };
+    } catch (error: unknown) {
+      console.error("获取节点摘要API调用失败:", error);
+
+      // 处理不同的HTTP错误状态码
+      if (error && typeof error === "object" && "response" in error) {
+        const httpError = error as {
+          response?: { status?: number; data?: Record<string, unknown> };
+        };
+
+        console.log("HTTP错误状态码:", httpError.response?.status);
+        console.log("HTTP错误数据:", httpError.response?.data);
+
+        switch (httpError.response?.status) {
+          case 401:
+            return {
+              success: false,
+              message: "认证失败，请重新登录",
+            };
+          case 403:
+            return {
+              success: false,
+              message: "权限不足，无法访问节点信息",
+            };
+          case 404:
+            return {
+              success: false,
+              message: "节点不存在或服务不可用",
+            };
+          case 422:
+            return {
+              success: false,
+              message: "请求参数错误，请检查主机名",
+            };
+          case 500: {
+            const errorData = httpError.response.data;
+            const errorMessage =
+              (errorData?.detail as string) ||
+              (errorData?.message as string) ||
+              "服务器内部错误";
+            return {
+              success: false,
+              message: errorMessage,
+            };
+          }
+          default:
+            return {
+              success: false,
+              message: "获取节点摘要失败",
+            };
+        }
+      }
+
+      // 处理网络错误等其他错误
+      let errorMessage = "获取节点摘要失败，请检查网络连接";
+      if (error && typeof error === "object") {
+        if ("message" in error) {
+          const messageError = error as { message: string };
+          errorMessage = messageError.message;
+        }
+      }
+
+      console.log("处理其他错误，返回消息:", errorMessage);
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    }
+  }
+
   // ===== 模拟数据方法 =====
   private async mockCheckClusterStatus(): Promise<ClusterStatusResponse> {
     // 模拟网络延迟
@@ -1202,6 +1303,38 @@ class ClusterInitService {
       success: true,
       data: mockData,
       message: "获取集群树成功",
+    };
+  }
+
+  private async mockGetNodeSummary(hostname: string): Promise<{
+    success: boolean;
+    data?: NodeSummaryResponse;
+    message: string;
+  }> {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    // 模拟节点摘要数据 - 匹配实际接口返回结构
+    const mockData: NodeSummaryResponse = {
+      cluster_name: "uos_cluster",
+      node_name: hostname,
+      running_time: 216000, // 60小时，单位为秒
+      cpu_total: 8,
+      mem_total: 16384,
+      cpu_used: 2,
+      mem_used: 4096,
+      vms_num: 5,
+      running_vm_num: 3,
+      stopped_vm_num: 1,
+      paused_vm_num: 0,
+      suspended_vm_num: 1,
+      error_vm_num: 0,
+      other_vm_num: 0,
+    };
+
+    return {
+      success: true,
+      data: mockData,
+      message: "获取节点摘要成功",
     };
   }
 }

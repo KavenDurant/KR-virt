@@ -1,13 +1,12 @@
 /*
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-06-10 15:30:00
- * @Description: 集群初始化服务
+ * @Description: 集群初始化服务 - 优化版本，使用统一的API工具
  */
 
-import request from "@/utils/request";
-import { CookieUtils } from "@/utils/cookies";
-import { EnvConfig } from "@/config/env";
-import type { RequestConfig } from "@/utils/request";
+import { api, mockApi, type StandardResponse } from '@/utils/apiHelper';
+import { CookieUtils } from '@/utils/cookies';
+import { EnvConfig } from '@/config/env';
 import type {
   ClusterStatusResponse,
   CreateClusterConfig,
@@ -15,11 +14,9 @@ import type {
   CreateClusterRequest,
   JoinClusterRequest,
   CreateClusterResponse,
-  ValidationErrorResponse,
   HostnameResponse,
   IpAddressesResponse,
   DissolveClusterResponse,
-  DissolveClusterErrorResponse,
   ClusterNodesResponse,
   ClusterSummaryResponse,
   ClusterResourcesResponse,
@@ -41,67 +38,39 @@ class ClusterInitService {
   /**
    * 获取节点主机名
    */
-  async getNodeHostname(): Promise<{
-    success: boolean;
-    hostname?: string;
-    message: string;
-  }> {
+  async getNodeHostname(): Promise<StandardResponse<{ hostname: string }>> {
     if (USE_MOCK_DATA) {
-      return this.mockGetNodeHostname();
+      return mockApi.get('/node/hostname', {}, {
+        useMock: true,
+        mockData: { hostname: "cluster-master-node" },
+        defaultSuccessMessage: "获取主机名成功",
+      });
     }
 
-    try {
-      const response = await request.get<HostnameResponse>(`/node/hostname`, {
-        skipAuth: true,
-        showErrorMessage: false,
-      } as RequestConfig);
-
-      const result = response.data;
-      return {
-        success: true,
-        hostname: result.hostname,
-        message: "获取主机名成功",
-      };
-    } catch (error) {
-      console.error("获取节点主机名失败:", error);
-      return {
-        success: false,
-        message: "获取主机名失败，请稍后重试",
-      };
-    }
+    return api.get<HostnameResponse>('/node/hostname', {}, {
+      skipAuth: true,
+      defaultSuccessMessage: "获取主机名成功",
+      defaultErrorMessage: "获取主机名失败，请稍后重试",
+    });
   }
 
   /**
    * 获取节点IP地址列表
    */
-  async getNodeIpAddresses(): Promise<{
-    success: boolean;
-    ipAddresses?: string[];
-    message: string;
-  }> {
+  async getNodeIpAddresses(): Promise<StandardResponse<{ ip_addresses: string[] }>> {
     if (USE_MOCK_DATA) {
-      return this.mockGetNodeIpAddresses();
+      return mockApi.get('/node/ips', {}, {
+        useMock: true,
+        mockData: { ip_addresses: ["192.168.1.100", "192.168.1.101", "10.0.0.100"] },
+        defaultSuccessMessage: "获取IP地址列表成功",
+      });
     }
 
-    try {
-      const response = await request.get<IpAddressesResponse>(`/node/ips`, {
-        skipAuth: true,
-        showErrorMessage: false,
-      } as RequestConfig);
-
-      const result = response.data;
-      return {
-        success: true,
-        ipAddresses: result.ip_addresses,
-        message: "获取IP地址列表成功",
-      };
-    } catch (error) {
-      console.error("获取节点IP地址失败:", error);
-      return {
-        success: false,
-        message: "获取IP地址列表失败，请稍后重试",
-      };
-    }
+    return api.get<IpAddressesResponse>('/node/ips', {}, {
+      skipAuth: true,
+      defaultSuccessMessage: "获取IP地址列表成功",
+      defaultErrorMessage: "获取IP地址列表失败，请稍后重试",
+    });
   }
 
   /**
@@ -130,14 +99,18 @@ class ClusterInitService {
     }
 
     try {
-      const response = await request.get(`/cluster/status`, {
+      const result = await api.get<ClusterStatusResponse>('/cluster/status', {}, {
         skipAuth: true,
-      } as RequestConfig);
+        showErrorMessage: false, // 检查状态不显示错误
+      });
 
-      const result = response.data || response;
-      // 缓存结果
-      this.statusCache = { data: result, timestamp: Date.now() };
-      return result;
+      if (result.success && result.data) {
+        // 缓存结果
+        this.statusCache = { data: result.data, timestamp: Date.now() };
+        return result.data;
+      }
+
+      throw new Error("无法获取集群状态");
     } catch (error) {
       console.error("检查集群状态失败:", error);
       throw new Error("无法获取集群状态，请检查网络连接");
@@ -149,45 +122,30 @@ class ClusterInitService {
    */
   async verifyOneTimePassword(
     password: string
-  ): Promise<{ success: boolean; message: string; token?: string }> {
+  ): Promise<StandardResponse<{ token: string }>> {
     if (USE_MOCK_DATA) {
-      return this.mockVerifyOneTimePassword(password);
+      const mockData = password === "testCluster" ? { token: `mock_token_${Date.now()}` } : { token: "" };
+      return mockApi.post('/cluster/auth', { one_time_password: password }, {
+        useMock: true,
+        mockData,
+        defaultSuccessMessage: password === "testCluster" ? "验证成功" : "一次性密码错误",
+      }) as Promise<StandardResponse<{ token: string }>>;
     }
 
-    try {
-      const response = await request.post(
-        `/cluster/auth`,
-        {
-          one_time_password: password,
-        },
-        {
-          skipAuth: true,
-        } as RequestConfig
-      );
+    const result = await api.post<{ token: string }>('/cluster/auth', {
+      one_time_password: password,
+    }, {
+      skipAuth: true,
+      defaultSuccessMessage: "验证成功",
+      defaultErrorMessage: "验证失败，请稍后重试",
+    });
 
-      const result = response.data || response;
-
-      if (result.success && result.token) {
-        // 保存认证token
-        CookieUtils.set(this.AUTH_TOKEN_KEY, result.token);
-        return {
-          success: true,
-          message: "验证成功",
-          token: result.token,
-        };
-      } else {
-        return {
-          success: false,
-          message: result.message || "验证失败",
-        };
-      }
-    } catch (error) {
-      console.error("验证一次性密码失败:", error);
-      return {
-        success: false,
-        message: "验证失败，请稍后重试",
-      };
+    // 如果验证成功，保存token
+    if (result.success && result.data && 'token' in result.data) {
+      CookieUtils.set(this.AUTH_TOKEN_KEY, result.data.token);
     }
+
+    return result;
   }
 
   /**
@@ -196,75 +154,26 @@ class ClusterInitService {
   async createCluster(
     config: CreateClusterConfig,
     hostname: string
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<StandardResponse<CreateClusterResponse>> {
     if (USE_MOCK_DATA) {
-      return this.mockCreateCluster(config);
+      return mockApi.post('/cluster/create', config, {
+        useMock: true,
+        mockData: { message: "集群创建请求已提交" },
+        defaultSuccessMessage: "集群创建请求已提交",
+      }) as Promise<StandardResponse<CreateClusterResponse>>;
     }
 
-    try {
-      // 获取一次性密钥（从localStorage）
-      const requestPayload: CreateClusterRequest = {
-        ip: config.selectedIp,
-        hostname: hostname,
-        disposable_secret_key: "moke_disposable_secret_key", // 模拟一次性密钥
-      };
+    const requestPayload: CreateClusterRequest = {
+      ip: config.selectedIp,
+      hostname: hostname,
+      disposable_secret_key: "moke_disposable_secret_key", // 模拟一次性密钥
+    };
 
-      const response = await request.post<CreateClusterResponse>(
-        `/cluster/create`,
-        requestPayload,
-        {
-          skipAuth: true, // 不需要token认证
-          showErrorMessage: false, // 手动处理错误
-        } as RequestConfig
-      );
-
-      const result = response.data;
-      return {
-        success: true,
-        message: result.message || "集群创建请求已提交",
-      };
-    } catch (error: unknown) {
-      console.error("创建集群失败:", error);
-
-      // 处理422验证错误
-      if (error && typeof error === "object" && "response" in error) {
-        const httpError = error as {
-          response?: { status?: number; data?: unknown };
-        };
-        if (httpError.response?.status === 422) {
-          const validationError = httpError.response
-            .data as ValidationErrorResponse;
-          const errorMessages = validationError.detail
-            .map((err) => `${err.loc.join(".")}: ${err.msg}`)
-            .join("; ");
-
-          return {
-            success: false,
-            message: `数据验证失败: ${errorMessages}`,
-          };
-        }
-      }
-
-      // 处理其他错误
-      let errorMessage = "创建集群失败，请稍后重试";
-
-      if (error && typeof error === "object") {
-        if ("response" in error) {
-          const httpError = error as {
-            response?: { data?: { message?: string } };
-          };
-          errorMessage = httpError.response?.data?.message || errorMessage;
-        } else if ("message" in error) {
-          const messageError = error as { message: string };
-          errorMessage = messageError.message;
-        }
-      }
-
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    }
+    return api.post<CreateClusterResponse>('/cluster/create', requestPayload, {
+      skipAuth: true,
+      defaultSuccessMessage: "集群创建请求已提交",
+      defaultErrorMessage: "创建集群失败，请稍后重试",
+    });
   }
 
   /**
@@ -272,42 +181,150 @@ class ClusterInitService {
    */
   async joinCluster(
     config: JoinClusterConfig
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<StandardResponse<{ message: string }>> {
     if (USE_MOCK_DATA) {
-      return this.mockJoinCluster(config);
+      return mockApi.post('/cluster/join', config, {
+        useMock: true,
+        mockData: { message: "加入集群请求已提交" },
+        defaultSuccessMessage: "加入集群请求已提交",
+      }) as Promise<StandardResponse<{ message: string }>>;
     }
 
-    try {
-      // 获取一次性密钥（从localStorage）
-      const disposableKey = this.getAuthToken();
-      if (!disposableKey) {
-        throw new Error("缺少一次性密钥，请先进行身份验证");
-      }
-
-      const requestPayload: JoinClusterRequest = {
-        ip: config.ip,
-        hostname: config.hostname,
-        pub_key: config.pub_key,
-        disposable_secret_key: disposableKey,
-      };
-
-      const response = await request.post(`/cluster/join`, requestPayload, {
-        skipAuth: true, // 不需要token认证
-        showErrorMessage: false, // 手动处理错误
-      } as RequestConfig);
-
-      const result = response.data || response;
-      return {
-        success: result.success || true,
-        message: result.message || "加入集群请求已提交",
-      };
-    } catch (error) {
-      console.error("加入集群失败:", error);
+    // 获取一次性密钥
+    const disposableKey = this.getAuthToken();
+    if (!disposableKey) {
       return {
         success: false,
-        message: "加入集群失败，请稍后重试",
+        message: "缺少一次性密钥，请先进行身份验证",
       };
     }
+
+    const requestPayload: JoinClusterRequest = {
+      ip: config.ip,
+      hostname: config.hostname,
+      pub_key: config.pub_key,
+      disposable_secret_key: disposableKey,
+    };
+
+    return api.post<{ message: string }>('/cluster/join', requestPayload, {
+      skipAuth: true,
+      defaultSuccessMessage: "加入集群请求已提交",
+      defaultErrorMessage: "加入集群失败，请稍后重试",
+    });
+  }
+
+  /**
+   * 解散集群
+   */
+  async dissolveCluster(): Promise<StandardResponse<DissolveClusterResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post('/cluster/dissolve', {}, {
+        useMock: true,
+        mockData: { message: "集群解散成功" },
+        defaultSuccessMessage: "集群解散成功",
+      }) as Promise<StandardResponse<DissolveClusterResponse>>;
+    }
+
+    return api.post<DissolveClusterResponse>('/cluster/dissolve', {}, {
+      skipAuth: false,
+      defaultSuccessMessage: "集群解散成功",
+      defaultErrorMessage: "解散集群失败，请稍后重试",
+    });
+  }
+
+  /**
+   * 获取集群节点列表
+   */
+  async getClusterNodes(): Promise<StandardResponse<ClusterNodesResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.get('/cluster/nodes', {}, {
+        useMock: true,
+        mockData: this.getMockClusterNodes(),
+        defaultSuccessMessage: "获取集群节点列表成功",
+      });
+    }
+
+    return api.get<ClusterNodesResponse>('/cluster/nodes', {}, {
+      skipAuth: false,
+      defaultSuccessMessage: "获取集群节点列表成功",
+      defaultErrorMessage: "获取集群节点列表失败，请检查网络连接",
+    });
+  }
+
+  /**
+   * 获取集群概览信息
+   */
+  async getClusterSummary(): Promise<StandardResponse<ClusterSummaryResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.get('/cluster/summary', {}, {
+        useMock: true,
+        mockData: this.getMockClusterSummary(),
+        defaultSuccessMessage: "获取集群概览成功",
+      });
+    }
+
+    return api.get<ClusterSummaryResponse>('/cluster/summary', {}, {
+      skipAuth: false,
+      defaultSuccessMessage: "获取集群概览成功",
+      defaultErrorMessage: "获取集群概览失败，请检查网络连接",
+    });
+  }
+
+  /**
+   * 获取集群资源
+   */
+  async getClusterResources(): Promise<StandardResponse<ClusterResourcesResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.get('/cluster/resources', {}, {
+        useMock: true,
+        mockData: this.getMockClusterResources(),
+        defaultSuccessMessage: "获取集群资源成功",
+      });
+    }
+
+    return api.get<ClusterResourcesResponse>('/cluster/resources', {}, {
+      skipAuth: false,
+      defaultSuccessMessage: "获取集群资源成功",
+      defaultErrorMessage: "获取集群资源失败",
+    });
+  }
+
+  /**
+   * 获取集群树结构
+   */
+  async getClusterTree(): Promise<StandardResponse<ClusterTreeResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.get('/cluster/tree', {}, {
+        useMock: true,
+        mockData: this.getMockClusterTree(),
+        defaultSuccessMessage: "获取集群树成功",
+      });
+    }
+
+    return api.get<ClusterTreeResponse>('/cluster/tree', {}, {
+      skipAuth: false,
+      defaultSuccessMessage: "获取集群树成功",
+      defaultErrorMessage: "获取集群树失败，请检查网络连接",
+    });
+  }
+
+  /**
+   * 获取节点摘要信息
+   */
+  async getNodeSummary(hostname: string): Promise<StandardResponse<NodeSummaryResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post('/node/summary', { hostname }, {
+        useMock: true,
+        mockData: this.getMockNodeSummary(hostname),
+        defaultSuccessMessage: "获取节点摘要成功",
+      });
+    }
+
+    return api.post<NodeSummaryResponse>('/node/summary', { hostname }, {
+      skipAuth: false,
+      defaultSuccessMessage: "获取节点摘要成功",
+      defaultErrorMessage: "获取节点摘要失败，请检查网络连接",
+    });
   }
 
   /**
@@ -324,487 +341,6 @@ class ClusterInitService {
     CookieUtils.remove(this.AUTH_TOKEN_KEY);
   }
 
-  /**
-   * 解散集群
-   */
-  async dissolveCluster(): Promise<{ success: boolean; message: string }> {
-    if (USE_MOCK_DATA) {
-      return this.mockDissolveCluster();
-    }
-
-    try {
-      console.log("调用解散集群API: POST /cluster/dissolve");
-      const response = await request.post<DissolveClusterResponse>(
-        `/cluster/dissolve`,
-        {},
-        {
-          skipAuth: false, // 需要认证
-          showErrorMessage: false, // 手动处理错误
-        } as RequestConfig
-      );
-
-      console.log("解散集群API响应成功:", response);
-      return {
-        success: true,
-        message: response.data.message || "集群解散成功",
-      };
-    } catch (error: unknown) {
-      console.error("解散集群API调用失败:", error);
-
-      // 处理500错误
-      if (error && typeof error === "object" && "response" in error) {
-        const httpError = error as {
-          response?: { status?: number; data?: DissolveClusterErrorResponse };
-        };
-
-        console.log("HTTP错误状态码:", httpError.response?.status);
-        console.log("HTTP错误数据:", httpError.response?.data);
-
-        if (httpError.response?.status === 500) {
-          const errorData = httpError.response.data;
-          const errorMessage = errorData?.detail || "解散集群失败";
-          console.log("处理500错误，返回消息:", errorMessage);
-          return {
-            success: false,
-            message: errorMessage,
-          };
-        }
-      }
-
-      // 处理其他错误
-      let errorMessage = "解散集群失败，请稍后重试";
-      if (error && typeof error === "object") {
-        if ("message" in error) {
-          const messageError = error as { message: string };
-          errorMessage = messageError.message;
-        }
-      }
-
-      console.log("处理其他错误，返回消息:", errorMessage);
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    }
-  }
-
-  /**
-   * 获取集群节点列表
-   */
-  async getClusterNodes(): Promise<{
-    success: boolean;
-    data?: ClusterNodesResponse;
-    message: string;
-  }> {
-    if (USE_MOCK_DATA) {
-      return this.mockGetClusterNodes();
-    }
-
-    try {
-      console.log("调用集群节点列表API: GET /cluster/nodes");
-      const response = await request.get<ClusterNodesResponse>(
-        `/cluster/nodes`,
-        {
-          skipAuth: false, // 需要认证
-          showErrorMessage: false, // 手动处理错误
-        } as RequestConfig
-      );
-
-      console.log("集群节点列表API响应成功:", response);
-      const data = response.data || response;
-
-      return {
-        success: true,
-        data: data,
-        message: "获取集群节点列表成功",
-      };
-    } catch (error: unknown) {
-      console.error("获取集群节点列表API调用失败:", error);
-
-      // 处理不同的HTTP错误状态码
-      if (error && typeof error === "object" && "response" in error) {
-        const httpError = error as {
-          response?: { status?: number; data?: Record<string, unknown> };
-        };
-
-        console.log("HTTP错误状态码:", httpError.response?.status);
-        console.log("HTTP错误数据:", httpError.response?.data);
-
-        switch (httpError.response?.status) {
-          case 401:
-            return {
-              success: false,
-              message: "认证失败，请重新登录",
-            };
-          case 403:
-            return {
-              success: false,
-              message: "权限不足，无法访问集群信息",
-            };
-          case 404:
-            return {
-              success: false,
-              message: "集群服务不可用",
-            };
-          case 500: {
-            const errorData = httpError.response.data;
-            const errorMessage =
-              (errorData?.detail as string) ||
-              (errorData?.message as string) ||
-              "服务器内部错误";
-            return {
-              success: false,
-              message: errorMessage,
-            };
-          }
-          default:
-            return {
-              success: false,
-              message: "获取集群节点列表失败",
-            };
-        }
-      }
-
-      // 处理网络错误等其他错误
-      let errorMessage = "获取集群节点列表失败，请检查网络连接";
-      if (error && typeof error === "object") {
-        if ("message" in error) {
-          const messageError = error as { message: string };
-          errorMessage = messageError.message;
-        }
-      }
-
-      console.log("处理其他错误，返回消息:", errorMessage);
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    }
-  }
-
-  /**
-   * 获取集群概览信息
-   */
-  async getClusterSummary(): Promise<{
-    success: boolean;
-    data?: ClusterSummaryResponse;
-    message: string;
-  }> {
-    if (USE_MOCK_DATA) {
-      return this.mockGetClusterSummary();
-    }
-
-    try {
-      console.log("调用集群概览API: GET /cluster/summary");
-      const response = await request.get<ClusterSummaryResponse>(
-        `/cluster/summary`,
-        {
-          skipAuth: false, // 需要认证
-          showErrorMessage: false, // 手动处理错误
-        } as RequestConfig
-      );
-
-      console.log("集群概览API响应成功:", response);
-      const data = response.data || response;
-
-      return {
-        success: true,
-        data: data,
-        message: "获取集群概览成功",
-      };
-    } catch (error: unknown) {
-      console.error("获取集群概览API调用失败:", error);
-
-      // 处理不同的HTTP错误状态码
-      if (error && typeof error === "object" && "response" in error) {
-        const httpError = error as {
-          response?: { status?: number; data?: Record<string, unknown> };
-        };
-
-        console.log("HTTP错误状态码:", httpError.response?.status);
-        console.log("HTTP错误数据:", httpError.response?.data);
-
-        switch (httpError.response?.status) {
-          case 401:
-            return {
-              success: false,
-              message: "认证失败，请重新登录",
-            };
-          case 403:
-            return {
-              success: false,
-              message: "权限不足，无法访问集群信息",
-            };
-          case 404:
-            return {
-              success: false,
-              message: "集群服务不可用",
-            };
-          case 500: {
-            const errorData = httpError.response.data;
-            const errorMessage =
-              (errorData?.detail as string) ||
-              (errorData?.message as string) ||
-              "服务器内部错误";
-            return {
-              success: false,
-              message: errorMessage,
-            };
-          }
-          default:
-            return {
-              success: false,
-              message: "获取集群概览失败",
-            };
-        }
-      }
-
-      // 处理网络错误等其他错误
-      let errorMessage = "获取集群概览失败，请检查网络连接";
-      if (error && typeof error === "object") {
-        if ("message" in error) {
-          const messageError = error as { message: string };
-          errorMessage = messageError.message;
-        }
-      }
-
-      console.log("处理其他错误，返回消息:", errorMessage);
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    }
-  }
-
-  /**
-   * 获取集群资源
-   */
-  async getClusterResources(): Promise<{
-    success: boolean;
-    data?: ClusterResourcesResponse;
-    message: string;
-  }> {
-    if (USE_MOCK_DATA) {
-      return this.mockGetClusterResources();
-    }    try {
-      const response = await request.get<ClusterResourcesResponse>(`/cluster/resources`);
-      
-      if (response?.data) {
-        return {
-          success: true,
-          data: response.data,
-          message: "获取集群资源成功",
-        };
-      } else {
-        return {
-          success: false,
-          message: "获取集群资源失败：无响应数据",
-        };
-      }
-    } catch (error: unknown) {
-      console.error("获取集群资源异常:", error);
-      const errorMessage = error instanceof Error ? error.message : "获取集群资源失败";
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    }
-  }
-
-  /**
-   * 获取集群树结构
-   */
-  async getClusterTree(): Promise<{
-    success: boolean;
-    data?: ClusterTreeResponse;
-    message: string;
-  }> {
-    if (USE_MOCK_DATA) {
-      return this.mockGetClusterTree();
-    }
-
-    try {
-      console.log("调用集群树API: GET /cluster/tree");
-      const response = await request.get<ClusterTreeResponse>(
-        `/cluster/tree`,
-        {
-          skipAuth: false, // 需要认证
-          showErrorMessage: false, // 手动处理错误
-        } as RequestConfig
-      );
-
-      console.log("集群树API响应成功:", response);
-      const data = response.data || response;
-
-      return {
-        success: true,
-        data: data,
-        message: "获取集群树成功",
-      };
-    } catch (error: unknown) {
-      console.error("获取集群树API调用失败:", error);
-
-      // 处理不同的HTTP错误状态码
-      if (error && typeof error === "object" && "response" in error) {
-        const httpError = error as {
-          response?: { status?: number; data?: Record<string, unknown> };
-        };
-
-        console.log("HTTP错误状态码:", httpError.response?.status);
-        console.log("HTTP错误数据:", httpError.response?.data);
-
-        switch (httpError.response?.status) {
-          case 401:
-            return {
-              success: false,
-              message: "认证失败，请重新登录",
-            };
-          case 403:
-            return {
-              success: false,
-              message: "权限不足，无法访问集群信息",
-            };
-          case 404:
-            return {
-              success: false,
-              message: "集群服务不可用",
-            };
-          case 500: {
-            const errorData = httpError.response.data;
-            const errorMessage =
-              (errorData?.detail as string) ||
-              (errorData?.message as string) ||
-              "服务器内部错误";
-            return {
-              success: false,
-              message: errorMessage,
-            };
-          }
-          default:
-            return {
-              success: false,
-              message: "获取集群树失败",
-            };
-        }
-      }
-
-      // 处理网络错误等其他错误
-      let errorMessage = "获取集群树失败，请检查网络连接";
-      if (error && typeof error === "object") {
-        if ("message" in error) {
-          const messageError = error as { message: string };
-          errorMessage = messageError.message;
-        }
-      }
-
-      console.log("处理其他错误，返回消息:", errorMessage);
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    }
-  }
-
-  /**
-   * 获取节点摘要信息
-   */
-  async getNodeSummary(hostname: string): Promise<{
-    success: boolean;
-    data?: NodeSummaryResponse;
-    message: string;
-  }> {
-    if (USE_MOCK_DATA) {
-      return this.mockGetNodeSummary(hostname);
-    }
-
-    try {
-      console.log(`调用节点摘要API: POST /node/summary, hostname: ${hostname}`);
-      const response = await request.post<NodeSummaryResponse>(
-        `/node/summary`,
-        { hostname },
-        {
-          skipAuth: false, // 需要认证
-          showErrorMessage: false, // 手动处理错误
-        } as RequestConfig
-      );
-
-      console.log("节点摘要API响应成功:", response);
-      const data = response.data || response;
-
-      return {
-        success: true,
-        data: data,
-        message: "获取节点摘要成功",
-      };
-    } catch (error: unknown) {
-      console.error("获取节点摘要API调用失败:", error);
-
-      // 处理不同的HTTP错误状态码
-      if (error && typeof error === "object" && "response" in error) {
-        const httpError = error as {
-          response?: { status?: number; data?: Record<string, unknown> };
-        };
-
-        console.log("HTTP错误状态码:", httpError.response?.status);
-        console.log("HTTP错误数据:", httpError.response?.data);
-
-        switch (httpError.response?.status) {
-          case 401:
-            return {
-              success: false,
-              message: "认证失败，请重新登录",
-            };
-          case 403:
-            return {
-              success: false,
-              message: "权限不足，无法访问节点信息",
-            };
-          case 404:
-            return {
-              success: false,
-              message: "节点不存在或服务不可用",
-            };
-          case 422:
-            return {
-              success: false,
-              message: "请求参数错误，请检查主机名",
-            };
-          case 500: {
-            const errorData = httpError.response.data;
-            const errorMessage =
-              (errorData?.detail as string) ||
-              (errorData?.message as string) ||
-              "服务器内部错误";
-            return {
-              success: false,
-              message: errorMessage,
-            };
-          }
-          default:
-            return {
-              success: false,
-              message: "获取节点摘要失败",
-            };
-        }
-      }
-
-      // 处理网络错误等其他错误
-      let errorMessage = "获取节点摘要失败，请检查网络连接";
-      if (error && typeof error === "object") {
-        if ("message" in error) {
-          const messageError = error as { message: string };
-          errorMessage = messageError.message;
-        }
-      }
-
-      console.log("处理其他错误，返回消息:", errorMessage);
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    }
-  }
-
   // ===== 模拟数据方法 =====
   private async mockCheckClusterStatus(): Promise<ClusterStatusResponse> {
     // 模拟网络延迟
@@ -818,104 +354,8 @@ class ClusterInitService {
     };
   }
 
-  private async mockVerifyOneTimePassword(
-    password: string
-  ): Promise<{ success: boolean; message: string; token?: string }> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    if (password === "testCluster") {
-      const token = `mock_token_${Date.now()}`;
-      CookieUtils.set(this.AUTH_TOKEN_KEY, token);
-      return {
-        success: true,
-        message: "验证成功",
-        token,
-      };
-    } else {
-      return {
-        success: false,
-        message: "一次性密码错误",
-      };
-    }
-  }
-
-  private async mockCreateCluster(
-    config: CreateClusterConfig
-  ): Promise<{ success: boolean; message: string }> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log("模拟创建集群:", config);
+  private getMockClusterNodes(): ClusterNodesResponse {
     return {
-      success: true,
-      message: "集群创建请求已提交",
-    };
-  }
-
-  private async mockJoinCluster(
-    config: JoinClusterConfig
-  ): Promise<{ success: boolean; message: string }> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log("模拟加入集群:", config);
-    return {
-      success: true,
-      message: "加入集群请求已提交",
-    };
-  }
-
-  private async mockGetNodeHostname(): Promise<{
-    success: boolean;
-    hostname?: string;
-    message: string;
-  }> {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return {
-      success: true,
-      hostname: "cluster-master-node",
-      message: "获取主机名成功",
-    };
-  }
-
-  private async mockGetNodeIpAddresses(): Promise<{
-    success: boolean;
-    ipAddresses?: string[];
-    message: string;
-  }> {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return {
-      success: true,
-      ipAddresses: ["192.168.1.100", "192.168.1.101", "10.0.0.100"],
-      message: "获取IP地址列表成功",
-    };
-  }
-
-  private async mockDissolveCluster(): Promise<{
-    success: boolean;
-    message: string;
-  }> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    // 90%成功率，10%失败率来模拟真实场景
-    const isSuccess = Math.random() > 0.1;
-
-    if (isSuccess) {
-      return {
-        success: true,
-        message: "集群解散成功",
-      };
-    } else {
-      return {
-        success: false,
-        message: "服务端失败信息",
-      };
-    }
-  }
-
-  private async mockGetClusterNodes(): Promise<{
-    success: boolean;
-    data?: ClusterNodesResponse;
-    message: string;
-  }> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    // 模拟集群节点数据 - 匹配新的实际接口格式
-    const mockData: ClusterNodesResponse = {
       cluster_name: "uos_cluster",
       cluster_uuid: "e00529eda6f5412b8a881dedfdaf2271",
       nodes: [
@@ -957,22 +397,10 @@ class ClusterInitService {
         },
       ],
     };
-
-    return {
-      success: true,
-      data: mockData,
-      message: "获取集群节点列表成功",
-    };
   }
 
-  private async mockGetClusterSummary(): Promise<{
-    success: boolean;
-    data?: ClusterSummaryResponse;
-    message: string;
-  }> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    // 模拟集群概览数据 - 匹配实际接口格式
-    const mockData: ClusterSummaryResponse = {
+  private getMockClusterSummary(): ClusterSummaryResponse {
+    return {
       cluster_name: "KR-Virt Cluster",
       stack: "corosync",
       dc_node: "localhost.localdomain",
@@ -1038,23 +466,10 @@ class ClusterInitService {
         "dlm": "active",
       },
     };
-
-    return {
-      success: true,
-      data: mockData,
-      message: "获取集群概览成功",
-    };
   }
 
-  private async mockGetClusterResources(): Promise<{
-    success: boolean;
-    data?: ClusterResourcesResponse;
-    message: string;
-  }> {
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    // 模拟集群资源数据 - 参考PVE、vSphere等平台的资源展示
-    const mockData: ClusterResourcesResponse = {
+  private getMockClusterResources(): ClusterResourcesResponse {
+    return {
       group: [
         {
           group: "web-services",
@@ -1082,51 +497,6 @@ class ClusterInitService {
                 },
               ],
             },
-            {
-              id: "apache-service",
-              class_: "ocf",
-              provider: "heartbeat",
-              type: "apache",
-              attributes: {
-                config: "/etc/httpd/conf/httpd.conf",
-                port: "8080",
-              },
-              operations: [
-                {
-                  name: "monitor",
-                  interval: "30s",
-                  timeout: "30s",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          group: "database-services",
-          resources: [
-            {
-              id: "mysql-master",
-              class_: "ocf",
-              provider: "heartbeat",
-              type: "mysql",
-              attributes: {
-                config: "/etc/mysql/my.cnf",
-                datadir: "/var/lib/mysql",
-                user: "mysql",
-              },
-              operations: [
-                {
-                  name: "monitor",
-                  interval: "20s",
-                  timeout: "30s",
-                },
-                {
-                  name: "start",
-                  interval: "0s",
-                  timeout: "120s",
-                },
-              ],
-            },
           ],
         },
       ],
@@ -1147,94 +517,14 @@ class ClusterInitService {
               interval: "10s",
               timeout: "20s",
             },
-            {
-              name: "start",
-              interval: "0s",
-              timeout: "20s",
-            },
-            {
-              name: "stop",
-              interval: "0s",
-              timeout: "20s",
-            },
-          ],
-        },
-        {
-          id: "shared-storage",
-          class_: "ocf",
-          provider: "heartbeat",
-          type: "Filesystem",
-          attributes: {
-            device: "/dev/sdb1",
-            directory: "/mnt/shared",
-            fstype: "ext4",
-          },
-          operations: [
-            {
-              name: "monitor",
-              interval: "20s",
-              timeout: "40s",
-            },
-            {
-              name: "start",
-              interval: "0s",
-              timeout: "60s",
-            },
-          ],
-        },
-        {
-          id: "dlm-service",
-          class_: "ocf",
-          provider: "pacemaker",
-          type: "controld",
-          attributes: {
-            allow_stonith_disabled: "true",
-          },
-          operations: [
-            {
-              name: "monitor",
-              interval: "60s",
-              timeout: "30s",
-            },
-          ],
-        },
-        {
-          id: "fence-device",
-          class_: "stonith",
-          provider: "fence_vmware_soap",
-          type: "external/vmware",
-          attributes: {
-            ipaddr: "192.168.1.50",
-            login: "admin",
-            passwd: "******",
-          },
-          operations: [
-            {
-              name: "monitor",
-              interval: "60s",
-              timeout: "20s",
-            },
           ],
         },
       ],
     };
-
-    return {
-      success: true,
-      data: mockData,
-      message: "获取集群资源成功",
-    };
   }
 
-  private async mockGetClusterTree(): Promise<{
-    success: boolean;
-    data?: ClusterTreeResponse;
-    message: string;
-  }> {
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    // 模拟集群树数据 - 匹配新的API格式
-    const mockData: ClusterTreeResponse = {
+  private getMockClusterTree(): ClusterTreeResponse {
+    return {
       cluster_name: "uos_cluster",
       cluster_uuid: "e00529eda6f5412b8a881dedfdaf2271",
       nodes: [
@@ -1252,13 +542,6 @@ class ClusterInitService {
           node_id: "node-002",
           is_dc: false,
         },
-        {
-          name: "node3.kr-virt.local",
-          status: "standby",
-          ip: "192.168.1.103", 
-          node_id: "node-003",
-          is_dc: false,
-        },
       ],
       networks: [
         {
@@ -1270,11 +553,6 @@ class ClusterInitService {
           name: "virbr0",
           status: "active",
           type: "virtual",
-        },
-        {
-          name: "br1",
-          status: "inactive",
-          type: "bridge",
         },
       ],
       storages: [
@@ -1290,31 +568,12 @@ class ClusterInitService {
           size: 2048000,
           used: 512000,
         },
-        {
-          name: "backup-storage",
-          status: "inactive",
-          size: 4096000,
-          used: 0,
-        },
       ],
-    };
-
-    return {
-      success: true,
-      data: mockData,
-      message: "获取集群树成功",
     };
   }
 
-  private async mockGetNodeSummary(hostname: string): Promise<{
-    success: boolean;
-    data?: NodeSummaryResponse;
-    message: string;
-  }> {
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    // 模拟节点摘要数据 - 匹配实际接口返回结构
-    const mockData: NodeSummaryResponse = {
+  private getMockNodeSummary(hostname: string): NodeSummaryResponse {
+    return {
       cluster_name: "uos_cluster",
       node_name: hostname,
       running_time: 216000, // 60小时，单位为秒
@@ -1329,19 +588,12 @@ class ClusterInitService {
       suspended_vm_num: 1,
       error_vm_num: 0,
       other_vm_num: 0,
-      // 新增字段的模拟数据
       storage_total: 2048,      // 2TB存储
       storage_used: 1024,       // 已用1TB
       network_throughput: 1000, // 1Gbps网络
       load_average: "0.8,1.2,1.5", // 系统负载
       vm_max_allowed: 50,       // 最大支持50台虚拟机
       power_state: "powered_on", // 电源状态
-    };
-
-    return {
-      success: true,
-      data: mockData,
-      message: "获取节点摘要成功",
     };
   }
 }

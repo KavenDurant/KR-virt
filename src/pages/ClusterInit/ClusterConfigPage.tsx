@@ -81,14 +81,14 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
         let hostname = "";
         let ipAddresses: string[] = [];
 
-        if (hostnameResult.success && hostnameResult.hostname) {
-          hostname = hostnameResult.hostname;
+        if (hostnameResult.success && hostnameResult.data?.hostname) {
+          hostname = hostnameResult.data.hostname;
         } else {
           message.warning(hostnameResult.message);
         }
 
-        if (ipResult.success && ipResult.ipAddresses) {
-          ipAddresses = ipResult.ipAddresses;
+        if (ipResult.success && ipResult.data?.ip_addresses) {
+          ipAddresses = ipResult.data.ip_addresses;
         } else {
           message.warning(ipResult.message);
         }

@@ -41,11 +41,19 @@ export interface ApiResponse<T = unknown> {
   config: AxiosRequestConfig;
 }
 
+// 422 验证错误详情接口
+interface ValidationErrorDetail {
+  loc: string[];
+  msg: string;
+  type: string;
+}
+
 // 错误响应数据接口
 interface ErrorResponseData {
   message?: string;
   error?: string;
   errors?: string[] | Record<string, string[]>;
+  detail?: ValidationErrorDetail[]; // 添加对 422 错误的支持
   [key: string]: unknown;
 }
 
@@ -255,6 +263,94 @@ const defaultRetryCondition = (error: AxiosError): boolean => {
     error.code === "ECONNABORTED" ||
     error.code === "NETWORK_ERROR"
   );
+};
+
+// 处理 422 验证错误的工具函数
+const handle422ValidationError = (errorDetails: ErrorResponseData): string => {
+  // 处理标准的 422 错误响应格式: { detail: [{ loc: [], msg: "", type: "" }] }
+  if (errorDetails?.detail && Array.isArray(errorDetails.detail)) {
+    const errorMessages = errorDetails.detail.map(
+      (error: ValidationErrorDetail) => {
+        // 从 loc 数组中提取字段名，通常第一个元素是 'body'，后续才是实际字段
+        const field =
+          error.loc.length > 1
+            ? error.loc.slice(1).join(".")
+            : error.loc.join(".");
+        return field ? `${field}: ${error.msg}` : error.msg;
+      }
+    );
+
+    return errorMessages.length > 0 ? errorMessages.join("; ") : "数据验证失败";
+  }
+
+  // 兼容其他格式的验证错误响应
+  if (errorDetails?.message) {
+    return errorDetails.message;
+  }
+
+  if (errorDetails?.errors) {
+    if (Array.isArray(errorDetails.errors)) {
+      return errorDetails.errors.join("; ");
+    } else if (typeof errorDetails.errors === "object") {
+      const fieldErrors = Object.entries(errorDetails.errors)
+        .map(
+          ([field, msgs]) =>
+            `${field}: ${Array.isArray(msgs) ? msgs.join(", ") : msgs}`
+        )
+        .join("; ");
+      return fieldErrors || "数据验证失败";
+    }
+  }
+
+  return "数据验证失败";
+};
+
+// 通用错误处理函数
+const handleCommonErrors = (
+  status: number,
+  errorDetails?: ErrorResponseData
+): string => {
+  switch (status) {
+    case 400:
+      return errorDetails?.message || "请求参数错误";
+    case 401:
+      return "登录已过期，请重新登录";
+    case 403:
+      return errorDetails?.message || "权限不足，无法访问该资源";
+    case 404:
+      return errorDetails?.message || "请求的资源不存在";
+    case 405:
+      return "请求方法不被允许";
+    case 408:
+      return "请求超时";
+    case 409:
+      return errorDetails?.message || "数据冲突，请刷新后重试";
+    case 410:
+      return "请求的资源已被永久删除";
+    case 422:
+      return handle422ValidationError(errorDetails || {});
+    case 429:
+      return "请求过于频繁，请稍后重试";
+    case 500:
+      return errorDetails?.message || "服务器内部错误";
+    case 501:
+      return "服务器不支持该功能";
+    case 502:
+      return "网关错误，请稍后重试";
+    case 503:
+      return "服务不可用，请稍后重试";
+    case 504:
+      return "网关超时，请稍后重试";
+    case 505:
+      return "HTTP版本不受支持";
+    default:
+      return (
+        errorDetails?.message ||
+        errorDetails?.error ||
+        HTTP_STATUS_MESSAGES[status] ||
+        `请求失败 (${status})`
+      );
+  }
 };
 
 // 重试函数
@@ -472,58 +568,16 @@ const createAxiosInstance = (): AxiosInstance => {
         const { status, data } = error.response;
         errorDetails = data as ErrorResponseData;
 
-        // 根据状态码处理
-        switch (status) {
-          case 401:
-            // Token过期或无效
-            TokenManager.clearTokens();
-            errorMessage = "登录已过期，请重新登录";
-            // 延迟跳转，避免影响当前错误处理
-            setTimeout(() => {
-              window.location.href = "/login";
-            }, 1500);
-            break;
+        // 使用统一的错误处理函数
+        errorMessage = handleCommonErrors(status, errorDetails);
 
-          case 403:
-            errorMessage = "权限不足，无法访问该资源";
-            break;
-
-          case 422:
-            // 验证错误处理
-            errorMessage = "数据验证失败";
-            if (errorDetails?.message) {
-              errorMessage = errorDetails.message;
-            } else if (errorDetails?.errors) {
-              if (Array.isArray(errorDetails.errors)) {
-                errorMessage = errorDetails.errors.join(", ");
-              } else if (typeof errorDetails.errors === "object") {
-                const fieldErrors = Object.entries(errorDetails.errors)
-                  .map(
-                    ([field, msgs]) =>
-                      `${field}: ${
-                        Array.isArray(msgs) ? msgs.join(", ") : msgs
-                      }`
-                  )
-                  .join("; ");
-                errorMessage = fieldErrors || errorMessage;
-              }
-            }
-            break;
-
-          default:
-            errorMessage =
-              HTTP_STATUS_MESSAGES[status] || `请求失败 (${status})`;
-
-            // 尝试从响应中获取错误信息
-            if (errorDetails) {
-              if (typeof errorDetails === "string") {
-                errorMessage = errorDetails;
-              } else if (errorDetails.message) {
-                errorMessage = errorDetails.message;
-              } else if (errorDetails.error) {
-                errorMessage = errorDetails.error;
-              }
-            }
+        // 特殊处理 401 错误的登录跳转
+        if (status === 401) {
+          TokenManager.clearTokens();
+          // 延迟跳转，避免影响当前错误处理
+          setTimeout(() => {
+            window.location.href = "/login";
+          }, 1500);
         }
 
         errorCode = `HTTP_${status}`;

@@ -1,21 +1,20 @@
 /*
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-06-10 11:30:00
- * @Description: 登录服务 - 整合模拟和真实API
+ * @Description: 登录服务 - 优化版本，使用统一的API工具
  */
 
-import { http } from "@/utils/request";
-import { CookieUtils } from "@/utils/cookies";
-import { EnvConfig } from "@/config/env";
-import type { RequestConfig } from "@/utils/request";
+import { api } from '@/utils/apiHelper';
+import { CookieUtils } from '@/utils/cookies';
+import { EnvConfig } from '@/config/env';
 import type {
-  AuthResponse,
   LoginData,
+  AuthResponse,
   UserInfo,
   MockUser,
   LoginApiResponse,
   RefreshTokenApiResponse,
-} from "./types";
+} from './types';
 
 // ===== 配置区域 =====
 const USE_MOCK_DATA = EnvConfig.ENABLE_MOCK; // 通过环境变量控制是否使用模拟数据
@@ -75,7 +74,7 @@ class LoginService {
       if (data.two_factor && data.two_factor !== "123456") {
         return {
           success: false,
-          message: "验证码错误",
+          message: "两步验证码错误",
         };
       }
 
@@ -127,49 +126,49 @@ class LoginService {
    * 真实API登录实现
    */
   private async apiLogin(data: LoginData): Promise<AuthResponse> {
-    try {
-      // 调用真实API，跳过Token认证
-      const response = await http.post<LoginApiResponse>("/user/login", data, {
-        skipAuth: true,
-      } as RequestConfig);
+    const result = await api.post<LoginApiResponse>("/user/login", data, {
+      skipAuth: true,
+      defaultSuccessMessage: "登录成功",
+      defaultErrorMessage: "登录失败，请稍后重试",
+    });
 
-      const result = response.data;
-
-      // 适配后端响应格式
-      if (result.access_token) {
-        const userInfo: UserInfo = {
-          username: data.login_name,
-          role: this.parseUserRole(result.permission),
-          permissions: this.parsePermissions(result.permission),
-          lastLogin: new Date().toISOString(),
-          isFirstLogin: result.is_first_time_login,
-        };
-
-        // 保存登录状态
-        CookieUtils.setToken(result.access_token);
-        CookieUtils.setUser(userInfo);
-
-        // 登录成功后立即启动Token自动刷新
-        console.log("🚀 登录成功，启动Token自动刷新");
-        this.startGlobalTokenRefresh();
-
-        return {
-          success: true,
-          message: "登录成功",
-          token: result.access_token,
-          user: userInfo,
-        };
-      } else {
-        return {
-          success: false,
-          message: "登录失败",
-        };
-      }
-    } catch (error) {
-      console.error("API登录失败:", error);
+    if (!result.success) {
       return {
         success: false,
-        message: "登录失败，请稍后重试",
+        message: result.message,
+      };
+    }
+
+    const apiResponse = result.data!;
+
+    // 适配后端响应格式
+    if (apiResponse.access_token) {
+      const userInfo: UserInfo = {
+        username: data.login_name,
+        role: this.parseUserRole(apiResponse.permission),
+        permissions: this.parsePermissions(apiResponse.permission),
+        lastLogin: new Date().toISOString(),
+        isFirstLogin: false,
+      };
+
+      // 保存登录状态
+      CookieUtils.setToken(apiResponse.access_token);
+      CookieUtils.setUser(userInfo);
+
+      // 启动Token自动刷新
+      console.log("🚀 API登录成功，启动Token自动刷新");
+      this.startGlobalTokenRefresh();
+
+      return {
+        success: true,
+        message: "登录成功",
+        token: apiResponse.access_token,
+        user: userInfo,
+      };
+    } else {
+      return {
+        success: false,
+        message: "登录响应格式错误",
       };
     }
   }
@@ -191,9 +190,7 @@ class LoginService {
     // 检查每部分是否为有效的Base64编码
     try {
       for (const part of parts) {
-        if (!part) return false;
-        // 尝试解码Base64，如果失败说明格式无效
-        atob(part.replace(/-/g, "+").replace(/_/g, "/"));
+        atob(part);
       }
       return true;
     } catch {
@@ -206,92 +203,85 @@ class LoginService {
    * 自动刷新token 接口地址为 http://192.168.1.187:8001/user/renew_access_token
    */
   async refreshToken(): Promise<AuthResponse> {
-    try {
-      const token = this.getToken();
-      if (!token) {
-        return {
-          success: false,
-          message: "未登录或token已过期",
-        };
+    const token = this.getToken();
+    if (!token) {
+      return {
+        success: false,
+        message: "未找到有效的Token",
+      };
+    }
+
+    // 验证token格式
+    if (!this.isValidTokenFormat(token)) {
+      this.clearAuthDataSync();
+      return {
+        success: false,
+        message: "Token格式无效，已清除本地数据",
+      };
+    }
+
+    const result = await api.get<RefreshTokenApiResponse>(
+      "/user/renew_access_token",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        skipAuth: true,
+        showErrorMessage: false, // 刷新token不显示错误
+        defaultErrorMessage: "Token刷新失败",
       }
+    );
 
-      // 验证token格式
-      if (!this.isValidTokenFormat(token)) {
-        console.warn("Token格式无效，清除本地数据");
-        this.clearAuthDataSync();
-        return {
-          success: false,
-          message: "Token格式无效，请重新登录",
-        };
-      }
-
-      // 调用后端API刷新token
-      const response = await http.get<RefreshTokenApiResponse>(
-        "/user/renew_access_token",
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // 添加 Bearer 前缀
-          },
-          skipAuth: true, // 跳过认证
-        } as RequestConfig
-      );
-
-      const result = response.data;
-
-      if (result.access_token) {
-        // 更新本地存储的token
-        this.setToken(result.access_token);
-        return {
-          success: true,
-          message: "Token刷新成功",
-          token: result.access_token,
-        };
-      } else {
-        return {
-          success: false,
-          message: "Token刷新失败",
-        };
-      }
-    } catch (error: unknown) {
-      console.error("Token刷新失败:", error);
-
+    if (!result.success) {
       // 如果是token格式错误，清除本地数据
-      if (
-        error &&
-        typeof error === "object" &&
-        "status" in error &&
-        error.status === 400
-      ) {
-        console.warn("Token解码失败，清除本地认证数据");
+      if (result.message?.includes("DecodeError") || result.message?.includes("400")) {
         this.clearAuthDataSync();
         return {
           success: false,
-          message: "Token已失效，请重新登录",
-        };
-      }
-
-      if (
-        error &&
-        typeof error === "object" &&
-        "message" in error &&
-        typeof error.message === "string" &&
-        error.message.includes("DecodeError")
-      ) {
-        console.warn("Token解码失败，清除本地认证数据");
-        this.clearAuthDataSync();
-        return {
-          success: false,
-          message: "Token已失效，请重新登录",
+          message: "Token已失效，已清除本地数据",
         };
       }
 
       return {
         success: false,
-        message: "Token刷新失败，请稍后重试",
+        message: result.message,
+      };
+    }
+
+    const refreshResponse = result.data!;
+
+    if (refreshResponse.access_token) {
+      // 更新token
+      CookieUtils.setToken(refreshResponse.access_token);
+
+      // 更新用户信息（如果有）
+      if (refreshResponse.permission) {
+        const currentUser = this.getCurrentUser();
+        if (currentUser) {
+          const updatedUser: UserInfo = {
+            ...currentUser,
+            role: this.parseUserRole(refreshResponse.permission),
+            permissions: this.parsePermissions(refreshResponse.permission),
+            lastLogin: new Date().toISOString(),
+          };
+          CookieUtils.setUser(updatedUser);
+        }
+      }
+
+      return {
+        success: true,
+        message: "Token刷新成功",
+        token: refreshResponse.access_token,
+      };
+    } else {
+      return {
+        success: false,
+        message: "Token刷新失败：响应格式错误",
       };
     }
   }
+
   /**
    * 解析权限信息
    */
@@ -367,74 +357,44 @@ class LoginService {
    * 登出 - 调用后端API并清除本地数据
    */
   async logout(): Promise<{ success: boolean; message: string }> {
-    try {
-      const token = this.getToken();
-      console.log("开始登出流程...");
-      console.log(
-        "当前token:",
-        token ? `${token.substring(0, 20)}...` : "null"
-      );
+    const token = this.getToken();
+    console.log("开始登出流程...");
+    console.log(
+      "当前token:",
+      token ? `${token.substring(0, 20)}...` : "null"
+    );
 
-      // 如果有token，尝试调用后端登出API
-      if (token) {
-        try {
-          console.log("正在调用登出API:", "/user/logout");
-          console.log("请求配置: GET /user/logout");
+    // 如果有token，尝试调用后端登出API
+    if (token) {
+      const result = await api.post("/user/logout", {}, {
+        skipAuth: false,
+        showErrorMessage: false, // 登出不显示错误
+        defaultErrorMessage: "登出失败",
+      });
 
-          const response = await http.get("/user/logout");
-
-          console.log("登出API调用成功:", response);
-        } catch (error: unknown) {
-          console.error("后端登出API调用失败:", error);
-
-          // 详细记录错误信息
-          if (error && typeof error === "object" && "response" in error) {
-            const responseError = error as {
-              response?: { status?: number; data?: unknown; headers?: unknown };
-            };
-            console.error("响应状态:", responseError.response?.status);
-            console.error("响应数据:", responseError.response?.data);
-            console.error("响应头:", responseError.response?.headers);
-          } else if (error && typeof error === "object" && "request" in error) {
-            const requestError = error as { request?: unknown };
-            console.error("请求失败，没有收到响应:", requestError.request);
-          } else if (error instanceof Error) {
-            console.error("请求配置错误:", error.message);
-          } else {
-            console.error("未知错误:", error);
-          }
-
-          // 即使后端API失败，也要清除本地数据
-        }
+      if (result.success) {
+        console.log("后端登出API调用成功");
       } else {
-        console.warn("没有找到token，跳过API调用");
+        console.log("后端登出API调用失败，但继续清除本地数据");
       }
-
-      // 清除本地存储的认证数据
-      console.log("清除本地认证数据...");
-      CookieUtils.clearAuth();
-
-      // 停止Token自动刷新
-      console.log("🛑 登出时停止Token自动刷新");
-      this.stopGlobalTokenRefresh();
-
-      console.log("本地数据清除完成");
-
-      return {
-        success: true,
-        message: "登出成功",
-      };
-    } catch (error) {
-      console.error("登出过程中发生未预期错误:", error);
-
-      // 即使出错，也要清除本地数据
-      CookieUtils.clearAuth();
-
-      return {
-        success: false,
-        message: "登出时发生错误，但已清除本地数据",
-      };
+    } else {
+      console.log("无token，直接清除本地数据");
     }
+
+    // 清除本地存储的认证数据
+    console.log("清除本地认证数据...");
+    CookieUtils.clearAuth();
+
+    // 停止Token自动刷新
+    console.log("🛑 登出时停止Token自动刷新");
+    this.stopGlobalTokenRefresh();
+
+    console.log("本地数据清除完成");
+
+    return {
+      success: true,
+      message: "登出成功",
+    };
   }
 
   /**
@@ -502,7 +462,6 @@ class LoginService {
     console.warn(
       `切换登录模式为: ${useMock ? "模拟" : "真实API"}，请确保在开发环境中使用`
     );
-    // 注意：这里不能直接修改常量，实际项目中应该通过环境变量控制
   }
 
   /**
@@ -535,7 +494,7 @@ class LoginService {
       console.group("🔍 Token调试信息");
 
       if (!token) {
-        console.warn("❌ 没有找到Token");
+        console.log("❌ 未找到Token");
         console.groupEnd();
         return;
       }
@@ -549,18 +508,15 @@ class LoginService {
         const parts = token.split(".");
         if (parts.length === 3) {
           const payload = JSON.parse(atob(parts[1]));
-          console.log("📦 Token Payload:", payload);
-          console.log(
-            "⏰ 过期时间:",
-            payload.exp ? new Date(payload.exp * 1000).toLocaleString() : "未知"
-          );
-          console.log(
-            "🕐 是否过期:",
-            payload.exp ? payload.exp * 1000 < Date.now() : "未知"
-          );
+          console.log("📄 Token Payload:", payload);
+          if (payload.exp) {
+            const expDate = new Date(payload.exp * 1000);
+            console.log("⏰ Token过期时间:", expDate.toLocaleString());
+            console.log("⌛ 是否已过期:", Date.now() > payload.exp * 1000);
+          }
         }
       } catch (error) {
-        console.error("❌ 解析Token失败:", error);
+        console.log("❌ Token解析失败:", error);
       }
 
       console.groupEnd();
@@ -614,18 +570,6 @@ class LoginService {
   }
 }
 
-// 创建并导出登录服务实例
-export const loginService = new LoginService();
-
-// 导出类型
-export * from "./types";
-
-// 导出类（用于测试或特殊需求）
-export { LoginService };
-
-// 默认导出
-export default loginService;
-
 // ===== Token自动刷新管理器 =====
 class TokenRefreshManager {
   private static instance: TokenRefreshManager | null = null;
@@ -671,7 +615,7 @@ class TokenRefreshManager {
       "后执行"
     );
 
-    // 设置定时器 - 等待3分钟后开始第一次自动刷新
+    // 设置定时器 - 等待指定时间后开始第一次自动刷新
     this.refreshTimer = setInterval(() => {
       this.performRefresh();
     }, this.REFRESH_INTERVAL);
@@ -720,49 +664,16 @@ class TokenRefreshManager {
       if (result.success) {
         console.log("✅ Token自动刷新成功");
       } else {
-        console.warn("⚠️ Token自动刷新失败:", result.message);
-
-        // 如果刷新失败且是认证相关错误，停止自动刷新并强制退出登录
-        if (
-          result.message.includes("重新登录") ||
-          result.message.includes("已失效")
-        ) {
-          console.log("🛑 Token已失效，停止自动刷新");
-          this.stopAutoRefresh();
-
-          // 通知用户并强制退出登录
-          this.handleAuthFailure(
-            "Token自动刷新失败，为了您的账户安全，系统将自动退出登录"
-          );
+        console.log("❌ Token自动刷新失败:", result.message);
+        
+        // 如果刷新失败，可能需要重新登录
+        if (result.message?.includes("已失效") || result.message?.includes("无效")) {
+          console.log("🚨 Token已失效，准备强制退出登录");
+          await this.handleAuthFailure();
         }
       }
     } catch (error) {
-      console.error("❌ Token自动刷新出错:", error);
-
-      // 如果是网络错误或其他关键错误，也考虑强制退出登录
-      if (error && typeof error === "object") {
-        const errorObj = error as {
-          status?: number;
-          code?: string;
-          message?: string;
-        };
-
-        // 401未授权或403禁止访问，直接强制退出
-        if (errorObj.status === 401 || errorObj.status === 403) {
-          console.log("🛑 收到认证错误响应，强制退出登录");
-          this.handleAuthFailure("身份验证失败，系统将自动退出登录");
-        }
-        // Token相关错误
-        else if (
-          errorObj.message &&
-          (errorObj.message.includes("token") ||
-            errorObj.message.includes("unauthorized") ||
-            errorObj.message.includes("expired"))
-        ) {
-          console.log("🛑 Token相关错误，强制退出登录");
-          this.handleAuthFailure("Token验证失败，系统将自动退出登录");
-        }
-      }
+      console.error("❌ Token自动刷新异常:", error);
     } finally {
       this.isRefreshing = false;
     }
@@ -781,58 +692,41 @@ class TokenRefreshManager {
   /**
    * 处理认证失败 - 通知用户并强制退出登录
    */
-  private async handleAuthFailure(message: string): Promise<void> {
+  private async handleAuthFailure(): Promise<void> {
     try {
-      console.error("🚨 认证失败，强制退出登录:", message);
-
       // 停止自动刷新
       this.stopAutoRefresh();
-
-      // 清除本地认证数据
+      
+      // 清除认证数据
       if (this.loginServiceInstance) {
-        this.loginServiceInstance.clearAuthDataSync();
+        await this.loginServiceInstance.clearAuthData();
       }
-
-      // 显示通知
-      if (typeof window !== "undefined") {
-        // 尝试使用全局通知组件
-        try {
-          const globalWindow = window as unknown as {
-            antd?: {
-              message?: {
-                error: (msg: string) => void;
-              };
-            };
-          };
-
-          if (globalWindow.antd && globalWindow.antd.message) {
-            globalWindow.antd.message.error(message);
-          } else {
-            // 降级到浏览器原生alert
-            alert(message);
-          }
-        } catch (notificationError) {
-          console.warn("显示通知失败，使用alert:", notificationError);
-          alert(message);
-        }
-
-        // 延迟后重定向到登录页面
-        setTimeout(() => {
-          if (
-            window.location.pathname !== "/login" &&
-            !window.location.hash.includes("/login")
-          ) {
-            console.log("🔄 重定向到登录页面");
-            // 使用正确的Hash路由格式
-            window.location.hash = "/login";
-          }
-        }, 2000);
-      }
+      
+      // 跳转到登录页
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1000);
+      
     } catch (error) {
-      console.error("处理认证失败时出错:", error);
+      console.error("处理认证失败时发生错误:", error);
     }
   }
 }
+
+// 创建并导出登录服务实例
+export const loginService = new LoginService();
+
+// 导出类型
+export * from "./types";
+
+// 导出类（用于测试或特殊需求）
+export { LoginService };
+
+// 默认导出
+export default loginService;
+
+// 导出工具类
+export { TokenRefreshManager };
 
 // 全局调试工具
 if (import.meta.env.DEV) {
@@ -904,6 +798,3 @@ if (import.meta.env.DEV) {
   console.log("- debugToken.stop() - 停止自动刷新");
   console.log("- debugToken.clear() - 清理Token");
 }
-
-// 导出工具类
-export { TokenRefreshManager };

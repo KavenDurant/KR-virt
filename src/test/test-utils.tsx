@@ -12,20 +12,22 @@ import { BrowserRouter } from "react-router-dom";
 import { ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN";
 
-// 创建一个简单的测试包装器
-const TestWrapper = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <BrowserRouter>
-      <ConfigProvider locale={zhCN}>{children}</ConfigProvider>
-    </BrowserRouter>
-  );
-};
-
 // 自定义渲染函数
 const customRender = (
   ui: ReactElement,
   options?: Omit<RenderOptions, "wrapper">
-) => render(ui, { wrapper: TestWrapper, ...options });
+) => {
+  // 内联包装器组件以避免Fast Refresh警告
+  const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+    return (
+      <BrowserRouter>
+        <ConfigProvider locale={zhCN}>{children}</ConfigProvider>
+      </BrowserRouter>
+    );
+  };
+  
+  return render(ui, { wrapper: TestWrapper, ...options });
+};
 
 // 重新导出所有 testing-library 工具，但不包含组件
 export {

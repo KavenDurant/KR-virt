@@ -117,10 +117,12 @@ const ClusterProcessingPage: React.FC<ClusterProcessingPageProps> = ({
       return (
         <Space direction="vertical" style={{ width: "100%" }}>
           <div>
-            <Text strong>主节点地址：</Text>
-            <Text>
-              {joinConfig.masterNodeIp}:{joinConfig.masterNodePort}
-            </Text>
+            <Text strong>节点IP：</Text>
+            <Text>{joinConfig.ip}</Text>
+          </div>
+          <div>
+            <Text strong>主机名：</Text>
+            <Text>{joinConfig.hostname}</Text>
           </div>
           <div>
             <Text strong>节点角色：</Text>
@@ -130,12 +132,6 @@ const ClusterProcessingPage: React.FC<ClusterProcessingPageProps> = ({
             <Text strong>加入令牌：</Text>
             <Text>{"*".repeat(20)}</Text>
           </div>
-          {joinConfig.description && (
-            <div>
-              <Text strong>描述：</Text>
-              <Text>{joinConfig.description}</Text>
-            </div>
-          )}
         </Space>
       );
     }

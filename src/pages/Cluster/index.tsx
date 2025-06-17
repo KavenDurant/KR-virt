@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import {
   Card,
   Button,
@@ -129,8 +135,44 @@ const getStatusTag = (status: string) => {
 
 const ClusterManagement: React.FC = () => {
   const { modal, message } = App.useApp();
+
+  // 全局API防重复调用机制
+  const globalApiLockRef = useRef<Set<string>>(new Set());
+
+  // 通用的API防重复包装器
+  const withApiLock = useCallback(
+    <T extends unknown[]>(
+      apiName: string,
+      apiFunc: (...args: T) => Promise<void>
+    ) => {
+      return async (...args: T) => {
+        const timestamp = new Date().toLocaleTimeString();
+        if (globalApiLockRef.current.has(apiName)) {
+          console.log(
+            `⛔ [${timestamp}][API Lock] ${apiName} 正在执行中，跳过重复调用`
+          );
+          return;
+        }
+
+        globalApiLockRef.current.add(apiName);
+        console.log(`🔒 [${timestamp}][API Lock] 锁定 ${apiName}`);
+
+        try {
+          await apiFunc(...args);
+        } finally {
+          globalApiLockRef.current.delete(apiName);
+          console.log(`🔓 [${timestamp}][API Unlock] 解锁 ${apiName}`);
+        }
+      };
+    },
+    []
+  );
+
   // 使用useTabSync Hook实现tab与URL同步
-  const { activeTab, setActiveTab } = useTabSync({ defaultTab: "overview" });
+  const { activeTab, setActiveTab } = useTabSync({
+    defaultTab: "overview",
+    debug: false, // 关闭调试模式
+  });
 
   // 真实集群数据状态
   const [realClusterData, setRealClusterData] =
@@ -232,103 +274,229 @@ const ClusterManagement: React.FC = () => {
     }
   };
 
-  // 获取真实集群数据
-  const fetchRealClusterData = useCallback(async () => {
+  // 获取真实集群数据基础函数
+  const fetchRealClusterDataBase = useCallback(async () => {
+    const timestamp = new Date().toLocaleTimeString();
     setRealClusterLoading(true);
     setRealClusterError(null);
     try {
+      console.log(
+        `📡 [${timestamp}][API Call] 开始调用物理机列表API (/cluster/nodes)`
+      );
       const result = await clusterInitService.getClusterNodes();
       if (result.success && result.data) {
         setRealClusterData(result.data);
-        console.log("获取集群节点数据成功:", result.data);
+        console.log(`✅ [${timestamp}][API Success] 获取集群节点数据成功`);
       } else {
-        console.error("获取集群节点数据失败:", result.message);
+        console.error(
+          `❌ [${timestamp}][API Error] 获取集群节点数据失败:`,
+          result.message
+        );
         setRealClusterError(result.message);
         message.error(result.message);
       }
     } catch (error) {
-      console.error("获取集群节点数据异常:", error);
+      console.error(
+        `❌ [${timestamp}][API Exception] 获取集群节点数据异常:`,
+        error
+      );
       const errorMessage = "获取集群数据失败，请稍后重试";
       setRealClusterError(errorMessage);
       message.error(errorMessage);
     } finally {
       setRealClusterLoading(false);
+      console.log(`🏁 [${timestamp}][API Complete] 物理机列表API调用完成`);
     }
-  }, [message, setRealClusterData, setRealClusterLoading, setRealClusterError]);
+  }, [message]);
 
-  // 获取集群概览数据
-  const fetchClusterSummaryData = useCallback(async () => {
+  // 使用API锁包装的函数
+  const fetchRealClusterData = useMemo(
+    () => withApiLock("fetchRealClusterData", fetchRealClusterDataBase),
+    [withApiLock, fetchRealClusterDataBase]
+  );
+
+  // 获取集群概览数据基础函数
+  const fetchClusterSummaryDataBase = useCallback(async () => {
+    const timestamp = new Date().toLocaleTimeString();
     setClusterSummaryLoading(true);
     setClusterSummaryError(null);
     try {
+      console.log(
+        `📡 [${timestamp}][API Call] 开始调用集群概览API (/cluster/summary)`
+      );
       const result = await clusterInitService.getClusterSummary();
       if (result.success && result.data) {
         setClusterSummaryData(result.data);
-        console.log("获取集群概览数据成功:", result.data);
+        console.log(`✅ [${timestamp}][API Success] 获取集群概览数据成功`);
       } else {
-        console.error("获取集群概览数据失败:", result.message);
+        console.error(
+          `❌ [${timestamp}][API Error] 获取集群概览数据失败:`,
+          result.message
+        );
         setClusterSummaryError(result.message);
         message.error(result.message);
       }
     } catch (error) {
-      console.error("获取集群概览数据异常:", error);
+      console.error(
+        `❌ [${timestamp}][API Exception] 获取集群概览数据异常:`,
+        error
+      );
       const errorMessage = "获取集群概览数据失败，请稍后重试";
       setClusterSummaryError(errorMessage);
       message.error(errorMessage);
     } finally {
       setClusterSummaryLoading(false);
+      console.log(`🏁 [${timestamp}][API Complete] 集群概览API调用完成`);
     }
-  }, [
-    message,
-    setClusterSummaryData,
-    setClusterSummaryLoading,
-    setClusterSummaryError,
-  ]);
+  }, [message]);
 
-  // 获取集群资源数据
-  const fetchClusterResourcesData = useCallback(async () => {
+  // 使用API锁包装的函数
+  const fetchClusterSummaryData = useMemo(
+    () => withApiLock("fetchClusterSummaryData", fetchClusterSummaryDataBase),
+    [withApiLock, fetchClusterSummaryDataBase]
+  );
+
+  // 获取集群资源数据基础函数
+  const fetchClusterResourcesDataBase = useCallback(async () => {
+    const timestamp = new Date().toLocaleTimeString();
     setClusterResourcesLoading(true);
     setClusterResourcesError(null);
     try {
+      console.log(
+        `📡 [${timestamp}][API Call] 开始调用集群资源API (/cluster/resources)`
+      );
       const result = await clusterInitService.getClusterResources();
       if (result.success && result.data) {
         setClusterResourcesData(result.data);
-        console.log("获取集群资源数据成功:", result.data);
+        console.log(`✅ [${timestamp}][API Success] 获取集群资源数据成功`);
       } else {
-        console.error("获取集群资源数据失败:", result.message);
+        console.error(
+          `❌ [${timestamp}][API Error] 获取集群资源数据失败:`,
+          result.message
+        );
         setClusterResourcesError(result.message);
         message.error(result.message);
       }
     } catch (error) {
-      console.error("获取集群资源数据异常:", error);
+      console.error(
+        `❌ [${timestamp}][API Exception] 获取集群资源数据异常:`,
+        error
+      );
       const errorMessage = "获取集群资源数据失败，请稍后重试";
       setClusterResourcesError(errorMessage);
       message.error(errorMessage);
     } finally {
       setClusterResourcesLoading(false);
+      console.log(`🏁 [${timestamp}][API Complete] 集群资源API调用完成`);
     }
-  }, [
-    message,
-    setClusterResourcesData,
-    setClusterResourcesLoading,
-    setClusterResourcesError,
-  ]);
+  }, [message]);
 
-  // 加载集群数据
+  // 使用API锁包装的函数
+  const fetchClusterResourcesData = useMemo(
+    () =>
+      withApiLock("fetchClusterResourcesData", fetchClusterResourcesDataBase),
+    [withApiLock, fetchClusterResourcesDataBase]
+  );
+
+  // 防重复调用的标记和上一次激活的Tab追踪
+  const loadingRef = useRef<Set<string>>(new Set());
+  const lastActiveTabRef = useRef<string | null>(null);
+  const tabChangeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // 实时Tab数据加载函数 - 防止重复调用
+  const loadTabData = useCallback(
+    async (tab: string, force = false) => {
+      // 防止重复调用检查
+      if (!force && loadingRef.current.has(tab)) {
+        console.log(
+          `⚠️ [Duplicate Prevention] Tab ${tab} 正在加载中，跳过重复请求`
+        );
+        return;
+      }
+
+      loadingRef.current.add(tab);
+      console.log(
+        `🎯 [Real-time Loading] 开始加载Tab: ${tab} - ${
+          force ? "强制" : "正常"
+        }刷新`
+      );
+
+      try {
+        switch (tab) {
+          case "overview":
+            console.log("📊 [Overview Tab] 加载集群概览数据");
+            await fetchClusterSummaryData();
+            console.log("✅ [Overview Tab] 集群概览数据加载完成");
+            break;
+
+          case "list":
+            console.log("🖥️ [List Tab] 加载物理机列表数据");
+            await fetchRealClusterData();
+            console.log("✅ [List Tab] 物理机列表数据加载完成");
+            break;
+
+          case "resources":
+            console.log("🔧 [Resources Tab] 加载集群资源数据");
+            await fetchClusterResourcesData();
+            console.log("✅ [Resources Tab] 集群资源数据加载完成");
+            break;
+
+          default:
+            console.log(`❓ [Unknown Tab] 未知Tab: ${tab}`);
+        }
+      } catch (error) {
+        console.error(`❌ [Loading Error] Tab ${tab} 加载失败:`, error);
+      } finally {
+        loadingRef.current.delete(tab);
+        console.log(`🏁 [Loading Complete] Tab ${tab} 加载流程结束`);
+      }
+    },
+    [fetchClusterSummaryData, fetchRealClusterData, fetchClusterResourcesData]
+  );
+
+  // 监听Tab切换，使用防抖策略和严格的重复检查
   useEffect(() => {
-    // 获取真实集群数据
-    fetchRealClusterData();
+    console.log(
+      `🔄 [Tab Switch Effect] 切换到Tab: ${activeTab}, 上次Tab: ${lastActiveTabRef.current}, 初始化状态: ${isInitialized}`
+    );
 
-    // 获取集群概览数据
-    fetchClusterSummaryData();
+    // 清除之前的定时器
+    if (tabChangeTimerRef.current) {
+      clearTimeout(tabChangeTimerRef.current);
+      console.log(`🧹 [Timer Clear] 清除之前的tab切换定时器`);
+    }
 
-    // 获取集群资源数据
-    fetchClusterResourcesData();
-  }, [
-    fetchRealClusterData,
-    fetchClusterSummaryData,
-    fetchClusterResourcesData,
-  ]);
+    // 如果Tab没有实际变化，跳过（除非是强制初始化）
+    if (isInitialized && lastActiveTabRef.current === activeTab) {
+      console.log(`⏭️ [Skip] Tab未变化，跳过加载: ${activeTab}`);
+      return;
+    }
+
+    // 更新lastActiveTab引用
+    lastActiveTabRef.current = activeTab;
+
+    // 使用防抖延迟执行，避免快速切换时的重复调用
+    tabChangeTimerRef.current = setTimeout(
+      () => {
+        if (!isInitialized) {
+          console.log(`🚀 [Initial Load] 首次加载Tab: ${activeTab}`);
+          setIsInitialized(true);
+        } else {
+          console.log(`⚡ [Subsequent Load] Tab切换加载: ${activeTab}`);
+        }
+        loadTabData(activeTab);
+      },
+      isInitialized ? 50 : 100
+    ); // 初始化时延迟更长，避免与useTabSync冲突
+
+    // 清理函数
+    return () => {
+      if (tabChangeTimerRef.current) {
+        clearTimeout(tabChangeTimerRef.current);
+      }
+    };
+  }, [activeTab, isInitialized, loadTabData]);
 
   // 解散集群
   const handleDissolveCluster = () => {
@@ -438,7 +606,7 @@ const ClusterManagement: React.FC = () => {
           record.cpu_total,
           "核"
         );
-        
+
         const memUsage = formatResourceUsage(
           record.mem_used,
           record.mem_total,
@@ -449,11 +617,12 @@ const ClusterManagement: React.FC = () => {
           <div style={{ fontSize: "12px" }}>
             <div style={{ marginBottom: "4px" }}>
               <span style={{ color: "#666" }}>CPU: </span>
-              <span 
-                style={{ 
-                  color: cpuUsage.percentage !== null 
-                    ? getProgressColor(cpuUsage.percentage)
-                    : "#999"
+              <span
+                style={{
+                  color:
+                    cpuUsage.percentage !== null
+                      ? getProgressColor(cpuUsage.percentage)
+                      : "#999",
                 }}
               >
                 {cpuUsage.display}
@@ -461,11 +630,12 @@ const ClusterManagement: React.FC = () => {
             </div>
             <div>
               <span style={{ color: "#666" }}>内存: </span>
-              <span 
-                style={{ 
-                  color: memUsage.percentage !== null 
-                    ? getProgressColor(memUsage.percentage)
-                    : "#999"
+              <span
+                style={{
+                  color:
+                    memUsage.percentage !== null
+                      ? getProgressColor(memUsage.percentage)
+                      : "#999",
                 }}
               >
                 {memUsage.display}
@@ -954,18 +1124,11 @@ const ClusterManagement: React.FC = () => {
           extra={
             <Space>
               <Button
-                onClick={() => {
-                  setSidebarSelectedHost(null);
-                }}
-              >
-                返回集群管理
-              </Button>
-              <Button
                 type="primary"
                 icon={<SyncOutlined />}
                 onClick={() => message.info("正在刷新主机信息...")}
               >
-                刷新状态
+                刷新
               </Button>
               <Button
                 icon={<MonitorOutlined />}
@@ -1147,9 +1310,8 @@ const ClusterManagement: React.FC = () => {
           <Button
             icon={<SyncOutlined />}
             onClick={() => {
-              fetchRealClusterData(); // 刷新真实集群数据
-              fetchClusterSummaryData(); // 刷新集群概览数据
-              fetchClusterResourcesData(); // 刷新集群资源数据
+              console.log(`🔄 [Manual Refresh] 手动刷新当前Tab: ${activeTab}`);
+              loadTabData(activeTab, true); // 强制刷新当前Tab
             }}
           >
             刷新
@@ -1479,14 +1641,19 @@ const ClusterManagement: React.FC = () => {
                     <Card
                       title={
                         <Space>
+                          <HddOutlined />
                           <span>物理机节点列表</span>
-                          <Tag color="processing">
-                            集群UUID: {realClusterData.cluster_uuid.slice(0, 8)}
-                            ...
-                          </Tag>
                         </Space>
                       }
-                      size="small"
+                      extra={
+                        <Button
+                          size="small"
+                          icon={<SyncOutlined />}
+                          onClick={fetchRealClusterData}
+                        >
+                          刷新
+                        </Button>
+                      }
                     >
                       <Table
                         columns={realClusterNodesColumns}

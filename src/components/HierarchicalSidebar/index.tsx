@@ -488,16 +488,6 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
               <HddOutlined />
             </span>
             <span className="tree-node-title">{node.name}</span>
-            <span
-              className="tree-node-subtitle"
-              style={{
-                fontSize: "11px",
-                color: actualTheme === "dark" ? "#888" : "#999",
-                marginLeft: "4px",
-              }}
-            >
-              ({node.vms.length} VMs)
-            </span>
             <div className="tree-node-status">
               <span
                 className="status-dot"

@@ -945,7 +945,7 @@ const VirtualMachineManagement: React.FC = () => {
                 icon={<SyncOutlined />}
                 onClick={() => message.info("正在刷新主机信息...")}
               >
-                刷新状态
+                刷新
               </Button>
               <Button
                 icon={<MonitorOutlined />}

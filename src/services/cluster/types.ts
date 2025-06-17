@@ -116,7 +116,7 @@ export interface ClusterNode {
   pub_key: string; // 公钥
 }
 
-// 集群节点列表响应 - 实际接口返回格式  
+// 集群节点列表响应 - 实际接口返回格式
 export interface ClusterNodesResponse {
   cluster_name: string; // 集群名称
   cluster_uuid: string; // 集群UUID
@@ -245,4 +245,11 @@ export interface NodeSummaryResponse {
   suspended_vm_num: number;
   error_vm_num: number;
   other_vm_num: number;
+  // TODO 新增字段
+  storage_total?: number; // 存储总容量（GB）
+  storage_used?: number; // 存储已用容量（GB）
+  network_throughput?: number; // 网络吞吐量（Mbps）
+  load_average?: string; // 系统负载（格式: "0.8,1.2,1.5"）
+  vm_max_allowed?: number; // 最大可创建虚拟机数量
+  power_state?: string; // 电源状态
 }

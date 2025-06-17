@@ -35,8 +35,18 @@ import {
   ThunderboltOutlined,
   DatabaseOutlined,
   CopyOutlined,
+  CloudServerOutlined,
+  DashboardOutlined,
+  SafetyOutlined,
+  PoweroffOutlined,
 } from "@ant-design/icons";
-import { formatResourceUsage } from "../../utils/format";
+import {
+  formatResourceUsage,
+  formatUptime,
+  formatNetworkThroughput,
+  formatLoadAverage,
+  formatPowerState,
+} from "../../utils/format";
 import { useTabSync } from "@/hooks/useTabSync";
 import type {
   Cluster as ClusterData,
@@ -208,7 +218,8 @@ const ClusterManagement: React.FC = () => {
   );
 
   // 节点摘要数据状态
-  const [nodeDetailData, setNodeDetailData] = useState<NodeSummaryResponse | null>(null);
+  const [nodeDetailData, setNodeDetailData] =
+    useState<NodeSummaryResponse | null>(null);
   const [nodeDetailLoading, setNodeDetailLoading] = useState(false);
   const [nodeDetailError, setNodeDetailError] = useState<string | null>(null);
 
@@ -222,7 +233,7 @@ const ClusterManagement: React.FC = () => {
       setSidebarSelectedCluster(null);
       setSidebarSelectedHost(null);
       setSidebarSelectedVM(null);
-      
+
       // 清空节点摘要数据
       setNodeDetailData(null);
       setNodeDetailError(null);
@@ -235,7 +246,9 @@ const ClusterManagement: React.FC = () => {
         const hostData = nodeData as Node;
         setSidebarSelectedHost(hostData);
         // 这里将在稍后调用节点摘要API，在fetchNodeDetailData定义后
-        console.log(`🔍 [Node Detail] 选择了主机 ${hostData.name}，将获取详细信息`);
+        console.log(
+          `🔍 [Node Detail] 选择了主机 ${hostData.name}，将获取详细信息`
+        );
       } else if (nodeType === "vm") {
         setSidebarSelectedVM(nodeData as VMData);
       }
@@ -412,39 +425,42 @@ const ClusterManagement: React.FC = () => {
   );
 
   // 获取节点摘要数据基础函数
-  const fetchNodeDetailDataBase = useCallback(async (hostname: string) => {
-    const timestamp = new Date().toLocaleTimeString();
-    setNodeDetailLoading(true);
-    setNodeDetailError(null);
-    try {
-      console.log(
-        `📡 [${timestamp}][API Call] 开始调用节点摘要API (/node/summary), hostname: ${hostname}`
-      );
-      const result = await clusterInitService.getNodeSummary(hostname);
-      if (result.success && result.data) {
-        setNodeDetailData(result.data);
-        console.log(`✅ [${timestamp}][API Success] 获取节点摘要数据成功`);
-      } else {
-        console.error(
-          `❌ [${timestamp}][API Error] 获取节点摘要数据失败:`,
-          result.message
+  const fetchNodeDetailDataBase = useCallback(
+    async (hostname: string) => {
+      const timestamp = new Date().toLocaleTimeString();
+      setNodeDetailLoading(true);
+      setNodeDetailError(null);
+      try {
+        console.log(
+          `📡 [${timestamp}][API Call] 开始调用节点摘要API (/node/summary), hostname: ${hostname}`
         );
-        setNodeDetailError(result.message);
-        message.error(result.message);
+        const result = await clusterInitService.getNodeSummary(hostname);
+        if (result.success && result.data) {
+          setNodeDetailData(result.data);
+          console.log(`✅ [${timestamp}][API Success] 获取节点摘要数据成功`);
+        } else {
+          console.error(
+            `❌ [${timestamp}][API Error] 获取节点摘要数据失败:`,
+            result.message
+          );
+          setNodeDetailError(result.message);
+          message.error(result.message);
+        }
+      } catch (error) {
+        console.error(
+          `❌ [${timestamp}][API Exception] 获取节点摘要数据异常:`,
+          error
+        );
+        const errorMessage = "获取节点摘要数据失败，请稍后重试";
+        setNodeDetailError(errorMessage);
+        message.error(errorMessage);
+      } finally {
+        setNodeDetailLoading(false);
+        console.log(`🏁 [${timestamp}][API Complete] 节点摘要API调用完成`);
       }
-    } catch (error) {
-      console.error(
-        `❌ [${timestamp}][API Exception] 获取节点摘要数据异常:`,
-        error
-      );
-      const errorMessage = "获取节点摘要数据失败，请稍后重试";
-      setNodeDetailError(errorMessage);
-      message.error(errorMessage);
-    } finally {
-      setNodeDetailLoading(false);
-      console.log(`🏁 [${timestamp}][API Complete] 节点摘要API调用完成`);
-    }
-  }, [message]);
+    },
+    [message]
+  );
 
   // 使用API锁包装的函数
   const fetchNodeDetailData = useMemo(
@@ -455,7 +471,9 @@ const ClusterManagement: React.FC = () => {
   // 监听主机选择变化，自动获取详细信息
   useEffect(() => {
     if (sidebarSelectedHost) {
-      console.log(`🔍 [Node Detail] 开始获取主机 ${sidebarSelectedHost.name} 的详细信息`);
+      console.log(
+        `🔍 [Node Detail] 开始获取主机 ${sidebarSelectedHost.name} 的详细信息`
+      );
       fetchNodeDetailData(sidebarSelectedHost.name);
     }
   }, [sidebarSelectedHost, fetchNodeDetailData]);
@@ -1041,9 +1059,15 @@ const ClusterManagement: React.FC = () => {
   // 如果从侧边栏选中了物理主机，显示主机详情
   if (sidebarSelectedHost) {
     // 计算CPU和内存使用百分比
-    const cpuUsagePercent = nodeDetailData ? Math.round((nodeDetailData.cpu_used / nodeDetailData.cpu_total) * 100) : 0;
-    const memoryUsagePercent = nodeDetailData ? Math.round((nodeDetailData.mem_used / nodeDetailData.mem_total) * 100) : 0;
-    const totalVmsCount = nodeDetailData ? nodeDetailData.vms_num : sidebarSelectedHost.vms.length;
+    const cpuUsagePercent = nodeDetailData
+      ? Math.round((nodeDetailData.cpu_used / nodeDetailData.cpu_total) * 100)
+      : 0;
+    const memoryUsagePercent = nodeDetailData
+      ? Math.round((nodeDetailData.mem_used / nodeDetailData.mem_total) * 100)
+      : 0;
+    const totalVmsCount = nodeDetailData
+      ? nodeDetailData.vms_num
+      : sidebarSelectedHost.vms.length;
 
     const hostDetailTabs = [
       {
@@ -1066,7 +1090,9 @@ const ClusterManagement: React.FC = () => {
                   action={
                     <Button
                       type="primary"
-                      onClick={() => fetchNodeDetailData(sidebarSelectedHost.name)}
+                      onClick={() =>
+                        fetchNodeDetailData(sidebarSelectedHost.name)
+                      }
                       icon={<SyncOutlined />}
                     >
                       重新加载
@@ -1076,10 +1102,11 @@ const ClusterManagement: React.FC = () => {
               </div>
             ) : (
               <Row gutter={[16, 16]}>
-                <Col xs={24} md={12}>
-                  <Card title="主机配置" size="small">
-                    <Row>
-                      <Col span={12}>
+                {/* 第一行：核心性能指标 */}
+                <Col xs={24} lg={12}>
+                  <Card title="性能指标" size="small">
+                    <Row gutter={16}>
+                      <Col span={8}>
                         <Statistic
                           title="CPU 使用率"
                           value={cpuUsagePercent}
@@ -1090,76 +1117,255 @@ const ClusterManagement: React.FC = () => {
                           prefix={<ThunderboltOutlined />}
                         />
                         {nodeDetailData && (
-                          <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
-                            {nodeDetailData.cpu_used}核 / {nodeDetailData.cpu_total}核
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              color: "#666",
+                              marginTop: "4px",
+                            }}
+                          >
+                            {nodeDetailData.cpu_used}核 /{" "}
+                            {nodeDetailData.cpu_total}核
                           </div>
                         )}
                       </Col>
-                      <Col span={12}>
+                      <Col span={8}>
                         <Statistic
                           title="内存使用率"
                           value={memoryUsagePercent}
                           suffix="%"
                           valueStyle={{
-                            color: memoryUsagePercent > 80 ? "#ff4d4f" : "#3f8600",
+                            color:
+                              memoryUsagePercent > 80 ? "#ff4d4f" : "#3f8600",
                           }}
                           prefix={<DatabaseOutlined />}
                         />
                         {nodeDetailData && (
-                          <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
-                            {(nodeDetailData.mem_used / 1024).toFixed(1)}GB / {(nodeDetailData.mem_total / 1024).toFixed(1)}GB
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              color: "#666",
+                              marginTop: "4px",
+                            }}
+                          >
+                            {(nodeDetailData.mem_used / 1024).toFixed(1)}GB /{" "}
+                            {(nodeDetailData.mem_total / 1024).toFixed(1)}GB
+                          </div>
+                        )}
+                      </Col>
+                      <Col span={8}>
+                        <Statistic
+                          title="存储使用率"
+                          value={
+                            nodeDetailData?.storage_total &&
+                            nodeDetailData?.storage_used
+                              ? Math.round(
+                                  (nodeDetailData.storage_used /
+                                    nodeDetailData.storage_total) *
+                                    100
+                                )
+                              : 0
+                          }
+                          suffix="%"
+                          valueStyle={{
+                            color:
+                              nodeDetailData?.storage_total &&
+                              nodeDetailData?.storage_used &&
+                              (nodeDetailData.storage_used /
+                                nodeDetailData.storage_total) *
+                                100 >
+                                80
+                                ? "#ff4d4f"
+                                : "#3f8600",
+                          }}
+                          prefix={<HddOutlined />}
+                        />
+                        {nodeDetailData &&
+                          nodeDetailData.storage_total &&
+                          nodeDetailData.storage_used && (
+                            <div
+                              style={{
+                                fontSize: "12px",
+                                color: "#666",
+                                marginTop: "4px",
+                              }}
+                            >
+                              {(nodeDetailData.storage_used / 1024).toFixed(1)}
+                              TB /{" "}
+                              {(nodeDetailData.storage_total / 1024).toFixed(1)}
+                              TB
+                            </div>
+                          )}
+                      </Col>
+                    </Row>
+                  </Card>
+                </Col>
+
+                {/* 第二行：虚拟机统计 */}
+                <Col xs={24} lg={12}>
+                  <Card title="虚拟机管理" size="small">
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Statistic
+                          title="虚拟机总数"
+                          value={totalVmsCount}
+                          suffix="台"
+                          prefix={<DesktopOutlined />}
+                        />
+                        {nodeDetailData && (
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "#666",
+                              marginTop: "4px",
+                            }}
+                          >
+                            运行: {nodeDetailData.running_vm_num}台 | 停止:{" "}
+                            {nodeDetailData.stopped_vm_num}台
+                          </div>
+                        )}
+                      </Col>
+                      <Col span={12}>
+                        <Statistic
+                          title="容量限制"
+                          value={nodeDetailData?.vm_max_allowed || "未限制"}
+                          suffix={nodeDetailData?.vm_max_allowed ? "台" : ""}
+                          prefix={<SafetyOutlined />}
+                        />
+                        {nodeDetailData?.vm_max_allowed && (
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "#666",
+                              marginTop: "4px",
+                            }}
+                          >
+                            剩余可创建:{" "}
+                            {nodeDetailData.vm_max_allowed - totalVmsCount}台
                           </div>
                         )}
                       </Col>
                     </Row>
-                    <div style={{ margin: "16px 0" }}>
-                      <Row>
-                        <Col span={24}>
-                          <Statistic
-                            title="虚拟机数量"
-                            value={totalVmsCount}
-                            suffix="台"
-                            prefix={<DesktopOutlined />}
-                          />
-                          {nodeDetailData && (
-                            <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
-                              运行: {nodeDetailData.running_vm_num}台 | 
-                              停止: {nodeDetailData.stopped_vm_num}台 | 
-                              暂停: {nodeDetailData.paused_vm_num}台
+                    {nodeDetailData &&
+                      (nodeDetailData.suspended_vm_num > 0 ||
+                        nodeDetailData.paused_vm_num > 0 ||
+                        nodeDetailData.error_vm_num > 0) && (
+                        <div style={{ marginTop: "16px", fontSize: "12px" }}>
+                          {nodeDetailData.paused_vm_num > 0 && (
+                            <div>
+                              暂停:{" "}
+                              <span style={{ color: "#faad14" }}>
+                                {nodeDetailData.paused_vm_num}台
+                              </span>
                             </div>
                           )}
-                        </Col>
-                      </Row>
-                    </div>
+                          {nodeDetailData.suspended_vm_num > 0 && (
+                            <div>
+                              挂起:{" "}
+                              <span style={{ color: "#722ed1" }}>
+                                {nodeDetailData.suspended_vm_num}台
+                              </span>
+                            </div>
+                          )}
+                          {nodeDetailData.error_vm_num > 0 && (
+                            <div>
+                              异常:{" "}
+                              <span style={{ color: "#ff4d4f" }}>
+                                {nodeDetailData.error_vm_num}台
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                   </Card>
                 </Col>
 
-                <Col xs={24} md={12}>
-                  <Card title="运行状态" size="small">
-                    <Descriptions column={1} bordered>
+                {/* 第三行：系统信息 */}
+                <Col xs={24} lg={12}>
+                  <Card title="系统信息" size="small">
+                    <Descriptions column={1} bordered size="small">
                       <Descriptions.Item label="节点名称">
-                        {nodeDetailData ? nodeDetailData.node_name : sidebarSelectedHost.name}
+                        {nodeDetailData
+                          ? nodeDetailData.node_name
+                          : sidebarSelectedHost.name}
                       </Descriptions.Item>
                       <Descriptions.Item label="集群名称">
                         {nodeDetailData ? nodeDetailData.cluster_name : "未知"}
                       </Descriptions.Item>
-                      <Descriptions.Item label="状态">
-                        {getStatusTag(sidebarSelectedHost.status)}
+                      <Descriptions.Item label="电源状态">
+                        {nodeDetailData?.power_state ? (
+                          <Tag
+                            color={
+                              formatPowerState(nodeDetailData.power_state).color
+                            }
+                          >
+                            {formatPowerState(nodeDetailData.power_state).text}
+                          </Tag>
+                        ) : (
+                          getStatusTag(sidebarSelectedHost.status)
+                        )}
                       </Descriptions.Item>
                       <Descriptions.Item label="运行时间">
-                        {nodeDetailData ? nodeDetailData.running_time : sidebarSelectedHost.uptime || "未知"}
+                        {nodeDetailData
+                          ? formatUptime(nodeDetailData.running_time)
+                          : sidebarSelectedHost.uptime || "未知"}
                       </Descriptions.Item>
-                      {nodeDetailData && nodeDetailData.suspended_vm_num > 0 && (
-                        <Descriptions.Item label="挂起虚拟机">
-                          {nodeDetailData.suspended_vm_num}台
-                        </Descriptions.Item>
-                      )}
-                      {nodeDetailData && nodeDetailData.error_vm_num > 0 && (
-                        <Descriptions.Item label="异常虚拟机">
-                          <span style={{ color: "#ff4d4f" }}>{nodeDetailData.error_vm_num}台</span>
-                        </Descriptions.Item>
-                      )}
                     </Descriptions>
+                  </Card>
+                </Col>
+
+                {/* 第四行：网络和负载信息 */}
+                <Col xs={24} lg={12}>
+                  <Card title="网络和负载" size="small">
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Statistic
+                          title="网络吞吐量"
+                          value={
+                            nodeDetailData?.network_throughput
+                              ? formatNetworkThroughput(
+                                  nodeDetailData.network_throughput
+                                )
+                              : "N/A"
+                          }
+                          prefix={<CloudServerOutlined />}
+                        />
+                      </Col>
+                      <Col span={12}>
+                        <Statistic
+                          title="系统负载"
+                          value={
+                            nodeDetailData?.load_average
+                              ? formatLoadAverage(nodeDetailData.load_average)
+                                  .display
+                              : "N/A"
+                          }
+                          prefix={<DashboardOutlined />}
+                          valueStyle={{
+                            color: nodeDetailData?.load_average
+                              ? formatLoadAverage(nodeDetailData.load_average)
+                                  .status === "high"
+                                ? "#ff4d4f"
+                                : formatLoadAverage(nodeDetailData.load_average)
+                                    .status === "medium"
+                                ? "#faad14"
+                                : "#3f8600"
+                              : "#666",
+                          }}
+                        />
+                        {nodeDetailData?.load_average && (
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "#666",
+                              marginTop: "4px",
+                            }}
+                          >
+                            1min, 5min, 15min
+                          </div>
+                        )}
+                      </Col>
+                    </Row>
                   </Card>
                 </Col>
               </Row>
@@ -1188,7 +1394,8 @@ const ClusterManagement: React.FC = () => {
               </div>
             ) : (
               <Row gutter={[16, 16]}>
-                <Col span={8}>
+                {/* 第一行：核心性能指标 - 响应式布局 */}
+                <Col xs={24} sm={12} md={8} lg={8} xl={8}>
                   <Card>
                     <Statistic
                       title="CPU 使用率"
@@ -1200,15 +1407,32 @@ const ClusterManagement: React.FC = () => {
                       prefix={<ThunderboltOutlined />}
                       suffix="%"
                     />
-                    <Progress percent={cpuUsagePercent} size="small" />
+                    <Progress
+                      percent={cpuUsagePercent}
+                      size="small"
+                      strokeColor={
+                        cpuUsagePercent > 80
+                          ? "#ff4d4f"
+                          : cpuUsagePercent > 60
+                          ? "#faad14"
+                          : "#52c41a"
+                      }
+                    />
                     {nodeDetailData && (
-                      <div style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
-                        使用: {nodeDetailData.cpu_used}核 / 总计: {nodeDetailData.cpu_total}核
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          color: "#666",
+                          marginTop: "8px",
+                        }}
+                      >
+                        使用: {nodeDetailData.cpu_used}核 / 总计:{" "}
+                        {nodeDetailData.cpu_total}核
                       </div>
                     )}
                   </Card>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8} lg={8} xl={8}>
                   <Card>
                     <Statistic
                       title="内存使用率"
@@ -1220,15 +1444,200 @@ const ClusterManagement: React.FC = () => {
                       prefix={<DatabaseOutlined />}
                       suffix="%"
                     />
-                    <Progress percent={memoryUsagePercent} size="small" />
+                    <Progress
+                      percent={memoryUsagePercent}
+                      size="small"
+                      strokeColor={
+                        memoryUsagePercent > 80
+                          ? "#ff4d4f"
+                          : memoryUsagePercent > 60
+                          ? "#faad14"
+                          : "#52c41a"
+                      }
+                    />
                     {nodeDetailData && (
-                      <div style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
-                        使用: {(nodeDetailData.mem_used / 1024).toFixed(1)}GB / 总计: {(nodeDetailData.mem_total / 1024).toFixed(1)}GB
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          color: "#666",
+                          marginTop: "8px",
+                        }}
+                      >
+                        使用: {(nodeDetailData.mem_used / 1024).toFixed(1)}GB /
+                        总计: {(nodeDetailData.mem_total / 1024).toFixed(1)}GB
                       </div>
                     )}
                   </Card>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                  <Card>
+                    <Statistic
+                      title="存储使用率"
+                      value={
+                        nodeDetailData?.storage_total &&
+                        nodeDetailData?.storage_used
+                          ? Math.round(
+                              (nodeDetailData.storage_used /
+                                nodeDetailData.storage_total) *
+                                100
+                            )
+                          : 0
+                      }
+                      precision={0}
+                      valueStyle={{
+                        color:
+                          nodeDetailData?.storage_total &&
+                          nodeDetailData?.storage_used &&
+                          (nodeDetailData.storage_used /
+                            nodeDetailData.storage_total) *
+                            100 >
+                            80
+                            ? "#ff4d4f"
+                            : "#3f8600",
+                      }}
+                      prefix={<HddOutlined />}
+                      suffix="%"
+                    />
+                    <Progress
+                      percent={
+                        nodeDetailData?.storage_total &&
+                        nodeDetailData?.storage_used
+                          ? Math.round(
+                              (nodeDetailData.storage_used /
+                                nodeDetailData.storage_total) *
+                                100
+                            )
+                          : 0
+                      }
+                      size="small"
+                      strokeColor={
+                        nodeDetailData?.storage_total &&
+                        nodeDetailData?.storage_used &&
+                        (nodeDetailData.storage_used /
+                          nodeDetailData.storage_total) *
+                          100 >
+                          80
+                          ? "#ff4d4f"
+                          : nodeDetailData?.storage_total &&
+                            nodeDetailData?.storage_used &&
+                            (nodeDetailData.storage_used /
+                              nodeDetailData.storage_total) *
+                              100 >
+                              60
+                          ? "#faad14"
+                          : "#52c41a"
+                      }
+                    />
+                    {nodeDetailData &&
+                      nodeDetailData.storage_total &&
+                      nodeDetailData.storage_used && (
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            color: "#666",
+                            marginTop: "8px",
+                          }}
+                        >
+                          使用:{" "}
+                          {(nodeDetailData.storage_used / 1024).toFixed(1)}TB /
+                          总计:{" "}
+                          {(nodeDetailData.storage_total / 1024).toFixed(1)}TB
+                        </div>
+                      )}
+                  </Card>
+                </Col>
+
+                {/* 第二行：系统性能指标 - 响应式布局 */}
+                <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                  <Card>
+                    <Statistic
+                      title="系统负载"
+                      value={
+                        nodeDetailData?.load_average
+                          ? formatLoadAverage(nodeDetailData.load_average)
+                              .display
+                          : "N/A"
+                      }
+                      prefix={<DashboardOutlined />}
+                      valueStyle={{
+                        color: nodeDetailData?.load_average
+                          ? formatLoadAverage(nodeDetailData.load_average)
+                              .status === "high"
+                            ? "#ff4d4f"
+                            : formatLoadAverage(nodeDetailData.load_average)
+                                .status === "medium"
+                            ? "#faad14"
+                            : "#3f8600"
+                          : "#666",
+                      }}
+                    />
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#666",
+                        marginTop: "8px",
+                      }}
+                    >
+                      1分钟, 5分钟, 15分钟平均负载
+                    </div>
+                    {nodeDetailData?.load_average && (
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          color: "#999",
+                          marginTop: "4px",
+                        }}
+                      >
+                        负载状态:{" "}
+                        {formatLoadAverage(nodeDetailData.load_average)
+                          .status === "high"
+                          ? "高负载"
+                          : formatLoadAverage(nodeDetailData.load_average)
+                              .status === "medium"
+                          ? "中等负载"
+                          : "低负载"}
+                      </div>
+                    )}
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                  <Card>
+                    <Statistic
+                      title="网络吞吐量"
+                      value={
+                        nodeDetailData?.network_throughput
+                          ? formatNetworkThroughput(
+                              nodeDetailData.network_throughput
+                            )
+                          : "N/A"
+                      }
+                      prefix={<CloudServerOutlined />}
+                    />
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#666",
+                        marginTop: "8px",
+                      }}
+                    >
+                      当前网络接口速率
+                    </div>
+                    {nodeDetailData?.network_throughput && (
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          color: "#999",
+                          marginTop: "4px",
+                        }}
+                      >
+                        {nodeDetailData.network_throughput >= 1000
+                          ? "千兆网络"
+                          : "百兆网络"}
+                      </div>
+                    )}
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} md={8} lg={8} xl={8}>
                   <Card>
                     <Statistic
                       title="虚拟机数量"
@@ -1236,15 +1645,110 @@ const ClusterManagement: React.FC = () => {
                       prefix={<DesktopOutlined />}
                       suffix="台"
                     />
-                    {nodeDetailData && (
-                      <div style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
-                        <div>运行: {nodeDetailData.running_vm_num}台</div>
-                        <div>停止: {nodeDetailData.stopped_vm_num}台</div>
-                        {nodeDetailData.error_vm_num > 0 && (
-                          <div style={{ color: "#ff4d4f" }}>异常: {nodeDetailData.error_vm_num}台</div>
-                        )}
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#666",
+                        marginTop: "8px",
+                      }}
+                    >
+                      <div>
+                        运行:{" "}
+                        <span style={{ color: "#52c41a" }}>
+                          {nodeDetailData?.running_vm_num || 0}台
+                        </span>
+                      </div>
+                      <div>
+                        停止:{" "}
+                        <span style={{ color: "#d9d9d9" }}>
+                          {nodeDetailData?.stopped_vm_num || 0}台
+                        </span>
+                      </div>
+                      {nodeDetailData && nodeDetailData.error_vm_num > 0 && (
+                        <div>
+                          异常:{" "}
+                          <span style={{ color: "#ff4d4f" }}>
+                            {nodeDetailData.error_vm_num}台
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {nodeDetailData?.vm_max_allowed && (
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          color: "#999",
+                          marginTop: "4px",
+                        }}
+                      >
+                        容量限制: {nodeDetailData.vm_max_allowed}台 (剩余{" "}
+                        {nodeDetailData.vm_max_allowed - totalVmsCount}台)
                       </div>
                     )}
+                  </Card>
+                </Col>
+
+                {/* 第三行：运行状态监控 - 响应式布局 */}
+                <Col span={24}>
+                  <Card title="运行状态监控" size="small">
+                    <Row gutter={16}>
+                      <Col xs={24} sm={12} md={6}>
+                        <Statistic
+                          title="电源状态"
+                          value={
+                            nodeDetailData?.power_state
+                              ? formatPowerState(nodeDetailData.power_state)
+                                  .text
+                              : "在线"
+                          }
+                          prefix={<PoweroffOutlined />}
+                          valueStyle={{
+                            color: nodeDetailData?.power_state
+                              ? formatPowerState(nodeDetailData.power_state)
+                                  .color === "success"
+                                ? "#52c41a"
+                                : formatPowerState(nodeDetailData.power_state)
+                                    .color === "error"
+                                ? "#ff4d4f"
+                                : "#faad14"
+                              : "#52c41a",
+                          }}
+                        />
+                      </Col>
+                      <Col xs={24} sm={12} md={6}>
+                        <Statistic
+                          title="运行时间"
+                          value={
+                            nodeDetailData
+                              ? formatUptime(nodeDetailData.running_time)
+                              : "未知"
+                          }
+                          prefix={<MonitorOutlined />}
+                        />
+                      </Col>
+                      <Col xs={24} sm={12} md={6}>
+                        <Statistic
+                          title="集群角色"
+                          value={
+                            nodeDetailData
+                              ? nodeDetailData.cluster_name || "独立节点"
+                              : "未知"
+                          }
+                          prefix={<ClusterOutlined />}
+                        />
+                      </Col>
+                      <Col xs={24} sm={12} md={6}>
+                        <Statistic
+                          title="节点名称"
+                          value={
+                            nodeDetailData
+                              ? nodeDetailData.node_name
+                              : sidebarSelectedHost.name
+                          }
+                          prefix={<HddOutlined />}
+                        />
+                      </Col>
+                    </Row>
                   </Card>
                 </Col>
               </Row>
@@ -1260,9 +1764,16 @@ const ClusterManagement: React.FC = () => {
           title={
             <Space>
               <HddOutlined />
-              <span>物理主机详情 - {nodeDetailData ? nodeDetailData.node_name : sidebarSelectedHost.name}</span>
+              <span>
+                物理主机详情 -{" "}
+                {nodeDetailData
+                  ? nodeDetailData.node_name
+                  : sidebarSelectedHost.name}
+              </span>
               {getStatusTag(sidebarSelectedHost.status)}
-              {nodeDetailLoading && <SyncOutlined spin style={{ marginLeft: "8px" }} />}
+              {nodeDetailLoading && (
+                <SyncOutlined spin style={{ marginLeft: "8px" }} />
+              )}
             </Space>
           }
           extra={
@@ -1272,7 +1783,9 @@ const ClusterManagement: React.FC = () => {
                 icon={<SyncOutlined />}
                 loading={nodeDetailLoading}
                 onClick={() => {
-                  console.log(`🔄 [Refresh] 手动刷新主机 ${sidebarSelectedHost.name} 的详细信息`);
+                  console.log(
+                    `🔄 [Refresh] 手动刷新主机 ${sidebarSelectedHost.name} 的详细信息`
+                  );
                   fetchNodeDetailData(sidebarSelectedHost.name);
                 }}
               >

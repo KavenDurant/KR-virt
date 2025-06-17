@@ -1329,6 +1329,13 @@ class ClusterInitService {
       suspended_vm_num: 1,
       error_vm_num: 0,
       other_vm_num: 0,
+      // 新增字段的模拟数据
+      storage_total: 2048,      // 2TB存储
+      storage_used: 1024,       // 已用1TB
+      network_throughput: 1000, // 1Gbps网络
+      load_average: "0.8,1.2,1.5", // 系统负载
+      vm_max_allowed: 50,       // 最大支持50台虚拟机
+      power_state: "powered_on", // 电源状态
     };
 
     return {

@@ -20,6 +20,9 @@ import {
   Descriptions,
   Alert,
   App,
+  Modal,
+  Form,
+  Input,
 } from "antd";
 import {
   SyncOutlined,
@@ -39,6 +42,10 @@ import {
   DashboardOutlined,
   SafetyOutlined,
   PoweroffOutlined,
+  ReloadOutlined,
+  StopOutlined,
+  PlayCircleOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import {
   formatResourceUsage,
@@ -217,6 +224,36 @@ const ClusterManagement: React.FC = () => {
     useState<NodeSummaryResponse | null>(null);
   const [nodeDetailLoading, setNodeDetailLoading] = useState(false);
   const [nodeDetailError, setNodeDetailError] = useState<string | null>(null);
+
+  // 节点操作相关状态
+  const [nodeOperationLoading, setNodeOperationLoading] = useState<
+    string | null
+  >(null);
+
+  // 添加节点相关状态
+  const [addNodeModalVisible, setAddNodeModalVisible] = useState(false);
+  const [addNodeLoading, setAddNodeLoading] = useState(false);
+
+  // ===== 节点操作相关函数 =====
+
+  /**
+   * 检查节点是否可以进入维护模式（需要所有虚拟机都关机）
+   */
+  const checkCanEnterMaintenance = useCallback(
+    async (hostname: string): Promise<boolean> => {
+      try {
+        const result = await clusterInitService.checkNodeStatus(hostname);
+        if (result.success && result.data) {
+          return result.data.running_vms === 0;
+        }
+        return false;
+      } catch (error) {
+        console.error("检查节点状态失败:", error);
+        return false;
+      }
+    },
+    []
+  );
 
   // 监听侧边栏选择事件
   useEffect(() => {
@@ -462,6 +499,203 @@ const ClusterManagement: React.FC = () => {
     () => withApiLock("fetchNodeDetailData", fetchNodeDetailDataBase),
     [withApiLock, fetchNodeDetailDataBase]
   );
+
+  // 节点操作处理函数
+  const handleNodeOperation = useCallback(
+    async (
+      operation:
+        | "reboot"
+        | "stop"
+        | "enter_maintenance"
+        | "exit_maintenance"
+        | "migrate",
+      hostname: string
+    ) => {
+      try {
+        // 检查维护模式权限
+        if (operation === "enter_maintenance") {
+          const canEnter = await checkCanEnterMaintenance(hostname);
+          if (!canEnter) {
+            modal.error({
+              title: "无法进入维护模式",
+              content:
+                "该主机上还有运行中的虚拟机，请先关闭所有虚拟机后再进入维护模式。",
+            });
+            return;
+          }
+        }
+
+        // 确认对话框
+        const operationNames = {
+          reboot: "重启主机",
+          stop: "关闭主机",
+          enter_maintenance: "进入维护模式",
+          exit_maintenance: "退出维护模式",
+          migrate: "迁移虚拟机",
+        };
+
+        modal.confirm({
+          title: `确认${operationNames[operation]}`,
+          content: `您确定要${operationNames[operation]} "${hostname}" 吗？`,
+          onOk: async () => {
+            setNodeOperationLoading(operation);
+
+            try {
+              let result;
+              switch (operation) {
+                case "reboot":
+                  result = await clusterInitService.rebootNode(hostname);
+                  break;
+                case "stop":
+                  result = await clusterInitService.stopNode(hostname);
+                  break;
+                case "enter_maintenance":
+                  result = await clusterInitService.enterMaintenanceMode(
+                    hostname
+                  );
+                  break;
+                case "exit_maintenance":
+                  result = await clusterInitService.exitMaintenanceMode(
+                    hostname
+                  );
+                  break;
+                case "migrate":
+                  // 暂时使用占位符实现 - 需要VM ID和目标主机
+                  result = await clusterInitService.migrateVM({
+                    vm_id: "placeholder-vm-id", // 实际实现时需要从UI获取
+                    source_node: hostname,
+                    target_node: "target-host", // 实际实现时需要从UI选择
+                    live_migration: true,
+                  });
+                  break;
+                default:
+                  throw new Error(`未知操作: ${operation}`);
+              }
+
+              if (result.success) {
+                // 刷新节点详细信息
+                fetchNodeDetailData(hostname);
+                modal.success({
+                  title: "操作成功",
+                  content: `${operationNames[operation]}操作已成功执行`,
+                });
+              } else {
+                modal.error({
+                  title: "操作失败",
+                  content:
+                    result.message || `${operationNames[operation]}操作失败`,
+                });
+              }
+            } catch (error) {
+              console.error(`${operation} operation failed:`, error);
+              modal.error({
+                title: "操作失败",
+                content: `${operationNames[operation]}操作执行失败`,
+              });
+            } finally {
+              setNodeOperationLoading(null);
+            }
+          },
+        });
+      } catch (error) {
+        console.error(`Error in handleNodeOperation:`, error);
+        modal.error({
+          title: "操作失败",
+          content: "操作执行过程中发生错误",
+        });
+      }
+    },
+    [checkCanEnterMaintenance, fetchNodeDetailData, modal]
+  );
+
+  // 添加节点处理函数
+  const handleAddNode = useCallback(
+    async (values: { join_ip: string; join_hostname: string }) => {
+      setAddNodeLoading(true);
+      try {
+        const result = await clusterInitService.addNode(values);
+        if (result.success) {
+          modal.success({
+            title: "添加节点成功",
+            content:
+              result.message ||
+              `节点 ${values.join_hostname} (${values.join_ip}) 已成功添加到集群`,
+          });
+          setAddNodeModalVisible(false);
+          // 刷新物理机列表
+          fetchRealClusterData();
+
+          // 触发侧边栏刷新事件
+          const refreshSidebarEvent = new CustomEvent("refresh-sidebar", {
+            detail: { type: "cluster", action: "node-added" },
+          });
+          window.dispatchEvent(refreshSidebarEvent);
+        } else {
+          modal.error({
+            title: "添加节点失败",
+            content: result.message || "添加节点失败，请检查节点信息",
+          });
+        }
+      } catch (error) {
+        console.error("添加节点失败:", error);
+        modal.error({
+          title: "添加节点失败",
+          content: "添加节点过程中发生错误，请稍后重试",
+        });
+      } finally {
+        setAddNodeLoading(false);
+      }
+    },
+    [modal, fetchRealClusterData]
+  );
+
+  // 监听侧边栏主机操作事件
+  useEffect(() => {
+    const handleSidebarHostAction = (event: CustomEvent) => {
+      const { action, hostname } = event.detail;
+      console.log("集群页面收到侧边栏主机操作事件:", { action, hostname });
+
+      // 将操作映射到正确的操作类型
+      let operation:
+        | "reboot"
+        | "stop"
+        | "enter_maintenance"
+        | "exit_maintenance"
+        | "migrate";
+      switch (action) {
+        case "reboot":
+          operation = "reboot";
+          break;
+        case "shutdown":
+          operation = "stop";
+          break;
+        case "maintenance":
+          operation = "enter_maintenance";
+          break;
+        case "migrate":
+          operation = "migrate";
+          break;
+        default:
+          console.warn(`未知的主机操作: ${action}`);
+          return;
+      }
+
+      // 调用主机操作处理函数
+      handleNodeOperation(operation, hostname);
+    };
+
+    window.addEventListener(
+      "hierarchical-sidebar-host-action",
+      handleSidebarHostAction as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "hierarchical-sidebar-host-action",
+        handleSidebarHostAction as EventListener
+      );
+    };
+  }, [handleNodeOperation]);
 
   // 监听主机选择变化，自动获取详细信息
   useEffect(() => {
@@ -1804,6 +2038,64 @@ const ClusterManagement: React.FC = () => {
             </Space>
           }
         >
+          {/* 物理机操作区域 */}
+          <Card title="主机操作" style={{ marginBottom: "16px" }} size="small">
+            <Space wrap>
+              <Button
+                icon={<ReloadOutlined />}
+                loading={nodeOperationLoading === "reboot"}
+                onClick={() =>
+                  handleNodeOperation("reboot", sidebarSelectedHost.name)
+                }
+              >
+                重启主机
+              </Button>
+              <Button
+                icon={<PoweroffOutlined />}
+                danger
+                loading={nodeOperationLoading === "stop"}
+                onClick={() =>
+                  handleNodeOperation("stop", sidebarSelectedHost.name)
+                }
+              >
+                关闭主机
+              </Button>
+              <Button
+                icon={<StopOutlined />}
+                loading={nodeOperationLoading === "enter_maintenance"}
+                onClick={() =>
+                  handleNodeOperation(
+                    "enter_maintenance",
+                    sidebarSelectedHost.name
+                  )
+                }
+              >
+                进入维护模式
+              </Button>
+              <Button
+                icon={<PlayCircleOutlined />}
+                loading={nodeOperationLoading === "exit_maintenance"}
+                onClick={() =>
+                  handleNodeOperation(
+                    "exit_maintenance",
+                    sidebarSelectedHost.name
+                  )
+                }
+              >
+                退出维护模式
+              </Button>
+              <Button
+                icon={<CloudServerOutlined />}
+                loading={nodeOperationLoading === "migrate"}
+                disabled
+                onClick={() =>
+                  handleNodeOperation("migrate", sidebarSelectedHost.name)
+                }
+              >
+                迁移虚拟机
+              </Button>
+            </Space>
+          </Card>
           <Tabs items={hostDetailTabs} />
         </Card>
       </div>
@@ -2079,7 +2371,7 @@ const ClusterManagement: React.FC = () => {
                     {/* 统计信息 */}
                     <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
                       <Col xs={24} sm={8} md={6}>
-                        <Card>
+                        <Card size="small">
                           <Statistic
                             title="配置节点数"
                             value={clusterSummaryData.nodes_configured}
@@ -2089,7 +2381,7 @@ const ClusterManagement: React.FC = () => {
                         </Card>
                       </Col>
                       <Col xs={24} sm={8} md={6}>
-                        <Card>
+                        <Card size="small">
                           <Statistic
                             title="在线节点数"
                             value={
@@ -2103,7 +2395,7 @@ const ClusterManagement: React.FC = () => {
                         </Card>
                       </Col>
                       <Col xs={24} sm={8} md={6}>
-                        <Card>
+                        <Card size="small">
                           <Statistic
                             title="配置资源数"
                             value={clusterSummaryData.resources_configured}
@@ -2113,7 +2405,7 @@ const ClusterManagement: React.FC = () => {
                         </Card>
                       </Col>
                       <Col xs={24} sm={8} md={6}>
-                        <Card>
+                        <Card size="small">
                           <Statistic
                             title="运行资源数"
                             value={
@@ -2311,13 +2603,23 @@ const ClusterManagement: React.FC = () => {
                         </Space>
                       }
                       extra={
-                        <Button
-                          size="small"
-                          icon={<SyncOutlined />}
-                          onClick={fetchRealClusterData}
-                        >
-                          刷新
-                        </Button>
+                        <Space>
+                          <Button
+                            size="small"
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => setAddNodeModalVisible(true)}
+                          >
+                            添加节点
+                          </Button>
+                          <Button
+                            size="small"
+                            icon={<SyncOutlined />}
+                            onClick={fetchRealClusterData}
+                          >
+                            刷新
+                          </Button>
+                        </Space>
                       }
                     >
                       <Table
@@ -2865,6 +3167,65 @@ const ClusterManagement: React.FC = () => {
           },
         ]}
       />
+
+      {/* 添加节点弹窗 */}
+      <Modal
+        title="添加节点到集群"
+        open={addNodeModalVisible}
+        onCancel={() => {
+          setAddNodeModalVisible(false);
+          // 重置表单在destroyOnClose为true时会自动处理
+        }}
+        footer={null}
+        destroyOnClose
+        width={500}
+      >
+        <Form layout="vertical" onFinish={handleAddNode} autoComplete="off">
+          <Form.Item
+            label="节点IP地址"
+            name="join_ip"
+            rules={[
+              { required: true, message: "请输入节点IP地址" },
+              {
+                pattern:
+                  /^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$/,
+                message: "请输入有效的IP地址",
+              },
+            ]}
+          >
+            <Input placeholder="例如: 192.168.1.100" />
+          </Form.Item>
+          <Form.Item
+            label="节点主机名"
+            name="join_hostname"
+            rules={[
+              { required: true, message: "请输入节点主机名" },
+              {
+                pattern: /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/,
+                message:
+                  "主机名只能包含字母、数字和连字符，且不能以连字符开头或结尾",
+              },
+            ]}
+          >
+            <Input placeholder="例如: node-2" />
+          </Form.Item>
+          <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+            <Space>
+              <Button onClick={() => setAddNodeModalVisible(false)}>
+                取消
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={addNodeLoading}
+                icon={<PlusOutlined />}
+              >
+                添加节点
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

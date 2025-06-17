@@ -149,13 +149,17 @@ class TokenManager {
   }
 
   static async refreshTokenIfNeeded(): Promise<string | null> {
-    if (this.isTokenValid()) {
-      return this.getToken();
+    // 先检查当前token是否有效
+    const currentToken = this.getToken();
+    if (currentToken && this.isTokenValid()) {
+      return currentToken;
     }
 
+    // 如果token无效，尝试使用refresh token刷新
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {
-      return null;
+      console.warn("No refresh token available");
+      return currentToken; // 返回当前token，即使可能无效
     }
 
     // 防止并发刷新
@@ -169,10 +173,11 @@ class TokenManager {
       const newToken = await this.refreshPromise;
       this.refreshPromise = null;
       return newToken;
-    } catch {
+    } catch (error) {
+      console.error("Token refresh failed:", error);
       this.refreshPromise = null;
-      this.clearTokens();
-      throw new Error("Token refresh failed");
+      // 不清除tokens，让当前token继续尝试
+      return currentToken;
     }
   }
 
@@ -422,12 +427,25 @@ const createAxiosInstance = (): AxiosInstance => {
       // 处理认证
       if (!customConfig.skipAuth) {
         try {
-          const token = await TokenManager.refreshTokenIfNeeded();
+          // 首先尝试获取当前token
+          let token = TokenManager.getToken();
+
+          // 如果没有token或token无效，尝试刷新
+          if (!token || !TokenManager.isTokenValid()) {
+            token = await TokenManager.refreshTokenIfNeeded();
+          }
+
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+          } else {
+            // 没有有效token，跳转登录页
+            console.warn("No valid token available, redirecting to login");
+            window.location.href = "/login";
+            return Promise.reject(new Error("No valid token"));
           }
-        } catch {
+        } catch (error) {
           // Token刷新失败，跳转到登录页
+          console.error("Token refresh failed:", error);
           window.location.href = "/login";
           return Promise.reject(new Error("Authentication failed"));
         }

@@ -51,6 +51,19 @@ export interface JoinClusterRequest {
   disposable_secret_key: string;
 }
 
+// 添加节点请求参数
+export interface AddNodeRequest {
+  join_ip: string;
+  join_hostname: string;
+}
+
+// 添加节点响应
+export interface AddNodeResponse {
+  message: string;
+  node_id?: string;
+  status?: string;
+}
+
 // 创建集群响应
 export interface CreateClusterResponse {
   message: string;
@@ -252,4 +265,40 @@ export interface NodeSummaryResponse {
   load_average?: string; // 系统负载（格式: "0.8,1.2,1.5"）
   vm_max_allowed?: number; // 最大可创建虚拟机数量
   power_state?: string; // 电源状态
+}
+
+// === 节点操作相关类型 ===
+
+// 节点操作请求参数
+export interface NodeOperationRequest {
+  hostname: string;
+}
+
+// 节点操作响应
+export interface NodeOperationResponse {
+  message: string;
+}
+
+// 节点状态检查响应
+export interface NodeStatusResponse {
+  hostname: string;
+  status: string;
+  running_vms: number;
+  stopped_vms: number;
+  maintenance_mode: boolean;
+  power_state: string;
+}
+
+// 虚拟机迁移请求参数
+export interface VMigrationRequest {
+  vm_id: string;
+  source_node: string;
+  target_node: string;
+  live_migration?: boolean; // 是否为在线迁移
+}
+
+// 虚拟机迁移响应
+export interface VMigrationResponse {
+  message: string;
+  task_id?: string; // 迁移任务ID
 }

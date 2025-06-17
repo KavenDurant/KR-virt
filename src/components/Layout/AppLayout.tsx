@@ -152,6 +152,25 @@ const AppLayout: React.FC = () => {
     }
   }, [selectedActivityItem, shouldShowSidebar, loadSidebarData]);
 
+  // 监听侧边栏刷新事件
+  useEffect(() => {
+    const handleSidebarRefresh = (event: CustomEvent) => {
+      console.log("收到侧边栏刷新事件:", event.detail);
+
+      // 只有在显示集群侧边栏时才刷新
+      if (shouldShowSidebar && selectedActivityItem === "/cluster") {
+        console.log("正在刷新集群侧边栏数据...");
+        loadSidebarData(selectedActivityItem);
+      }
+    };
+
+    window.addEventListener("refresh-sidebar", handleSidebarRefresh as EventListener);
+
+    return () => {
+      window.removeEventListener("refresh-sidebar", handleSidebarRefresh as EventListener);
+    };
+  }, [shouldShowSidebar, selectedActivityItem, loadSidebarData]);
+
   // 初始加载时设置侧边栏宽度
   useEffect(() => {
     // 确保侧边栏宽度与localStorage同步（仅在组件挂载时）

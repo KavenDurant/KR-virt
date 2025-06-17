@@ -234,87 +234,15 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
 
   // 物理机操作处理函数
   const handleHostAction = (action: string, host: Node) => {
-    const statusMap = {
-      online: "在线",
-      offline: "离线",
-    };
-
-    const currentStatus = statusMap[host.status] || host.status;
-
-    switch (action) {
-      case "reboot":
-        message.loading({
-          content: `正在重启物理主机 ${host.name}...`,
-          key: "host-action",
-          duration: 3,
-        });
-        setTimeout(() => {
-          message.success({
-            content: `物理主机 ${host.name} 重启成功`,
-            key: "host-action",
-            duration: 2,
-          });
-        }, 3000);
-        break;
-      case "shutdown":
-        message.loading({
-          content: `正在关闭物理主机 ${host.name}...`,
-          key: "host-action",
-          duration: 3,
-        });
-        setTimeout(() => {
-          message.success({
-            content: `物理主机 ${host.name} 关闭成功`,
-            key: "host-action",
-            duration: 2,
-          });
-        }, 3000);
-        break;
-      case "maintenance":
-        message.loading({
-          content: `正在进入维护模式 ${host.name}...`,
-          key: "host-action",
-          duration: 2,
-        });
-        setTimeout(() => {
-          message.success({
-            content: `物理主机 ${host.name} 已进入维护模式`,
-            key: "host-action",
-            duration: 2,
-          });
-        }, 2000);
-        break;
-      case "migrate":
-        message.loading({
-          content: `正在迁移 ${host.name} 上的虚拟机...`,
-          key: "host-action",
-          duration: 4,
-        });
-        setTimeout(() => {
-          message.success({
-            content: `虚拟机迁移完成`,
-            key: "host-action",
-            duration: 2,
-          });
-        }, 4000);
-        break;
-      case "console":
-        message.loading({
-          content: `正在连接物理主机 ${host.name} 控制台...`,
-          key: "host-action",
-          duration: 1,
-        });
-        setTimeout(() => {
-          message.success({
-            content: `物理主机 ${host.name} 控制台已打开`,
-            key: "host-action",
-            duration: 2,
-          });
-        }, 1000);
-        break;
-      default:
-        message.info(`执行操作: ${action} - ${host.name} (${currentStatus})`);
-    }
+    // 发送自定义事件到集群页面进行真实API调用
+    const event = new CustomEvent("hierarchical-sidebar-host-action", {
+      detail: {
+        action,
+        hostname: host.name,
+        hostData: host
+      }
+    });
+    window.dispatchEvent(event);
   };
 
   // 获取物理机右键菜单项

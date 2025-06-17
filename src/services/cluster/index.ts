@@ -14,6 +14,8 @@ import type {
   CreateClusterRequest,
   JoinClusterRequest,
   CreateClusterResponse,
+  AddNodeRequest,
+  AddNodeResponse,
   HostnameResponse,
   IpAddressesResponse,
   DissolveClusterResponse,
@@ -22,6 +24,10 @@ import type {
   ClusterResourcesResponse,
   ClusterTreeResponse,
   NodeSummaryResponse,
+  NodeOperationResponse,
+  NodeStatusResponse,
+  VMigrationRequest,
+  VMigrationResponse,
 } from "./types";
 
 // 配置区域
@@ -233,6 +239,29 @@ class ClusterInitService {
   }
 
   /**
+   * 添加节点到集群
+   */
+  async addNode(nodeData: AddNodeRequest): Promise<StandardResponse<AddNodeResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post('/cluster/approve', nodeData, {
+        useMock: true,
+        mockData: { 
+          message: `节点 ${nodeData.join_hostname} (${nodeData.join_ip}) 添加成功`,
+          node_id: `node-${Date.now()}`,
+          status: "approved"
+        },
+        defaultSuccessMessage: "节点添加成功",
+      }) as Promise<StandardResponse<AddNodeResponse>>;
+    }
+
+    return api.post<AddNodeResponse>('/cluster/approve', nodeData, {
+      skipAuth: false,
+      defaultSuccessMessage: "节点添加成功",
+      defaultErrorMessage: "添加节点失败，请检查节点信息",
+    });
+  }
+
+  /**
    * 获取集群节点列表
    */
   async getClusterNodes(): Promise<StandardResponse<ClusterNodesResponse>> {
@@ -339,6 +368,125 @@ class ClusterInitService {
    */
   clearAuthToken(): void {
     CookieUtils.remove(this.AUTH_TOKEN_KEY);
+  }
+
+  // ===== 节点操作方法 =====
+  
+  /**
+   * 检查节点状态，包括虚拟机运行情况
+   */
+  async checkNodeStatus(hostname: string): Promise<StandardResponse<NodeStatusResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.get('/node/status', { hostname }, {
+        useMock: true,
+        mockData: this.getMockNodeStatus(hostname),
+        defaultSuccessMessage: "获取节点状态成功",
+      });
+    }
+
+    return api.get<NodeStatusResponse>(`/node/status?hostname=${hostname}`, {}, {
+      skipAuth: false,
+      defaultSuccessMessage: "获取节点状态成功",
+      defaultErrorMessage: "获取节点状态失败，请检查网络连接",
+    });
+  }
+
+  /**
+   * 关机节点
+   */
+  async stopNode(hostname: string): Promise<StandardResponse<NodeOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post('/node/stop', { hostname }, {
+        useMock: true,
+        mockData: { message: `节点 ${hostname} 关机指令已发送`, success: true },
+        defaultSuccessMessage: "节点关机指令已发送",
+      });
+    }
+
+    return api.post<NodeOperationResponse>('/node/stop', { hostname }, {
+      skipAuth: false,
+      defaultSuccessMessage: "节点关机指令已发送",
+      defaultErrorMessage: "节点关机失败，请稍后重试",
+    });
+  }
+
+  /**
+   * 重启节点
+   */
+  async rebootNode(hostname: string): Promise<StandardResponse<NodeOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post('/node/reboot', { hostname }, {
+        useMock: true,
+        mockData: { message: `节点 ${hostname} 重启指令已发送`, success: true },
+        defaultSuccessMessage: "节点重启指令已发送",
+      });
+    }
+
+    return api.post<NodeOperationResponse>('/node/reboot', { hostname }, {
+      skipAuth: false,
+      defaultSuccessMessage: "节点重启指令已发送",
+      defaultErrorMessage: "节点重启失败，请稍后重试",
+    });
+  }
+
+  /**
+   * 进入维护模式
+   */
+  async enterMaintenanceMode(hostname: string): Promise<StandardResponse<NodeOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post('/node/enter_maintenance', { hostname }, {
+        useMock: true,
+        mockData: { message: `节点 ${hostname} 已进入维护模式`, success: true },
+        defaultSuccessMessage: "节点已进入维护模式",
+      });
+    }
+
+    return api.post<NodeOperationResponse>('/node/enter_maintenance', { hostname }, {
+      skipAuth: false,
+      defaultSuccessMessage: "节点已进入维护模式",
+      defaultErrorMessage: "进入维护模式失败，请稍后重试",
+    });
+  }
+
+  /**
+   * 退出维护模式
+   */
+  async exitMaintenanceMode(hostname: string): Promise<StandardResponse<NodeOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post('/node/exit_maintenance', { hostname }, {
+        useMock: true,
+        mockData: { message: `节点 ${hostname} 已退出维护模式`, success: true },
+        defaultSuccessMessage: "节点已退出维护模式",
+      });
+    }
+
+    return api.post<NodeOperationResponse>('/node/exit_maintenance', { hostname }, {
+      skipAuth: false,
+      defaultSuccessMessage: "节点已退出维护模式",
+      defaultErrorMessage: "退出维护模式失败，请稍后重试",
+    });
+  }
+
+  /**
+   * 迁移虚拟机 (暂时只返回占位实现)
+   */
+  async migrateVM(vmMigrationData: VMigrationRequest): Promise<StandardResponse<VMigrationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post('/vm/migrate', vmMigrationData, {
+        useMock: true,
+        mockData: { 
+          message: `虚拟机 ${vmMigrationData.vm_id} 迁移任务已创建`, 
+          task_id: `migration_${Date.now()}`
+        },
+        defaultSuccessMessage: "虚拟机迁移任务已创建",
+      });
+    }
+
+    // TODO: 实际API实现，暂时返回未实现消息
+    return Promise.resolve({
+      success: false,
+      message: "虚拟机迁移功能暂未实现",
+    });
   }
 
   // ===== 模拟数据方法 =====
@@ -594,6 +742,20 @@ class ClusterInitService {
       load_average: "0.8,1.2,1.5", // 系统负载
       vm_max_allowed: 50,       // 最大支持50台虚拟机
       power_state: "powered_on", // 电源状态
+    };
+  }
+
+  /**
+   * 获取模拟节点状态
+   */
+  private getMockNodeStatus(hostname: string): NodeStatusResponse {
+    return {
+      hostname: hostname,
+      status: "online",
+      running_vms: 3,
+      stopped_vms: 2,
+      maintenance_mode: false,
+      power_state: "powered_on",
     };
   }
 }

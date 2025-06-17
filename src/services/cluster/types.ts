@@ -259,6 +259,8 @@ export interface NodeSummaryResponse {
   running_time: number;
   cpu_total: number;
   mem_total: number;
+  disk_total?: number; // 物理机系统盘总容量（GB）
+  disk_used?: number; // 物理机系统盘已用容量（GB）
   cpu_used: number;
   mem_used: number;
   vms_num: number;

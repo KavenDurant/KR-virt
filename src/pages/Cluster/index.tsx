@@ -246,22 +246,27 @@ const ClusterManagement: React.FC = () => {
   // ===== 节点操作相关函数 =====
 
   /**
-   * 检查节点是否可以进入维护模式（需要所有虚拟机都关机）
+   * 检查节点是否可以进入维护模式（基于节点摘要数据检查运行中的虚拟机）
    */
   const checkCanEnterMaintenance = useCallback(
-    async (hostname: string): Promise<boolean> => {
+    (hostname: string): boolean => {
       try {
-        const result = await clusterInitService.checkNodeStatus(hostname);
-        if (result.success && result.data) {
-          return result.data.running_vms === 0;
+        // 使用节点摘要数据来检查，避免调用不存在的checkNodeStatus接口
+        if (nodeDetailData && nodeDetailData.node_name === hostname) {
+          return nodeDetailData.running_vm_num === 0;
         }
-        return false;
+        
+        // 如果没有节点详情数据，则直接允许进入维护模式
+        // 后端会在实际操作时进行检查
+        console.warn(`没有找到节点 ${hostname} 的详情数据，允许尝试进入维护模式`);
+        return true;
       } catch (error) {
         console.error("检查节点状态失败:", error);
-        return false;
+        // 出错时也允许尝试，让后端来决定是否可以进入维护模式
+        return true;
       }
     },
-    []
+    [nodeDetailData]
   );
 
   // 监听侧边栏选择事件
@@ -523,7 +528,7 @@ const ClusterManagement: React.FC = () => {
       try {
         // 检查维护模式权限
         if (operation === "enter_maintenance") {
-          const canEnter = await checkCanEnterMaintenance(hostname);
+          const canEnter = checkCanEnterMaintenance(hostname);
           if (!canEnter) {
             modal.error({
               title: "无法进入维护模式",
@@ -1673,7 +1678,99 @@ const ClusterManagement: React.FC = () => {
                   </Card>
                 </Col>
 
-                {/* 第四行：网络和负载信息 */}
+                {/* 第四行：磁盘信息 */}
+                <Col xs={24} lg={12}>
+                  <Card title="磁盘信息" size="small">
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Statistic
+                          title="系统盘使用率"
+                          value={
+                            nodeDetailData?.disk_total &&
+                            nodeDetailData?.disk_used
+                              ? Math.round(
+                                  (nodeDetailData.disk_used /
+                                    nodeDetailData.disk_total) *
+                                    100
+                                )
+                              : 0
+                          }
+                          suffix="%"
+                          valueStyle={{
+                            color:
+                              nodeDetailData?.disk_total &&
+                              nodeDetailData?.disk_used &&
+                              (nodeDetailData.disk_used /
+                                nodeDetailData.disk_total) *
+                                100 >
+                                80
+                                ? "#ff4d4f"
+                                : nodeDetailData?.disk_total &&
+                                  nodeDetailData?.disk_used &&
+                                  (nodeDetailData.disk_used /
+                                    nodeDetailData.disk_total) *
+                                    100 >
+                                    60
+                                ? "#faad14"
+                                : "#3f8600",
+                          }}
+                          prefix={<HddOutlined />}
+                        />
+                        {nodeDetailData &&
+                          nodeDetailData.disk_total &&
+                          nodeDetailData.disk_used && (
+                            <div
+                              style={{
+                                fontSize: "12px",
+                                color: "#666",
+                                marginTop: "4px",
+                              }}
+                            >
+                              已用: {nodeDetailData.disk_used}GB / 总计:{" "}
+                              {nodeDetailData.disk_total}GB
+                            </div>
+                          )}
+                      </Col>
+                      <Col span={12}>
+                        <Statistic
+                          title="可用空间"
+                          value={
+                            nodeDetailData?.disk_total &&
+                            nodeDetailData?.disk_used
+                              ? nodeDetailData.disk_total -
+                                nodeDetailData.disk_used
+                              : 0
+                          }
+                          suffix="GB"
+                          valueStyle={{ color: "#3f8600" }}
+                          prefix={<DatabaseOutlined />}
+                        />
+                        {nodeDetailData &&
+                          nodeDetailData.disk_total &&
+                          nodeDetailData.disk_used && (
+                            <div
+                              style={{
+                                fontSize: "12px",
+                                color: "#666",
+                                marginTop: "4px",
+                              }}
+                            >
+                              可用率:{" "}
+                              {(
+                                ((nodeDetailData.disk_total -
+                                  nodeDetailData.disk_used) /
+                                  nodeDetailData.disk_total) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </div>
+                          )}
+                      </Col>
+                    </Row>
+                  </Card>
+                </Col>
+
+                {/* 第五行：网络和负载信息 */}
                 <Col xs={24} lg={12}>
                   <Card title="网络和负载" size="small">
                     <Row gutter={16}>
@@ -2044,6 +2141,90 @@ const ClusterManagement: React.FC = () => {
                         {nodeDetailData.vm_max_allowed - totalVmsCount}台)
                       </div>
                     )}
+                  </Card>
+                </Col>
+
+                {/* 系统盘监控 - 新增 */}
+                <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                  <Card>
+                    <Statistic
+                      title="系统盘使用率"
+                      value={
+                        nodeDetailData?.disk_total &&
+                        nodeDetailData?.disk_used
+                          ? Math.round(
+                              (nodeDetailData.disk_used /
+                                nodeDetailData.disk_total) *
+                                100
+                            )
+                          : 0
+                      }
+                      precision={0}
+                      valueStyle={{
+                        color:
+                          nodeDetailData?.disk_total &&
+                          nodeDetailData?.disk_used &&
+                          (nodeDetailData.disk_used /
+                            nodeDetailData.disk_total) *
+                            100 >
+                            80
+                            ? "#ff4d4f"
+                            : nodeDetailData?.disk_total &&
+                              nodeDetailData?.disk_used &&
+                              (nodeDetailData.disk_used /
+                                nodeDetailData.disk_total) *
+                                100 >
+                                60
+                            ? "#faad14"
+                            : "#3f8600",
+                      }}
+                      prefix={<HddOutlined />}
+                      suffix="%"
+                    />
+                    <Progress
+                      percent={
+                        nodeDetailData?.disk_total &&
+                        nodeDetailData?.disk_used
+                          ? Math.round(
+                              (nodeDetailData.disk_used /
+                                nodeDetailData.disk_total) *
+                                100
+                            )
+                          : 0
+                      }
+                      size="small"
+                      strokeColor={
+                        nodeDetailData?.disk_total &&
+                        nodeDetailData?.disk_used &&
+                        (nodeDetailData.disk_used /
+                          nodeDetailData.disk_total) *
+                          100 >
+                          80
+                          ? "#ff4d4f"
+                          : nodeDetailData?.disk_total &&
+                            nodeDetailData?.disk_used &&
+                            (nodeDetailData.disk_used /
+                              nodeDetailData.disk_total) *
+                              100 >
+                              60
+                          ? "#faad14"
+                          : "#52c41a"
+                      }
+                    />
+                    {nodeDetailData &&
+                      nodeDetailData.disk_total &&
+                      nodeDetailData.disk_used && (
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            color: "#666",
+                            marginTop: "8px",
+                          }}
+                        >
+                          已用: {nodeDetailData.disk_used}GB / 总计:{" "}
+                          {nodeDetailData.disk_total}GB
+                        </div>
+                      )}
                   </Card>
                 </Col>
 

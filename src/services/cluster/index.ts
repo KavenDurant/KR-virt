@@ -397,6 +397,7 @@ class ClusterInitService {
   
   /**
    * 检查节点状态，包括虚拟机运行情况
+   * 注意：此接口暂不可用，请使用getNodeSummary获取节点信息
    */
   async checkNodeStatus(hostname: string): Promise<StandardResponse<NodeStatusResponse>> {
     if (USE_MOCK_DATA) {
@@ -407,10 +408,10 @@ class ClusterInitService {
       });
     }
 
-    return api.get<NodeStatusResponse>(`/node/status?hostname=${hostname}`, {}, {
-      skipAuth: false,
-      defaultSuccessMessage: "获取节点状态成功",
-      defaultErrorMessage: "获取节点状态失败，请检查网络连接",
+    // 返回接口不可用的错误信息
+    return Promise.resolve({
+      success: false,
+      message: "checkNodeStatus接口暂不可用，请使用getNodeSummary接口获取节点详细信息",
     });
   }
 
@@ -750,6 +751,8 @@ class ClusterInitService {
       running_time: 216000, // 60小时，单位为秒
       cpu_total: 8,
       mem_total: 16384,
+      disk_total: 512,          // 物理机系统盘总容量512GB
+      disk_used: 256,           // 物理机系统盘已用容量256GB
       cpu_used: 2,
       mem_used: 4096,
       vms_num: 5,

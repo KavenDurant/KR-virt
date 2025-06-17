@@ -53,7 +53,7 @@ interface ErrorResponseData {
   message?: string;
   error?: string;
   errors?: string[] | Record<string, string[]>;
-  detail?: ValidationErrorDetail[]; // 添加对 422 错误的支持
+  detail?: ValidationErrorDetail[] | string; // 支持 422 错误的数组格式和 500 错误的字符串格式
   [key: string]: unknown;
 }
 
@@ -233,26 +233,6 @@ class LoadingManager {
   }
 }
 
-// HTTP状态码映射
-const HTTP_STATUS_MESSAGES: Record<number, string> = {
-  400: "请求参数错误",
-  401: "未授权，请重新登录",
-  403: "权限不足",
-  404: "请求的资源不存在",
-  405: "请求方法不被允许",
-  408: "请求超时",
-  409: "数据冲突",
-  410: "请求的资源已被永久删除",
-  422: "数据验证失败",
-  429: "请求过于频繁，请稍后重试",
-  500: "服务器内部错误",
-  501: "服务器不支持该功能",
-  502: "网关错误",
-  503: "服务不可用",
-  504: "网关超时",
-  505: "HTTP版本不受支持",
-};
-
 // 重试配置
 interface RetryConfig {
   count: number;
@@ -270,45 +250,59 @@ const defaultRetryCondition = (error: AxiosError): boolean => {
   );
 };
 
-// 处理 422 验证错误的工具函数
-const handle422ValidationError = (errorDetails: ErrorResponseData): string => {
-  // 处理标准的 422 错误响应格式: { detail: [{ loc: [], msg: "", type: "" }] }
-  if (errorDetails?.detail && Array.isArray(errorDetails.detail)) {
-    const errorMessages = errorDetails.detail.map(
-      (error: ValidationErrorDetail) => {
-        // 从 loc 数组中提取字段名，通常第一个元素是 'body'，后续才是实际字段
-        const field =
-          error.loc.length > 1
-            ? error.loc.slice(1).join(".")
-            : error.loc.join(".");
-        return field ? `${field}: ${error.msg}` : error.msg;
-      }
-    );
-
-    return errorMessages.length > 0 ? errorMessages.join("; ") : "数据验证失败";
-  }
-
-  // 兼容其他格式的验证错误响应
-  if (errorDetails?.message) {
-    return errorDetails.message;
-  }
-
-  if (errorDetails?.errors) {
-    if (Array.isArray(errorDetails.errors)) {
-      return errorDetails.errors.join("; ");
-    } else if (typeof errorDetails.errors === "object") {
-      const fieldErrors = Object.entries(errorDetails.errors)
-        .map(
-          ([field, msgs]) =>
-            `${field}: ${Array.isArray(msgs) ? msgs.join(", ") : msgs}`
-        )
-        .join("; ");
-      return fieldErrors || "数据验证失败";
-    }
-  }
-
-  return "数据验证失败";
-};
+// // 通用错误处理函数
+// const handleCommonErrors = (
+//   status: number,
+//   errorDetails?: ErrorResponseData
+// ): string => {
+//   switch (status) {
+//     case 400:
+//       return errorDetails?.message || "请求参数错误";
+//     case 401:
+//       return "登录已过期，请重新登录";
+//     case 403:
+//       return errorDetails?.message || "权限不足，无法访问该资源";
+//     case 404:
+//       return errorDetails?.message || "请求的资源不存在";
+//     case 405:
+//       return "请求方法不被允许";
+//     case 408:
+//       return "请求超时";
+//     case 409:
+//       return errorDetails?.message || "数据冲突，请刷新后重试";
+//     case 410:
+//       return "请求的资源已被永久删除";
+//     case 422:
+//       return handle422ValidationError(errorDetails || {});
+//     case 429:
+//       return "请求过于频繁，请稍后重试";
+//     case 498:
+//       return errorDetails?.message || "Token已失效，请重新登录";
+//     case 500:
+//       // 处理 500 错误时，优先使用 detail 字段（如果是字符串），然后是 message，最后是默认错误
+//       if (errorDetails?.detail && typeof errorDetails.detail === 'string') {
+//         return errorDetails.detail;
+//       }
+//       return errorDetails?.message || "服务器内部错误";
+//     case 501:
+//       return "服务器不支持该功能";
+//     case 502:
+//       return "网关错误，请稍后重试";
+//     case 503:
+//       return "服务不可用，请稍后重试";
+//     case 504:
+//       return "网关超时，请稍后重试";
+//     case 505:
+//       return "HTTP版本不受支持";
+//     default:
+//       return (
+//         errorDetails?.message ||
+//         errorDetails?.error ||
+//         HTTP_STATUS_MESSAGES[status] ||
+//         `请求失败 (${status})`
+//       );
+//   }
+// };
 
 // 通用错误处理函数
 const handleCommonErrors = (
@@ -316,48 +310,23 @@ const handleCommonErrors = (
   errorDetails?: ErrorResponseData
 ): string => {
   switch (status) {
-    case 400:
-      return errorDetails?.message || "请求参数错误";
+    case 200:
+    case 201:
+    case 202:
+      // 正常返回，不应该进入错误处理
+      return "操作成功";
     case 401:
       return "登录已过期，请重新登录";
-    case 403:
-      return errorDetails?.message || "权限不足，无法访问该资源";
-    case 404:
-      return errorDetails?.message || "请求的资源不存在";
-    case 405:
-      return "请求方法不被允许";
-    case 408:
-      return "请求超时";
-    case 409:
-      return errorDetails?.message || "数据冲突，请刷新后重试";
-    case 410:
-      return "请求的资源已被永久删除";
-    case 422:
-      return handle422ValidationError(errorDetails || {});
-    case 429:
-      return "请求过于频繁，请稍后重试";
-    case 500:
-      return errorDetails?.message || "服务器内部错误";
-    case 501:
-      return "服务器不支持该功能";
-    case 502:
-      return "网关错误，请稍后重试";
-    case 503:
-      return "服务不可用，请稍后重试";
-    case 504:
-      return "网关超时，请稍后重试";
-    case 505:
-      return "HTTP版本不受支持";
+    case 498:
+      return "账户需要激活，请联系管理员";
     default:
-      return (
-        errorDetails?.message ||
-        errorDetails?.error ||
-        HTTP_STATUS_MESSAGES[status] ||
-        `请求失败 (${status})`
-      );
+      // 其他所有状态码都优先使用 detail 字段
+      if (errorDetails?.detail && typeof errorDetails.detail === 'string') {
+        return errorDetails.detail;
+      }
+      return errorDetails?.message || `请求失败 (${status})`;
   }
 };
-
 // 重试函数
 const retryRequest = async (
   axiosInstance: AxiosInstance,
@@ -401,7 +370,7 @@ const retryRequest = async (
 const createAxiosInstance = (): AxiosInstance => {
   const instance = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 30000, // 30秒超时
+    timeout: 120000, // 120秒超时
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
@@ -589,8 +558,8 @@ const createAxiosInstance = (): AxiosInstance => {
         // 使用统一的错误处理函数
         errorMessage = handleCommonErrors(status, errorDetails);
 
-        // 特殊处理 401 错误的登录跳转
-        if (status === 401) {
+        // 特殊处理 401 和 498 错误的登录跳转
+        if (status === 401 || status === 498) {
           TokenManager.clearTokens();
           // 延迟跳转，避免影响当前错误处理
           setTimeout(() => {

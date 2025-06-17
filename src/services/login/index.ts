@@ -574,9 +574,6 @@ class LoginService {
 class TokenRefreshManager {
   private static instance: TokenRefreshManager | null = null;
   private refreshTimer: NodeJS.Timeout | null = null;
-  private readonly REFRESH_INTERVAL = import.meta.env.DEV
-    ? 30 * 1000
-    : 3 * 60 * 1000; // 开发环境30秒，生产环境3分钟
   private isRefreshing = false;
   private loginServiceInstance: LoginService | null = null;
 
@@ -628,7 +625,7 @@ class TokenRefreshManager {
     this.refreshTimer = setInterval(() => {
       console.log("⏰ 触发自动刷新定时器");
       this.performRefresh();
-    }, this.REFRESH_INTERVAL);
+    }, interval);
 
     console.log("✅ Token自动刷新定时器已设置");
     console.log("✅ 定时器ID:", this.refreshTimer);

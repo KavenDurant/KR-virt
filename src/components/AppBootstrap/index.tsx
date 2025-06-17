@@ -12,10 +12,10 @@ import Login from "@/pages/Auth/Login";
 import { clusterInitService } from "@/services/cluster";
 import { loginService } from "@/services/login";
 import { CookieUtils } from "@/utils/cookies";
-// 在开发环境中加载测试工具
-// if (import.meta.env.DEV) {
-//   import("@/utils/tokenRefreshTestUtils");
-// }
+// 在开发环境中加载诊断工具
+if (import.meta.env.DEV) {
+  import("@/utils/tokenRefreshDiagnostic");
+}
 import type { ClusterStatusResponse } from "@/services/cluster/types";
 
 type AppState = "loading" | "cluster-init" | "login" | "app";
@@ -36,14 +36,51 @@ const AppBootstrap: React.FC = () => {
       console.warn("⚠️ 发现并清理了无效Token");
     }
 
+    // 检查当前登录状态
+    const isAuthenticated = loginService.isAuthenticated();
+    const token = loginService.getToken();
+    const user = loginService.getCurrentUser();
+
+    console.log("📊 当前状态检查:");
+    console.log("  - 认证状态:", isAuthenticated);
+    console.log("  - Token存在:", !!token);
+    console.log("  - 用户信息:", !!user);
+
     // 如果用户已登录，启动自动刷新
-    if (loginService.isAuthenticated()) {
+    if (isAuthenticated) {
       console.log("👤 用户已登录，启动Token自动刷新");
       loginService.startGlobalTokenRefresh();
 
       // 打印自动刷新状态
       const status = loginService.getAutoRefreshStatus();
       console.log("🔄 Token自动刷新状态:", status);
+
+      // 在开发环境中额外打印调试信息
+      if (import.meta.env.DEV) {
+        setTimeout(() => {
+          console.log("🔍 5秒后检查自动刷新状态:");
+          const laterStatus = loginService.getAutoRefreshStatus();
+          console.log("  - 运行状态:", laterStatus.isRunning);
+          console.log("  - 刷新状态:", laterStatus.isRefreshing);
+
+          // 检查定时器是否真的在运行
+          if (laterStatus.isRunning) {
+            console.log("✅ Token自动刷新定时器正在运行");
+            console.log("⏰ 等待下次自动刷新触发...");
+          } else {
+            console.log("❌ Token自动刷新定时器未运行！");
+            console.log("🔧 尝试重新启动...");
+            loginService.startGlobalTokenRefresh();
+          }
+        }, 5000);
+
+        // 15秒后再次检查
+        setTimeout(() => {
+          console.log("🔍 15秒后再次检查:");
+          const finalStatus = loginService.getAutoRefreshStatus();
+          console.log("最终状态:", finalStatus);
+        }, 15000);
+      }
     } else {
       console.log("❌ 用户未登录，跳过Token自动刷新");
     }

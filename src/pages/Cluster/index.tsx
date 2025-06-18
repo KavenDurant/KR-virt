@@ -68,6 +68,12 @@ import type { ClusterNodesResponse } from "@/services/cluster";
 import type { ClusterSummaryResponse } from "@/services/cluster";
 import type { ClusterResourcesResponse } from "@/services/cluster";
 import type { NodeSummaryResponse } from "@/services/cluster";
+import {
+  CpuPerformanceChart,
+  MemoryPerformanceChart,
+  DiskPerformanceChart,
+  NetworkPerformanceChart,
+} from "@/components/ClusterComponent";
 
 const { Text } = Typography;
 
@@ -889,8 +895,8 @@ const ClusterManagement: React.FC = () => {
         `🔍 [Node Detail] 开始获取主机 ${sidebarSelectedHost.name} 的详细信息`
       );
 
-      // 重置Tab状态到basic，清空硬件信息状态
-      setHostDetailActiveTab("basic");
+      // 不重置Tab状态，保持用户当前选择的Tab
+      console.log(`📌 [Tab Keep] 保持当前Tab状态不变`);
 
       // 清空硬件信息状态，准备按需加载
       setNodePCIData(null);
@@ -2140,7 +2146,37 @@ const ClusterManagement: React.FC = () => {
                   </Card>
                 </Col>
 
-                {/* 第二行：系统性能指标 - 响应式布局 */}
+                {/* 性能监控图表 - 只在当前Tab是性能监控时渲染 */}
+                {hostDetailActiveTab === "performance" && (
+                  <>
+                    <Col xs={24} xl={12}>
+                      <CpuPerformanceChart
+                        hostname={sidebarSelectedHost.name}
+                        shouldFetch={true}
+                      />
+                    </Col>
+                    <Col xs={24} xl={12}>
+                      <MemoryPerformanceChart
+                        hostname={sidebarSelectedHost.name}
+                        shouldFetch={true}
+                      />
+                    </Col>
+                    <Col xs={24} xl={12}>
+                      <DiskPerformanceChart
+                        hostname={sidebarSelectedHost.name}
+                        shouldFetch={true}
+                      />
+                    </Col>
+                    <Col xs={24} xl={12}>
+                      <NetworkPerformanceChart
+                        hostname={sidebarSelectedHost.name}
+                        shouldFetch={true}
+                      />
+                    </Col>
+                  </>
+                )}
+
+                {/* 系统性能指标 - 响应式布局 */}
                 <Col xs={24} sm={12} md={8} lg={8} xl={8}>
                   <Card>
                     <Statistic

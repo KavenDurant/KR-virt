@@ -640,6 +640,7 @@ const ClusterManagement: React.FC = () => {
             modal.warning({
               title: "无法进入维护模式",
               content: "该节点上还有运行中的虚拟机，请先关闭或迁移虚拟机后再进入维护模式。",
+              okText: "确定",
             });
             return;
           }
@@ -650,6 +651,8 @@ const ClusterManagement: React.FC = () => {
         modal.confirm({
           title: `确认${operationNames[operation]}`,
           content: `您确定要对节点 ${hostname} 执行${operationNames[operation]}操作吗？`,
+          okText: "确认",
+          cancelText: "取消",
           onOk: async () => {
             try {
               let result;
@@ -696,6 +699,10 @@ const ClusterManagement: React.FC = () => {
             } finally {
               setNodeOperationLoading(null);
             }
+          },
+          onCancel: () => {
+            // 用户点击取消时重置加载状态
+            setNodeOperationLoading(null);
           },
         });
       } catch (error) {
@@ -1029,6 +1036,7 @@ const ClusterManagement: React.FC = () => {
 
   const handleSafetyCancel = useCallback(() => {
     setSafetyConfirmVisible(false);
+    setSafetyConfirmLoading(false);
     setPendingAction(null);
   }, []);
 
@@ -3816,6 +3824,7 @@ const ClusterManagement: React.FC = () => {
         open={addNodeModalVisible}
         onCancel={() => {
           setAddNodeModalVisible(false);
+          setAddNodeLoading(false);
           // 重置表单在destroyOnClose为true时会自动处理
         }}
         footer={null}

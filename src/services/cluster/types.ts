@@ -314,3 +314,59 @@ export interface VMigrationResponse {
   message: string;
   task_id?: string; // 迁移任务ID
 }
+
+// === 物理机硬件信息相关类型 ===
+
+// PCI设备信息 - 修正字段名
+export interface NodePCIDevice {
+  slot: string; // PCI插槽位置，如 "0000:00:1f.2"
+  vendor_name: string; // 厂商名称
+  device_name: string; // 设备名称
+  device_type: string; // 设备类别，如 "Mass storage controller"
+  iommu_group?: number; // IOMMU组
+  subsystem_vendor?: string; // 子系统厂商
+  subsystem_device?: string; // 子系统设备
+  driver?: string; // 驱动程序
+  vendor_id: string; // 厂商ID，如 "8086"
+  device_id: string; // 设备ID，如 "2922"
+  revision?: string; // 版本号
+  numa_node?: number; // NUMA节点
+}
+
+// 物理机PCI设备列表请求参数
+export interface NodePCIRequest {
+  hostname: string;
+}
+
+// 物理机PCI设备列表响应
+export interface NodePCIResponse {
+  hostname: string;
+  devices: NodePCIDevice[];
+}
+
+// 物理机磁盘设备列表请求参数
+export interface NodeDisksRequest {
+  hostname: string;
+}
+
+// 物理机磁盘设备列表响应
+export interface NodeDisksResponse {
+  devices: NodeDiskDeviceActual[];
+}
+
+// 磁盘设备信息 - 根据mock数据调整
+export interface NodeDiskDeviceActual {
+  name: string; // 设备名称，如 "/dev/sda"
+  major_minor: string; // 主次设备号，如 "8:0"
+  removable: boolean; // 是否可移动
+  size_gb: number; // 容量（GB）
+  read_only: boolean; // 是否只读
+  device_type: "disk" | "part" | "rom"; // 设备类型
+  mount_point: string; // 挂载点
+  parent: string; // 父设备
+  filesystem: string; // 文件系统
+  total_size_gb: number; // 总容量（GB）
+  used_size_gb: number; // 已用容量（GB）
+  available_size_gb: number; // 可用容量（GB）
+  percentage_value: number; // 使用百分比
+}

@@ -30,6 +30,8 @@ import type {
   NodeStatusResponse,
   VMigrationRequest,
   VMigrationResponse,
+  NodePCIResponse,
+  NodeDisksResponse,
 } from "./types";
 
 // 配置区域
@@ -376,6 +378,44 @@ class ClusterInitService {
       skipAuth: false,
       defaultSuccessMessage: "获取节点摘要成功",
       defaultErrorMessage: "获取节点摘要失败，请检查网络连接",
+    });
+  }
+
+  /**
+   * 获取物理机PCI设备列表
+   */
+  async getNodePCIDevices(hostname: string): Promise<StandardResponse<NodePCIResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post('/node/pcis', { hostname }, {
+        useMock: true,
+        mockData: this.getMockNodePCIDevices(hostname),
+        defaultSuccessMessage: "获取PCI设备列表成功",
+      });
+    }
+
+    return api.post<NodePCIResponse>('/node/pcis', { hostname }, {
+      skipAuth: false,
+      defaultSuccessMessage: "获取PCI设备列表成功",
+      defaultErrorMessage: "获取PCI设备列表失败，请检查网络连接",
+    });
+  }
+
+  /**
+   * 获取物理机硬盘设备列表
+   */
+  async getNodeDiskDevices(hostname: string): Promise<StandardResponse<NodeDisksResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post('/node/disks', { hostname }, {
+        useMock: true,
+        mockData: this.getMockNodeDiskDevices(hostname),
+        defaultSuccessMessage: "获取硬盘设备列表成功",
+      });
+    }
+
+    return api.post<NodeDisksResponse>('/node/disks', { hostname }, {
+      skipAuth: false,
+      defaultSuccessMessage: "获取硬盘设备列表成功",
+      defaultErrorMessage: "获取硬盘设备列表失败，请检查网络连接",
     });
   }
 
@@ -782,6 +822,147 @@ class ClusterInitService {
       stopped_vms: 2,
       maintenance_mode: false,
       power_state: "powered_on",
+    };
+  }
+
+  /**
+   * 获取模拟PCI设备列表
+   */
+  private getMockNodePCIDevices(hostname: string): NodePCIResponse {
+    return {
+      hostname,
+      devices: [
+        {
+          slot: "0000:00:1f.2",
+          vendor_id: "8086",
+          device_id: "2922",
+          vendor_name: "Intel Corporation",
+          device_name: "6 Series/C200 Series Chipset Family SATA AHCI Controller",
+          device_type: "SATA controller",
+          iommu_group: 15,
+        },
+        {
+          slot: "0000:00:02.0",
+          vendor_id: "8086",
+          device_id: "0126",
+          vendor_name: "Intel Corporation",
+          device_name: "2nd Generation Core Processor Family Integrated Graphics Controller",
+          device_type: "VGA compatible controller",
+          iommu_group: 1,
+        },
+        {
+          slot: "0000:00:1a.0",
+          vendor_id: "8086",
+          device_id: "1c2d",
+          vendor_name: "Intel Corporation",
+          device_name: "6 Series/C200 Series Chipset Family USB Enhanced Host Controller #2",
+          device_type: "USB controller",
+          iommu_group: 12,
+        },
+        {
+          slot: "0000:02:00.0",
+          vendor_id: "14e4",
+          device_id: "165f",
+          vendor_name: "Broadcom Inc. and subsidiaries",
+          device_name: "NetXtreme BCM5720 Gigabit Ethernet PCIe",
+          device_type: "Ethernet controller",
+          iommu_group: 18,
+        },
+        {
+          slot: "0000:03:00.0",
+          vendor_id: "1000",
+          device_id: "0072",
+          vendor_name: "LSI Logic / Symbios Logic",
+          device_name: "SAS2008 PCI-Express Fusion-MPT SAS-2 [Falcon]",
+          device_type: "Serial Attached SCSI controller",
+          iommu_group: 19,
+        },
+      ],
+    };
+  }
+
+  /**
+   * 获取模拟硬盘设备列表
+   */
+  private getMockNodeDiskDevices(_hostname: string): NodeDisksResponse {
+    return {
+      devices: [
+        {
+          name: "/dev/sda",
+          major_minor: "8:0",
+          removable: false,
+          size_gb: 500,
+          read_only: false,
+          device_type: "disk",
+          mount_point: "",
+          parent: "",
+          filesystem: "",
+          total_size_gb: 500,
+          used_size_gb: 250,
+          available_size_gb: 250,
+          percentage_value: 50,
+        },
+        {
+          name: "/dev/sda1",
+          major_minor: "8:1",
+          removable: false,
+          size_gb: 1,
+          read_only: false,
+          device_type: "part",
+          mount_point: "/boot",
+          parent: "/dev/sda",
+          filesystem: "ext4",
+          total_size_gb: 1,
+          used_size_gb: 0.2,
+          available_size_gb: 0.8,
+          percentage_value: 20,
+        },
+        {
+          name: "/dev/sda2",
+          major_minor: "8:2",
+          removable: false,
+          size_gb: 499,
+          read_only: false,
+          device_type: "part",
+          mount_point: "/",
+          parent: "/dev/sda",
+          filesystem: "ext4",
+          total_size_gb: 499,
+          used_size_gb: 249.8,
+          available_size_gb: 249.2,
+          percentage_value: 50,
+        },
+        {
+          name: "/dev/sdb",
+          major_minor: "8:16",
+          removable: false,
+          size_gb: 1000,
+          read_only: false,
+          device_type: "disk",
+          mount_point: "/var/lib/virt",
+          parent: "",
+          filesystem: "ext4",
+          total_size_gb: 1000,
+          used_size_gb: 300,
+          available_size_gb: 700,
+          percentage_value: 30,
+        },
+        {
+          name: "/dev/sr0",
+          major_minor: "11:0",
+          removable: true,
+          size_gb: 0,
+          read_only: true,
+          device_type: "rom",
+          mount_point: "",
+          parent: "",
+          filesystem: "",
+          total_size_gb: 0,
+          used_size_gb: 0,
+          available_size_gb: 0,
+          percentage_value: 0,
+        },
+      ],
     };
   }
 }

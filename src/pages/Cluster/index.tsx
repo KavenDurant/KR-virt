@@ -23,6 +23,7 @@ import {
   Modal,
   Form,
   Input,
+  Empty,
 } from "antd";
 import SafetyConfirmModal from "@/components/SafetyConfirmModal";
 import {
@@ -47,6 +48,8 @@ import {
   StopOutlined,
   PlayCircleOutlined,
   PlusOutlined,
+  SettingOutlined,
+  AppstoreOutlined,
 } from "@ant-design/icons";
 import {
   formatResourceUsage,
@@ -225,6 +228,16 @@ const ClusterManagement: React.FC = () => {
     useState<NodeSummaryResponse | null>(null);
   const [nodeDetailLoading, setNodeDetailLoading] = useState(false);
   const [nodeDetailError, setNodeDetailError] = useState<string | null>(null);
+
+  // 硬件信息相关状态 - PCI设备
+  const [nodePCIData, setNodePCIData] = useState<import("@/services/cluster").NodePCIResponse | null>(null);
+  const [nodePCILoading, setNodePCILoading] = useState(false);
+  const [nodePCIError, setNodePCIError] = useState<string | null>(null);
+
+  // 硬件信息相关状态 - 磁盘设备
+  const [nodeDisksData, setNodeDisksData] = useState<import("@/services/cluster").NodeDisksResponse | null>(null);
+  const [nodeDisksLoading, setNodeDisksLoading] = useState(false);
+  const [nodeDisksError, setNodeDisksError] = useState<string | null>(null);
 
   // 节点操作相关状态
   const [nodeOperationLoading, setNodeOperationLoading] = useState<
@@ -514,46 +527,130 @@ const ClusterManagement: React.FC = () => {
     [withApiLock, fetchNodeDetailDataBase]
   );
 
+  // ===== 硬件信息获取函数 =====
+
+  // 获取节点PCI设备信息基础函数
+  const fetchNodePCIDataBase = useCallback(
+    async (hostname: string) => {
+      const timestamp = new Date().toLocaleTimeString();
+      setNodePCILoading(true);
+      setNodePCIError(null);
+      try {
+        console.log(
+          `📡 [${timestamp}][API Call] 开始调用节点PCI设备API (/node/pcis), hostname: ${hostname}`
+        );
+        const result = await clusterInitService.getNodePCIDevices(hostname);
+        if (result.success && result.data) {
+          setNodePCIData(result.data);
+          console.log(`✅ [${timestamp}][API Success] 获取节点PCI设备数据成功`);
+        } else {
+          console.error(
+            `❌ [${timestamp}][API Error] 获取节点PCI设备数据失败:`,
+            result.message
+          );
+          setNodePCIError(result.message);
+          message.error(result.message);
+        }
+      } catch (error) {
+        console.error(
+          `❌ [${timestamp}][API Exception] 获取节点PCI设备数据异常:`,
+          error
+        );
+        const errorMessage = "获取节点PCI设备数据失败，请稍后重试";
+        setNodePCIError(errorMessage);
+        message.error(errorMessage);
+      } finally {
+        setNodePCILoading(false);
+        console.log(`🏁 [${timestamp}][API Complete] 节点PCI设备API调用完成`);
+      }
+    },
+    [message]
+  );
+
+  // 获取节点磁盘设备信息基础函数
+  const fetchNodeDisksDataBase = useCallback(
+    async (hostname: string) => {
+      const timestamp = new Date().toLocaleTimeString();
+      setNodeDisksLoading(true);
+      setNodeDisksError(null);
+      try {
+        console.log(
+          `📡 [${timestamp}][API Call] 开始调用节点磁盘设备API (/node/disks), hostname: ${hostname}`
+        );
+        const result = await clusterInitService.getNodeDiskDevices(hostname);
+        if (result.success && result.data) {
+          setNodeDisksData(result.data);
+          console.log(`✅ [${timestamp}][API Success] 获取节点磁盘设备数据成功`);
+        } else {
+          console.error(
+            `❌ [${timestamp}][API Error] 获取节点磁盘设备数据失败:`,
+            result.message
+          );
+          setNodeDisksError(result.message);
+          message.error(result.message);
+        }
+      } catch (error) {
+        console.error(
+          `❌ [${timestamp}][API Exception] 获取节点磁盘设备数据异常:`,
+          error
+        );
+        const errorMessage = "获取节点磁盘设备数据失败，请稍后重试";
+        setNodeDisksError(errorMessage);
+        message.error(errorMessage);
+      } finally {
+        setNodeDisksLoading(false);
+        console.log(`🏁 [${timestamp}][API Complete] 节点磁盘设备API调用完成`);
+      }
+    },
+    [message]
+  );
+
+  // 使用API锁包装的硬件信息获取函数
+  const fetchNodePCIData = useMemo(
+    () => withApiLock("fetchNodePCIData", fetchNodePCIDataBase),
+    [withApiLock, fetchNodePCIDataBase]
+  );
+
+  const fetchNodeDisksData = useMemo(
+    () => withApiLock("fetchNodeDisksData", fetchNodeDisksDataBase),
+    [withApiLock, fetchNodeDisksDataBase]
+  );
+
+  // ===== 节点操作相关函数 =====
+
   // 节点操作处理函数
   const handleNodeOperation = useCallback(
     async (
-      operation:
-        | "reboot"
-        | "stop"
-        | "enter_maintenance"
-        | "exit_maintenance"
-        | "migrate",
+      operation: "reboot" | "stop" | "enter_maintenance" | "exit_maintenance" | "migrate",
       hostname: string
     ) => {
+      const operationNames = {
+        reboot: "重启",
+        stop: "关机",
+        enter_maintenance: "进入维护模式",
+        exit_maintenance: "退出维护模式",
+        migrate: "迁移虚拟机",
+      };
+
       try {
-        // 检查维护模式权限
+        // 特殊处理：进入维护模式前检查虚拟机状态
         if (operation === "enter_maintenance") {
           const canEnter = checkCanEnterMaintenance(hostname);
           if (!canEnter) {
-            modal.error({
+            modal.warning({
               title: "无法进入维护模式",
-              content:
-                "该主机上还有运行中的虚拟机，请先关闭所有虚拟机后再进入维护模式。",
+              content: "该节点上还有运行中的虚拟机，请先关闭或迁移虚拟机后再进入维护模式。",
             });
             return;
           }
         }
 
-        // 确认对话框
-        const operationNames = {
-          reboot: "重启主机",
-          stop: "关闭主机",
-          enter_maintenance: "进入维护模式",
-          exit_maintenance: "退出维护模式",
-          migrate: "迁移虚拟机",
-        };
+        setNodeOperationLoading(operation);
 
         modal.confirm({
           title: `确认${operationNames[operation]}`,
-          content: `您确定要${operationNames[operation]} "${hostname}" 吗？`,
+          content: `您确定要对节点 ${hostname} 执行${operationNames[operation]}操作吗？`,
           onOk: async () => {
-            setNodeOperationLoading(operation);
-
             try {
               let result;
               switch (operation) {
@@ -564,40 +661,30 @@ const ClusterManagement: React.FC = () => {
                   result = await clusterInitService.stopNode(hostname);
                   break;
                 case "enter_maintenance":
-                  result = await clusterInitService.enterMaintenanceMode(
-                    hostname
-                  );
+                  result = await clusterInitService.enterMaintenanceMode(hostname);
                   break;
                 case "exit_maintenance":
-                  result = await clusterInitService.exitMaintenanceMode(
-                    hostname
-                  );
+                  result = await clusterInitService.exitMaintenanceMode(hostname);
                   break;
                 case "migrate":
-                  // 暂时使用占位符实现 - 需要VM ID和目标主机
-                  result = await clusterInitService.migrateVM({
-                    vm_id: "placeholder-vm-id", // 实际实现时需要从UI获取
-                    source_node: hostname,
-                    target_node: "target-host", // 实际实现时需要从UI选择
-                    live_migration: true,
-                  });
-                  break;
+                  // 虚拟机迁移逻辑（暂时简化处理）
+                  message.info("虚拟机迁移功能正在开发中");
+                  return;
                 default:
-                  throw new Error(`未知操作: ${operation}`);
+                  console.error("未知的操作类型:", operation);
+                  return;
               }
 
               if (result.success) {
-                // 刷新节点详细信息
-                fetchNodeDetailData(hostname);
-                modal.success({
-                  title: "操作成功",
-                  content: `${operationNames[operation]}操作已成功执行`,
-                });
+                message.success(result.message || `${operationNames[operation]}操作成功`);
+                // 操作成功后刷新节点详情
+                setTimeout(() => {
+                  fetchNodeDetailData(hostname);
+                }, 2000);
               } else {
                 modal.error({
-                  title: "操作失败",
-                  content:
-                    result.message || `${operationNames[operation]}操作失败`,
+                  title: `${operationNames[operation]}失败`,
+                  content: result.message || `${operationNames[operation]}操作失败`,
                 });
               }
             } catch (error) {
@@ -619,7 +706,7 @@ const ClusterManagement: React.FC = () => {
         });
       }
     },
-    [checkCanEnterMaintenance, fetchNodeDetailData, modal]
+    [checkCanEnterMaintenance, fetchNodeDetailData, modal, message]
   );
 
   // 添加节点处理函数
@@ -764,15 +851,23 @@ const ClusterManagement: React.FC = () => {
     };
   }, [handleNodeOperation]);
 
-  // 监听主机选择变化，自动获取详细信息
+  // 监听主机选择变化，自动获取详细信息和硬件信息
   useEffect(() => {
     if (sidebarSelectedHost) {
       console.log(
         `🔍 [Node Detail] 开始获取主机 ${sidebarSelectedHost.name} 的详细信息`
       );
+      // 获取基本节点信息
       fetchNodeDetailData(sidebarSelectedHost.name);
+      
+      // 自动加载硬件信息
+      console.log(
+        `🔧 [Hardware Info] 自动加载主机 ${sidebarSelectedHost.name} 的硬件信息`
+      );
+      fetchNodePCIData(sidebarSelectedHost.name);
+      fetchNodeDisksData(sidebarSelectedHost.name);
     }
-  }, [sidebarSelectedHost, fetchNodeDetailData]);
+  }, [sidebarSelectedHost, fetchNodeDetailData, fetchNodePCIData, fetchNodeDisksData]);
 
   // 防重复调用的标记和上一次激活的Tab追踪
   const loadingRef = useRef<Set<string>>(new Set());
@@ -2293,6 +2388,241 @@ const ClusterManagement: React.FC = () => {
                 </Col>
               </Row>
             )}
+          </div>
+        ),
+      },
+      {
+        key: "hardware",
+        label: "硬件信息",
+        children: (
+          <div>
+            <Row gutter={[16, 16]}>
+              {/* PCI设备信息 */}
+              <Col span={24}>
+                <Card 
+                  title={
+                    <Space>
+                      <SettingOutlined />
+                      <span>PCI设备列表</span>
+                    </Space>
+                  }
+                  extra={
+                    <Button
+                      icon={<SyncOutlined />}
+                      loading={nodePCILoading}
+                      onClick={() => {
+                        if (sidebarSelectedHost) {
+                          fetchNodePCIData(sidebarSelectedHost.name);
+                        }
+                      }}
+                    >
+                      刷新
+                    </Button>
+                  }
+                  size="small"
+                >
+                  {nodePCILoading ? (
+                    <div style={{ textAlign: "center", padding: "20px" }}>
+                      <SyncOutlined spin style={{ fontSize: "18px" }} />
+                      <div style={{ marginTop: "8px" }}>加载PCI设备信息中...</div>
+                    </div>
+                  ) : nodePCIError ? (
+                    <Alert
+                      message="获取PCI设备信息失败"
+                      description={nodePCIError}
+                      type="error"
+                      showIcon
+                    />
+                  ) : nodePCIData && nodePCIData.devices.length > 0 ? (
+                    <Table
+                      dataSource={nodePCIData.devices}
+                      rowKey={(record, index) => `${record.slot || index}`}
+                      pagination={{ pageSize: 10, showSizeChanger: true }}
+                      size="small"
+                      columns={[
+                        {
+                          title: "插槽",
+                          dataIndex: "slot",
+                          key: "slot",
+                          width: "15%",
+                          render: (slot: string) => (
+                            <Tag color="blue">{slot}</Tag>
+                          ),
+                        },
+                        {
+                          title: "厂商",
+                          dataIndex: "vendor_name",
+                          key: "vendor_name",
+                          width: "25%",
+                          ellipsis: true,
+                        },
+                        {
+                          title: "设备名称",
+                          dataIndex: "device_name", 
+                          key: "device_name",
+                          width: "30%",
+                          ellipsis: true,
+                        },
+                        {
+                          title: "设备类型",
+                          dataIndex: "device_type",
+                          key: "device_type",
+                          width: "20%",
+                          render: (type: string) => (
+                            <Tag color="green">{type}</Tag>
+                          ),
+                        },
+                        {
+                          title: "IOMMU组",
+                          dataIndex: "iommu_group",
+                          key: "iommu_group",
+                          width: "10%",
+                          render: (group: number) => (
+                            group !== null ? (
+                              <Tag color="orange">{group}</Tag>
+                            ) : (
+                              <Tag color="default">-</Tag>
+                            )
+                          ),
+                        },
+                      ]}
+                    />
+                  ) : (
+                    <Empty description="暂无PCI设备信息" />
+                  )}
+                </Card>
+              </Col>
+
+              {/* 磁盘设备信息 */}
+              <Col span={24}>
+                <Card 
+                  title={
+                    <Space>
+                      <AppstoreOutlined />
+                      <span>磁盘设备列表</span>
+                    </Space>
+                  }
+                  extra={
+                    <Button
+                      icon={<SyncOutlined />}
+                      loading={nodeDisksLoading}
+                      onClick={() => {
+                        if (sidebarSelectedHost) {
+                          fetchNodeDisksData(sidebarSelectedHost.name);
+                        }
+                      }}
+                    >
+                      刷新
+                    </Button>
+                  }
+                  size="small"
+                >
+                  {nodeDisksLoading ? (
+                    <div style={{ textAlign: "center", padding: "20px" }}>
+                      <SyncOutlined spin style={{ fontSize: "18px" }} />
+                      <div style={{ marginTop: "8px" }}>加载磁盘设备信息中...</div>
+                    </div>
+                  ) : nodeDisksError ? (
+                    <Alert
+                      message="获取磁盘设备信息失败"
+                      description={nodeDisksError}
+                      type="error"
+                      showIcon
+                    />
+                  ) : nodeDisksData && nodeDisksData.devices.length > 0 ? (
+                    <Table
+                      dataSource={nodeDisksData.devices}
+                      rowKey={(record, index) => `${record.name || index}`}
+                      pagination={{ pageSize: 10, showSizeChanger: true }}
+                      size="small"
+                      columns={[
+                        {
+                          title: "设备名称",
+                          dataIndex: "name",
+                          key: "name",
+                          width: "15%",
+                          render: (name: string) => (
+                            <Tag color="blue">{name}</Tag>
+                          ),
+                        },
+                        {
+                          title: "大小",
+                          dataIndex: "size",
+                          key: "size",
+                          width: "15%",
+                          render: (size: number) => (
+                            <span>{(size / 1024 / 1024 / 1024).toFixed(2)} GB</span>
+                          ),
+                        },
+                        {
+                          title: "类型",
+                          dataIndex: "type",
+                          key: "type",
+                          width: "10%",
+                          render: (type: string) => (
+                            <Tag color="green">{type}</Tag>
+                          ),
+                        },
+                        {
+                          title: "挂载点",
+                          dataIndex: "mount_points",
+                          key: "mount_points",
+                          width: "25%",
+                          render: (mountPoints: string[]) => (
+                            <div>
+                              {mountPoints && mountPoints.length > 0 ? (
+                                mountPoints.map((point, index) => (
+                                  <Tag key={index} color="purple" style={{ marginBottom: "2px" }}>
+                                    {point}
+                                  </Tag>
+                                ))
+                              ) : (
+                                <Tag color="default">未挂载</Tag>
+                              )}
+                            </div>
+                          ),
+                        },
+                        {
+                          title: "使用率",
+                          dataIndex: "usage_percentage",
+                          key: "usage_percentage", 
+                          width: "20%",
+                          render: (usage: number) => (
+                            usage !== null ? (
+                              <Progress
+                                percent={Math.round(usage)}
+                                size="small"
+                                strokeColor={
+                                  usage > 90 ? "#ff4d4f" :
+                                  usage > 70 ? "#faad14" : "#52c41a"
+                                }
+                              />
+                            ) : (
+                              <span style={{ color: "#999" }}>-</span>
+                            )
+                          ),
+                        },
+                        {
+                          title: "文件系统",
+                          dataIndex: "filesystem",
+                          key: "filesystem", 
+                          width: "15%",
+                          render: (fs: string) => (
+                            fs ? (
+                              <Tag color="cyan">{fs}</Tag>
+                            ) : (
+                              <Tag color="default">-</Tag>
+                            )
+                          ),
+                        },
+                      ]}
+                    />
+                  ) : (
+                    <Empty description="暂无磁盘设备信息" />
+                  )}
+                </Card>
+              </Col>
+            </Row>
           </div>
         ),
       },

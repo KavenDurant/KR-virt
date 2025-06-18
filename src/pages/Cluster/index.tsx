@@ -230,12 +230,16 @@ const ClusterManagement: React.FC = () => {
   const [nodeDetailError, setNodeDetailError] = useState<string | null>(null);
 
   // 硬件信息相关状态 - PCI设备
-  const [nodePCIData, setNodePCIData] = useState<import("@/services/cluster").NodePCIResponse | null>(null);
+  const [nodePCIData, setNodePCIData] = useState<
+    import("@/services/cluster").NodePCIResponse | null
+  >(null);
   const [nodePCILoading, setNodePCILoading] = useState(false);
   const [nodePCIError, setNodePCIError] = useState<string | null>(null);
 
   // 硬件信息相关状态 - 磁盘设备
-  const [nodeDisksData, setNodeDisksData] = useState<import("@/services/cluster").NodeDisksResponse | null>(null);
+  const [nodeDisksData, setNodeDisksData] = useState<
+    import("@/services/cluster").NodeDisksResponse | null
+  >(null);
   const [nodeDisksLoading, setNodeDisksLoading] = useState(false);
   const [nodeDisksError, setNodeDisksError] = useState<string | null>(null);
 
@@ -252,9 +256,12 @@ const ClusterManagement: React.FC = () => {
   const [safetyConfirmVisible, setSafetyConfirmVisible] = useState(false);
   const [safetyConfirmLoading, setSafetyConfirmLoading] = useState(false);
   const [pendingAction, setPendingAction] = useState<{
-    type: 'removeNode' | 'dissolveCluster';
+    type: "removeNode" | "dissolveCluster";
     data: { hostname?: string; nodeName?: string };
   } | null>(null);
+
+  // 主机详情Tab状态 - 用于按需加载硬件信息
+  const [hostDetailActiveTab, setHostDetailActiveTab] = useState("basic");
 
   // ===== 节点操作相关函数 =====
 
@@ -268,10 +275,12 @@ const ClusterManagement: React.FC = () => {
         if (nodeDetailData && nodeDetailData.node_name === hostname) {
           return nodeDetailData.running_vm_num === 0;
         }
-        
+
         // 如果没有节点详情数据，则直接允许进入维护模式
         // 后端会在实际操作时进行检查
-        console.warn(`没有找到节点 ${hostname} 的详情数据，允许尝试进入维护模式`);
+        console.warn(
+          `没有找到节点 ${hostname} 的详情数据，允许尝试进入维护模式`
+        );
         return true;
       } catch (error) {
         console.error("检查节点状态失败:", error);
@@ -580,7 +589,9 @@ const ClusterManagement: React.FC = () => {
         const result = await clusterInitService.getNodeDiskDevices(hostname);
         if (result.success && result.data) {
           setNodeDisksData(result.data);
-          console.log(`✅ [${timestamp}][API Success] 获取节点磁盘设备数据成功`);
+          console.log(
+            `✅ [${timestamp}][API Success] 获取节点磁盘设备数据成功`
+          );
         } else {
           console.error(
             `❌ [${timestamp}][API Error] 获取节点磁盘设备数据失败:`,
@@ -621,7 +632,12 @@ const ClusterManagement: React.FC = () => {
   // 节点操作处理函数
   const handleNodeOperation = useCallback(
     async (
-      operation: "reboot" | "stop" | "enter_maintenance" | "exit_maintenance" | "migrate",
+      operation:
+        | "reboot"
+        | "stop"
+        | "enter_maintenance"
+        | "exit_maintenance"
+        | "migrate",
       hostname: string
     ) => {
       const operationNames = {
@@ -639,7 +655,8 @@ const ClusterManagement: React.FC = () => {
           if (!canEnter) {
             modal.warning({
               title: "无法进入维护模式",
-              content: "该节点上还有运行中的虚拟机，请先关闭或迁移虚拟机后再进入维护模式。",
+              content:
+                "该节点上还有运行中的虚拟机，请先关闭或迁移虚拟机后再进入维护模式。",
               okText: "确定",
             });
             return;
@@ -664,10 +681,14 @@ const ClusterManagement: React.FC = () => {
                   result = await clusterInitService.stopNode(hostname);
                   break;
                 case "enter_maintenance":
-                  result = await clusterInitService.enterMaintenanceMode(hostname);
+                  result = await clusterInitService.enterMaintenanceMode(
+                    hostname
+                  );
                   break;
                 case "exit_maintenance":
-                  result = await clusterInitService.exitMaintenanceMode(hostname);
+                  result = await clusterInitService.exitMaintenanceMode(
+                    hostname
+                  );
                   break;
                 case "migrate":
                   // 虚拟机迁移逻辑（暂时简化处理）
@@ -679,7 +700,9 @@ const ClusterManagement: React.FC = () => {
               }
 
               if (result.success) {
-                message.success(result.message || `${operationNames[operation]}操作成功`);
+                message.success(
+                  result.message || `${operationNames[operation]}操作成功`
+                );
                 // 操作成功后刷新节点详情
                 setTimeout(() => {
                   fetchNodeDetailData(hostname);
@@ -687,7 +710,8 @@ const ClusterManagement: React.FC = () => {
               } else {
                 modal.error({
                   title: `${operationNames[operation]}失败`,
-                  content: result.message || `${operationNames[operation]}操作失败`,
+                  content:
+                    result.message || `${operationNames[operation]}操作失败`,
                 });
               }
             } catch (error) {
@@ -762,8 +786,8 @@ const ClusterManagement: React.FC = () => {
     async (hostname: string, nodeName: string) => {
       // 设置待处理的操作并显示安全确认模态框
       setPendingAction({
-        type: 'removeNode',
-        data: { hostname, nodeName }
+        type: "removeNode",
+        data: { hostname, nodeName },
       });
       setSafetyConfirmVisible(true);
     },
@@ -858,23 +882,31 @@ const ClusterManagement: React.FC = () => {
     };
   }, [handleNodeOperation]);
 
-  // 监听主机选择变化，自动获取详细信息和硬件信息
+  // 监听主机选择变化，优化数据加载策略
   useEffect(() => {
     if (sidebarSelectedHost) {
       console.log(
         `🔍 [Node Detail] 开始获取主机 ${sidebarSelectedHost.name} 的详细信息`
       );
-      // 获取基本节点信息
+
+      // 重置Tab状态到basic，清空硬件信息状态
+      setHostDetailActiveTab("basic");
+
+      // 清空硬件信息状态，准备按需加载
+      setNodePCIData(null);
+      setNodePCIError(null);
+      setNodeDisksData(null);
+      setNodeDisksError(null);
+
+      // 只获取基本节点信息（用于basic和performance Tab）
       fetchNodeDetailData(sidebarSelectedHost.name);
-      
-      // 自动加载硬件信息
+
+      // 硬件信息将在用户切换到hardware Tab时按需加载
       console.log(
-        `🔧 [Hardware Info] 自动加载主机 ${sidebarSelectedHost.name} 的硬件信息`
+        `📋 [Optimized Loading] 硬件信息将在切换到hardware Tab时按需加载`
       );
-      fetchNodePCIData(sidebarSelectedHost.name);
-      fetchNodeDisksData(sidebarSelectedHost.name);
     }
-  }, [sidebarSelectedHost, fetchNodeDetailData, fetchNodePCIData, fetchNodeDisksData]);
+  }, [sidebarSelectedHost, fetchNodeDetailData]);
 
   // 防重复调用的标记和上一次激活的Tab追踪
   const loadingRef = useRef<Set<string>>(new Set());
@@ -980,52 +1012,52 @@ const ClusterManagement: React.FC = () => {
   const handleDissolveCluster = () => {
     // 设置待处理的操作并显示安全确认模态框
     setPendingAction({
-      type: 'dissolveCluster',
-      data: {}
+      type: "dissolveCluster",
+      data: {},
     });
     setSafetyConfirmVisible(true);
   };
 
   // 执行解散集群操作
-  const executeDissolveCluster = useCallback(
-    async () => {
-      setSafetyConfirmLoading(true);
-      try {
-        console.log("开始调用解散集群API...");
-        const result = await clusterInitService.dissolveCluster();
-        console.log("解散集群API返回结果:", result);
+  const executeDissolveCluster = useCallback(async () => {
+    setSafetyConfirmLoading(true);
+    try {
+      console.log("开始调用解散集群API...");
+      const result = await clusterInitService.dissolveCluster();
+      console.log("解散集群API返回结果:", result);
 
-        if (result.success) {
-          console.log("解散集群成功，显示成功消息:", result.message);
-          message.success(result.message);
-          // 刷新集群列表 - 这里可以添加具体的刷新逻辑
-        } else {
-          console.log("解散集群失败，显示错误消息:", result.message);
-          message.error(result.message);
-        }
-      } catch (error) {
-        console.error("解散集群异常:", error);
-        message.error("解散集群失败，请稍后重试");
-      } finally {
-        setSafetyConfirmLoading(false);
-        setSafetyConfirmVisible(false);
-        setPendingAction(null);
+      if (result.success) {
+        console.log("解散集群成功，显示成功消息:", result.message);
+        message.success(result.message);
+        // 刷新集群列表 - 这里可以添加具体的刷新逻辑
+      } else {
+        console.log("解散集群失败，显示错误消息:", result.message);
+        message.error(result.message);
       }
-    },
-    [message]
-  );
+    } catch (error) {
+      console.error("解散集群异常:", error);
+      message.error("解散集群失败，请稍后重试");
+    } finally {
+      setSafetyConfirmLoading(false);
+      setSafetyConfirmVisible(false);
+      setPendingAction(null);
+    }
+  }, [message]);
 
   // 安全确认处理函数
   const handleSafetyConfirm = useCallback(() => {
     if (!pendingAction) return;
 
     switch (pendingAction.type) {
-      case 'removeNode':
+      case "removeNode":
         if (pendingAction.data.hostname && pendingAction.data.nodeName) {
-          executeRemoveNode(pendingAction.data.hostname, pendingAction.data.nodeName);
+          executeRemoveNode(
+            pendingAction.data.hostname,
+            pendingAction.data.nodeName
+          );
         }
         break;
-      case 'dissolveCluster':
+      case "dissolveCluster":
         executeDissolveCluster();
         break;
       default:
@@ -1045,21 +1077,23 @@ const ClusterManagement: React.FC = () => {
     if (!pendingAction) return null;
 
     switch (pendingAction.type) {
-      case 'removeNode':
+      case "removeNode":
         return {
           title: "确认移除节点",
           description: `您即将从集群中移除节点 "${pendingAction.data.nodeName}"。此操作将会影响集群的可用性，请确保该节点上没有重要的运行中虚拟机。`,
           confirmText: `remove ${pendingAction.data.nodeName}`,
-          warning: "移除节点是不可逆操作，移除后节点上的数据将无法恢复。请确保已备份重要数据。",
-          confirmButtonText: "移除节点"
+          warning:
+            "移除节点是不可逆操作，移除后节点上的数据将无法恢复。请确保已备份重要数据。",
+          confirmButtonText: "移除节点",
         };
-      case 'dissolveCluster':
+      case "dissolveCluster":
         return {
           title: "确认解散集群",
           description: "您即将解散当前集群。此操作将清除所有集群配置和数据。",
           confirmText: "dissolve cluster",
-          warning: "解散集群是极其危险的操作，所有数据将被永久删除且无法恢复。请确保已备份所有重要数据。",
-          confirmButtonText: "解散集群"
+          warning:
+            "解散集群是极其危险的操作，所有数据将被永久删除且无法恢复。请确保已备份所有重要数据。",
+          confirmButtonText: "解散集群",
         };
       default:
         return null;
@@ -2253,8 +2287,7 @@ const ClusterManagement: React.FC = () => {
                     <Statistic
                       title="系统盘使用率"
                       value={
-                        nodeDetailData?.disk_total &&
-                        nodeDetailData?.disk_used
+                        nodeDetailData?.disk_total && nodeDetailData?.disk_used
                           ? Math.round(
                               (nodeDetailData.disk_used /
                                 nodeDetailData.disk_total) *
@@ -2286,8 +2319,7 @@ const ClusterManagement: React.FC = () => {
                     />
                     <Progress
                       percent={
-                        nodeDetailData?.disk_total &&
-                        nodeDetailData?.disk_used
+                        nodeDetailData?.disk_total && nodeDetailData?.disk_used
                           ? Math.round(
                               (nodeDetailData.disk_used /
                                 nodeDetailData.disk_total) *
@@ -2299,8 +2331,7 @@ const ClusterManagement: React.FC = () => {
                       strokeColor={
                         nodeDetailData?.disk_total &&
                         nodeDetailData?.disk_used &&
-                        (nodeDetailData.disk_used /
-                          nodeDetailData.disk_total) *
+                        (nodeDetailData.disk_used / nodeDetailData.disk_total) *
                           100 >
                           80
                           ? "#ff4d4f"
@@ -2407,7 +2438,7 @@ const ClusterManagement: React.FC = () => {
             <Row gutter={[16, 16]}>
               {/* PCI设备信息 */}
               <Col span={24}>
-                <Card 
+                <Card
                   title={
                     <Space>
                       <SettingOutlined />
@@ -2432,7 +2463,9 @@ const ClusterManagement: React.FC = () => {
                   {nodePCILoading ? (
                     <div style={{ textAlign: "center", padding: "20px" }}>
                       <SyncOutlined spin style={{ fontSize: "18px" }} />
-                      <div style={{ marginTop: "8px" }}>加载PCI设备信息中...</div>
+                      <div style={{ marginTop: "8px" }}>
+                        加载PCI设备信息中...
+                      </div>
                     </div>
                   ) : nodePCIError ? (
                     <Alert
@@ -2466,7 +2499,7 @@ const ClusterManagement: React.FC = () => {
                         },
                         {
                           title: "设备名称",
-                          dataIndex: "device_name", 
+                          dataIndex: "device_name",
                           key: "device_name",
                           width: "30%",
                           ellipsis: true,
@@ -2485,13 +2518,12 @@ const ClusterManagement: React.FC = () => {
                           dataIndex: "iommu_group",
                           key: "iommu_group",
                           width: "10%",
-                          render: (group: number) => (
+                          render: (group: number) =>
                             group !== null ? (
                               <Tag color="orange">{group}</Tag>
                             ) : (
                               <Tag color="default">-</Tag>
-                            )
-                          ),
+                            ),
                         },
                       ]}
                     />
@@ -2503,7 +2535,7 @@ const ClusterManagement: React.FC = () => {
 
               {/* 磁盘设备信息 */}
               <Col span={24}>
-                <Card 
+                <Card
                   title={
                     <Space>
                       <AppstoreOutlined />
@@ -2528,7 +2560,9 @@ const ClusterManagement: React.FC = () => {
                   {nodeDisksLoading ? (
                     <div style={{ textAlign: "center", padding: "20px" }}>
                       <SyncOutlined spin style={{ fontSize: "18px" }} />
-                      <div style={{ marginTop: "8px" }}>加载磁盘设备信息中...</div>
+                      <div style={{ marginTop: "8px" }}>
+                        加载磁盘设备信息中...
+                      </div>
                     </div>
                   ) : nodeDisksError ? (
                     <Alert
@@ -2559,7 +2593,9 @@ const ClusterManagement: React.FC = () => {
                           key: "size",
                           width: "15%",
                           render: (size: number) => (
-                            <span>{(size / 1024 / 1024 / 1024).toFixed(2)} GB</span>
+                            <span>
+                              {(size / 1024 / 1024 / 1024).toFixed(2)} GB
+                            </span>
                           ),
                         },
                         {
@@ -2580,7 +2616,11 @@ const ClusterManagement: React.FC = () => {
                             <div>
                               {mountPoints && mountPoints.length > 0 ? (
                                 mountPoints.map((point, index) => (
-                                  <Tag key={index} color="purple" style={{ marginBottom: "2px" }}>
+                                  <Tag
+                                    key={index}
+                                    color="purple"
+                                    style={{ marginBottom: "2px" }}
+                                  >
                                     {point}
                                   </Tag>
                                 ))
@@ -2593,35 +2633,36 @@ const ClusterManagement: React.FC = () => {
                         {
                           title: "使用率",
                           dataIndex: "usage_percentage",
-                          key: "usage_percentage", 
+                          key: "usage_percentage",
                           width: "20%",
-                          render: (usage: number) => (
+                          render: (usage: number) =>
                             usage !== null ? (
                               <Progress
                                 percent={Math.round(usage)}
                                 size="small"
                                 strokeColor={
-                                  usage > 90 ? "#ff4d4f" :
-                                  usage > 70 ? "#faad14" : "#52c41a"
+                                  usage > 90
+                                    ? "#ff4d4f"
+                                    : usage > 70
+                                    ? "#faad14"
+                                    : "#52c41a"
                                 }
                               />
                             ) : (
                               <span style={{ color: "#999" }}>-</span>
-                            )
-                          ),
+                            ),
                         },
                         {
                           title: "文件系统",
                           dataIndex: "filesystem",
-                          key: "filesystem", 
+                          key: "filesystem",
                           width: "15%",
-                          render: (fs: string) => (
+                          render: (fs: string) =>
                             fs ? (
                               <Tag color="cyan">{fs}</Tag>
                             ) : (
                               <Tag color="default">-</Tag>
-                            )
-                          ),
+                            ),
                         },
                       ]}
                     />
@@ -2745,7 +2786,33 @@ const ClusterManagement: React.FC = () => {
               </Button>
             </Space>
           </Card>
-          <Tabs items={hostDetailTabs} />
+          <Tabs
+            activeKey={hostDetailActiveTab}
+            onChange={(key) => {
+              console.log(`🔄 [Host Detail Tab] 切换到Tab: ${key}`);
+              setHostDetailActiveTab(key);
+
+              // 当切换到hardware Tab时，按需加载硬件信息
+              if (key === "hardware" && sidebarSelectedHost) {
+                console.log(
+                  `🔧 [On-Demand Loading] 按需加载硬件信息: ${sidebarSelectedHost.name}`
+                );
+
+                // 如果还没有PCI设备数据，则加载
+                if (!nodePCIData) {
+                  console.log(`📡 [PCI Loading] 开始加载PCI设备信息`);
+                  fetchNodePCIData(sidebarSelectedHost.name);
+                }
+
+                // 如果还没有磁盘设备数据，则加载
+                if (!nodeDisksData) {
+                  console.log(`💽 [Disks Loading] 开始加载磁盘设备信息`);
+                  fetchNodeDisksData(sidebarSelectedHost.name);
+                }
+              }
+            }}
+            items={hostDetailTabs}
+          />
         </Card>
       </div>
     );
@@ -3022,7 +3089,6 @@ const ClusterManagement: React.FC = () => {
                       <Col xs={24} sm={8} md={6}>
                         <Card size="small">
                           <Statistic
-                           
                             title="配置节点数"
                             value={clusterSummaryData.nodes_configured}
                             prefix={<ClusterOutlined />}

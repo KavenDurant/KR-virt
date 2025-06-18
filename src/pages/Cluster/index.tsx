@@ -669,8 +669,6 @@ const ClusterManagement: React.FC = () => {
           }
         }
 
-        setNodeOperationLoading(operation);
-
         modal.confirm({
           title: `确认${operationNames[operation]}`,
           content: `您确定要对节点 ${hostname} 执行${operationNames[operation]}操作吗？`,
@@ -678,6 +676,9 @@ const ClusterManagement: React.FC = () => {
           cancelText: "取消",
           onOk: async () => {
             try {
+              // 在用户确认后才设置loading状态
+              setNodeOperationLoading(operation);
+              
               let result;
               switch (operation) {
                 case "reboot":
@@ -699,9 +700,11 @@ const ClusterManagement: React.FC = () => {
                 case "migrate":
                   // 虚拟机迁移逻辑（暂时简化处理）
                   message.info("虚拟机迁移功能正在开发中");
+                  setNodeOperationLoading(null);
                   return;
                 default:
                   console.error("未知的操作类型:", operation);
+                  setNodeOperationLoading(null);
                   return;
               }
 
@@ -730,10 +733,6 @@ const ClusterManagement: React.FC = () => {
               setNodeOperationLoading(null);
             }
           },
-          onCancel: () => {
-            // 用户点击取消时重置加载状态
-            setNodeOperationLoading(null);
-          },
         });
       } catch (error) {
         console.error(`Error in handleNodeOperation:`, error);
@@ -741,6 +740,8 @@ const ClusterManagement: React.FC = () => {
           title: "操作失败",
           content: "操作执行过程中发生错误",
         });
+        // 确保在错误情况下也重置loading状态
+        setNodeOperationLoading(null);
       }
     },
     [checkCanEnterMaintenance, fetchNodeDetailData, modal, message]

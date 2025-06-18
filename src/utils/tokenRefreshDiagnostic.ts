@@ -4,7 +4,7 @@
  * @Description: Token自动刷新诊断工具
  */
 
-import { loginService, TokenRefreshManager } from "@/services/login";
+import { loginService } from "@/services/login";
 
 export class TokenRefreshDiagnostic {
   /**
@@ -76,10 +76,12 @@ export class TokenRefreshDiagnostic {
                 console.log("   - 过期时间:", expDate.toLocaleString());
                 console.log("   - 是否过期:", isExpired ? "❌ 是" : "✅ 否");
               }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (error) {
               console.log("   - Payload解析:", "❌ 失败");
             }
           }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
           console.log("6️⃣ Token格式检查:", "❌ 解析失败");
         }

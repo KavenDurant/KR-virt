@@ -1063,6 +1063,7 @@ class ClusterInitService {
   /**
    * 获取模拟硬盘设备列表
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private getMockNodeDiskDevices(_hostname: string): NodeDisksResponse {
     return {
       devices: [

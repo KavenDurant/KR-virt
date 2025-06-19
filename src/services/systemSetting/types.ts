@@ -1,0 +1,53 @@
+/*
+ * @Author: KavenDurant luojiaxin888@gmail.com
+ * @Date: 2025-06-18 18:51:18
+ * @LastEditors: KavenDurant luojiaxin888@gmail.com
+ * @LastEditTime: 2025-06-18 18:53:42
+ * @FilePath: /KR-virt/src/services/systemSetting/types.ts
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
+// 时间同步相关类型定义
+
+// NTP服务器配置
+export interface NtpServerConfig {
+  address: string;
+}
+
+// NTP服务器状态
+export interface NtpServerStatus {
+  address: string;
+  status: string;
+}
+
+// 节点时间同步状态
+export interface NodeTimeSyncStatus {
+  sync_service: string;
+  service_status: string;
+  ntp_server_list: NtpServerStatus[];
+}
+
+// 时间同步状态响应
+export interface TimeSyncStatusResponse {
+  nodes: Record<string, NodeTimeSyncStatus>;
+}
+
+// 时间同步执行请求
+export interface TimeSyncExecuteRequest {
+  node_ids?: string[];
+}
+
+// 时间同步执行响应
+export interface TimeSyncExecuteResponse {
+  task_id: string;
+  status: string;
+  message: string;
+}
+
+// 组件状态相关类型
+export interface TimeSyncComponentState {
+  ntpServer: string;
+  syncStatus: TimeSyncStatusResponse | null;
+  loading: boolean;
+  refreshing: boolean;
+  executing: boolean;
+}

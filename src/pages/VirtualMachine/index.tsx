@@ -62,6 +62,7 @@ import {
   SaveOutlined,
 } from "@ant-design/icons";
 import { useTheme } from "../../hooks/useTheme";
+import { useSidebarSelection } from "../../hooks";
 import type {
   VirtualMachine as VMData,
   VMManagementData,
@@ -120,8 +121,32 @@ interface VMStats {
   storageUsage: number;
 }
 
+/**
+ * 虚拟机管理主组件
+ *
+ * 重构说明：
+ * - 使用 useSidebarSelection Hook 统一管理侧边栏选择状态
+ * - 移除了重复的事件监听逻辑
+ * - 简化了状态管理，提高了代码复用性
+ */
 const VirtualMachineManagement: React.FC = () => {
   const { themeConfig } = useTheme();
+
+  /**
+   * 侧边栏选择状态管理
+   *
+   * 重构优势：
+   * - 复用了集群管理模块的相同逻辑
+   * - 自动处理事件监听和清理
+   * - 类型安全的状态访问
+   * - 统一的状态清理接口
+   */
+  const {
+    selectedHost: sidebarSelectedHost,
+    selectedVM: sidebarSelectedVM,
+    clearSelection,
+  } = useSidebarSelection();
+
   const [activeTab, setActiveTab] = useState("list");
   const [loading, setLoading] = useState(false);
   const [vmList, setVmList] = useState<VirtualMachine[]>([]);
@@ -136,47 +161,19 @@ const VirtualMachineManagement: React.FC = () => {
   const [selectedVM, setSelectedVM] = useState<VirtualMachine | null>(null);
   const [createVMModal, setCreateVMModal] = useState(false);
 
-  // 侧边栏选择的虚拟机状态
-  const [sidebarSelectedVM, setSidebarSelectedVM] = useState<VMData | null>(
-    null,
-  );
-
-  // 侧边栏选择的物理机状态
-  const [sidebarSelectedHost, setSidebarSelectedHost] = useState<Node | null>(
-    null,
-  );
-
-  // 监听侧边栏选择事件
-  useEffect(() => {
-    const handleSidebarSelect = (event: CustomEvent) => {
-      const { nodeType, nodeData } = event.detail;
-
-      // 处理不同类型的节点选择
-      if (nodeType === "vm") {
-        setSidebarSelectedVM(nodeData as VMData);
-        setSidebarSelectedHost(null);
-      } else if (nodeType === "host") {
-        setSidebarSelectedHost(nodeData);
-        setSidebarSelectedVM(null);
-      } else {
-        // 选择集群时清空选择
-        setSidebarSelectedVM(null);
-        setSidebarSelectedHost(null);
-      }
-    };
-
-    window.addEventListener(
-      "hierarchical-sidebar-select",
-      handleSidebarSelect as EventListener,
-    );
-
-    return () => {
-      window.removeEventListener(
-        "hierarchical-sidebar-select",
-        handleSidebarSelect as EventListener,
-      );
-    };
-  }, []);
+  /**
+   * 侧边栏选择事件处理
+   *
+   * 重构前：需要手动监听 hierarchical-sidebar-select 事件
+   * 重构后：useSidebarSelection Hook 自动处理所有事件监听
+   *
+   * 移除的代码：
+   * - 30+ 行的事件监听逻辑
+   * - 手动状态清理
+   * - 复杂的条件判断
+   *
+   * 现在只需要使用 Hook 返回的状态即可
+   */
 
   // 数据加载effect
   useEffect(() => {
@@ -1825,7 +1822,7 @@ const VirtualMachineManagement: React.FC = () => {
           </h3>
           <Button
             style={{ marginTop: "8px" }}
-            onClick={() => setSidebarSelectedVM(null)}
+            onClick={() => clearSelection()}
           >
             返回列表
           </Button>

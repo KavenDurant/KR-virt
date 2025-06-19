@@ -57,9 +57,11 @@ import {
   SunOutlined,
   MoonOutlined,
   DesktopOutlined,
+  ClockCircleOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTheme } from "../../hooks/useTheme";
+import { TimeSyncComponent } from "../../components/SystemSettingComponent";
 
 const { Content } = Layout;
 const { TabPane } = Tabs;
@@ -1260,6 +1262,19 @@ const SystemSettings: React.FC = () => {
                       size="small"
                     />
                   </Card>
+                </TabPane>
+
+                {/* 时间同步 */}
+                <TabPane
+                  tab={
+                    <Space>
+                      <ClockCircleOutlined />
+                      <span>时间同步</span>
+                    </Space>
+                  }
+                  key="timeSync"
+                >
+                  <TimeSyncComponent />
                 </TabPane>
 
                 {/* 关于系统 */}

@@ -75,6 +75,7 @@ import {
   DiskPerformanceChart,
   NetworkPerformanceChart,
 } from "@/components/ClusterComponent";
+import DiskDeviceTreeTable from "@/components/DiskDeviceTreeTable";
 
 const { Text } = Typography;
 
@@ -2364,99 +2365,9 @@ const ClusterManagement: React.FC = () => {
                       showIcon
                     />
                   ) : nodeDisksData && nodeDisksData.devices.length > 0 ? (
-                    <Table
-                      dataSource={nodeDisksData.devices}
-                      rowKey={(record, index) => `${record.name || index}`}
-                      pagination={{ pageSize: 10, showSizeChanger: true }}
-                      size="small"
-                      columns={[
-                        {
-                          title: "设备名称",
-                          dataIndex: "name",
-                          key: "name",
-                          width: "15%",
-                          render: (name: string) => (
-                            <Tag color="blue">{name}</Tag>
-                          ),
-                        },
-                        {
-                          title: "大小",
-                          dataIndex: "size",
-                          key: "size",
-                          width: "15%",
-                          render: (size: number) => (
-                            <span>
-                              {(size / 1024 / 1024 / 1024).toFixed(2)} GB
-                            </span>
-                          ),
-                        },
-                        {
-                          title: "类型",
-                          dataIndex: "type",
-                          key: "type",
-                          width: "10%",
-                          render: (type: string) => (
-                            <Tag color="green">{type}</Tag>
-                          ),
-                        },
-                        {
-                          title: "挂载点",
-                          dataIndex: "mount_points",
-                          key: "mount_points",
-                          width: "25%",
-                          render: (mountPoints: string[]) => (
-                            <div>
-                              {mountPoints && mountPoints.length > 0 ? (
-                                mountPoints.map((point, index) => (
-                                  <Tag
-                                    key={index}
-                                    color="purple"
-                                    style={{ marginBottom: "2px" }}
-                                  >
-                                    {point}
-                                  </Tag>
-                                ))
-                              ) : (
-                                <Tag color="default">未挂载</Tag>
-                              )}
-                            </div>
-                          ),
-                        },
-                        {
-                          title: "使用率",
-                          dataIndex: "usage_percentage",
-                          key: "usage_percentage",
-                          width: "20%",
-                          render: (usage: number) =>
-                            usage !== null ? (
-                              <Progress
-                                percent={Math.round(usage)}
-                                size="small"
-                                strokeColor={
-                                  usage > 90
-                                    ? "#ff4d4f"
-                                    : usage > 70
-                                    ? "#faad14"
-                                    : "#52c41a"
-                                }
-                              />
-                            ) : (
-                              <span style={{ color: "#999" }}>-</span>
-                            ),
-                        },
-                        {
-                          title: "文件系统",
-                          dataIndex: "filesystem",
-                          key: "filesystem",
-                          width: "15%",
-                          render: (fs: string) =>
-                            fs ? (
-                              <Tag color="cyan">{fs}</Tag>
-                            ) : (
-                              <Tag color="default">-</Tag>
-                            ),
-                        },
-                      ]}
+                    <DiskDeviceTreeTable
+                      devices={nodeDisksData.devices}
+                      loading={nodeDisksLoading}
                     />
                   ) : (
                     <Empty description="暂无磁盘设备信息" />

@@ -363,7 +363,7 @@ export interface NodeDiskDeviceActual {
   read_only: boolean; // 是否只读
   device_type: "disk" | "part" | "rom"; // 设备类型
   mount_point: string; // 挂载点
-  parent: string; // 父设备
+  parent: string | null; // 父设备
   filesystem: string; // 文件系统
   total_size_gb: number; // 总容量（GB）
   used_size_gb: number; // 已用容量（GB）

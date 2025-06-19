@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-06-18 18:51:32
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-06-18 19:22:12
+ * @LastEditTime: 2025-06-19 10:29:36
  * @FilePath: /KR-virt/src/services/systemSetting/index.ts
  * @Description: 系统设置服务 - 参考cluster集群服务的统一架构
  */
@@ -201,17 +201,14 @@ class SystemSettingService {
   }
 }
 
-// 创建实例并导出
-const systemSettingService = new SystemSettingService();
+// 创建并导出系统设置服务实例
+export const systemSettingService = new SystemSettingService();
 
-// 兼容原有的timeSyncApi导出
-export const timeSyncApi = {
-  getNtpServer: () => systemSettingService.getNtpServer(),
-  setNtpServer: (config: NtpServerConfig) =>
-    systemSettingService.setNtpServer(config),
-  getTimeSyncStatus: () => systemSettingService.getTimeSyncStatus(),
-  executeTimeSync: (params?: TimeSyncExecuteRequest) =>
-    systemSettingService.executeTimeSync(params),
-};
+// 导出类型
+export * from "./types";
 
+// 导出类（用于测试或特殊需求）
+export { SystemSettingService };
+
+// 默认导出
 export default systemSettingService;

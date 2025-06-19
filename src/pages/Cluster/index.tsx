@@ -58,11 +58,12 @@ import {
   formatLoadAverage,
   formatPowerState,
 } from "../../utils/format";
-import type {
-  Cluster as ClusterData,
-  Node,
-  VirtualMachine as VMData,
-} from "../../services/mockData";
+import {
+  useSidebarSelection,
+  useSidebarRefresh,
+  useSidebarHostActions,
+  SidebarRefreshTriggers,
+} from "../../hooks";
 import { clusterInitService } from "@/services/cluster";
 import type { ClusterNodesResponse } from "@/services/cluster";
 import type { ClusterSummaryResponse } from "@/services/cluster";
@@ -160,8 +161,86 @@ const getStatusTag = (status: string) => {
   }
 };
 
+/**
+ * 集群管理主组件
+ *
+ * 重构说明：
+ * - 使用 useSidebarSelection Hook 统一管理侧边栏选择状态
+ * - 使用 useSidebarRefresh Hook 处理刷新事件
+ * - 使用 useSidebarHostActions Hook 处理主机操作
+ * - 简化了事件处理逻辑，提高了代码可维护性
+ */
 const ClusterManagement: React.FC = () => {
   const { modal, message } = App.useApp();
+
+  /**
+   * 侧边栏选择状态管理
+   *
+   * 这个Hook替代了原来复杂的事件监听逻辑：
+   * - 自动处理 hierarchical-sidebar-select 事件
+   * - 提供类型安全的状态访问
+   * - 统一的状态清理接口
+   *
+   * 注意：selectedCluster 始终为 null，因为选择集群时会清空所有选择状态
+   * 这样可以确保页面显示集群管理主页面而不是集群详情页面
+   */
+  const {
+    selectedHost: sidebarSelectedHost,
+    selectedVM: sidebarSelectedVM,
+    clearSelection,
+  } = useSidebarSelection();
+
+  /**
+   * 侧边栏刷新事件处理
+   *
+   * 替代了原来的手动事件监听：
+   * window.addEventListener("refresh-sidebar", ...)
+   *
+   * 现在只需要提供回调函数，Hook会自动处理事件监听和清理
+   */
+  useSidebarRefresh((detail) => {
+    console.log("收到侧边栏刷新事件:", detail);
+
+    // 只有在显示集群页面时才刷新
+    if (detail.type === "cluster") {
+      console.log("正在刷新集群数据...");
+      fetchRealClusterData();
+    }
+  });
+
+  /**
+   * 侧边栏主机操作事件处理
+   *
+   * 替代了原来复杂的操作映射逻辑：
+   * - 自动处理 hierarchical-sidebar-host-action 事件
+   * - 标准化操作类型映射
+   * - 类型安全的回调接口
+   */
+  useSidebarHostActions((operation, hostname, hostData) => {
+    console.log("收到侧边栏主机操作事件:", { operation, hostname, hostData });
+
+    // 确保操作类型是有效的
+    const validOperations = [
+      "reboot",
+      "stop",
+      "enter_maintenance",
+      "exit_maintenance",
+      "migrate",
+    ];
+    if (validOperations.includes(operation)) {
+      handleNodeOperation(
+        operation as
+          | "reboot"
+          | "stop"
+          | "enter_maintenance"
+          | "exit_maintenance"
+          | "migrate",
+        hostname
+      );
+    } else {
+      console.warn(`未知的主机操作: ${operation}`);
+    }
+  });
 
   // 全局API防重复调用机制
   const globalApiLockRef = useRef<Set<string>>(new Set());
@@ -218,16 +297,6 @@ const ClusterManagement: React.FC = () => {
   const [clusterResourcesError, setClusterResourcesError] = useState<
     string | null
   >(null);
-
-  // 侧边栏选择的节点状态
-  const [sidebarSelectedCluster, setSidebarSelectedCluster] =
-    useState<ClusterData | null>(null);
-  const [sidebarSelectedHost, setSidebarSelectedHost] = useState<Node | null>(
-    null
-  );
-  const [sidebarSelectedVM, setSidebarSelectedVM] = useState<VMData | null>(
-    null
-  );
 
   // 节点摘要数据状态
   const [nodeDetailData, setNodeDetailData] =
@@ -297,49 +366,21 @@ const ClusterManagement: React.FC = () => {
     [nodeDetailData]
   );
 
-  // 监听侧边栏选择事件
+  // 当选择主机时，自动获取节点详细信息
   useEffect(() => {
-    const handleSidebarSelect = (event: CustomEvent) => {
-      const { nodeType, nodeData } = event.detail;
-      console.log("集群页面收到侧边栏选择事件:", { nodeType, nodeData });
-
-      // 清空所有选择状态
-      setSidebarSelectedCluster(null);
-      setSidebarSelectedHost(null);
-      setSidebarSelectedVM(null);
-
-      // 清空节点摘要数据
+    if (sidebarSelectedHost) {
+      // 清空之前的节点摘要数据
       setNodeDetailData(null);
       setNodeDetailError(null);
 
-      // 处理不同类型的节点选择
-      if (nodeType === "cluster") {
-        // 选中集群时，不设置 sidebarSelectedCluster，让它显示默认的集群管理页面
-        // setSidebarSelectedCluster(nodeData as ClusterData);
-      } else if (nodeType === "host") {
-        const hostData = nodeData as Node;
-        setSidebarSelectedHost(hostData);
-        // 这里将在稍后调用节点摘要API，在fetchNodeDetailData定义后
-        console.log(
-          `🔍 [Node Detail] 选择了主机 ${hostData.name}，将获取详细信息`
-        );
-      } else if (nodeType === "vm") {
-        setSidebarSelectedVM(nodeData as VMData);
-      }
-    };
-
-    window.addEventListener(
-      "hierarchical-sidebar-select",
-      handleSidebarSelect as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        "hierarchical-sidebar-select",
-        handleSidebarSelect as EventListener
+      console.log(
+        `🔍 [Node Detail] 选择了主机 ${sidebarSelectedHost.name}，将获取详细信息`
       );
-    };
-  }, []);
+
+      // 获取节点详细信息（将在fetchNodeDetailData定义后调用）
+      // fetchNodeDetailData(sidebarSelectedHost.name);
+    }
+  }, [sidebarSelectedHost]);
 
   // 获取进度条颜色的函数
   const getProgressColor = (percent: number) => {
@@ -678,7 +719,7 @@ const ClusterManagement: React.FC = () => {
             try {
               // 在用户确认后才设置loading状态
               setNodeOperationLoading(operation);
-              
+
               let result;
               switch (operation) {
                 case "reboot":
@@ -765,10 +806,7 @@ const ClusterManagement: React.FC = () => {
           fetchRealClusterData();
 
           // 触发侧边栏刷新事件
-          const refreshSidebarEvent = new CustomEvent("refresh-sidebar", {
-            detail: { type: "cluster", action: "node-added" },
-          });
-          window.dispatchEvent(refreshSidebarEvent);
+          SidebarRefreshTriggers.cluster("node-added");
         } else {
           modal.error({
             title: "添加节点失败",
@@ -816,10 +854,7 @@ const ClusterManagement: React.FC = () => {
           fetchRealClusterData();
 
           // 触发侧边栏刷新事件
-          const refreshSidebarEvent = new CustomEvent("refresh-sidebar", {
-            detail: { type: "cluster", action: "node-removed" },
-          });
-          window.dispatchEvent(refreshSidebarEvent);
+          SidebarRefreshTriggers.cluster("node-removed");
         } else {
           modal.error({
             title: "移除节点失败",
@@ -841,54 +876,6 @@ const ClusterManagement: React.FC = () => {
     [modal, fetchRealClusterData]
   );
 
-  // 监听侧边栏主机操作事件
-  useEffect(() => {
-    const handleSidebarHostAction = (event: CustomEvent) => {
-      const { action, hostname } = event.detail;
-      console.log("集群页面收到侧边栏主机操作事件:", { action, hostname });
-
-      // 将操作映射到正确的操作类型
-      let operation:
-        | "reboot"
-        | "stop"
-        | "enter_maintenance"
-        | "exit_maintenance"
-        | "migrate";
-      switch (action) {
-        case "reboot":
-          operation = "reboot";
-          break;
-        case "shutdown":
-          operation = "stop";
-          break;
-        case "maintenance":
-          operation = "enter_maintenance";
-          break;
-        case "migrate":
-          operation = "migrate";
-          break;
-        default:
-          console.warn(`未知的主机操作: ${action}`);
-          return;
-      }
-
-      // 调用主机操作处理函数
-      handleNodeOperation(operation, hostname);
-    };
-
-    window.addEventListener(
-      "hierarchical-sidebar-host-action",
-      handleSidebarHostAction as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        "hierarchical-sidebar-host-action",
-        handleSidebarHostAction as EventListener
-      );
-    };
-  }, [handleNodeOperation]);
-
   // 监听主机选择变化，优化数据加载策略
   useEffect(() => {
     if (sidebarSelectedHost) {
@@ -896,8 +883,14 @@ const ClusterManagement: React.FC = () => {
         `🔍 [Node Detail] 开始获取主机 ${sidebarSelectedHost.name} 的详细信息`
       );
 
-      // 不重置Tab状态，保持用户当前选择的Tab
-      console.log(`📌 [Tab Keep] 保持当前Tab状态不变`);
+      // 重置主机详情标签页到默认状态（基本信息）
+      // 这确保了每次选择主机时都从默认标签页开始，提供一致的用户体验
+      setHostDetailActiveTab("basic");
+      console.log(`🔄 [Tab Reset] 重置主机详情标签页到默认状态: basic`);
+
+      // 清空之前的节点详情数据
+      setNodeDetailData(null);
+      setNodeDetailError(null);
 
       // 清空硬件信息状态，准备按需加载
       setNodePCIData(null);
@@ -1320,249 +1313,11 @@ const ClusterManagement: React.FC = () => {
     },
   ];
 
-  // 如果从侧边栏选中了集群，显示集群详情
-  if (sidebarSelectedCluster) {
-    console.log("显示集群详情:", sidebarSelectedCluster);
-    const clusterDetailTabs = [
-      {
-        key: "basic",
-        label: "基本信息",
-        children: (
-          <div>
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <Card title="集群配置" size="small">
-                  <Descriptions column={1} bordered>
-                    <Descriptions.Item label="集群名称">
-                      {sidebarSelectedCluster.name}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="集群类型">
-                      {sidebarSelectedCluster.type}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="状态">
-                      {getStatusTag(sidebarSelectedCluster.status)}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="物理主机数量">
-                      {sidebarSelectedCluster.nodes.length} 台
-                    </Descriptions.Item>
-                    <Descriptions.Item label="虚拟机总数">
-                      {sidebarSelectedCluster.nodes.reduce(
-                        (acc, node) => acc + node.vms.length,
-                        0
-                      )}{" "}
-                      台
-                    </Descriptions.Item>
-                  </Descriptions>
-                </Card>
-              </Col>
+  // 集群选择不再触发详情页面显示，因为我们始终显示集群管理主页面
+  // 移除了集群详情相关的 useEffect
 
-              <Col xs={24} md={12}>
-                <Card title="资源统计" size="small">
-                  <Row gutter={16}>
-                    <Col span={12}>
-                      <Statistic
-                        title="平均CPU使用率"
-                        value={Math.round(
-                          sidebarSelectedCluster.nodes.reduce(
-                            (acc, node) => acc + node.cpu,
-                            0
-                          ) / sidebarSelectedCluster.nodes.length
-                        )}
-                        suffix="%"
-                        prefix={<ThunderboltOutlined />}
-                      />
-                    </Col>
-                    <Col span={12}>
-                      <Statistic
-                        title="平均内存使用率"
-                        value={Math.round(
-                          sidebarSelectedCluster.nodes.reduce(
-                            (acc, node) => acc + node.memory,
-                            0
-                          ) / sidebarSelectedCluster.nodes.length
-                        )}
-                        suffix="%"
-                        prefix={<DatabaseOutlined />}
-                      />
-                    </Col>
-                  </Row>
-                </Card>
-              </Col>
-            </Row>
-          </div>
-        ),
-      },
-      {
-        key: "hosts",
-        label: "物理主机",
-        children: (
-          <div>
-            <Card title="物理主机列表" size="small">
-              <Table
-                size="small"
-                dataSource={sidebarSelectedCluster.nodes}
-                columns={[
-                  {
-                    title: "主机名称",
-                    dataIndex: "name",
-                    key: "name",
-                    render: (name: string, record: Node) => (
-                      <div>
-                        <div style={{ fontWeight: "bold" }}>{name}</div>
-                        <div style={{ fontSize: "12px", color: "#666" }}>
-                          ID: {record.id}
-                        </div>
-                      </div>
-                    ),
-                  },
-                  {
-                    title: "状态",
-                    dataIndex: "status",
-                    key: "status",
-                    render: (status: string) => getStatusTag(status),
-                  },
-                  {
-                    title: "CPU使用率",
-                    dataIndex: "cpu",
-                    key: "cpu",
-                    render: (cpu: number) => (
-                      <Progress
-                        percent={cpu}
-                        size="small"
-                        strokeColor={getProgressColor(cpu)}
-                      />
-                    ),
-                  },
-                  {
-                    title: "内存使用率",
-                    dataIndex: "memory",
-                    key: "memory",
-                    render: (memory: number) => (
-                      <Progress
-                        percent={memory}
-                        size="small"
-                        strokeColor={getProgressColor(memory)}
-                      />
-                    ),
-                  },
-                  {
-                    title: "虚拟机数量",
-                    key: "vmCount",
-                    render: (_, record: Node) => `${record.vms.length} 台`,
-                  },
-                  {
-                    title: "运行时间",
-                    dataIndex: "uptime",
-                    key: "uptime",
-                  },
-                ]}
-                pagination={false}
-              />
-            </Card>
-          </div>
-        ),
-      },
-      {
-        key: "vms",
-        label: "虚拟机",
-        children: (
-          <div>
-            <Card title="虚拟机列表" size="small">
-              <Table
-                size="small"
-                dataSource={sidebarSelectedCluster.nodes.flatMap((node) =>
-                  node.vms.map((vm) => ({ ...vm, nodeName: node.name }))
-                )}
-                columns={[
-                  {
-                    title: "虚拟机名称",
-                    dataIndex: "name",
-                    key: "name",
-                    render: (
-                      name: string,
-                      record: VMData & { nodeName?: string }
-                    ) => (
-                      <div>
-                        <div style={{ fontWeight: "bold" }}>{name}</div>
-                        <div style={{ fontSize: "12px", color: "#666" }}>
-                          ID: {record.vmid} | 主机:{" "}
-                          {record.nodeName || record.node}
-                        </div>
-                      </div>
-                    ),
-                  },
-                  {
-                    title: "状态",
-                    dataIndex: "status",
-                    key: "status",
-                    render: (status: string) => getStatusTag(status),
-                  },
-                  {
-                    title: "配置",
-                    key: "config",
-                    render: (_, record: VMData) => (
-                      <div style={{ fontSize: "12px" }}>
-                        <div>CPU: {record.cpu}核</div>
-                        <div>内存: {record.memory}GB</div>
-                        <div>磁盘: {record.diskSize}GB</div>
-                      </div>
-                    ),
-                  },
-                  {
-                    title: "运行时间",
-                    dataIndex: "uptime",
-                    key: "uptime",
-                    render: (uptime: string) => uptime || "未运行",
-                  },
-                ]}
-                pagination={{ pageSize: 10 }}
-              />
-            </Card>
-          </div>
-        ),
-      },
-    ];
-
-    return (
-      <div>
-        <Card
-          title={
-            <Space>
-              <ClusterOutlined />
-              <span>集群详情 - {sidebarSelectedCluster.name}</span>
-              {getStatusTag(sidebarSelectedCluster.status)}
-            </Space>
-          }
-          extra={
-            <Space>
-              <Button
-                onClick={() => {
-                  setSidebarSelectedCluster(null);
-                }}
-              >
-                返回集群管理
-              </Button>
-              <Button
-                type="primary"
-                icon={<SyncOutlined />}
-                onClick={() => message.info("正在刷新集群信息...")}
-              >
-                刷新状态
-              </Button>
-              <Button
-                icon={<MonitorOutlined />}
-                onClick={() => message.info("正在打开集群监控...")}
-              >
-                监控
-              </Button>
-            </Space>
-          }
-        >
-          <Tabs items={clusterDetailTabs} />
-        </Card>
-      </div>
-    );
-  }
+  // 移除了集群详情页面显示逻辑
+  // 现在选择集群时会清空所有选择状态，始终显示集群管理主页面
 
   // 如果从侧边栏选中了物理主机，显示主机详情
   if (sidebarSelectedHost) {
@@ -2755,7 +2510,7 @@ const ClusterManagement: React.FC = () => {
               </Button>
               <Button
                 onClick={() => {
-                  setSidebarSelectedHost(null);
+                  clearSelection();
                   setNodeDetailData(null);
                   setNodeDetailError(null);
                 }}
@@ -2956,7 +2711,7 @@ const ClusterManagement: React.FC = () => {
             <Space>
               <Button
                 onClick={() => {
-                  setSidebarSelectedVM(null);
+                  clearSelection();
                 }}
               >
                 返回集群管理

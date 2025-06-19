@@ -29,7 +29,7 @@ import {
   ReloadOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
-import { timeSyncApi } from '../../services/systemSetting';
+import { systemSettingService as timeSyncApi } from '../../services/systemSetting';
 import type {
   NtpServerConfig,
   TimeSyncStatusResponse,

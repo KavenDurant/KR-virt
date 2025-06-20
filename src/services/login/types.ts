@@ -19,6 +19,7 @@ export interface AuthResponse {
   message: string;
   token?: string;
   user?: UserInfo;
+  requireReauth?: boolean; // 标记是否需要重新认证
 }
 
 // 登录数据接口
@@ -54,11 +55,52 @@ export interface MockUser {
 export interface LoginApiResponse {
   access_token: string;
   permission: unknown;
+  exp: string;
   is_first_time_login: boolean;
   [key: string]: unknown;
 }
 
-export interface RefreshTokenApiResponse {
+// Token刷新相关类型定义
+export interface TokenRefreshRequest {
+  // 根据实际API需求定义请求参数
+}
+
+export interface TokenRefreshResponse {
   access_token: string;
+  expires_in?: number;
+  token_type?: string;
   [key: string]: unknown;
+}
+
+// 2FA相关类型定义
+export interface TotpSecretResponse {
+  totp_secret: string;
+}
+
+export interface TotpVerifyRequest {
+  totp_code: string;
+}
+
+export interface TotpVerifyResponse {
+  success: boolean;
+  message: string;
+}
+
+// 首次登录密码修改类型定义
+export interface FirstTimePasswordChangeRequest {
+  new_password: string;
+}
+
+export interface FirstTimePasswordChangeResponse {
+  success: boolean;
+  message: string;
+}
+
+// 首次登录流程状态
+export interface FirstTimeLoginState {
+  isFirstTime: boolean;
+  totpSetupRequired: boolean;
+  passwordChangeRequired: boolean;
+  totpSecret?: string;
+  currentStep: 'totp' | 'password' | 'complete';
 }

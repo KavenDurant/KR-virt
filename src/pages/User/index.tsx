@@ -30,7 +30,12 @@ import {
   CopyOutlined,
 } from "@ant-design/icons";
 import { useTheme } from "../../hooks/useTheme";
-import { userService, type User, type CreateUserRequest, type UserType } from "../../services/user";
+import {
+  userService,
+  type User,
+  type CreateUserRequest,
+  type UserType,
+} from "../../services/user";
 
 const { Search } = Input;
 const { Option } = Select;
@@ -65,7 +70,10 @@ const UserManagement: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [form] = Form.useForm();
-  const [createUserResult, setCreateUserResult] = useState<{ login_name: string; password: string } | null>(null);
+  const [createUserResult, setCreateUserResult] = useState<{
+    login_name: string;
+    password: string;
+  } | null>(null);
 
   // 加载用户列表
   const loadUsers = useCallback(async () => {
@@ -217,7 +225,7 @@ const UserManagement: React.FC = () => {
       const response = await userService.toggleUserStatus(user.id, newStatus);
       if (response.success) {
         setUsers(
-          users.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u)),
+          users.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u))
         );
         message.success(response.message);
       } else {
@@ -272,7 +280,10 @@ const UserManagement: React.FC = () => {
           department: values.department,
           status: values.status ? ("active" as const) : ("disabled" as const),
         };
-        const response = await userService.updateUser(editingUser.id, updateData);
+        const response = await userService.updateUser(
+          editingUser.id,
+          updateData
+        );
         if (response.success) {
           message.success(response.message);
           setModalVisible(false);
@@ -467,11 +478,7 @@ const UserManagement: React.FC = () => {
         footer={null}
         width={600}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleFormSubmit}
-        >
+        <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -513,10 +520,14 @@ const UserManagement: React.FC = () => {
               <Button type="primary" htmlType="submit">
                 {editingUser ? "更新" : "创建"}
               </Button>
-              <Button onClick={() => {
-                setModalVisible(false);
-                setCreateUserResult(null);
-              }}>取消</Button>
+              <Button
+                onClick={() => {
+                  setModalVisible(false);
+                  setCreateUserResult(null);
+                }}
+              >
+                取消
+              </Button>
             </Space>
           </Form.Item>
         </Form>
@@ -527,8 +538,12 @@ const UserManagement: React.FC = () => {
             message="用户创建成功！"
             description={
               <div>
-                <p><strong>登录名：</strong>{createUserResult.login_name}</p>
-                <p><strong>初始密码：</strong>
+                <p>
+                  <strong>登录名：</strong>
+                  {createUserResult.login_name}
+                </p>
+                <p>
+                  <strong>初始密码：</strong>
                   <Text code copyable={{ text: createUserResult.password }}>
                     {createUserResult.password}
                   </Text>
@@ -543,7 +558,7 @@ const UserManagement: React.FC = () => {
                     复制密码
                   </Button>
                 </p>
-                <p style={{ color: '#ff4d4f', fontSize: '12px' }}>
+                <p style={{ color: "#ff4d4f", fontSize: "12px" }}>
                   请妥善保存此密码，用户首次登录后建议修改密码。
                 </p>
               </div>

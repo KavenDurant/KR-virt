@@ -307,8 +307,20 @@ const defaultRetryCondition = (error: AxiosError): boolean => {
 // 通用错误处理函数
 const handleCommonErrors = (
   status: number,
-  errorDetails?: ErrorResponseData
+  errorDetails?: ErrorResponseData,
+  requestUrl?: string
 ): string => {
+  // 优先使用后端返回的 detail 字段
+  if (errorDetails?.detail && typeof errorDetails.detail === 'string') {
+    return errorDetails.detail;
+  }
+
+  // 如果有 message 字段，也优先使用
+  if (errorDetails?.message && typeof errorDetails.message === 'string') {
+    return errorDetails.message;
+  }
+
+  // 根据状态码和请求URL判断错误类型
   switch (status) {
     case 200:
     case 201:
@@ -316,15 +328,15 @@ const handleCommonErrors = (
       // 正常返回，不应该进入错误处理
       return "操作成功";
     case 401:
+      // 区分登录请求和其他请求的401错误
+      if (requestUrl?.includes('/user/login')) {
+        return "用户名或密码不正确";
+      }
       return "登录已过期，请重新登录";
     case 498:
       return "账户需要激活，请联系管理员";
     default:
-      // 其他所有状态码都优先使用 detail 字段
-      if (errorDetails?.detail && typeof errorDetails.detail === 'string') {
-        return errorDetails.detail;
-      }
-      return errorDetails?.message || `请求失败 (${status})`;
+      return `请求失败 (${status})`;
   }
 };
 // 重试函数
@@ -555,11 +567,12 @@ const createAxiosInstance = (): AxiosInstance => {
         const { status, data } = error.response;
         errorDetails = data as ErrorResponseData;
 
-        // 使用统一的错误处理函数
-        errorMessage = handleCommonErrors(status, errorDetails);
+        // 使用统一的错误处理函数，传入请求URL用于判断错误类型
+        errorMessage = handleCommonErrors(status, errorDetails, error.config?.url);
 
         // 特殊处理 401 和 498 错误的登录跳转
-        if (status === 401 || status === 498) {
+        // 但排除登录请求本身，避免登录失败时自动跳转
+        if ((status === 401 || status === 498) && !error.config?.url?.includes('/user/login')) {
           TokenManager.clearTokens();
           // 延迟跳转，避免影响当前错误处理
           setTimeout(() => {

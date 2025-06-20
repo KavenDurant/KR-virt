@@ -25,7 +25,6 @@ class UserService {
     userData: CreateUserRequest
   ): Promise<StandardResponse<CreateUserResponse>> {
     if (USE_MOCK_DATA) {
-      console.log("🎭 Using Mock API");
       return mockApi.post(`${this.BASE_URL}/create`, userData, {
         useMock: true,
         mockData: {

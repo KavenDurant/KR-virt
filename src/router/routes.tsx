@@ -27,6 +27,7 @@ import UserManagement from "@/pages/User";
 import SystemSettings from "@/pages/System";
 import Dashboard from "@/pages/Dashboard";
 import AuditManagement from "@/pages/Audit";
+import FirstTimeLogin from "@/pages/FirstTimeLogin";
 
 // 定义路由
 export interface RouteConfig {

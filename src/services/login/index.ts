@@ -194,27 +194,17 @@ class LoginService {
 
   /**
    * 验证Token格式是否有效
+   * TODO: 当前使用browser token，暂时跳过格式验证，后期需要根据实际token格式添加验证逻辑
    */
   private isValidTokenFormat(token: string): boolean {
     if (!token || typeof token !== "string") {
       return false;
     }
 
-    // 检查JWT格式 (header.payload.signature)
-    const parts = token.split(".");
-    if (parts.length !== 3) {
-      return false;
-    }
+    // TODO: 根据实际的browser token格式添加验证逻辑
+    // 当前暂时只检查token是否为非空字符串
+    return token.trim().length > 0;
 
-    // 检查每部分是否为有效的Base64编码
-    try {
-      for (const part of parts) {
-        atob(part);
-      }
-      return true;
-    } catch {
-      return false;
-    }
   }
 
   // ===== 自动刷新token区域 =====
@@ -235,6 +225,7 @@ class LoginService {
 
     // 验证Token格式
     if (!this.isValidTokenFormat(currentToken)) {
+      console.warn("Token格式验证失败，清除本地数据");
       this.clearAuthDataSync();
       return {
         success: false,
@@ -243,9 +234,9 @@ class LoginService {
     }
 
     try {
-      // 调用Token刷新接口
-      const result = await api.post<TokenRefreshResponse>(
-        "/user/refresh_token", // 使用正确的刷新端点
+      // 调用Token刷新接口 http://192.168.1.187:8001/user/renew_access_token get
+      const result = await api.get<TokenRefreshResponse>(
+        "/user/renew_access_token", // 使用正确的刷新端点
         {}, // 空的请求体，Token通过Header传递
         {
           headers: {
@@ -529,6 +520,7 @@ class LoginService {
 
   /**
    * 调试Token信息（仅开发环境使用）
+   * TODO: 当前使用browser token，暂时只显示基本信息，后期根据实际token格式添加解析逻辑
    */
   debugTokenInfo(): void {
     if (import.meta.env.DEV) {
@@ -536,25 +528,33 @@ class LoginService {
       console.group("🔍 Token调试信息");
 
       if (!token) {
+        console.log("❌ 未找到Token");
         console.groupEnd();
         return;
       }
 
-      // 尝试解析JWT payload
-      try {
-        const parts = token.split(".");
-        if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1]));
-          console.log("📄 Token Payload:", payload);
-          if (payload.exp) {
-            const expDate = new Date(payload.exp * 1000);
-            console.log("⏰ Token过期时间:", expDate.toLocaleString());
-            console.log("⌛ 是否已过期:", Date.now() > payload.exp * 1000);
-          }
-        }
-      } catch (error) {
-        console.log("❌ Token解析失败:", error);
-      }
+      // 显示基本Token信息
+      console.log("📄 Token类型:", "Browser Token");
+      console.log("📏 Token长度:", token.length);
+      console.log("🔤 Token内容:", token);
+      console.log("✅ Token格式验证:", this.isValidTokenFormat(token));
+
+      // TODO: 根据实际的browser token格式添加解析逻辑
+      // 以下是原JWT解析代码，已注释掉
+      // try {
+      //   const parts = token.split(".");
+      //   if (parts.length === 3) {
+      //     const payload = JSON.parse(atob(parts[1]));
+      //     console.log("📄 Token Payload:", payload);
+      //     if (payload.exp) {
+      //       const expDate = new Date(payload.exp * 1000);
+      //       console.log("⏰ Token过期时间:", expDate.toLocaleString());
+      //       console.log("⌛ 是否已过期:", Date.now() > payload.exp * 1000);
+      //     }
+      //   }
+      // } catch (error) {
+      //   console.log("❌ Token解析失败:", error);
+      // }
 
       console.groupEnd();
     }

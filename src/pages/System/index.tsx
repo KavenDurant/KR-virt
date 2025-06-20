@@ -289,7 +289,8 @@ const SystemSettings: React.FC = () => {
     } finally {
       setLicenseLoading(false);
     }
-  }, [message]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 移除message依赖，避免无限循环
 
   // 加载登录策略
   const loadLoginPolicy = useCallback(async () => {
@@ -308,7 +309,8 @@ const SystemSettings: React.FC = () => {
     } finally {
       setLoginPolicyLoading(false);
     }
-  }, [loginPolicyForm, message]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loginPolicyForm]); // 移除message依赖，避免无限循环
 
   // 加载"关于系统"标签页数据
   const loadAboutTabData = useCallback(async () => {
@@ -325,7 +327,8 @@ const SystemSettings: React.FC = () => {
       console.error("Failed to load about tab data:", error);
       message.error("加载关于系统数据失败");
     }
-  }, [loadedTabs, loadLicenseInfo, loadLoginPolicy, message]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadedTabs, loadLicenseInfo, loadLoginPolicy]); // 移除message依赖，避免无限循环
 
   // 标签页切换处理函数
   const handleTabChange = useCallback(
@@ -382,7 +385,8 @@ const SystemSettings: React.FC = () => {
     };
 
     initializeData();
-  }, [message]); // 添加message依赖
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 移除message依赖，避免无限循环
 
   // 处理初始标签页的懒加载（如果用户直接访问特定标签页）
   useEffect(() => {

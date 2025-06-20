@@ -180,8 +180,18 @@ export class CookieUtils {
    * 设置Token到安全Cookie
    */
   static setToken(token: string, options: CookieOptions = {}): void {
+    console.log("🍪 设置Token到Cookie:");
+    console.log("原始Token:", token);
+    console.log("原始Token长度:", token.length);
+
     const tokenOptions = { ...TOKEN_COOKIE_OPTIONS, ...options };
     this.set('kr_virt_token', token, tokenOptions);
+
+    // 立即验证保存的Token
+    const savedToken = this.getToken();
+    console.log("保存后读取的Token:", savedToken);
+    console.log("保存后Token长度:", savedToken?.length);
+    console.log("Token是否一致:", token === savedToken);
   }
 
   /**

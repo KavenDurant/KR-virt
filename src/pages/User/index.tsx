@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   Table,
@@ -10,12 +10,13 @@ import {
   Tooltip,
   Modal,
   Form,
-  Switch,
-  message,
   Spin,
   Row,
   Col,
   Statistic,
+  App,
+  Typography,
+  Alert,
 } from "antd";
 import {
   UserOutlined,
@@ -26,67 +27,40 @@ import {
   LockOutlined,
   UnlockOutlined,
   TeamOutlined,
+  CopyOutlined,
 } from "@ant-design/icons";
 import { useTheme } from "../../hooks/useTheme";
+import {
+  userService,
+  type User,
+  type CreateUserRequest,
+  type UserType,
+} from "../../services/user";
 
 const { Search } = Input;
 const { Option } = Select;
+const { Text } = Typography;
 
-// 用户数据类型定义
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  realName: string;
-  role: string;
-  status: "active" | "disabled" | "locked";
-  lastLogin: string;
-  createTime: string;
-  department: string;
-  phone: string;
+// 表单值类型定义
+interface UserFormValues {
+  login_name: string;
+  user_name: string;
+  user_type: UserType;
+  email?: string;
+  phone?: string;
+  department?: string;
+  status?: boolean;
 }
 
-// 模拟用户数据
-const mockUsers: User[] = [
-  {
-    id: "1",
-    username: "admin",
-    email: "admin@example.com",
-    realName: "系统管理员",
-    role: "administrator",
-    status: "active",
-    lastLogin: "2025-05-26 10:30:00",
-    createTime: "2025-01-01 00:00:00",
-    department: "信息技术部",
-    phone: "13800138000",
-  },
-  {
-    id: "2",
-    username: "operator1",
-    email: "operator1@example.com",
-    realName: "运维员",
-    role: "operator",
-    status: "active",
-    lastLogin: "2025-05-26 09:15:00",
-    createTime: "2025-02-15 00:00:00",
-    department: "运维部",
-    phone: "13800138001",
-  },
-  {
-    id: "3",
-    username: "user1",
-    email: "user1@example.com",
-    realName: "普通用户",
-    role: "user",
-    status: "disabled",
-    lastLogin: "2025-05-25 16:45:00",
-    createTime: "2025-03-10 00:00:00",
-    department: "业务部",
-    phone: "13800138002",
-  },
-];
+// 用户类型映射
+const userTypeMap = {
+  system_admin: { color: "red", text: "系统管理员" },
+  security_admin: { color: "orange", text: "安全保密管理员" },
+  security_auditor: { color: "blue", text: "安全审计员" },
+};
 
 const UserManagement: React.FC = () => {
+  const { message } = App.useApp();
   const { themeConfig } = useTheme();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
@@ -96,20 +70,33 @@ const UserManagement: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [form] = Form.useForm();
+  const [createUserResult, setCreateUserResult] = useState<{
+    login_name: string;
+    password: string;
+  } | null>(null);
 
-  // 模拟数据加载
+  // 加载用户列表
+  const loadUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await userService.getUserList();
+      if (response.success && response.data) {
+        setUsers(response.data.users);
+      } else {
+        message.error(response.message || "获取用户列表失败");
+      }
+    } catch (error) {
+      console.error("Failed to load users:", error);
+      message.error("获取用户列表失败");
+    } finally {
+      setLoading(false);
+    }
+  }, [message]);
+
+  // 初始化加载数据
   useEffect(() => {
-    const loadData = () => {
-      setLoading(true);
-      // 模拟API调用延迟
-      setTimeout(() => {
-        setUsers(mockUsers);
-        setLoading(false);
-      }, 800);
-    };
-
-    loadData();
-  }, []);
+    loadUsers();
+  }, [loadUsers]);
 
   // 获取状态标签
   const getStatusTag = (status: string) => {
@@ -122,14 +109,9 @@ const UserManagement: React.FC = () => {
     return <Tag color={config.color}>{config.text}</Tag>;
   };
 
-  // 获取角色标签
-  const getRoleTag = (role: string) => {
-    const roleMap = {
-      administrator: { color: "red", text: "管理员" },
-      operator: { color: "orange", text: "运维员" },
-      user: { color: "blue", text: "普通用户" },
-    };
-    const config = roleMap[role as keyof typeof roleMap];
+  // 获取用户类型标签
+  const getUserTypeTag = (userType: UserType) => {
+    const config = userTypeMap[userType];
     return <Tag color={config.color}>{config.text}</Tag>;
   };
 
@@ -146,29 +128,23 @@ const UserManagement: React.FC = () => {
 
   const columns: UserTableColumn[] = [
     {
+      title: "登录名",
+      dataIndex: "login_name",
+      key: "login_name",
+      width: 120,
+    },
+    {
       title: "用户名",
-      dataIndex: "username",
-      key: "username",
+      dataIndex: "user_name",
+      key: "user_name",
       width: 120,
     },
     {
-      title: "真实姓名",
-      dataIndex: "realName",
-      key: "realName",
-      width: 120,
-    },
-    {
-      title: "邮箱",
-      dataIndex: "email",
-      key: "email",
-      width: 200,
-    },
-    {
-      title: "角色",
-      dataIndex: "role",
-      key: "role",
+      title: "用户类型",
+      dataIndex: "user_type",
+      key: "user_type",
       width: 100,
-      render: (role: string) => getRoleTag(role),
+      render: (userType: UserType) => getUserTypeTag(userType),
     },
     {
       title: "状态",
@@ -178,15 +154,9 @@ const UserManagement: React.FC = () => {
       render: (status: string) => getStatusTag(status),
     },
     {
-      title: "部门",
-      dataIndex: "department",
-      key: "department",
-      width: 120,
-    },
-    {
       title: "最后登录",
-      dataIndex: "lastLogin",
-      key: "lastLogin",
+      dataIndex: "last_login",
+      key: "last_login",
       width: 150,
     },
     {
@@ -237,34 +207,105 @@ const UserManagement: React.FC = () => {
   };
 
   // 处理状态切换
-  const handleToggleStatus = (user: User) => {
-    const newStatus = user.status === "active" ? "disabled" : "active";
-    setUsers(
-      users.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u)),
-    );
-    message.success(`用户状态已${newStatus === "active" ? "启用" : "禁用"}`);
+  const handleToggleStatus = async (user: User) => {
+    try {
+      const newStatus = user.status === "active" ? "disabled" : "active";
+      const response = await userService.toggleUserStatus(user.id, newStatus);
+      if (response.success) {
+        setUsers(
+          users.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u))
+        );
+        message.success(response.message);
+      } else {
+        message.error(response.message || "状态更新失败");
+      }
+    } catch (error) {
+      console.error("Failed to toggle user status:", error);
+      message.error("状态更新失败");
+    }
   };
 
   // 处理删除
   const handleDelete = (user: User) => {
     Modal.confirm({
       title: "确认删除",
-      content: `确定要删除用户 "${user.realName}" 吗？`,
-      onOk: () => {
-        setUsers(users.filter((u) => u.id !== user.id));
-        message.success("删除成功");
+      content: `确定要删除用户 "${user.user_name}" 吗？`,
+      onOk: async () => {
+        try {
+          const response = await userService.deleteUser(user.id);
+          if (response.success) {
+            setUsers(users.filter((u) => u.id !== user.id));
+            message.success(response.message);
+          } else {
+            message.error(response.message || "删除失败");
+          }
+        } catch (error) {
+          console.error("Failed to delete user:", error);
+          message.error("删除失败");
+        }
       },
     });
   };
 
   // 刷新数据
   const handleRefresh = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setUsers(mockUsers);
-      setLoading(false);
-      message.success("数据已刷新");
-    }, 500);
+    loadUsers();
+  };
+
+  // 处理表单提交
+  const handleFormSubmit = async (values: UserFormValues) => {
+    console.log("🚀 handleFormSubmit called with values:", values);
+    console.log("📝 editingUser:", editingUser);
+
+    try {
+      if (editingUser) {
+        // 更新用户
+        const updateData = {
+          user_name: values.user_name,
+          user_type: values.user_type,
+          email: values.email,
+          phone: values.phone,
+          department: values.department,
+          status: values.status ? ("active" as const) : ("disabled" as const),
+        };
+        const response = await userService.updateUser(
+          editingUser.id,
+          updateData
+        );
+        if (response.success) {
+          message.success(response.message);
+          setModalVisible(false);
+          loadUsers(); // 重新加载用户列表
+        } else {
+          message.error(response.message || "用户更新失败");
+        }
+      } else {
+        // 创建新用户
+        const createRequest: CreateUserRequest = {
+          login_name: values.login_name,
+          user_name: values.user_name,
+          user_type: values.user_type,
+        };
+
+        console.log("📡 Calling userService.createUser with:", createRequest);
+        const response = await userService.createUser(createRequest);
+        console.log("📥 API response:", response);
+
+        if (response.success && response.data) {
+          console.log("✅ User created successfully:", response.data);
+          setCreateUserResult(response.data);
+          message.success(response.message);
+          loadUsers(); // 重新加载用户列表
+          // 不关闭模态框，显示创建结果
+        } else {
+          console.log("❌ User creation failed:", response.message);
+          message.error(response.message || "用户创建失败");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to submit form:", error);
+      message.error(editingUser ? "用户更新失败" : "用户创建失败");
+    }
   };
 
   // 统计数据
@@ -272,7 +313,7 @@ const UserManagement: React.FC = () => {
     total: users.length,
     active: users.filter((u) => u.status === "active").length,
     disabled: users.filter((u) => u.status === "disabled").length,
-    administrators: users.filter((u) => u.role === "administrator").length,
+    administrators: users.filter((u) => u.user_type === "system_admin").length,
   };
 
   // 如果正在加载，显示Loading状态
@@ -308,6 +349,7 @@ const UserManagement: React.FC = () => {
               type="primary"
               onClick={() => {
                 setEditingUser(null);
+                setCreateUserResult(null);
                 form.resetFields();
                 setModalVisible(true);
               }}
@@ -372,15 +414,15 @@ const UserManagement: React.FC = () => {
           </Col>
           <Col span={4}>
             <Select
-              placeholder="角色"
+              placeholder="用户类型"
               style={{ width: "100%" }}
               value={roleFilter}
               onChange={setRoleFilter}
             >
-              <Option value="all">全部角色</Option>
-              <Option value="administrator">管理员</Option>
-              <Option value="operator">运维员</Option>
-              <Option value="user">普通用户</Option>
+              <Option value="all">全部类型</Option>
+              <Option value="system_admin">系统管理员</Option>
+              <Option value="security_admin">安全保密管理员</Option>
+              <Option value="security_auditor">安全审计员</Option>
             </Select>
           </Col>
           <Col span={4}>
@@ -417,98 +459,114 @@ const UserManagement: React.FC = () => {
       <Modal
         title={editingUser ? "编辑用户" : "新增用户"}
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={() => {
+          setModalVisible(false);
+          setCreateUserResult(null);
+        }}
         footer={null}
         width={600}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={(values) => {
-            console.log("提交用户数据:", values);
-            message.success(editingUser ? "用户更新成功" : "用户创建成功");
-            setModalVisible(false);
-          }}
-        >
+        <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="username"
+                name="login_name"
+                label="登录名"
+                rules={[{ required: true, message: "请输入登录名" }]}
+              >
+                <Input placeholder="用于登录的用户名" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="user_name"
                 label="用户名"
                 rules={[{ required: true, message: "请输入用户名" }]}
               >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="realName"
-                label="真实姓名"
-                rules={[{ required: true, message: "请输入真实姓名" }]}
-              >
-                <Input />
+                <Input placeholder="用户的显示名称" />
               </Form.Item>
             </Col>
           </Row>
+
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="email"
-                label="邮箱"
-                rules={[
-                  { required: true, message: "请输入邮箱" },
-                  { type: "email", message: "请输入有效的邮箱地址" },
-                ]}
+                name="user_type"
+                label="用户类型"
+                rules={[{ required: true, message: "请选择用户类型" }]}
               >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="phone"
-                label="手机号"
-                rules={[{ required: true, message: "请输入手机号" }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="role"
-                label="角色"
-                rules={[{ required: true, message: "请选择角色" }]}
-              >
-                <Select>
-                  <Option value="administrator">管理员</Option>
-                  <Option value="operator">运维员</Option>
-                  <Option value="user">普通用户</Option>
+                <Select placeholder="请选择用户类型">
+                  <Option value="system_admin">系统管理员</Option>
+                  <Option value="security_admin">安全保密管理员</Option>
+                  <Option value="security_auditor">安全审计员</Option>
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item
-                name="department"
-                label="部门"
-                rules={[{ required: true, message: "请输入部门" }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
           </Row>
-          <Form.Item name="status" label="状态" valuePropName="checked">
-            <Switch checkedChildren="启用" unCheckedChildren="禁用" />
-          </Form.Item>
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit">
                 {editingUser ? "更新" : "创建"}
               </Button>
-              <Button onClick={() => setModalVisible(false)}>取消</Button>
+              <Button
+                onClick={() => {
+                  setModalVisible(false);
+                  setCreateUserResult(null);
+                }}
+              >
+                取消
+              </Button>
             </Space>
           </Form.Item>
         </Form>
+
+        {/* 显示创建用户结果 */}
+        {createUserResult && !editingUser && (
+          <Alert
+            message="用户创建成功！"
+            description={
+              <div>
+                <p>
+                  <strong>登录名：</strong>
+                  {createUserResult.login_name}
+                </p>
+                <p>
+                  <strong>初始密码：</strong>
+                  <Text code copyable={{ text: createUserResult.password }}>
+                    {createUserResult.password}
+                  </Text>
+                  <Button
+                    type="link"
+                    icon={<CopyOutlined />}
+                    onClick={() => {
+                      navigator.clipboard.writeText(createUserResult.password);
+                      message.success("密码已复制到剪贴板");
+                    }}
+                  >
+                    复制密码
+                  </Button>
+                </p>
+                <p style={{ color: "#ff4d4f", fontSize: "12px" }}>
+                  请妥善保存此密码，用户首次登录后建议修改密码。
+                </p>
+              </div>
+            }
+            type="success"
+            showIcon
+            style={{ marginTop: 16 }}
+            action={
+              <Button
+                size="small"
+                onClick={() => {
+                  setModalVisible(false);
+                  setCreateUserResult(null);
+                }}
+              >
+                关闭
+              </Button>
+            }
+          />
+        )}
       </Modal>
     </div>
   );

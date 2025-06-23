@@ -338,6 +338,34 @@ export class MockableApiHelper extends ApiHelper {
 
     return super.post<T>(url, data, apiOptions);
   }
+
+  /**
+   * 可 Mock 的 PUT 请求
+   */
+  static async put<T = unknown>(
+    url: string,
+    data?: unknown,
+    options: ApiOptions & {
+      mockData?: T;
+      useMock?: boolean;
+    } = {}
+  ): Promise<StandardResponse<T>> {
+    const { mockData, useMock, ...apiOptions } = options;
+
+    if ((useMock || process.env.NODE_ENV === "development") && mockData) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, 500 + Math.random() * 1000)
+      );
+
+      return {
+        success: true,
+        data: mockData,
+        message: apiOptions.defaultSuccessMessage || "更新成功",
+      };
+    }
+
+    return super.put<T>(url, data, apiOptions);
+  }
 }
 
 export const mockApi = MockableApiHelper;

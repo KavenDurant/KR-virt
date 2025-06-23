@@ -107,11 +107,6 @@ class ClusterInitService {
    * 检查集群状态
    */
   async checkClusterStatus(): Promise<ClusterStatusResponse> {
-    console.log(
-      "🔍 checkClusterStatus API调用 - 来源:",
-      new Error().stack?.split("\n")[2]?.trim()
-    );
-
     // 检查缓存
     if (
       this.statusCache &&

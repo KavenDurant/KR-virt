@@ -67,19 +67,34 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       };
       const result = await loginService.login(loginData);
       if (!result.success) {
-        message.error(result.message || "登录失败，请检查用户名和密码");
+        // 显示准确的错误信息
+        const errorMessage = result.message || "登录失败，请检查用户名和密码";
+        console.log("❌ 登录失败:", errorMessage);
+        message.error(errorMessage);
         return;
       }
+
       message.success("登录成功！正在跳转...");
+
+      // 检查是否为首次登录
+      const isFirstTime = result.user?.isFirstLogin || false;
+
       setTimeout(() => {
         if (onLoginSuccess) {
           onLoginSuccess();
         } else {
-          // 使用正确的Hash路由格式跳转到仪表盘
-          window.location.hash = "#/dashboard";
+          if (isFirstTime) {
+            // 首次登录，跳转到首次登录流程
+            console.log("检测到首次登录，跳转到首次登录流程");
+            window.location.hash = "#/first-time-login";
+          } else {
+            // 正常登录，跳转到仪表盘
+            window.location.hash = "#/dashboard";
+          }
         }
       }, 1000);
-    } catch {
+    } catch (error) {
+      console.error("❌ 登录异常:", error);
       message.error("登录失败，请稍后重试");
     } finally {
       setLoading(false);

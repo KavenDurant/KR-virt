@@ -51,3 +51,33 @@ export interface TimeSyncComponentState {
   refreshing: boolean;
   executing: boolean;
 }
+
+// ===== 许可证管理相关类型 =====
+
+// 许可证信息
+export interface LicenseInfo {
+  device_code: string;
+  expiry_date: string; // ISO 8601 格式
+  active_status: string;
+}
+
+// 许可证上传响应
+export interface LicenseUploadResponse {
+  message: string;
+  success: boolean;
+}
+
+// ===== 登录策略相关类型 =====
+
+// 登录策略配置
+export interface LoginPolicy {
+  login_timeout_value: number; // 登录超时时间（分钟）
+  login_max_retry_times: number; // 最大重试次数
+  enable_two_factor_auth: boolean; // 是否启用双因子认证
+}
+
+// 登录策略更新请求
+export interface LoginPolicyUpdateRequest extends LoginPolicy {}
+
+// 登录策略响应
+export interface LoginPolicyResponse extends LoginPolicy {}

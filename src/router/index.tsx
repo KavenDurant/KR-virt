@@ -13,6 +13,7 @@ import AppBootstrap from "@/components/AppBootstrap";
 import AppLayout from "@/components/Layout";
 import AuthGuard from "@/components/AuthGuard";
 import Login from "@/pages/Auth/Login";
+import FirstTimeLogin from "@/pages/FirstTimeLogin";
 
 // 验证用户是否已登录的函数
 const isUserAuthenticated = () => {
@@ -29,6 +30,16 @@ const Router: React.FC = () => {
 
         {/* 独立的登录路由 */}
         <Route path="/login" element={<Login />} />
+
+        {/* 首次登录流程路由 */}
+        <Route
+          path="/first-time-login"
+          element={
+            <AuthGuard>
+              <FirstTimeLogin />
+            </AuthGuard>
+          }
+        />
 
         {/* 根路由 - 重定向到启动页面 */}
         <Route path="/" element={<Navigate to="/bootstrap" replace />} />

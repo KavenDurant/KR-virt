@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Layout,
   Card,
@@ -25,12 +25,12 @@ import {
   Radio,
   Slider,
   InputNumber,
-  message,
   Popconfirm,
   Avatar,
   Descriptions,
   Steps,
   Spin,
+  App,
 } from "antd";
 import {
   SettingOutlined,
@@ -62,6 +62,11 @@ import {
 import dayjs from "dayjs";
 import { useTheme } from "../../hooks/useTheme";
 import { TimeSyncComponent } from "../../components/SystemSettingComponent";
+import { systemSettingService } from "../../services/systemSetting";
+import type {
+  LicenseInfo,
+  LoginPolicy,
+} from "../../services/systemSetting/types";
 
 const { Content } = Layout;
 const { TabPane } = Tabs;
@@ -117,8 +122,8 @@ type ThemeMode = "light" | "dark" | "auto";
 
 // 模拟数据
 const mockSystemInfo = {
-  version: "2.3.1",
-  buildTime: "2024-01-15 14:30:22",
+  version: "0.0.1",
+  buildTime: "2025-06-19 14:30:22",
   uptime: "15天 8小时 32分钟",
   license: {
     type: "Enterprise",
@@ -234,6 +239,7 @@ const mockLogs: LogEntry[] = [
 ];
 
 const SystemSettings: React.FC = () => {
+  const { message } = App.useApp();
   const [activeTab, setActiveTab] = useState("general");
 
   const [loading, setLoading] = useState(true);
@@ -256,14 +262,120 @@ const SystemSettings: React.FC = () => {
   const [, setSelectedBackup] = useState<Backup | null>(null);
   const { themeMode, setThemeMode, themeConfig } = useTheme();
 
-  // 初始化数据加载
+  // 许可证和登录策略相关状态
+  const [licenseInfo, setLicenseInfo] = useState<LicenseInfo | null>(null);
+  const [loginPolicy, setLoginPolicy] = useState<LoginPolicy | null>(null);
+  const [licenseLoading, setLicenseLoading] = useState(false);
+  const [loginPolicyLoading, setLoginPolicyLoading] = useState(false);
+  const [uploadingLicense, setUploadingLicense] = useState(false);
+  const [loginPolicyForm] = Form.useForm();
+
+  // 懒加载状态 - 跟踪哪些标签页已经被加载过
+  const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set());
+
+  // 加载许可证信息
+  const loadLicenseInfo = useCallback(async () => {
+    setLicenseLoading(true);
+    try {
+      const response = await systemSettingService.getLicenseInfo();
+      if (response.success && response.data) {
+        setLicenseInfo(response.data);
+      } else {
+        message.error(response.message || "获取许可证信息失败");
+      }
+    } catch (error) {
+      console.error("Failed to load license info:", error);
+      message.error("获取许可证信息失败");
+    } finally {
+      setLicenseLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 移除message依赖，避免无限循环
+
+  // 加载登录策略
+  const loadLoginPolicy = useCallback(async () => {
+    setLoginPolicyLoading(true);
+    try {
+      const response = await systemSettingService.getLoginPolicy();
+      if (response.success && response.data) {
+        setLoginPolicy(response.data);
+        loginPolicyForm.setFieldsValue(response.data);
+      } else {
+        message.error(response.message || "获取登录策略失败");
+      }
+    } catch (error) {
+      console.error("Failed to load login policy:", error);
+      message.error("获取登录策略失败");
+    } finally {
+      setLoginPolicyLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loginPolicyForm]); // 移除message依赖，避免无限循环
+
+  // 加载"关于系统"标签页数据
+  const loadAboutTabData = useCallback(async () => {
+    if (loadedTabs.has("about")) {
+      return; // 已经加载过，直接返回
+    }
+
+    try {
+      await Promise.all([loadLicenseInfo(), loadLoginPolicy()]);
+
+      // 标记该标签页已加载
+      setLoadedTabs((prev) => new Set(prev).add("about"));
+    } catch (error) {
+      console.error("Failed to load about tab data:", error);
+      message.error("加载关于系统数据失败");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadedTabs, loadLicenseInfo, loadLoginPolicy]); // 移除message依赖，避免无限循环
+
+  // 标签页切换处理函数
+  const handleTabChange = useCallback(
+    async (tabKey: string) => {
+      setActiveTab(tabKey);
+
+      // 根据标签页懒加载对应数据
+      switch (tabKey) {
+        case "about":
+          if (!loadedTabs.has("about")) {
+            await loadAboutTabData();
+          }
+          break;
+        // 可以在这里添加其他标签页的懒加载逻辑
+        case "users":
+          // 如果用户管理标签页有API调用，可以在这里添加
+          break;
+        case "backup":
+          // 如果备份管理标签页有API调用，可以在这里添加
+          break;
+        case "logs":
+          // 如果日志管理标签页有API调用，可以在这里添加
+          break;
+        case "timeSync":
+          // 时间同步标签页的组件内部已经有自己的懒加载逻辑
+          // 这里只需要标记为已加载，避免重复处理
+          if (!loadedTabs.has("timeSync")) {
+            setLoadedTabs((prev) => new Set(prev).add("timeSync"));
+          }
+          break;
+        default:
+          break;
+      }
+    },
+    [loadedTabs, loadAboutTabData]
+  );
+
+  // 初始化数据加载（仅加载通用数据，不加载特定标签页数据）
   useEffect(() => {
     const initializeData = async () => {
       setLoading(true);
       try {
-        // 模拟加载系统设置数据
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-        // 这里可以加载实际的系统配置数据
+        // 模拟加载系统设置通用数据
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        // 这里可以加载通用的系统配置数据（如果有的话）
+
+        // 初始化时不加载任何标签页特定数据，等待用户切换时再懒加载
       } catch (error) {
         console.error("Failed to load system settings:", error);
         message.error("加载系统设置失败");
@@ -273,7 +385,62 @@ const SystemSettings: React.FC = () => {
     };
 
     initializeData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 移除message依赖，避免无限循环
+
+  // 处理初始标签页的懒加载（如果用户直接访问特定标签页）
+  useEffect(() => {
+    if (!loading && activeTab === "about" && !loadedTabs.has("about")) {
+      loadAboutTabData();
+    }
+  }, [loading, activeTab, loadedTabs, loadAboutTabData]);
+
+  // 上传许可证文件
+  const handleLicenseUpload = async (file: File) => {
+    setUploadingLicense(true);
+    try {
+      const response = await systemSettingService.uploadLicense(file);
+      if (response.success) {
+        message.success("许可证上传成功");
+        // 重新加载许可证信息
+        await loadLicenseInfo();
+      } else {
+        message.error(response.message || "许可证上传失败");
+      }
+    } catch (error) {
+      console.error("Failed to upload license:", error);
+      message.error("许可证上传失败");
+    } finally {
+      setUploadingLicense(false);
+    }
+    return false; // 阻止默认上传行为
+  };
+
+  // 更新登录策略
+  const handleLoginPolicyUpdate = async (values: LoginPolicy) => {
+    console.log("🚀 handleLoginPolicyUpdate called with values:", values);
+    setLoginPolicyLoading(true);
+    try {
+      console.log("📡 Calling systemSettingService.updateLoginPolicy...");
+      const response = await systemSettingService.updateLoginPolicy(values);
+      console.log("📥 API response:", response);
+
+      if (response.success) {
+        message.success("登录策略更新成功");
+        setLoginPolicy(values);
+        console.log("✅ Login policy updated successfully");
+      } else {
+        message.error(response.message || "登录策略更新失败");
+        console.log("❌ Login policy update failed:", response.message);
+      }
+    } catch (error) {
+      console.error("💥 Failed to update login policy:", error);
+      message.error("登录策略更新失败");
+    } finally {
+      setLoginPolicyLoading(false);
+      console.log("🏁 handleLoginPolicyUpdate completed");
+    }
+  };
 
   // 获取状态标签
   const getStatusTag = (status: string) => {
@@ -599,7 +766,11 @@ const SystemSettings: React.FC = () => {
                 </Space>
               }
             >
-              <Tabs activeKey={activeTab} onChange={setActiveTab} type="line">
+              <Tabs
+                activeKey={activeTab}
+                onChange={handleTabChange}
+                type="line"
+              >
                 {/* 通用设置 */}
                 <TabPane
                   tab={
@@ -1288,6 +1459,7 @@ const SystemSettings: React.FC = () => {
                   key="about"
                 >
                   <Row gutter={[24, 24]}>
+                    {/* 第一行：产品信息和硬件信息 */}
                     <Col span={12}>
                       <Card title="产品信息">
                         <Descriptions column={1}>
@@ -1304,10 +1476,10 @@ const SystemSettings: React.FC = () => {
                             {mockSystemInfo.uptime}
                           </Descriptions.Item>
                           <Descriptions.Item label="开发商">
-                            科瑞科技有限公司
+                            上海瞰融信息科技有限公司
                           </Descriptions.Item>
                           <Descriptions.Item label="技术支持">
-                            support@kr-tech.com
+                            luojiaxin888@gmail.com
                           </Descriptions.Item>
                         </Descriptions>
                       </Card>
@@ -1332,12 +1504,159 @@ const SystemSettings: React.FC = () => {
                       </Card>
                     </Col>
 
+                    {/* 第二行：许可证管理和登录策略 */}
+                    <Col span={12}>
+                      <Card
+                        title="许可证管理"
+                        loading={licenseLoading}
+                        extra={
+                          <Button
+                            type="link"
+                            icon={<SyncOutlined />}
+                            onClick={loadLicenseInfo}
+                            size="small"
+                          >
+                            刷新
+                          </Button>
+                        }
+                      >
+                        {licenseInfo ? (
+                          <Descriptions column={1} size="small">
+                            <Descriptions.Item label="设备代码">
+                              <Text code>{licenseInfo.device_code}</Text>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="到期日期">
+                              <Text>
+                                {dayjs(licenseInfo.expiry_date).format(
+                                  "YYYY-MM-DD HH:mm:ss"
+                                )}
+                              </Text>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="激活状态">
+                              {licenseInfo.active_status === "active" ? (
+                                <Tag
+                                  icon={<CheckCircleOutlined />}
+                                  color="success"
+                                >
+                                  已激活
+                                </Tag>
+                              ) : (
+                                <Tag icon={<WarningOutlined />} color="warning">
+                                  {licenseInfo.active_status}
+                                </Tag>
+                              )}
+                            </Descriptions.Item>
+                          </Descriptions>
+                        ) : (
+                          <Alert
+                            message="暂无许可证信息"
+                            description="请上传有效的许可证文件"
+                            type="warning"
+                            showIcon
+                          />
+                        )}
+
+                        <Divider />
+
+                        <Upload
+                          accept=".lic,.license,.key"
+                          beforeUpload={handleLicenseUpload}
+                          showUploadList={false}
+                          disabled={uploadingLicense}
+                        >
+                          <Button
+                            icon={<UploadOutlined />}
+                            loading={uploadingLicense}
+                            block
+                          >
+                            {uploadingLicense ? "上传中..." : "上传许可证文件"}
+                          </Button>
+                        </Upload>
+                      </Card>
+                    </Col>
+
+                    <Col span={12}>
+                      <Card title="登录策略" loading={loginPolicyLoading}>
+                        <Form
+                          form={loginPolicyForm}
+                          layout="vertical"
+                          onFinish={handleLoginPolicyUpdate}
+                          disabled={loginPolicyLoading}
+                        >
+                          <Form.Item
+                            name="login_timeout_value"
+                            label="登录超时时间（分钟）"
+                            rules={[
+                              { required: true, message: "请输入登录超时时间" },
+                              {
+                                type: "number",
+                                min: 1,
+                                max: 1440,
+                                message: "超时时间必须在1-1440分钟之间",
+                              },
+                            ]}
+                          >
+                            <InputNumber
+                              min={1}
+                              max={1440}
+                              style={{ width: "100%" }}
+                              placeholder="请输入超时时间"
+                            />
+                          </Form.Item>
+
+                          <Form.Item
+                            name="login_max_retry_times"
+                            label="最大重试次数"
+                            rules={[
+                              { required: true, message: "请输入最大重试次数" },
+                              {
+                                type: "number",
+                                min: 1,
+                                max: 10,
+                                message: "重试次数必须在1-10次之间",
+                              },
+                            ]}
+                          >
+                            <InputNumber
+                              min={1}
+                              max={10}
+                              style={{ width: "100%" }}
+                              placeholder="请输入重试次数"
+                            />
+                          </Form.Item>
+
+                          <Form.Item
+                            name="enable_two_factor_auth"
+                            label="双因子认证"
+                            valuePropName="checked"
+                          >
+                            <Switch
+                              checkedChildren="启用"
+                              unCheckedChildren="禁用"
+                            />
+                          </Form.Item>
+
+                          <Form.Item>
+                            <Button
+                              type="primary"
+                              htmlType="submit"
+                              loading={loginPolicyLoading}
+                              block
+                            >
+                              保存登录策略
+                            </Button>
+                          </Form.Item>
+                        </Form>
+                      </Card>
+                    </Col>
+
+                    {/* 第三行：更新历史 */}
                     <Col span={24}>
                       <Card title="更新历史">
                         <Steps progressDot current={3} direction="vertical">
                           <Step
                             title="v2.3.1"
-                            description="2024-01-15 - 修复网络配置问题，优化用户界面"
+                            description="2024-01-15 - 修复网络配置问题，优化用户界面，新增许可证管理和登录策略功能"
                           />
                           <Step
                             title="v2.3.0"

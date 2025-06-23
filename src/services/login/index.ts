@@ -4,17 +4,22 @@
  * @Description: 登录服务 - 优化版本，使用统一的API工具
  */
 
-import { api } from '@/utils/apiHelper';
-import { CookieUtils } from '@/utils/cookies';
-import { EnvConfig } from '@/config/env';
+import { api } from "@/utils/apiHelper";
+import { CookieUtils } from "@/utils/cookies";
+import { EnvConfig } from "@/config/env";
 import type {
   LoginData,
   AuthResponse,
   UserInfo,
   MockUser,
   LoginApiResponse,
-  RefreshTokenApiResponse,
-} from './types';
+  TokenRefreshResponse,
+  TotpSecretResponse,
+  TotpVerifyRequest,
+  TotpVerifyResponse,
+  FirstTimePasswordChangeRequest,
+  FirstTimePasswordChangeResponse,
+} from "./types";
 
 // ===== 配置区域 =====
 const USE_MOCK_DATA = EnvConfig.ENABLE_MOCK; // 通过环境变量控制是否使用模拟数据
@@ -34,6 +39,13 @@ const mockUsers: MockUser[] = [
     role: "administrator",
     permissions: ["*"],
     isFirstLogin: false,
+  },
+  {
+    username: "new_user",
+    password: "NewUser123!",
+    role: "user",
+    permissions: ["read"],
+    isFirstLogin: true,
   },
 ];
 
@@ -93,7 +105,6 @@ class LoginService {
       CookieUtils.setUser(userInfo);
 
       // 模拟登录成功后也启动Token自动刷新
-      console.log("🚀 模拟登录成功，启动Token自动刷新");
       this.startGlobalTokenRefresh();
 
       return {
@@ -126,16 +137,28 @@ class LoginService {
    * 真实API登录实现
    */
   private async apiLogin(data: LoginData): Promise<AuthResponse> {
+
     const result = await api.post<LoginApiResponse>("/user/login", data, {
       skipAuth: true,
+      showErrorMessage: false, // 不自动显示错误，由登录页面处理
       defaultSuccessMessage: "登录成功",
       defaultErrorMessage: "登录失败，请稍后重试",
     });
 
     if (!result.success) {
+      // 确保返回准确的错误信息
+      let errorMessage = result.message || "登录失败，请检查用户名和密码";
+
+      // 如果是常见的登录错误，提供更友好的提示
+      if (errorMessage.includes("用户名或密码") ||
+          errorMessage.includes("Unauthorized") ||
+          errorMessage.includes("401")) {
+        errorMessage = "用户名或密码不正确";
+      }
+
       return {
         success: false,
-        message: result.message,
+        message: errorMessage,
       };
     }
 
@@ -148,15 +171,11 @@ class LoginService {
         role: this.parseUserRole(apiResponse.permission),
         permissions: this.parsePermissions(apiResponse.permission),
         lastLogin: new Date().toISOString(),
-        isFirstLogin: false,
+        isFirstLogin: apiResponse.is_first_time_login || false,
       };
-
       // 保存登录状态
       CookieUtils.setToken(apiResponse.access_token);
       CookieUtils.setUser(userInfo);
-
-      // 启动Token自动刷新
-      console.log("🚀 API登录成功，启动Token自动刷新");
       this.startGlobalTokenRefresh();
 
       return {
@@ -175,44 +194,38 @@ class LoginService {
 
   /**
    * 验证Token格式是否有效
+   * TODO: 当前使用browser token，暂时跳过格式验证，后期需要根据实际token格式添加验证逻辑
    */
   private isValidTokenFormat(token: string): boolean {
     if (!token || typeof token !== "string") {
       return false;
     }
 
-    // 检查JWT格式 (header.payload.signature)
-    const parts = token.split(".");
-    if (parts.length !== 3) {
-      return false;
-    }
+    // TODO: 根据实际的browser token格式添加验证逻辑
+    // 当前暂时只检查token是否为非空字符串
+    return token.trim().length > 0;
 
-    // 检查每部分是否为有效的Base64编码
-    try {
-      for (const part of parts) {
-        atob(part);
-      }
-      return true;
-    } catch {
-      return false;
-    }
   }
 
   // ===== 自动刷新token区域 =====
   /**
-   * 自动刷新token 接口地址为 http://192.168.1.187:8001/user/renew_access_token
+   * Token自动刷新方法
+   * 使用当前Token调用刷新接口获取新的Token
    */
   async refreshToken(): Promise<AuthResponse> {
-    const token = this.getToken();
-    if (!token) {
+    const currentToken = this.getToken();
+
+    // 检查是否有有效的Token
+    if (!currentToken) {
       return {
         success: false,
         message: "未找到有效的Token",
       };
     }
 
-    // 验证token格式
-    if (!this.isValidTokenFormat(token)) {
+    // 验证Token格式
+    if (!this.isValidTokenFormat(currentToken)) {
+      console.warn("Token格式验证失败，清除本地数据");
       this.clearAuthDataSync();
       return {
         success: false,
@@ -220,66 +233,99 @@ class LoginService {
       };
     }
 
-    const result = await api.get<RefreshTokenApiResponse>(
-      "/user/renew_access_token",
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        skipAuth: true,
-        showErrorMessage: false, // 刷新token不显示错误
-        defaultErrorMessage: "Token刷新失败",
-      }
-    );
+    try {
+      // 调用Token刷新接口 http://192.168.1.187:8001/user/renew_access_token get
+      const result = await api.get<TokenRefreshResponse>(
+        "/user/renew_access_token", // 使用正确的刷新端点
+        {}, // 空的请求体，Token通过Header传递
+        {
+          headers: {
+            Authorization: `Bearer ${currentToken}`,
+          },
+          skipAuth: true, // 跳过自动添加认证头，我们手动添加
+          showErrorMessage: false, // 不自动显示错误，由调用方处理
+          defaultErrorMessage: "Token刷新失败",
+        }
+      );
 
-    if (!result.success) {
-      // 如果是token格式错误，清除本地数据
-      if (result.message?.includes("DecodeError") || result.message?.includes("400")) {
-        this.clearAuthDataSync();
+      if (!result.success) {
+        // 处理刷新失败的情况
+        return this.handleRefreshFailure(result.message);
+      }
+
+      const refreshData = result.data;
+      if (!refreshData?.access_token) {
         return {
           success: false,
-          message: "Token已失效，已清除本地数据",
+          message: "Token刷新响应格式错误：缺少access_token",
         };
       }
 
-      return {
-        success: false,
-        message: result.message,
-      };
-    }
+      // 更新本地Token
+      CookieUtils.setToken(refreshData.access_token);
 
-    const refreshResponse = result.data!;
-
-    if (refreshResponse.access_token) {
-      // 更新token
-      CookieUtils.setToken(refreshResponse.access_token);
-
-      // 更新用户信息（如果有）
-      if (refreshResponse.permission) {
-        const currentUser = this.getCurrentUser();
-        if (currentUser) {
-          const updatedUser: UserInfo = {
-            ...currentUser,
-            role: this.parseUserRole(refreshResponse.permission),
-            permissions: this.parsePermissions(refreshResponse.permission),
-            lastLogin: new Date().toISOString(),
-          };
-          CookieUtils.setUser(updatedUser);
-        }
+      // 更新用户信息的最后登录时间
+      const currentUser = this.getCurrentUser();
+      if (currentUser) {
+        const updatedUser: UserInfo = {
+          ...currentUser,
+          lastLogin: new Date().toISOString(),
+        };
+        CookieUtils.setUser(updatedUser);
       }
 
       return {
         success: true,
         message: "Token刷新成功",
-        token: refreshResponse.access_token,
+        token: refreshData.access_token,
       };
-    } else {
+
+    } catch (error) {
+      console.error("Token刷新请求异常:", error);
+
+      // 根据错误类型返回不同的错误信息
+      if (error && typeof error === 'object' && 'message' in error) {
+        return this.handleRefreshFailure(error.message as string);
+      }
+
       return {
         success: false,
-        message: "Token刷新失败：响应格式错误",
+        message: "Token刷新请求失败，请检查网络连接",
       };
     }
+  }
+
+  /**
+   * 处理Token刷新失败的情况
+   */
+  private handleRefreshFailure(errorMessage?: string): AuthResponse {
+    const message = errorMessage || "Token刷新失败";
+
+    // 检查是否是认证相关的错误，需要清除本地数据
+    const authErrorKeywords = [
+      "401", "403", "Unauthorized", "Forbidden",
+      "invalid", "expired", "已失效", "无效",
+      "DecodeError", "token"
+    ];
+
+    const isAuthError = authErrorKeywords.some(keyword =>
+      message.toLowerCase().includes(keyword.toLowerCase())
+    );
+
+    if (isAuthError) {
+      console.warn("检测到认证错误，清除本地Token数据");
+      this.clearAuthDataSync();
+      return {
+        success: false,
+        message: "Token已失效，请重新登录",
+        requireReauth: true, // 标记需要重新认证
+      };
+    }
+
+    return {
+      success: false,
+      message,
+    };
   }
 
   /**
@@ -358,38 +404,25 @@ class LoginService {
    */
   async logout(): Promise<{ success: boolean; message: string }> {
     const token = this.getToken();
-    console.log("开始登出流程...");
-    console.log(
-      "当前token:",
-      token ? `${token.substring(0, 20)}...` : "null"
-    );
 
     // 如果有token，尝试调用后端登出API
     if (token) {
-      const result = await api.post("/user/logout", {}, {
-        skipAuth: false,
-        showErrorMessage: false, // 登出不显示错误
-        defaultErrorMessage: "登出失败",
-      });
-
-      if (result.success) {
-        console.log("后端登出API调用成功");
-      } else {
-        console.log("后端登出API调用失败，但继续清除本地数据");
-      }
-    } else {
-      console.log("无token，直接清除本地数据");
+      await api.post(
+        "/user/logout",
+        {},
+        {
+          skipAuth: false,
+          showErrorMessage: false, // 登出不显示错误
+          defaultErrorMessage: "登出失败",
+        }
+      );
     }
 
     // 清除本地存储的认证数据
-    console.log("清除本地认证数据...");
     CookieUtils.clearAuth();
 
     // 停止Token自动刷新
-    console.log("🛑 登出时停止Token自动刷新");
     this.stopGlobalTokenRefresh();
-
-    console.log("本地数据清除完成");
 
     return {
       success: true,
@@ -487,6 +520,7 @@ class LoginService {
 
   /**
    * 调试Token信息（仅开发环境使用）
+   * TODO: 当前使用browser token，暂时只显示基本信息，后期根据实际token格式添加解析逻辑
    */
   debugTokenInfo(): void {
     if (import.meta.env.DEV) {
@@ -499,25 +533,28 @@ class LoginService {
         return;
       }
 
-      console.log("📋 原始Token:", token);
+      // 显示基本Token信息
+      console.log("📄 Token类型:", "Browser Token");
       console.log("📏 Token长度:", token.length);
-      console.log("✅ Token格式检查:", this.isValidTokenFormat(token));
+      console.log("🔤 Token内容:", token);
+      console.log("✅ Token格式验证:", this.isValidTokenFormat(token));
 
-      // 尝试解析JWT payload
-      try {
-        const parts = token.split(".");
-        if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1]));
-          console.log("📄 Token Payload:", payload);
-          if (payload.exp) {
-            const expDate = new Date(payload.exp * 1000);
-            console.log("⏰ Token过期时间:", expDate.toLocaleString());
-            console.log("⌛ 是否已过期:", Date.now() > payload.exp * 1000);
-          }
-        }
-      } catch (error) {
-        console.log("❌ Token解析失败:", error);
-      }
+      // TODO: 根据实际的browser token格式添加解析逻辑
+      // 以下是原JWT解析代码，已注释掉
+      // try {
+      //   const parts = token.split(".");
+      //   if (parts.length === 3) {
+      //     const payload = JSON.parse(atob(parts[1]));
+      //     console.log("📄 Token Payload:", payload);
+      //     if (payload.exp) {
+      //       const expDate = new Date(payload.exp * 1000);
+      //       console.log("⏰ Token过期时间:", expDate.toLocaleString());
+      //       console.log("⌛ 是否已过期:", Date.now() > payload.exp * 1000);
+      //     }
+      //   }
+      // } catch (error) {
+      //   console.log("❌ Token解析失败:", error);
+      // }
 
       console.groupEnd();
     }
@@ -542,7 +579,22 @@ class LoginService {
   startGlobalTokenRefresh(): void {
     const refreshManager = TokenRefreshManager.getInstance();
     refreshManager.setLoginService(this);
+
+    // 先停止现有的刷新（如果有）
+    refreshManager.stopAutoRefresh();
+
+    // 启动新的刷新
     refreshManager.startAutoRefresh();
+
+    // 验证启动状态
+    setTimeout(() => {
+      const status = refreshManager.getStatus();
+
+      if (!status.isRunning) {
+        console.error("❌ Token自动刷新启动失败，尝试重新启动...");
+        refreshManager.startAutoRefresh();
+      }
+    }, 1000);
   }
 
   /**
@@ -562,12 +614,207 @@ class LoginService {
   }
 
   /**
+   * 强制重启Token自动刷新（用于调试）
+   */
+  forceRestartTokenRefresh(): void {
+    console.log("🔄 强制重启Token自动刷新...");
+
+    const refreshManager = TokenRefreshManager.getInstance();
+
+    // 停止现有刷新
+    refreshManager.stopAutoRefresh();
+
+    // 等待一下确保清理完成
+    setTimeout(() => {
+      if (this.isAuthenticated()) {
+        refreshManager.setLoginService(this);
+        refreshManager.startAutoRefresh();
+
+        // 验证重启结果
+        setTimeout(() => {
+          const status = refreshManager.getStatus();
+          console.log("🔍 强制重启结果:", status);
+        }, 1000);
+      } else {
+        console.log("❌ 用户未登录，跳过重启");
+      }
+    }, 500);
+  }
+
+  /**
+   * 诊断Token自动刷新状态（用于调试）
+   */
+  diagnoseTokenRefresh(): void {
+    console.group("🔍 Token自动刷新诊断");
+
+    // 基本状态检查
+    console.log("=== 基本状态 ===");
+    console.log("用户认证状态:", this.isAuthenticated());
+    console.log("Token存在:", !!this.getToken());
+    console.log("用户信息存在:", !!this.getCurrentUser());
+
+    // 刷新管理器状态
+    const refreshManager = TokenRefreshManager.getInstance();
+    const status = refreshManager.getStatus();
+    console.log("=== 刷新管理器状态 ===");
+    console.log("定时器运行中:", status.isRunning);
+    console.log("正在刷新:", status.isRefreshing);
+
+    // 详细定时器信息
+    console.log("=== 定时器详情 ===");
+    const timerExists = (refreshManager as unknown as { refreshTimer: NodeJS.Timeout | null }).refreshTimer !== null;
+    const timerId = (refreshManager as unknown as { refreshTimer: NodeJS.Timeout | null }).refreshTimer;
+    console.log("定时器对象存在:", timerExists);
+    console.log("定时器ID:", timerId);
+    console.log("定时器类型:", typeof timerId);
+
+    // 环境信息
+    console.log("=== 环境信息 ===");
+    console.log("开发环境:", import.meta.env.DEV);
+    console.log("当前URL:", window.location.href);
+    console.log("页面可见:", !document.hidden);
+
+    // 手动触发测试
+    console.log("=== 手动测试 ===");
+    console.log("即将进行手动刷新测试...");
+
+    this.refreshToken().then(result => {
+      console.log("手动刷新结果:", result);
+      if (result.success) {
+        console.log("✅ 刷新成功，新Token已保存");
+      } else {
+        console.warn("❌ 刷新失败:", result.message);
+        if (result.requireReauth) {
+          console.warn("🚨 需要重新认证");
+        }
+      }
+      console.groupEnd();
+    }).catch(error => {
+      console.error("手动刷新异常:", error);
+      console.groupEnd();
+    });
+  }
+
+  /**
    * 检查用户是否为管理员
    */
   isAdmin(): boolean {
     const user = this.getCurrentUser();
     return user ? user.role === "administrator" : false;
   }
+
+  // ===== 首次登录流程相关方法 =====
+
+  /**
+   * 生成2FA密钥
+   */
+  async generateTotpSecret(): Promise<{
+    success: boolean;
+    message: string;
+    data?: TotpSecretResponse;
+  }> {
+    if (USE_MOCK_DATA) {
+      // Mock实现
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return {
+        success: true,
+        message: "2FA密钥生成成功",
+        data: {
+          totp_secret: "JBSWY3DPEHPK3PXP", // Mock密钥
+        },
+      };
+    }
+
+    const result = await api.post<TotpSecretResponse>(
+      "/user/change_totp_secret",
+      {},
+      {
+        defaultSuccessMessage: "2FA密钥生成成功",
+        defaultErrorMessage: "2FA密钥生成失败，请稍后重试",
+      }
+    );
+
+    return {
+      success: result.success,
+      message: result.message,
+      data: result.data,
+    };
+  }
+
+  /**
+   * 验证2FA代码（可选，因为没有验证接口）
+   */
+  async verifyTotpCode(
+    request: TotpVerifyRequest
+  ): Promise<TotpVerifyResponse> {
+    if (USE_MOCK_DATA) {
+      // Mock实现 - 简单验证
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const isValid =
+        request.totp_code === "123456" || request.totp_code.length === 6;
+      return {
+        success: isValid,
+        message: isValid ? "2FA验证成功" : "2FA验证码错误",
+      };
+    }
+
+    // 由于没有验证接口，这里只做简单的格式验证
+    const isValidFormat = /^\d{6}$/.test(request.totp_code);
+    return {
+      success: isValidFormat,
+      message: isValidFormat
+        ? "2FA代码格式正确"
+        : "2FA代码格式错误，请输入6位数字",
+    };
+  }
+
+  /**
+   * 首次登录修改密码
+   */
+  async changePasswordFirstTime(
+    request: FirstTimePasswordChangeRequest
+  ): Promise<FirstTimePasswordChangeResponse> {
+    if (USE_MOCK_DATA) {
+      // Mock实现
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      return {
+        success: true,
+        message: "密码修改成功",
+      };
+    }
+
+    const result = await api.post<void>("/user/change_password", request, {
+      defaultSuccessMessage: "密码修改成功",
+      defaultErrorMessage: "密码修改失败，请稍后重试",
+    });
+
+    return {
+      success: result.success,
+      message: result.message,
+    };
+  }
+
+  /**
+   * 检查是否为首次登录
+   */
+  isFirstTimeLogin(): boolean {
+    const user = this.getCurrentUser();
+    return user?.isFirstLogin || false;
+  }
+
+  /**
+   * 更新首次登录状态
+   */
+  updateFirstTimeLoginStatus(isFirstTime: boolean): void {
+    const user = this.getCurrentUser();
+    if (user) {
+      this.updateUser({ isFirstLogin: isFirstTime });
+    }
+  }
+
+
+
+
 }
 
 // ===== Token自动刷新管理器 =====
@@ -576,14 +823,49 @@ class TokenRefreshManager {
   private refreshTimer: NodeJS.Timeout | null = null;
   private isRefreshing = false;
   private loginServiceInstance: LoginService | null = null;
+  private retryCount = 0;
+  private readonly MAX_RETRY = 3;
+  private visibilityChangeHandler: (() => void) | null = null;
 
-  private constructor() {}
+  private constructor() {
+    // 监听页面可见性变化
+    this.setupVisibilityListener();
+  }
 
   static getInstance(): TokenRefreshManager {
     if (!TokenRefreshManager.instance) {
       TokenRefreshManager.instance = new TokenRefreshManager();
     }
     return TokenRefreshManager.instance;
+  }
+
+  /**
+   * 设置页面可见性监听器
+   */
+  private setupVisibilityListener(): void {
+    if (typeof document === 'undefined') return;
+
+    this.visibilityChangeHandler = () => {
+      if (!document.hidden && this.loginServiceInstance?.isAuthenticated()) {
+        // 页面变为可见且用户已登录时，检查刷新状态
+        const status = this.getStatus();
+        if (!status.isRunning) {
+          this.startAutoRefresh();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', this.visibilityChangeHandler);
+  }
+
+  /**
+   * 清理页面可见性监听器
+   */
+  private cleanupVisibilityListener(): void {
+    if (this.visibilityChangeHandler && typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.visibilityChangeHandler);
+      this.visibilityChangeHandler = null;
+    }
   }
 
   /**
@@ -602,33 +884,18 @@ class TokenRefreshManager {
       return;
     }
 
-    const isDev = import.meta.env.DEV;
-    const devMode = import.meta.env.MODE;
-    const interval = isDev ? 30 * 1000 : 3 * 60 * 1000;
-    
-    console.log("🔧 环境检测信息:");
-    console.log("  - import.meta.env.DEV:", isDev);
-    console.log("  - import.meta.env.MODE:", devMode);
-    console.log("  - 刷新间隔:", interval / 1000, "秒");
+    // 修复：统一使用30秒间隔，符合用户需求
+    const interval = 30 * 1000; // 30秒
 
-    console.log(
-      "🔄 启动Token自动刷新，间隔:",
-      isDev ? "30秒 (开发模式)" : "3分钟"
-    );
-    console.log(
-      "⏰ 下次自动刷新将在",
-      isDev ? "30秒" : "3分钟",
-      "后执行"
-    );
+    console.log(`🚀 启动Token自动刷新，间隔: ${interval/1000}秒`);
 
     // 设置定时器 - 等待指定时间后开始第一次自动刷新
     this.refreshTimer = setInterval(() => {
-      console.log("⏰ 触发自动刷新定时器");
+      console.log("⏰ Token自动刷新定时器触发");
       this.performRefresh();
     }, interval);
 
-    console.log("✅ Token自动刷新定时器已设置");
-    console.log("✅ 定时器ID:", this.refreshTimer);
+    console.log(`✅ Token自动刷新定时器已设置，ID: ${this.refreshTimer}`);
   }
 
   /**
@@ -638,8 +905,10 @@ class TokenRefreshManager {
     if (this.refreshTimer) {
       clearInterval(this.refreshTimer);
       this.refreshTimer = null;
-      console.log("⏹️ Token自动刷新已停止");
     }
+
+    // 清理页面可见性监听器
+    this.cleanupVisibilityListener();
   }
 
   /**
@@ -653,35 +922,57 @@ class TokenRefreshManager {
 
     // 检查是否已登录
     if (!this.loginServiceInstance.isAuthenticated()) {
-      console.log("用户未登录，跳过token刷新");
+      this.retryCount = 0; // 重置重试计数
       return;
     }
 
     // 防止并发刷新
     if (this.isRefreshing) {
-      console.log("Token刷新正在进行中，跳过本次刷新");
       return;
     }
 
     this.isRefreshing = true;
 
     try {
-      console.log("🔄 开始自动刷新Token...");
       const result = await this.loginServiceInstance.refreshToken();
 
       if (result.success) {
+        // 刷新成功，重置重试计数
+        this.retryCount = 0;
         console.log("✅ Token自动刷新成功");
       } else {
-        console.log("❌ Token自动刷新失败:", result.message);
-        
-        // 如果刷新失败，可能需要重新登录
-        if (result.message?.includes("已失效") || result.message?.includes("无效")) {
-          console.log("🚨 Token已失效，准备强制退出登录");
-          await this.handleAuthFailure();
+        // 刷新失败，增加重试计数
+        this.retryCount++;
+        console.warn(`⚠️ Token刷新失败 (${this.retryCount}/${this.MAX_RETRY}):`, result.message);
+
+        // 检查是否需要重新认证
+        if (result.requireReauth) {
+          console.warn("🚨 Token已失效，需要重新登录");
+          await this.handleAuthFailure(result.message);
+          return;
         }
+
+        // 检查是否达到最大重试次数
+        if (this.retryCount >= this.MAX_RETRY) {
+          console.error("🚨 Token刷新达到最大重试次数，强制退出登录");
+          await this.handleAuthFailure("Token刷新多次失败，请重新登录");
+          return;
+        }
+
+        console.log(`🔄 将在下次定时刷新时重试 (${this.retryCount}/${this.MAX_RETRY})`);
       }
     } catch (error) {
-      console.error("❌ Token自动刷新异常:", error);
+      this.retryCount++;
+      console.error(`❌ Token刷新异常 (${this.retryCount}/${this.MAX_RETRY}):`, error);
+
+      // 检查是否达到最大重试次数
+      if (this.retryCount >= this.MAX_RETRY) {
+        console.error("🚨 Token刷新异常达到最大重试次数，强制退出登录");
+        await this.handleAuthFailure("网络连接异常，请检查网络后重新登录");
+        return;
+      }
+
+      console.log(`🔄 网络异常，将在下次刷新时重试 (${this.retryCount}/${this.MAX_RETRY})`);
     } finally {
       this.isRefreshing = false;
     }
@@ -698,26 +989,105 @@ class TokenRefreshManager {
   }
 
   /**
+   * 判断是否应该强制登出 - 暂时保留，待重新实现时使用
+   */
+  // private shouldForceLogout(message?: string): boolean {
+  //   if (!message) return false;
+
+  //   const logoutKeywords = [
+  //     "已失效",
+  //     "无效",
+  //     "DecodeError",
+  //     "401",
+  //     "403",
+  //     "Unauthorized",
+  //     "Forbidden",
+  //     "expired",
+  //     "invalid",
+  //   ];
+
+  //   return logoutKeywords.some((keyword) =>
+  //     message.toLowerCase().includes(keyword.toLowerCase())
+  //   );
+  // }
+
+  /**
    * 处理认证失败 - 通知用户并强制退出登录
    */
-  private async handleAuthFailure(): Promise<void> {
+  private async handleAuthFailure(reason?: string): Promise<void> {
     try {
+      console.warn("🚨 Token认证失败:", reason || "未知原因");
+
+      // 重置重试计数
+      this.retryCount = 0;
+
       // 停止自动刷新
       this.stopAutoRefresh();
-      
+
+      // 显示用户友好的错误消息
+      const errorMessage = this.getLogoutMessage(reason);
+
+      // 尝试显示通知（如果可用）
+      try {
+        // 检查是否有Ant Design的message组件可用
+        const globalWindow = window as unknown as {
+          antd?: { message?: { error: (msg: string) => void } };
+        };
+        if (typeof window !== "undefined" && globalWindow.antd?.message) {
+          globalWindow.antd.message.error(errorMessage);
+        } else {
+          // 降级到原生alert
+          alert(errorMessage);
+        }
+      } catch (notificationError) {
+        console.warn("显示错误通知失败:", notificationError);
+        // 即使通知失败也要继续执行清理和跳转
+      }
+
       // 清除认证数据
       if (this.loginServiceInstance) {
         await this.loginServiceInstance.clearAuthData();
       }
-      
-      // 跳转到登录页
+
+      // 延迟跳转到登录页，给用户时间看到错误消息
+      setTimeout(() => {
+        console.log("🔄 跳转到登录页面");
+        window.location.href = "/login";
+      }, 2000);
+    } catch (error) {
+      console.error("处理认证失败时发生错误:", error);
+      // 即使出错也要尝试跳转到登录页
       setTimeout(() => {
         window.location.href = "/login";
       }, 1000);
-      
-    } catch (error) {
-      console.error("处理认证失败时发生错误:", error);
     }
+  }
+
+  /**
+   * 获取用户友好的登出消息
+   */
+  private getLogoutMessage(reason?: string): string {
+    if (!reason) {
+      return "身份验证失败，系统将自动退出登录";
+    }
+
+    if (reason.includes("网络")) {
+      return "网络连接异常，为了您的账户安全，系统将自动退出登录";
+    }
+
+    if (reason.includes("已失效") || reason.includes("expired")) {
+      return "登录状态已过期，系统将自动退出登录";
+    }
+
+    if (
+      reason.includes("401") ||
+      reason.includes("403") ||
+      reason.includes("Unauthorized")
+    ) {
+      return "身份验证失败，系统将自动退出登录";
+    }
+
+    return "Token验证失败，系统将自动退出登录";
   }
 }
 
@@ -748,6 +1118,9 @@ if (import.meta.env.DEV) {
       start: () => void;
       stop: () => void;
       clear: () => void;
+      restart: () => void;
+      detailedStatus: () => void;
+      diagnose: () => void;
     };
   }
 
@@ -796,13 +1169,44 @@ if (import.meta.env.DEV) {
       loginService.clearAuthDataSync();
       loginService.stopGlobalTokenRefresh();
     },
+
+    // 强制重启自动刷新
+    restart: () => {
+      console.log("🔄 强制重启Token自动刷新...");
+      loginService.forceRestartTokenRefresh();
+    },
+
+    // 详细状态检查
+    detailedStatus: () => {
+      console.log("=== 详细Token状态检查 ===");
+      console.log("用户登录状态:", loginService.isAuthenticated());
+      console.log("Token:", loginService.getToken());
+      console.log("用户信息:", loginService.getCurrentUser());
+
+      const status = loginService.getAutoRefreshStatus();
+      console.log("自动刷新状态:", status);
+
+      // 检查定时器状态
+      const refreshManager = TokenRefreshManager.getInstance();
+      console.log("刷新管理器状态:", refreshManager.getStatus());
+
+      loginService.debugTokenInfo();
+    },
+
+    // 诊断Token自动刷新
+    diagnose: () => {
+      loginService.diagnoseTokenRefresh();
+    },
   };
 
   console.log("🛠️ Token调试工具已加载!");
   console.log("在控制台中使用以下命令:");
   console.log("- debugToken.status() - 查看当前状态");
+  console.log("- debugToken.detailedStatus() - 查看详细状态");
+  console.log("- debugToken.diagnose() - 诊断自动刷新问题");
   console.log("- debugToken.refresh() - 立即刷新Token");
   console.log("- debugToken.start() - 启动自动刷新");
   console.log("- debugToken.stop() - 停止自动刷新");
+  console.log("- debugToken.restart() - 强制重启自动刷新");
   console.log("- debugToken.clear() - 清理Token");
 }

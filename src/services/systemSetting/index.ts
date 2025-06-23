@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-06-18 18:51:32
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-06-19 10:29:36
+ * @LastEditTime: 2025-06-19 16:22:33
  * @FilePath: /KR-virt/src/services/systemSetting/index.ts
  * @Description: 系统设置服务 - 参考cluster集群服务的统一架构
  */
@@ -14,6 +14,11 @@ import type {
   TimeSyncStatusResponse,
   TimeSyncExecuteRequest,
   TimeSyncExecuteResponse,
+  LicenseInfo,
+  LicenseUploadResponse,
+  LoginPolicy,
+  LoginPolicyUpdateRequest,
+  LoginPolicyResponse,
 } from "./types";
 
 // 配置区域
@@ -55,7 +60,7 @@ class SystemSettingService {
     if (USE_MOCK_DATA) {
       return mockApi.put(`${this.BASE_URL}/ntp_server`, config, {
         useMock: true,
-        mockData: {},
+        mockData: undefined,
         defaultSuccessMessage: "NTP服务器配置保存成功",
       });
     }
@@ -155,6 +160,105 @@ class SystemSettingService {
         defaultErrorMessage: "启动时间同步失败，请稍后重试",
       }
     );
+  }
+
+  // ===== 许可证管理相关方法 =====
+
+  /**
+   * 获取许可证信息
+   */
+  async getLicenseInfo(): Promise<StandardResponse<LicenseInfo>> {
+    if (USE_MOCK_DATA) {
+      const mockData: LicenseInfo = {
+        device_code: "KR-VIRT-ENT-2024-001",
+        expiry_date: "2025-12-31T23:59:59Z",
+        active_status: "active",
+      };
+
+      return mockApi.get("/system_setting/license", {}, {
+        useMock: true,
+        mockData,
+        defaultSuccessMessage: "获取许可证信息成功",
+      });
+    }
+
+    return api.get<LicenseInfo>("/system_setting/license", {}, {
+      defaultSuccessMessage: "获取许可证信息成功",
+      defaultErrorMessage: "获取许可证信息失败，请稍后重试",
+    });
+  }
+
+  /**
+   * 上传许可证文件
+   */
+  async uploadLicense(file: File): Promise<StandardResponse<LicenseUploadResponse>> {
+    if (USE_MOCK_DATA) {
+      const mockData: LicenseUploadResponse = {
+        message: "许可证上传成功",
+        success: true,
+      };
+
+      return mockApi.post("/system_setting/license/upload", { file }, {
+        useMock: true,
+        mockData,
+        defaultSuccessMessage: "许可证上传成功",
+      });
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return api.post<LicenseUploadResponse>("/system_setting/license/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      defaultSuccessMessage: "许可证上传成功",
+      defaultErrorMessage: "许可证上传失败，请检查文件格式",
+    });
+  }
+
+  // ===== 登录策略管理相关方法 =====
+
+  /**
+   * 获取登录策略配置
+   */
+  async getLoginPolicy(): Promise<StandardResponse<LoginPolicyResponse>> {
+    if (USE_MOCK_DATA) {
+      const mockData: LoginPolicyResponse = {
+        login_timeout_value: 30,
+        login_max_retry_times: 5,
+        enable_two_factor_auth: false,
+      };
+
+      return mockApi.get("/system_setting/login_policy", {}, {
+        useMock: true,
+        mockData,
+        defaultSuccessMessage: "获取登录策略成功",
+      });
+    }
+
+    return api.get<LoginPolicyResponse>("/system_setting/login_policy", {}, {
+      defaultSuccessMessage: "获取登录策略成功",
+      defaultErrorMessage: "获取登录策略失败，请稍后重试",
+    });
+  }
+
+  /**
+   * 更新登录策略配置
+   */
+  async updateLoginPolicy(policy: LoginPolicyUpdateRequest): Promise<StandardResponse<void>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.put("/system_setting/login_policy", policy, {
+        useMock: true,
+        mockData: undefined,
+        defaultSuccessMessage: "登录策略更新成功",
+      });
+    }
+
+    return api.put<void>("/system_setting/login_policy", policy, {
+      defaultSuccessMessage: "登录策略更新成功",
+      defaultErrorMessage: "登录策略更新失败，请稍后重试",
+    });
   }
 
   /**

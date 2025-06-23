@@ -373,11 +373,6 @@ const ClusterManagement: React.FC = () => {
       // 清空之前的节点摘要数据
       setNodeDetailData(null);
       setNodeDetailError(null);
-
-      console.log(
-        `🔍 [Node Detail] 选择了主机 ${sidebarSelectedHost.name}，将获取详细信息`
-      );
-
       // 获取节点详细信息（将在fetchNodeDetailData定义后调用）
       // fetchNodeDetailData(sidebarSelectedHost.name);
     }
@@ -422,18 +417,10 @@ const ClusterManagement: React.FC = () => {
     setRealClusterLoading(true);
     setRealClusterError(null);
     try {
-      console.log(
-        `📡 [${timestamp}][API Call] 开始调用物理机列表API (/cluster/nodes)`
-      );
       const result = await clusterInitService.getClusterNodes();
       if (result.success && result.data) {
         setRealClusterData(result.data);
-        console.log(`✅ [${timestamp}][API Success] 获取集群节点数据成功`);
       } else {
-        console.error(
-          `❌ [${timestamp}][API Error] 获取集群节点数据失败:`,
-          result.message
-        );
         setRealClusterError(result.message);
         message.error(result.message);
       }
@@ -447,7 +434,6 @@ const ClusterManagement: React.FC = () => {
       message.error(errorMessage);
     } finally {
       setRealClusterLoading(false);
-      console.log(`🏁 [${timestamp}][API Complete] 物理机列表API调用完成`);
     }
   }, [message]);
 
@@ -504,18 +490,10 @@ const ClusterManagement: React.FC = () => {
     setClusterResourcesLoading(true);
     setClusterResourcesError(null);
     try {
-      console.log(
-        `📡 [${timestamp}][API Call] 开始调用集群资源API (/cluster/resources)`
-      );
       const result = await clusterInitService.getClusterResources();
       if (result.success && result.data) {
         setClusterResourcesData(result.data);
-        console.log(`✅ [${timestamp}][API Success] 获取集群资源数据成功`);
       } else {
-        console.error(
-          `❌ [${timestamp}][API Error] 获取集群资源数据失败:`,
-          result.message
-        );
         setClusterResourcesError(result.message);
         message.error(result.message);
       }
@@ -529,7 +507,6 @@ const ClusterManagement: React.FC = () => {
       message.error(errorMessage);
     } finally {
       setClusterResourcesLoading(false);
-      console.log(`🏁 [${timestamp}][API Complete] 集群资源API调用完成`);
     }
   }, [message]);
 
@@ -593,13 +570,9 @@ const ClusterManagement: React.FC = () => {
       setNodePCILoading(true);
       setNodePCIError(null);
       try {
-        console.log(
-          `📡 [${timestamp}][API Call] 开始调用节点PCI设备API (/node/pcis), hostname: ${hostname}`
-        );
         const result = await clusterInitService.getNodePCIDevices(hostname);
         if (result.success && result.data) {
           setNodePCIData(result.data);
-          console.log(`✅ [${timestamp}][API Success] 获取节点PCI设备数据成功`);
         } else {
           console.error(
             `❌ [${timestamp}][API Error] 获取节点PCI设备数据失败:`,
@@ -618,7 +591,6 @@ const ClusterManagement: React.FC = () => {
         message.error(errorMessage);
       } finally {
         setNodePCILoading(false);
-        console.log(`🏁 [${timestamp}][API Complete] 节点PCI设备API调用完成`);
       }
     },
     [message]
@@ -631,20 +603,10 @@ const ClusterManagement: React.FC = () => {
       setNodeDisksLoading(true);
       setNodeDisksError(null);
       try {
-        console.log(
-          `📡 [${timestamp}][API Call] 开始调用节点磁盘设备API (/node/disks), hostname: ${hostname}`
-        );
         const result = await clusterInitService.getNodeDiskDevices(hostname);
         if (result.success && result.data) {
           setNodeDisksData(result.data);
-          console.log(
-            `✅ [${timestamp}][API Success] 获取节点磁盘设备数据成功`
-          );
         } else {
-          console.error(
-            `❌ [${timestamp}][API Error] 获取节点磁盘设备数据失败:`,
-            result.message
-          );
           setNodeDisksError(result.message);
           message.error(result.message);
         }
@@ -658,7 +620,6 @@ const ClusterManagement: React.FC = () => {
         message.error(errorMessage);
       } finally {
         setNodeDisksLoading(false);
-        console.log(`🏁 [${timestamp}][API Complete] 节点磁盘设备API调用完成`);
       }
     },
     [message]
@@ -887,7 +848,6 @@ const ClusterManagement: React.FC = () => {
       // 重置主机详情标签页到默认状态（基本信息）
       // 这确保了每次选择主机时都从默认标签页开始，提供一致的用户体验
       setHostDetailActiveTab("basic");
-      console.log(`🔄 [Tab Reset] 重置主机详情标签页到默认状态: basic`);
 
       // 清空之前的节点详情数据
       setNodeDetailData(null);
@@ -901,11 +861,6 @@ const ClusterManagement: React.FC = () => {
 
       // 只获取基本节点信息（用于basic和performance Tab）
       fetchNodeDetailData(sidebarSelectedHost.name);
-
-      // 硬件信息将在用户切换到hardware Tab时按需加载
-      console.log(
-        `📋 [Optimized Loading] 硬件信息将在切换到hardware Tab时按需加载`
-      );
     }
   }, [sidebarSelectedHost, fetchNodeDetailData]);
 

@@ -2,7 +2,7 @@
  * Cookie工具类基础测试
  */
 
-import { describe, test, expect, beforeEach } from "vitest";
+import { describe, test, expect, beforeEach, vi } from "vitest";
 
 // Mock document.cookie
 Object.defineProperty(document, "cookie", {
@@ -10,11 +10,13 @@ Object.defineProperty(document, "cookie", {
   value: "",
 });
 
-// Mock location.protocol
-Object.defineProperty(location, "protocol", {
-  writable: true,
-  value: "https:",
-});
+// Mock location object
+const mockLocationProtocol = {
+  protocol: "https:",
+};
+
+// 使用vi.stubGlobal来Mock location
+vi.stubGlobal("location", mockLocationProtocol);
 
 // 动态导入CookieUtils以避免顶层导入问题
 const { CookieUtils } = await import("../utils/cookies");

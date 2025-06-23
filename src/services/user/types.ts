@@ -3,7 +3,7 @@
  */
 
 // 用户类型枚举
-export type UserType = "system_admin" | "operator" | "user";
+export type UserType = "system_admin" | "security_admin" | "security_auditor";
 
 // 创建用户请求参数
 export interface CreateUserRequest {
@@ -18,21 +18,30 @@ export interface CreateUserResponse {
   password: string;
 }
 
-// 用户信息
+// 用户信息（根据API返回结构定义）
 export interface User {
-  id: string;
+  id: number;
+  user_type: UserType;
   login_name: string;
   user_name: string;
-  user_type: UserType;
+  created_at: string;
+  updated_at: string;
+  is_first_time_login: boolean;
+  login_retry_times: number;
+  // 以下字段用于前端显示和编辑，可能不在API返回中
   email?: string;
   phone?: string;
   department?: string;
-  status: "active" | "disabled" | "locked";
+  status?: "active" | "disabled" | "locked";
   last_login?: string;
-  create_time: string;
 }
 
-// 用户列表响应
+// API返回的用户列表响应结构
+export interface UserListApiResponse {
+  user_list: User[];
+}
+
+// 用户列表响应（适配前端使用）
 export interface UserListResponse {
   users: User[];
   total: number;

@@ -55,8 +55,8 @@ interface UserFormValues {
 // 用户类型映射
 const userTypeMap = {
   system_admin: { color: "red", text: "系统管理员" },
-  operator: { color: "orange", text: "运维员" },
-  user: { color: "blue", text: "普通用户" },
+  security_admin: { color: "orange", text: "安全保密管理员" },
+  security_auditor: { color: "blue", text: "安全审计员" },
 };
 
 const UserManagement: React.FC = () => {
@@ -140,12 +140,6 @@ const UserManagement: React.FC = () => {
       width: 120,
     },
     {
-      title: "邮箱",
-      dataIndex: "email",
-      key: "email",
-      width: 200,
-    },
-    {
       title: "用户类型",
       dataIndex: "user_type",
       key: "user_type",
@@ -158,12 +152,6 @@ const UserManagement: React.FC = () => {
       key: "status",
       width: 80,
       render: (status: string) => getStatusTag(status),
-    },
-    {
-      title: "部门",
-      dataIndex: "department",
-      key: "department",
-      width: 120,
     },
     {
       title: "最后登录",
@@ -433,8 +421,8 @@ const UserManagement: React.FC = () => {
             >
               <Option value="all">全部类型</Option>
               <Option value="system_admin">系统管理员</Option>
-              <Option value="operator">运维员</Option>
-              <Option value="user">普通用户</Option>
+              <Option value="security_admin">安全保密管理员</Option>
+              <Option value="security_auditor">安全审计员</Option>
             </Select>
           </Col>
           <Col span={4}>
@@ -509,8 +497,8 @@ const UserManagement: React.FC = () => {
               >
                 <Select placeholder="请选择用户类型">
                   <Option value="system_admin">系统管理员</Option>
-                  <Option value="operator">运维员</Option>
-                  <Option value="user">普通用户</Option>
+                  <Option value="security_admin">安全保密管理员</Option>
+                  <Option value="security_auditor">安全审计员</Option>
                 </Select>
               </Form.Item>
             </Col>

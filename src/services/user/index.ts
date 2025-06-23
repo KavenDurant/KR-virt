@@ -8,6 +8,7 @@ import type {
   CreateUserResponse,
   User,
   UserListResponse,
+  UserListApiResponse,
   UserQueryParams,
   UpdateUserRequest,
 } from "./types";
@@ -47,25 +48,49 @@ class UserService {
   async getUserList(
     params?: UserQueryParams
   ): Promise<StandardResponse<UserListResponse>> {
-    if (!USE_MOCK_DATA) {
-      return mockApi.get(`${this.BASE_URL}/list`, params, {
+    if (USE_MOCK_DATA) {
+      return mockApi.get(`${this.BASE_URL}/list`, params as Record<string, unknown>, {
         useMock: true,
         mockData: this.getMockUserList(),
         defaultSuccessMessage: "获取用户列表成功",
       });
     }
 
-    return api.get<UserListResponse>(`${this.BASE_URL}/list`, params, {
+    // 调用真实API
+    const response = await api.get<UserListApiResponse>(`${this.BASE_URL}/list`, params as Record<string, unknown>, {
       defaultSuccessMessage: "获取用户列表成功",
       defaultErrorMessage: "获取用户列表失败，请稍后重试",
     });
+
+    // 适配API响应格式到前端期望的格式
+    if (response.success && response.data) {
+      const adaptedData: UserListResponse = {
+        users: response.data.user_list.map(user => ({
+          ...user,
+          // 为前端显示添加默认状态
+          status: user.is_first_time_login ? "disabled" : "active",
+          last_login: user.updated_at,
+        })),
+        total: response.data.user_list.length,
+      };
+
+      return {
+        ...response,
+        data: adaptedData,
+      };
+    }
+
+    return {
+      success: false,
+      message: response.message || "获取用户列表失败",
+    } as StandardResponse<UserListResponse>;
   }
 
   /**
    * 更新用户信息
    */
   async updateUser(
-    userId: string,
+    userId: number,
     userData: UpdateUserRequest
   ): Promise<StandardResponse<void>> {
     if (USE_MOCK_DATA) {
@@ -85,13 +110,14 @@ class UserService {
   /**
    * 删除用户
    */
-  async deleteUser(userId: string): Promise<StandardResponse<void>> {
+  async deleteUser(userId: number): Promise<StandardResponse<void>> {
     if (USE_MOCK_DATA) {
-      return mockApi.delete(`${this.BASE_URL}/${userId}`, {
-        useMock: true,
-        mockData: undefined,
-        defaultSuccessMessage: "用户删除成功",
-      });
+      // MockableApiHelper doesn't have a delete method, use regular api with mock simulation
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+      return {
+        success: true,
+        message: "用户删除成功",
+      };
     }
 
     return api.delete<void>(`${this.BASE_URL}/${userId}`, {
@@ -104,7 +130,7 @@ class UserService {
    * 切换用户状态
    */
   async toggleUserStatus(
-    userId: string,
+    userId: number,
     status: "active" | "disabled"
   ): Promise<StandardResponse<void>> {
     if (USE_MOCK_DATA) {
@@ -150,40 +176,64 @@ class UserService {
   private getMockUserList(): UserListResponse {
     const mockUsers: User[] = [
       {
-        id: "1",
+        id: 1,
         login_name: "admin",
         user_name: "系统管理员",
         user_type: "system_admin",
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-05-26T10:30:00Z",
+        is_first_time_login: false,
+        login_retry_times: 0,
         email: "admin@example.com",
         phone: "13800138000",
         department: "信息技术部",
         status: "active",
         last_login: "2025-05-26 10:30:00",
-        create_time: "2025-01-01 00:00:00",
       },
       {
-        id: "2",
-        login_name: "operator1",
-        user_name: "运维员",
-        user_type: "operator",
-        email: "operator1@example.com",
+        id: 2,
+        login_name: "security_admin",
+        user_name: "安全保密管理员",
+        user_type: "security_admin",
+        created_at: "2025-02-15T00:00:00Z",
+        updated_at: "2025-05-26T09:15:00Z",
+        is_first_time_login: false,
+        login_retry_times: 0,
+        email: "security_admin@example.com",
         phone: "13800138001",
-        department: "运维部",
+        department: "安全保密部",
         status: "active",
         last_login: "2025-05-26 09:15:00",
-        create_time: "2025-02-15 00:00:00",
       },
       {
-        id: "3",
-        login_name: "user1",
-        user_name: "普通用户",
-        user_type: "user",
-        email: "user1@example.com",
+        id: 3,
+        login_name: "auditor",
+        user_name: "安全审计员",
+        user_type: "security_auditor",
+        created_at: "2025-03-10T00:00:00Z",
+        updated_at: "2025-05-25T16:45:00Z",
+        is_first_time_login: false,
+        login_retry_times: 0,
+        email: "auditor@example.com",
         phone: "13800138002",
-        department: "业务部",
-        status: "disabled",
+        department: "审计部",
+        status: "active",
         last_login: "2025-05-25 16:45:00",
-        create_time: "2025-03-10 00:00:00",
+      },
+      {
+        id: 4,
+        login_name: "new_auditor",
+        user_name: "新审计员",
+        user_type: "security_auditor",
+        created_at: "2025-04-01T00:00:00Z",
+        updated_at: "2025-04-01T00:00:00Z",
+        is_first_time_login: true,
+        login_retry_times: 0,
+        email: "new_auditor@example.com",
+        phone: "13800138003",
+        department: "审计部",
+        status: "disabled",
+        last_login: undefined,
       },
     ];
 

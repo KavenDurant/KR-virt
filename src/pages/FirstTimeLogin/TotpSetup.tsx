@@ -2,7 +2,7 @@
  * 2FA绑定页面组件
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Card,
   Form,
@@ -45,6 +45,7 @@ const TotpSetup: React.FC<TotpSetupProps> = ({ onComplete, onSkip }) => {
   const [totpSecret, setTotpSecret] = useState<string>("");
   const [currentStep, setCurrentStep] = useState(0);
   const [qrCodeValue, setQrCodeValue] = useState<string>("");
+  const hasLoadedRef = useRef(false); // 使用useRef防止React StrictMode重复调用
 
   // 生成QR码内容
   const generateQRCodeValue = (secret: string) => {
@@ -56,19 +57,32 @@ const TotpSetup: React.FC<TotpSetupProps> = ({ onComplete, onSkip }) => {
 
   // 加载2FA密钥
   useEffect(() => {
+    // 防止React StrictMode在开发环境下的重复调用
+    if (hasLoadedRef.current) {
+      console.log("🔄 检测到重复调用，跳过API请求");
+      return;
+    }
+
     const loadTotpSecret = async () => {
+      console.log("📡 开始加载2FA密钥...");
       setSecretLoading(true);
+      hasLoadedRef.current = true; // 标记已开始加载
+
       try {
         const response = await loginService.generateTotpSecret();
         if (response.success && response.data) {
+          console.log("✅ 2FA密钥加载成功");
           setTotpSecret(response.data.totp_secret);
           setQrCodeValue(generateQRCodeValue(response.data.totp_secret));
         } else {
+          console.error("❌ 2FA密钥加载失败:", response.message);
           message.error(response.message || "获取2FA密钥失败");
+          hasLoadedRef.current = false; // 失败时重置标志，允许重试
         }
       } catch (error) {
-        console.error("Failed to load TOTP secret:", error);
+        console.error("❌ 2FA密钥加载异常:", error);
         message.error("获取2FA密钥失败");
+        hasLoadedRef.current = false; // 异常时重置标志，允许重试
       } finally {
         setSecretLoading(false);
       }
@@ -76,7 +90,7 @@ const TotpSetup: React.FC<TotpSetupProps> = ({ onComplete, onSkip }) => {
 
     loadTotpSecret();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 只在组件挂载时调用一次，避免重复API调用
+  }, []); // 空依赖数组，只在组件挂载时调用一次
 
   // 处理验证码验证
   const handleVerifyCode = async (values: { totp_code: string }) => {

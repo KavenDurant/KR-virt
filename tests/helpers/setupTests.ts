@@ -3,11 +3,11 @@
  * 配置全局测试环境和Mock
  */
 
-import { vi } from 'vitest';
-import '@testing-library/jest-dom';
+import { vi } from "vitest";
+import "@testing-library/jest-dom";
 
 // 导入全局Mock
-import '../__mocks__/localStorage';
+import "../__mocks__/localStorage";
 
 // 设置全局Mock
 (global as any).vi = vi;
@@ -18,9 +18,9 @@ import '../__mocks__/localStorage';
   unobserve: vi.fn(),
   disconnect: vi.fn(),
   root: null,
-  rootMargin: '',
+  rootMargin: "",
   thresholds: [],
-  takeRecords: vi.fn(() => [])
+  takeRecords: vi.fn(() => []),
 }));
 
 // Mock ResizeObserver
@@ -31,9 +31,9 @@ import '../__mocks__/localStorage';
 }));
 
 // Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -46,30 +46,34 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock getComputedStyle
-Object.defineProperty(window, 'getComputedStyle', {
+Object.defineProperty(window, "getComputedStyle", {
   value: () => ({
-    getPropertyValue: () => '',
+    getPropertyValue: () => "",
   }),
 });
 
 // Mock scrollTo
-Object.defineProperty(window, 'scrollTo', {
+Object.defineProperty(window, "scrollTo", {
   value: vi.fn(),
 });
 
 // Mock HTMLElement.scrollIntoView
-Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
   value: vi.fn(),
 });
 
 // Mock HTMLElement.offsetHeight and offsetWidth
 Object.defineProperties(HTMLElement.prototype, {
   offsetHeight: {
-    get() { return parseFloat(this.style.height) || 1; }
+    get() {
+      return parseFloat(this.style.height) || 1;
+    },
   },
   offsetWidth: {
-    get() { return parseFloat(this.style.width) || 1; }
-  }
+    get() {
+      return parseFloat(this.style.width) || 1;
+    },
+  },
 });
 
 // Mock Canvas API
@@ -101,11 +105,11 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
 })) as any;
 
 // Mock URL.createObjectURL
-Object.defineProperty(URL, 'createObjectURL', {
-  value: vi.fn(() => 'mocked-url'),
+Object.defineProperty(URL, "createObjectURL", {
+  value: vi.fn(() => "mocked-url"),
 });
 
-Object.defineProperty(URL, 'revokeObjectURL', {
+Object.defineProperty(URL, "revokeObjectURL", {
   value: vi.fn(),
 });
 
@@ -113,10 +117,10 @@ Object.defineProperty(URL, 'revokeObjectURL', {
 beforeEach(() => {
   // 清理所有Mock
   vi.clearAllMocks();
-  
+
   // 重置DOM
-  document.body.innerHTML = '';
-  
+  document.body.innerHTML = "";
+
   // 重置localStorage和sessionStorage
   localStorage.clear();
   sessionStorage.clear();
@@ -128,17 +132,17 @@ afterEach(() => {
 });
 
 // 全局错误处理
-process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled Rejection:', reason);
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Rejection:", reason);
 });
 
 // 抑制特定的控制台警告
 const originalError = console.error;
 console.error = (...args: any[]) => {
   if (
-    typeof args[0] === 'string' &&
-    (args[0].includes('Warning: ReactDOM.render is deprecated') ||
-     args[0].includes('Warning: componentWillReceiveProps has been renamed'))
+    typeof args[0] === "string" &&
+    (args[0].includes("Warning: ReactDOM.render is deprecated") ||
+      args[0].includes("Warning: componentWillReceiveProps has been renamed"))
   ) {
     return;
   }

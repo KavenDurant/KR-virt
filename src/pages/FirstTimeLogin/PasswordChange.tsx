@@ -189,14 +189,6 @@ const PasswordChange: React.FC<PasswordChangeProps> = ({ onComplete }) => {
           </Paragraph>
         </div>
 
-        <Alert
-          message="安全要求"
-          description="请设置一个强密码以保护您的账户安全。密码应包含大小写字母、数字和特殊字符。"
-          type="info"
-          showIcon
-          style={{ marginBottom: 20 }}
-        />
-
         <Form
           form={form}
           layout="vertical"

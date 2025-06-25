@@ -37,6 +37,14 @@ import HierarchicalSidebar from "@/components/HierarchicalSidebar";
 import { useTheme } from "@/hooks/useTheme";
 import { loginService } from "@/services/login";
 import type { UserInfo } from "@/services/login";
+import { UserActivityMonitor } from "@/components/UserActivity";
+import type {
+  IdleEvent,
+  ActiveEvent,
+  PromptEvent,
+  TimeoutEvent,
+  LogoutEvent
+} from "@/components/UserActivity/types";
 import { getSidebarData, getClusterSidebarData } from "@/services/mockData";
 import type { DataCenter } from "@/services/mockData";
 import "./AppLayout.css";
@@ -54,10 +62,33 @@ const AppLayout: React.FC = () => {
   const [logoutModalVisible, setLogoutModalVisible] = useState<boolean>(false);
   const [passwordForm] = Form.useForm();
 
-  // 初始化用户信息
+  // 初始化用户信息和Token自动刷新
   useEffect(() => {
     const user = loginService.getCurrentUser();
     setCurrentUser(user);
+
+    // 确保Token自动刷新在主应用中运行
+    // 这是为了修复页面刷新后Token自动刷新停止的问题
+    if (loginService.isAuthenticated()) {
+      console.log("🔧 AppLayout: 确保Token自动刷新正在运行");
+
+      // 检查当前自动刷新状态
+      const status = loginService.getAutoRefreshStatus();
+      console.log("📊 当前Token自动刷新状态:", status);
+
+      if (!status.isRunning) {
+        console.log("🚀 Token自动刷新未运行，重新启动...");
+        loginService.startGlobalTokenRefresh();
+
+        // 验证启动结果
+        setTimeout(() => {
+          const newStatus = loginService.getAutoRefreshStatus();
+          console.log("✅ Token自动刷新重启结果:", newStatus);
+        }, 1000);
+      } else {
+        console.log("✅ Token自动刷新已在运行中");
+      }
+    }
   }, []);
 
   // 添加侧边栏宽度状态，使用useRef保证它不会随渲染重置
@@ -726,6 +757,40 @@ const AppLayout: React.FC = () => {
       >
         <p>确定要退出登录吗？</p>
       </Modal>
+
+      {/* 用户活动监控 */}
+      <UserActivityMonitor
+        config={{
+          timeout: import.meta.env.DEV ? 5 * 60 * 1000 : 10 * 60 * 1000, // 开发环境1小时，生产环境10分钟
+          promptTimeout: import.meta.env.DEV ? 10 * 1000 : 30 * 1000, // 开发环境10秒，生产环境30秒
+          debug: import.meta.env.DEV,
+          crossTab: true,
+          resetTokenOnActivity: true,
+        }}
+        callbacks={{
+          onIdle: (event: IdleEvent) => {
+            if (import.meta.env.DEV) {
+              console.log('🔍 用户进入空闲状态:', event);
+            }
+          },
+          onActive: (event: ActiveEvent) => {
+            if (import.meta.env.DEV) {
+              console.log('🔍 用户恢复活动:', event);
+            }
+          },
+          onPrompt: (event: PromptEvent) => {
+            if (import.meta.env.DEV) {
+              console.log('⚠️ 显示空闲警告:', event);
+            }
+          },
+          onTimeout: (event: TimeoutEvent) => {
+            console.log('⏰ 用户会话超时:', event);
+          },
+          onLogout: (event: LogoutEvent) => {
+            console.log('👋 用户登出:', event);
+          },
+        }}
+      />
     </Layout>
   );
 };

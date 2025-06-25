@@ -85,10 +85,13 @@ const AppBootstrap: React.FC = () => {
       console.log("❌ 用户未登录，跳过Token自动刷新");
     }
 
-    // 清理函数：在组件卸载时停止自动刷新
+    // 修复：不在组件卸载时停止Token自动刷新
+    // Token自动刷新应该在整个应用生命周期中保持运行
+    // 只有在用户主动登出时才停止
     return () => {
-      console.log("🛑 应用关闭，停止Token自动刷新");
-      loginService.stopGlobalTokenRefresh();
+      console.log("🔧 AppBootstrap组件卸载，但保持Token自动刷新运行");
+      // 注释掉这行，避免导航时停止Token自动刷新
+      // loginService.stopGlobalTokenRefresh();
     };
   }, []);
 

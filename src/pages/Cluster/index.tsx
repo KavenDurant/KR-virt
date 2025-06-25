@@ -185,11 +185,8 @@ const ClusterManagement: React.FC = () => {
    * 注意：selectedCluster 始终为 null，因为选择集群时会清空所有选择状态
    * 这样可以确保页面显示集群管理主页面而不是集群详情页面
    */
-  const {
-    selectedHost: sidebarSelectedHost,
-    selectedVM: sidebarSelectedVM,
-    clearSelection,
-  } = useSidebarSelection();
+  const { selectedHost: sidebarSelectedHost, selectedVM: sidebarSelectedVM } =
+    useSidebarSelection();
 
   /**
    * 侧边栏刷新事件处理
@@ -1323,7 +1320,25 @@ const ClusterManagement: React.FC = () => {
               <Row gutter={[16, 16]}>
                 {/* 第一行：核心性能指标 */}
                 <Col xs={24} lg={12}>
-                  <Card title="性能指标" size="small">
+                  <Card
+                    title="性能指标"
+                    size="small"
+                    extra={
+                      <Button
+                        icon={<SyncOutlined />}
+                        size="small"
+                        loading={nodeDetailLoading}
+                        onClick={() => {
+                          console.log(
+                            `🔄 [Basic Info Refresh] 刷新主机 ${sidebarSelectedHost.name} 的基本信息`
+                          );
+                          fetchNodeDetailData(sidebarSelectedHost.name);
+                        }}
+                      >
+                        刷新
+                      </Button>
+                    }
+                  >
                     <Row gutter={16}>
                       <Col span={8}>
                         <Statistic
@@ -2356,32 +2371,10 @@ const ClusterManagement: React.FC = () => {
           extra={
             <Space>
               <Button
-                type="primary"
-                icon={<SyncOutlined />}
-                loading={nodeDetailLoading}
-                onClick={() => {
-                  console.log(
-                    `🔄 [Refresh] 手动刷新主机 ${sidebarSelectedHost.name} 的详细信息`
-                  );
-                  fetchNodeDetailData(sidebarSelectedHost.name);
-                }}
-              >
-                刷新
-              </Button>
-              <Button
                 icon={<MonitorOutlined />}
                 onClick={() => message.info("正在打开主机控制台...")}
               >
                 控制台
-              </Button>
-              <Button
-                onClick={() => {
-                  clearSelection();
-                  setNodeDetailData(null);
-                  setNodeDetailError(null);
-                }}
-              >
-                返回集群管理
               </Button>
             </Space>
           }
@@ -2576,13 +2569,6 @@ const ClusterManagement: React.FC = () => {
           extra={
             <Space>
               <Button
-                onClick={() => {
-                  clearSelection();
-                }}
-              >
-                返回集群管理
-              </Button>
-              <Button
                 type="primary"
                 icon={<SyncOutlined />}
                 onClick={() => message.info("正在刷新虚拟机信息...")}
@@ -2637,15 +2623,6 @@ const ClusterManagement: React.FC = () => {
             onClick={handleDissolveCluster}
           >
             解散集群
-          </Button>
-          <Button
-            icon={<SyncOutlined />}
-            onClick={() => {
-              console.log(`🔄 [Manual Refresh] 手动刷新当前Tab: ${activeTab}`);
-              loadTabData(activeTab, true); // 强制刷新当前Tab
-            }}
-          >
-            刷新
           </Button>
         </Space>
       </div>

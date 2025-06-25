@@ -83,7 +83,7 @@ export class MockApiHelper {
 }
 
 // Mock服务类生成器
-export const createMockService = (serviceName: string) => {
+export const createMockService = (_serviceName: string) => {
   const mockMethods: Record<string, any> = {};
 
   return new Proxy(mockMethods, {
@@ -114,7 +114,7 @@ export const mockResponseTemplates = {
   deleted: () => createMockResponse(null, true, "删除成功"),
 
   // 验证错误
-  validationError: (errors: Record<string, string[]>) =>
+  validationError: (_errors: Record<string, string[]>) =>
     createMockErrorResponse("验证失败", 422),
 
   // 未授权

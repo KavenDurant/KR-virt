@@ -294,6 +294,84 @@
   color: #40a9ff !important;
 }
 
+/* 数据中心节点标识 */
+.dc-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #1890ff, #40a9ff);
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 1px 4px;
+  border-radius: 2px;
+  margin-left: 4px;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .dc-badge {
+  background: linear-gradient(135deg, #40a9ff, #69c0ff);
+  color: #000;
+}
+
+/* 节点状态样式增强 */
+.tree-node-content[data-type="node"] .tree-node-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding-left: 8px;
+}
+
+.tree-node-content[data-type="node"] .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.tree-node-content[data-type="node"] .status-text {
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0.9;
+}
+
+/* 节点IP地址显示 */
+.tree-node-content[data-type="node"] .tree-node-subtitle {
+  font-size: 10px;
+  color: #8c8c8c;
+  margin-left: 6px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+[data-theme="dark"] .tree-node-content[data-type="node"] .tree-node-subtitle {
+  color: #666;
+}
+
+/* 节点状态特定颜色 */
+.tree-node-content[data-type="node"][data-status="online"] .status-dot {
+  background-color: #52c41a !important;
+  box-shadow: 0 0 0 1px rgba(82, 196, 26, 0.3), 0 0 4px rgba(82, 196, 26, 0.4);
+}
+
+.tree-node-content[data-type="node"][data-status="offline"] .status-dot {
+  background-color: #8c8c8c !important;
+  box-shadow: 0 0 0 1px rgba(140, 140, 140, 0.3);
+}
+
+.tree-node-content[data-type="node"][data-status="standby"] .status-dot {
+  background-color: #faad14 !important;
+  box-shadow: 0 0 0 1px rgba(250, 173, 20, 0.3), 0 0 4px rgba(250, 173, 20, 0.4);
+}
+
+.tree-node-content[data-type="node"][data-status="maintenance"] .status-dot {
+  background-color: #ff7a00 !important;
+  box-shadow: 0 0 0 1px rgba(255, 122, 0, 0.3), 0 0 4px rgba(255, 122, 0, 0.4);
+}
+
 /* 响应式调整 */
 @media (max-width: 1200px) {
   .tree-node-status {

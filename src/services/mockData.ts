@@ -19,11 +19,13 @@ export interface Node {
   id: string;
   name: string;
   type: "node";
-  status: "online" | "offline";
+  status: "online" | "offline" | "standby" | "maintenance";
   cpu: number;
   memory: number;
   uptime: string;
   vms: VirtualMachine[];
+  ip?: string; // 可选的IP地址
+  is_dc?: boolean; // 可选的数据中心节点标识
 }
 
 // 网络接口定义
@@ -478,14 +480,13 @@ const convertClusterTreeToDataCenter = (
           id: node.node_id,
           name: node.name,
           type: "node" as const,
-          status:
-            node.status === "online"
-              ? ("online" as const)
-              : ("offline" as const),
+          status: node.status as NodeStatus, // 直接使用API返回的状态
           cpu: 0, // API中没有这些信息，使用默认值
           memory: 0,
-          uptime: node.status === "online" ? "在线" : "离线",
+          uptime: getNodeStatusConfig(node.status).label,
           vms: [], // API中没有虚拟机信息，使用空数组
+          ip: node.ip, // 添加IP地址信息
+          is_dc: node.is_dc, // 添加是否为数据中心节点标识
         })),
         networks:
           treeData.networks?.map((network) => ({
@@ -515,6 +516,42 @@ const convertClusterTreeToDataCenter = (
   };
 };
 
+// 节点状态类型定义
+export type NodeStatus = 'online' | 'offline' | 'standby' | 'maintenance';
+
+// 节点状态映射配置
+export const NODE_STATUS_CONFIG = {
+  online: {
+    label: '在线',
+    color: '#52c41a',
+    icon: '🟢',
+  },
+  offline: {
+    label: '离线',
+    color: '#8c8c8c',
+    icon: '⚫',
+  },
+  standby: {
+    label: '节点待命',
+    color: '#faad14',
+    icon: '🟡',
+  },
+  maintenance: {
+    label: '维护模式',
+    color: '#ff7a00',
+    icon: '🟠',
+  },
+} as const;
+
+// 获取节点状态配置
+export const getNodeStatusConfig = (status: string) => {
+  return NODE_STATUS_CONFIG[status as NodeStatus] || {
+    label: status,
+    color: '#d9d9d9',
+    icon: '⚪',
+  };
+};
+
 // 获取状态颜色
 export const getStatusColor = (status: string) => {
   switch (status) {
@@ -526,11 +563,13 @@ export const getStatusColor = (status: string) => {
     case "stopped":
     case "offline":
     case "inactive":
-      return "#ff4d4f";
+      return "#8c8c8c"; // 更新离线状态为灰色
     case "suspended":
     case "warning":
     case "standby":
       return "#faad14";
+    case "maintenance":
+      return "#ff7a00"; // 新增维护模式状态
     case "error":
       return "#ff4d4f";
     default:

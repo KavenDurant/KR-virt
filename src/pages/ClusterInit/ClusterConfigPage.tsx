@@ -37,7 +37,6 @@ interface ClusterConfigPageProps {
   onSubmit: (
     type: ClusterConfigType,
     config: CreateClusterConfig | JoinClusterConfig,
-    additionalData?: { hostname?: string },
   ) => void;
   loading?: boolean;
 }
@@ -89,17 +88,16 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
           message.warning(ipResult.message);
         }
 
-        setNodeInfo({
+        // 更新节点信息状态
+        const newNodeInfo = {
           hostname,
           ipAddresses,
-          selectedIp: ipAddresses[0] || "", // 默认选择第一个IP
-          loading: false,
-        });
-
-        // 更新表单的初始值
-        createForm.setFieldsValue({
           selectedIp: ipAddresses[0] || "",
-        });
+          loading: false,
+        };
+
+        setNodeInfo(newNodeInfo);
+
       } catch (error) {
         console.error("获取节点信息失败:", error);
         message.error("获取节点信息失败，请稍后重试");
@@ -108,7 +106,29 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
     };
 
     fetchNodeInfo();
-  }, [createForm, message]);
+  }, [message]);
+
+  // 当节点信息加载完成后，设置表单初始值
+  useEffect(() => {
+    if (!nodeInfo.loading && nodeInfo.hostname) {
+      const formValues = {
+        selectedIp: nodeInfo.selectedIp,
+        hostname: nodeInfo.hostname,
+      };
+
+      // 设置表单值
+      createForm.setFieldsValue(formValues);
+
+      // 延迟验证，确保DOM更新完成
+      setTimeout(() => {
+        const currentValues = createForm.getFieldsValue();
+
+        if (currentValues.hostname !== nodeInfo.hostname) {
+          createForm.setFieldValue('hostname', nodeInfo.hostname);
+        }
+      }, 100);
+    }
+  }, [nodeInfo, createForm]);
 
   // 根据当前状态确定默认tab
   const getDefaultActiveKey = () => {
@@ -123,9 +143,7 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
 
   const handleCreateSubmit = async (values: CreateClusterConfig) => {
     try {
-      onSubmit("create", values, {
-        hostname: nodeInfo.hostname,
-      });
+      onSubmit("create", values);
     } catch (error) {
       console.error("提交创建配置失败:", error);
       message.error("提交失败，请稍后重试");
@@ -142,7 +160,15 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
   };
 
   const renderCreateClusterForm = () => (
-    <Form form={createForm} layout="vertical" onFinish={handleCreateSubmit}>
+    <Form
+      form={createForm}
+      layout="vertical"
+      onFinish={handleCreateSubmit}
+      initialValues={{
+        hostname: nodeInfo.hostname,
+        selectedIp: nodeInfo.selectedIp,
+      }}
+    >
       <Alert
         message="创建新集群"
         description="系统将自动获取节点信息并创建集群，请选择要使用的IP地址"
@@ -153,15 +179,27 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
 
       <Row gutter={16}>
         <Col span={24}>
-          <Form.Item label="节点名称">
-            <Spin spinning={nodeInfo.loading} size="small">
-              <Input
-                size="large"
-                disabled
-                value={nodeInfo.hostname}
-                placeholder={nodeInfo.loading ? "获取中..." : "自动获取"}
-              />
-            </Spin>
+          <Form.Item
+            name="hostname"
+            label="节点名称"
+            rules={[
+              { required: true, message: "请输入节点名称" },
+              { min: 3, message: "节点名称至少3个字符" },
+              { max: 63, message: "节点名称不能超过63个字符" },
+              {
+                pattern: /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/,
+                message: "节点名称只能包含字母、数字和连字符，且不能以连字符开头或结尾",
+              },
+            ]}
+            tooltip="节点名称将用于集群内部识别，建议使用有意义的名称"
+          >
+            <Input
+              size="large"
+              placeholder={nodeInfo.loading ? "获取中..." : "请输入节点名称"}
+              prefix={<ClusterOutlined />}
+              disabled={nodeInfo.loading}
+              suffix={nodeInfo.loading ? <Spin size="small" /> : null}
+            />
           </Form.Item>
         </Col>
       </Row>

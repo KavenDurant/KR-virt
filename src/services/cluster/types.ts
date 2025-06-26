@@ -22,9 +22,10 @@ export type ClusterInitStep =
 // 集群配置类型
 export type ClusterConfigType = "create" | "join";
 
-// 创建集群配置 - 简化版，只需要选择IP
+// 创建集群配置 - 包含IP地址和主机名
 export interface CreateClusterConfig {
   selectedIp: string; // 选择的IP地址
+  hostname: string; // 节点主机名（可编辑）
 }
 
 // 加入集群配置 - 用户需要填写的字段

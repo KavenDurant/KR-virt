@@ -66,6 +66,7 @@ import {
   useTimeZone,
 } from "../../hooks";
 import { clusterInitService } from "@/services/cluster";
+import { loginService } from "@/services/login";
 import type { ClusterNodesResponse } from "@/services/cluster";
 import type { ClusterSummaryResponse } from "@/services/cluster";
 import type { ClusterResourcesResponse } from "@/services/cluster";
@@ -991,7 +992,21 @@ const ClusterManagement: React.FC = () => {
       if (result.success) {
         console.log("解散集群成功，显示成功消息:", result.message);
         message.success(result.message);
-        // 刷新集群列表 - 这里可以添加具体的刷新逻辑
+
+        // 解散集群成功后，退出登录并跳转到项目最开始的页面
+        console.log("解散集群成功，开始退出登录流程...");
+
+        // 调用登出API清除认证状态
+        await loginService.logout();
+        console.log("登出成功，准备跳转到bootstrap页面");
+
+        // 延迟跳转，让用户看到成功消息
+        setTimeout(() => {
+          // 跳转到bootstrap页面，该页面会自动调用status接口检查集群状态
+          window.location.hash = "#/bootstrap";
+          // 强制刷新页面，确保重新检查集群状态
+          window.location.reload();
+        }, 1500);
       } else {
         console.log("解散集群失败，显示错误消息:", result.message);
         message.error(result.message);

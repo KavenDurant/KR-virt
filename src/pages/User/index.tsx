@@ -29,7 +29,7 @@ import {
   TeamOutlined,
   CopyOutlined,
 } from "@ant-design/icons";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "../../hooks";
 import {
   userService,
   type User,

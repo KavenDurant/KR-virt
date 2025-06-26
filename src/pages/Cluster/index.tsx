@@ -63,6 +63,7 @@ import {
   useSidebarRefresh,
   useSidebarHostActions,
   SidebarRefreshTriggers,
+  useTimeZone,
 } from "../../hooks";
 import { clusterInitService } from "@/services/cluster";
 import type { ClusterNodesResponse } from "@/services/cluster";
@@ -288,6 +289,16 @@ const ClusterManagement: React.FC = () => {
     null
   );
 
+  // 时间转换Hook调用
+  const { localTime: lastUpdatedTime, isValid: lastUpdatedValid } = useTimeZone(
+    clusterSummaryData?.last_updated || "",
+    { format: "YYYY-MM-DD HH:mm:ss" }
+  );
+  const { localTime: lastChangeTime, isValid: lastChangeValid } = useTimeZone(
+    clusterSummaryData?.last_change_time || "",
+    { format: "YYYY-MM-DD HH:mm:ss" }
+  );
+
   // 集群资源数据状态
   const [clusterResourcesData, setClusterResourcesData] =
     useState<ClusterResourcesResponse | null>(null);
@@ -332,7 +343,6 @@ const ClusterManagement: React.FC = () => {
     type: "removeNode" | "dissolveCluster";
     data: { hostname?: string; nodeName?: string };
   } | null>(null);
-
   // 主机详情Tab状态 - 用于按需加载硬件信息
   const [hostDetailActiveTab, setHostDetailActiveTab] = useState("basic");
 
@@ -1596,8 +1606,8 @@ const ClusterManagement: React.FC = () => {
                                 marginTop: "4px",
                               }}
                             >
-                              已用: {nodeDetailData.disk_used}GB / 总计:{" "}
-                              {nodeDetailData.disk_total}GB
+                              已用: {nodeDetailData.disk_used.toFixed(2)}GB /
+                              总计: {nodeDetailData.disk_total.toFixed(2)}GB
                             </div>
                           )}
                       </Col>
@@ -1607,8 +1617,12 @@ const ClusterManagement: React.FC = () => {
                           value={
                             nodeDetailData?.disk_total &&
                             nodeDetailData?.disk_used
-                              ? nodeDetailData.disk_total -
-                                nodeDetailData.disk_used
+                              ? Number(
+                                  (
+                                    nodeDetailData.disk_total -
+                                    nodeDetailData.disk_used
+                                  ).toFixed(2)
+                                )
                               : 0
                           }
                           suffix="GB"
@@ -2118,8 +2132,8 @@ const ClusterManagement: React.FC = () => {
                             marginTop: "8px",
                           }}
                         >
-                          已用: {nodeDetailData.disk_used}GB / 总计:{" "}
-                          {nodeDetailData.disk_total}GB
+                          已用: {nodeDetailData.disk_used.toFixed(2)}GB / 总计:{" "}
+                          {nodeDetailData.disk_total.toFixed(2)}GB
                         </div>
                       )}
                   </Card>
@@ -2700,10 +2714,14 @@ const ClusterManagement: React.FC = () => {
                         <Col xs={24} md={12}>
                           <Descriptions column={1} bordered size="small">
                             <Descriptions.Item label="最后更新">
-                              {clusterSummaryData.last_updated}
+                              {lastUpdatedValid
+                                ? lastUpdatedTime
+                                : clusterSummaryData.last_updated || "未知"}
                             </Descriptions.Item>
                             <Descriptions.Item label="最后变更时间">
-                              {clusterSummaryData.last_change_time}
+                              {lastChangeValid
+                                ? lastChangeTime
+                                : clusterSummaryData.last_change_time || "未知"}
                             </Descriptions.Item>
                             <Descriptions.Item label="变更用户">
                               {clusterSummaryData.last_change_user}

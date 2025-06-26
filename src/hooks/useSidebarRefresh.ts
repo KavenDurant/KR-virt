@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from "react";
 
 /**
  * 侧边栏刷新事件的详细信息
@@ -23,7 +23,7 @@ export interface UseSidebarRefreshOptions {
    * @default true
    */
   enabled?: boolean;
-  
+
   /**
    * 过滤刷新事件的条件函数
    * 返回 true 表示处理该事件，false 表示忽略
@@ -33,20 +33,20 @@ export interface UseSidebarRefreshOptions {
 
 /**
  * 自定义Hook：管理侧边栏刷新事件监听
- * 
+ *
  * 这个Hook提供了一个简洁的方式来监听和处理侧边栏刷新事件，
  * 支持条件过滤和自动清理，避免了手动管理事件监听器的复杂性。
- * 
+ *
  * 使用场景：
  * - 当侧边栏数据发生变化时，需要刷新主内容区域
  * - 当执行某些操作后，需要同步更新侧边栏显示
- * 
+ *
  * @param callback 刷新事件的回调函数
  * @param options 配置选项
  */
 export const useSidebarRefresh = (
   callback: SidebarRefreshCallback,
-  options: UseSidebarRefreshOptions = {}
+  options: UseSidebarRefreshOptions = {},
 ): void => {
   const { enabled = true, filter } = options;
 
@@ -54,17 +54,20 @@ export const useSidebarRefresh = (
    * 处理侧边栏刷新事件
    * 应用过滤条件并调用回调函数
    */
-  const handleSidebarRefresh = useCallback((event: CustomEvent<SidebarRefreshDetail>) => {
-    const detail = event.detail;
-    
-    // 应用过滤条件
-    if (filter && !filter(detail)) {
-      return;
-    }
-    
-    // 调用回调函数
-    callback(detail);
-  }, [callback, filter]);
+  const handleSidebarRefresh = useCallback(
+    (event: CustomEvent<SidebarRefreshDetail>) => {
+      const detail = event.detail;
+
+      // 应用过滤条件
+      if (filter && !filter(detail)) {
+        return;
+      }
+
+      // 调用回调函数
+      callback(detail);
+    },
+    [callback, filter],
+  );
 
   /**
    * 监听侧边栏刷新事件
@@ -76,28 +79,28 @@ export const useSidebarRefresh = (
     }
 
     const eventListener = handleSidebarRefresh as EventListener;
-    
-    window.addEventListener('refresh-sidebar', eventListener);
-    
+
+    window.addEventListener("refresh-sidebar", eventListener);
+
     return () => {
-      window.removeEventListener('refresh-sidebar', eventListener);
+      window.removeEventListener("refresh-sidebar", eventListener);
     };
   }, [handleSidebarRefresh, enabled]);
 };
 
 /**
  * 触发侧边栏刷新事件的工具函数
- * 
+ *
  * 这个函数提供了一个统一的方式来触发侧边栏刷新事件，
  * 确保事件格式的一致性和类型安全。
- * 
+ *
  * @param detail 刷新事件的详细信息
  */
 export const triggerSidebarRefresh = (detail: SidebarRefreshDetail): void => {
-  const refreshEvent = new CustomEvent('refresh-sidebar', {
+  const refreshEvent = new CustomEvent("refresh-sidebar", {
     detail,
   });
-  
+
   window.dispatchEvent(refreshEvent);
 };
 
@@ -106,11 +109,11 @@ export const triggerSidebarRefresh = (detail: SidebarRefreshDetail): void => {
  * 提供常用的刷新事件类型，确保事件类型的一致性
  */
 export const SidebarRefreshTypes = {
-  CLUSTER: 'cluster',
-  HOST: 'host',
-  VM: 'vm',
-  NETWORK: 'network',
-  STORAGE: 'storage',
+  CLUSTER: "cluster",
+  HOST: "host",
+  VM: "vm",
+  NETWORK: "network",
+  STORAGE: "storage",
 } as const;
 
 /**
@@ -118,11 +121,11 @@ export const SidebarRefreshTypes = {
  * 提供常用的操作类型，确保操作类型的一致性
  */
 export const SidebarRefreshActions = {
-  ADDED: 'added',
-  UPDATED: 'updated',
-  DELETED: 'deleted',
-  STATUS_CHANGED: 'status-changed',
-  CONFIGURATION_CHANGED: 'configuration-changed',
+  ADDED: "added",
+  UPDATED: "updated",
+  DELETED: "deleted",
+  STATUS_CHANGED: "status-changed",
+  CONFIGURATION_CHANGED: "configuration-changed",
 } as const;
 
 /**
@@ -140,7 +143,7 @@ export const SidebarRefreshTriggers = {
       ...data,
     });
   },
-  
+
   /**
    * 触发主机相关的刷新事件
    */
@@ -151,7 +154,7 @@ export const SidebarRefreshTriggers = {
       ...data,
     });
   },
-  
+
   /**
    * 触发虚拟机相关的刷新事件
    */
@@ -162,7 +165,7 @@ export const SidebarRefreshTriggers = {
       ...data,
     });
   },
-  
+
   /**
    * 触发网络相关的刷新事件
    */
@@ -173,7 +176,7 @@ export const SidebarRefreshTriggers = {
       ...data,
     });
   },
-  
+
   /**
    * 触发存储相关的刷新事件
    */

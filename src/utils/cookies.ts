@@ -47,7 +47,7 @@ export class CookieUtils {
     try {
       const finalOptions = { ...DEFAULT_SECURE_OPTIONS, ...options };
       let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(
-        value
+        value,
       )}`;
 
       // 设置过期时间
@@ -265,7 +265,7 @@ export class CookieUtils {
   static setWithExpiry(
     name: string,
     value: string,
-    expiryMinutes: number
+    expiryMinutes: number,
   ): void {
     const expiryTime = new Date(Date.now() + expiryMinutes * 60 * 1000);
     this.set(name, value, { expires: expiryTime });

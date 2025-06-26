@@ -20,11 +20,7 @@ import {
   App,
   Spin,
 } from "antd";
-import {
-  ClusterOutlined,
-  PlusOutlined,
-  LinkOutlined,
-} from "@ant-design/icons";
+import { ClusterOutlined, PlusOutlined, LinkOutlined } from "@ant-design/icons";
 import { clusterInitService } from "@/services/cluster";
 import type {
   CreateClusterConfig,
@@ -41,7 +37,7 @@ interface ClusterConfigPageProps {
   onSubmit: (
     type: ClusterConfigType,
     config: CreateClusterConfig | JoinClusterConfig,
-    additionalData?: { hostname?: string }
+    additionalData?: { hostname?: string },
   ) => void;
   loading?: boolean;
 }
@@ -57,7 +53,7 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
   const [configType, setConfigType] = useState<ClusterConfigType>(initialType);
   const [createForm] = Form.useForm();
   const [joinForm] = Form.useForm();
-  
+
   // 节点信息状态
   const [nodeInfo, setNodeInfo] = useState({
     hostname: "",
@@ -70,7 +66,7 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
   useEffect(() => {
     const fetchNodeInfo = async () => {
       try {
-        setNodeInfo(prev => ({ ...prev, loading: true }));
+        setNodeInfo((prev) => ({ ...prev, loading: true }));
 
         // 并行获取主机名和IP地址
         const [hostnameResult, ipResult] = await Promise.all([
@@ -104,11 +100,10 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
         createForm.setFieldsValue({
           selectedIp: ipAddresses[0] || "",
         });
-
       } catch (error) {
         console.error("获取节点信息失败:", error);
         message.error("获取节点信息失败，请稍后重试");
-        setNodeInfo(prev => ({ ...prev, loading: false }));
+        setNodeInfo((prev) => ({ ...prev, loading: false }));
       }
     };
 
@@ -147,11 +142,7 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
   };
 
   const renderCreateClusterForm = () => (
-    <Form
-      form={createForm}
-      layout="vertical"
-      onFinish={handleCreateSubmit}
-    >
+    <Form form={createForm} layout="vertical" onFinish={handleCreateSubmit}>
       <Alert
         message="创建新集群"
         description="系统将自动获取节点信息并创建集群，请选择要使用的IP地址"
@@ -162,9 +153,7 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
 
       <Row gutter={16}>
         <Col span={24}>
-          <Form.Item
-            label="节点名称"
-          >
+          <Form.Item label="节点名称">
             <Spin spinning={nodeInfo.loading} size="small">
               <Input
                 size="large"
@@ -216,11 +205,7 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
   );
 
   const renderJoinClusterForm = () => (
-    <Form
-      form={joinForm}
-      layout="vertical"
-      onFinish={handleJoinSubmit}
-    >
+    <Form form={joinForm} layout="vertical" onFinish={handleJoinSubmit}>
       <Alert
         message="加入现有集群"
         description="请填写节点信息以加入现有集群"
@@ -284,7 +269,7 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
             <Input.TextArea
               rows={4}
               placeholder="请输入节点的公钥"
-              style={{ fontFamily: 'monospace' }}
+              style={{ fontFamily: "monospace" }}
             />
           </Form.Item>
         </Col>

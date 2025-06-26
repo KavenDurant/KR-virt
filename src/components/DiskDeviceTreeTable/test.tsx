@@ -139,9 +139,7 @@ const DiskDeviceTreeTableTest: React.FC = () => {
   return (
     <div style={{ padding: "24px" }}>
       <Card title="磁盘设备分层树表测试" style={{ marginBottom: "24px" }}>
-        <p>
-          此测试展示了磁盘设备的分层结构：
-        </p>
+        <p>此测试展示了磁盘设备的分层结构：</p>
         <ul>
           <li>sda (主磁盘) → sda1, sda2, sda3 (分区)</li>
           <li>sda3 (LVM分区) → uos-root, uos-swap (逻辑卷)</li>
@@ -149,7 +147,7 @@ const DiskDeviceTreeTableTest: React.FC = () => {
           <li>sr0 (光驱设备)</li>
         </ul>
       </Card>
-      
+
       <Card title="磁盘设备树表">
         <DiskDeviceTreeTable devices={testDevices} loading={false} />
       </Card>

@@ -182,7 +182,7 @@ class TokenManager {
   }
 
   private static async performTokenRefresh(
-    refreshToken: string
+    refreshToken: string,
   ): Promise<string> {
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
@@ -308,15 +308,15 @@ const defaultRetryCondition = (error: AxiosError): boolean => {
 const handleCommonErrors = (
   status: number,
   errorDetails?: ErrorResponseData,
-  requestUrl?: string
+  requestUrl?: string,
 ): string => {
   // 优先使用后端返回的 detail 字段
-  if (errorDetails?.detail && typeof errorDetails.detail === 'string') {
+  if (errorDetails?.detail && typeof errorDetails.detail === "string") {
     return errorDetails.detail;
   }
 
   // 如果有 message 字段，也优先使用
-  if (errorDetails?.message && typeof errorDetails.message === 'string') {
+  if (errorDetails?.message && typeof errorDetails.message === "string") {
     return errorDetails.message;
   }
 
@@ -329,7 +329,7 @@ const handleCommonErrors = (
       return "操作成功";
     case 401:
       // 区分登录请求和其他请求的401错误
-      if (requestUrl?.includes('/user/login')) {
+      if (requestUrl?.includes("/user/login")) {
         return "用户名或密码不正确";
       }
       return "登录已过期，请重新登录";
@@ -343,7 +343,7 @@ const handleCommonErrors = (
 const retryRequest = async (
   axiosInstance: AxiosInstance,
   config: InternalAxiosRequestConfig & RequestConfig,
-  retryConfig: RetryConfig
+  retryConfig: RetryConfig,
 ): Promise<AxiosResponse> => {
   let lastError: AxiosError | undefined;
 
@@ -352,14 +352,14 @@ const retryRequest = async (
       if (attempt > 0) {
         // 等待重试延迟
         await new Promise((resolve) =>
-          setTimeout(resolve, retryConfig.delay * attempt)
+          setTimeout(resolve, retryConfig.delay * attempt),
         );
 
         if (isDevelopment) {
           console.log(
             `🔄 Retrying request (${attempt}/${
               retryConfig.count
-            }): ${config.method?.toUpperCase()} ${config.url}`
+            }): ${config.method?.toUpperCase()} ${config.url}`,
           );
         }
       }
@@ -454,7 +454,7 @@ const createAxiosInstance = (): AxiosInstance => {
         console.group(
           `🚀 API Request [${requestId}]: ${config.method?.toUpperCase()} ${
             config.url
-          }`
+          }`,
         );
         console.log("Config:", config);
         console.log("Headers:", config.headers);
@@ -470,7 +470,7 @@ const createAxiosInstance = (): AxiosInstance => {
       message.error("请求配置错误");
       LoadingManager.end();
       return Promise.reject(error);
-    }
+    },
   );
 
   // 响应拦截器
@@ -495,7 +495,7 @@ const createAxiosInstance = (): AxiosInstance => {
         console.group(
           `✅ API Response [${requestId}]: ${response.config.method?.toUpperCase()} ${
             response.config.url
-          }`
+          }`,
         );
         console.log("Status:", response.status);
         console.log("Headers:", response.headers);
@@ -533,7 +533,7 @@ const createAxiosInstance = (): AxiosInstance => {
         console.group(
           `❌ API Error [${requestId}]: ${error.config?.method?.toUpperCase()} ${
             error.config?.url
-          }`
+          }`,
         );
         console.log("Error:", error);
         console.log("Response:", error.response);
@@ -552,7 +552,7 @@ const createAxiosInstance = (): AxiosInstance => {
           return await retryRequest(
             instance,
             error.config as InternalAxiosRequestConfig & RequestConfig,
-            retryConfig
+            retryConfig,
           );
         } catch {
           // 重试失败，继续处理原始错误
@@ -568,11 +568,18 @@ const createAxiosInstance = (): AxiosInstance => {
         errorDetails = data as ErrorResponseData;
 
         // 使用统一的错误处理函数，传入请求URL用于判断错误类型
-        errorMessage = handleCommonErrors(status, errorDetails, error.config?.url);
+        errorMessage = handleCommonErrors(
+          status,
+          errorDetails,
+          error.config?.url,
+        );
 
         // 特殊处理 401 和 498 错误的登录跳转
         // 但排除登录请求本身，避免登录失败时自动跳转
-        if ((status === 401 || status === 498) && !error.config?.url?.includes('/user/login')) {
+        if (
+          (status === 401 || status === 498) &&
+          !error.config?.url?.includes("/user/login")
+        ) {
           TokenManager.clearTokens();
           // 延迟跳转，避免影响当前错误处理
           setTimeout(() => {
@@ -615,7 +622,7 @@ const createAxiosInstance = (): AxiosInstance => {
       }
 
       return Promise.reject(apiError);
-    }
+    },
   );
 
   return instance;
@@ -632,7 +639,7 @@ const createRequest = <T = unknown>(
   method: RequestMethod,
   url: string,
   data?: unknown,
-  config?: RequestConfig
+  config?: RequestConfig,
 ): Promise<ApiResponse<T>> => {
   const requestConfig: AxiosRequestConfig = {
     method: method.toLowerCase() as "get" | "post" | "put" | "patch" | "delete",
@@ -661,34 +668,34 @@ export const http = {
   get: <T = unknown>(
     url: string,
     params?: Record<string, unknown>,
-    config?: RequestConfig
+    config?: RequestConfig,
   ): Promise<ApiResponse<T>> => createRequest<T>("GET", url, params, config),
 
   // POST 请求
   post: <T = unknown>(
     url: string,
     data?: unknown,
-    config?: RequestConfig
+    config?: RequestConfig,
   ): Promise<ApiResponse<T>> => createRequest<T>("POST", url, data, config),
 
   // PUT 请求
   put: <T = unknown>(
     url: string,
     data?: unknown,
-    config?: RequestConfig
+    config?: RequestConfig,
   ): Promise<ApiResponse<T>> => createRequest<T>("PUT", url, data, config),
 
   // PATCH 请求
   patch: <T = unknown>(
     url: string,
     data?: unknown,
-    config?: RequestConfig
+    config?: RequestConfig,
   ): Promise<ApiResponse<T>> => createRequest<T>("PATCH", url, data, config),
 
   // DELETE 请求
   delete: <T = unknown>(
     url: string,
-    config?: RequestConfig
+    config?: RequestConfig,
   ): Promise<ApiResponse<T>> =>
     createRequest<T>("DELETE", url, undefined, config),
 
@@ -697,7 +704,7 @@ export const http = {
     url: string,
     formData: FormData,
     config?: RequestConfig,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
   ): Promise<ApiResponse<T>> =>
     request.post(url, formData, {
       ...config,
@@ -720,7 +727,7 @@ export const http = {
     url: string,
     filename?: string,
     config?: RequestConfig,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
   ): Promise<void> => {
     const response = await request.get(url, {
       ...config,
@@ -748,13 +755,13 @@ export const http = {
 
   // 并发请求
   all: <T extends readonly unknown[] | []>(
-    requests: T
+    requests: T,
   ): Promise<{ -readonly [P in keyof T]: Awaited<T[P]> }> =>
     Promise.all(requests),
 
   // 请求竞速
   race: <T extends readonly unknown[] | []>(
-    requests: T
+    requests: T,
   ): Promise<Awaited<T[number]>> => Promise.race(requests),
 
   // 取消所有请求

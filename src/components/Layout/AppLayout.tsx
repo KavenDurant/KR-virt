@@ -43,7 +43,7 @@ import type {
   ActiveEvent,
   PromptEvent,
   TimeoutEvent,
-  LogoutEvent
+  LogoutEvent,
 } from "@/components/UserActivity/types";
 import { getSidebarData, getClusterSidebarData } from "@/services/mockData";
 import type { DataCenter } from "@/services/mockData";
@@ -128,7 +128,7 @@ const AppLayout: React.FC = () => {
         originalWidthRef.current = validWidth;
       }
     },
-    [] // 移除sidebarWidth依赖，避免频繁重新创建函数
+    [], // 移除sidebarWidth依赖，避免频繁重新创建函数
   );
 
   // 根据当前路径确定选中的菜单项
@@ -138,7 +138,7 @@ const AppLayout: React.FC = () => {
   }, [location.pathname]);
 
   const [selectedActivityItem, setSelectedActivityItem] = useState(
-    getCurrentSelectedPath
+    getCurrentSelectedPath,
   );
 
   // 获取侧边栏数据的异步函数
@@ -199,10 +199,16 @@ const AppLayout: React.FC = () => {
       }
     };
 
-    window.addEventListener("refresh-sidebar", handleSidebarRefresh as EventListener);
+    window.addEventListener(
+      "refresh-sidebar",
+      handleSidebarRefresh as EventListener,
+    );
 
     return () => {
-      window.removeEventListener("refresh-sidebar", handleSidebarRefresh as EventListener);
+      window.removeEventListener(
+        "refresh-sidebar",
+        handleSidebarRefresh as EventListener,
+      );
     };
   }, [shouldShowSidebar, selectedActivityItem, loadSidebarData]);
 
@@ -373,8 +379,8 @@ const AppLayout: React.FC = () => {
                             ? "#ffffff"
                             : "#000000"
                           : actualTheme === "dark"
-                          ? "#858585"
-                          : "#666666",
+                            ? "#858585"
+                            : "#666666",
                     },
                   })}
                 </Tooltip>
@@ -386,8 +392,8 @@ const AppLayout: React.FC = () => {
                       ? "#444444"
                       : "#e6f7ff"
                     : actualTheme === "dark"
-                    ? "#333333"
-                    : "#f3f3f3",
+                      ? "#333333"
+                      : "#f3f3f3",
                 height: "50px",
               },
             }))}
@@ -441,8 +447,8 @@ const AppLayout: React.FC = () => {
                           ? "#ffffff"
                           : "#000000"
                         : actualTheme === "dark"
-                        ? "#858585"
-                        : "#666666",
+                          ? "#858585"
+                          : "#666666",
                       cursor: "pointer",
                     }}
                     onClick={() => {
@@ -550,7 +556,7 @@ const AppLayout: React.FC = () => {
                 data={sidebarData}
                 onSelect={(
                   selectedKeys: string[],
-                  info: Record<string, unknown>
+                  info: Record<string, unknown>,
                 ) => {
                   // 处理树节点选择事件，传递选择信息到主内容区域
                   const selectedKey = selectedKeys[0];
@@ -568,7 +574,7 @@ const AppLayout: React.FC = () => {
                           nodeType: nodeInfo.type,
                           nodeData: nodeInfo.data,
                         },
-                      })
+                      }),
                     );
                   }
                 }}
@@ -592,7 +598,7 @@ const AppLayout: React.FC = () => {
                     routes.find((route) => route.path === selectedActivityItem)
                       ?.name || "仪表盘",
                   icon: routes.find(
-                    (route) => route.path === selectedActivityItem
+                    (route) => route.path === selectedActivityItem,
                   )?.icon,
                   children: [],
                   className: "sidebar-menu-item",
@@ -628,7 +634,7 @@ const AppLayout: React.FC = () => {
                   if (now - lastUpdateTime > throttleDelay) {
                     originalWidthRef.current = Math.max(
                       200,
-                      Math.min(newWidth, 400)
+                      Math.min(newWidth, 400),
                     );
                     lastUpdateTime = now;
                   }
@@ -757,7 +763,6 @@ const AppLayout: React.FC = () => {
       >
         <p>确定要退出登录吗？</p>
       </Modal>
-
       {/* 用户活动监控 */}
       <UserActivityMonitor
         config={{
@@ -770,24 +775,24 @@ const AppLayout: React.FC = () => {
         callbacks={{
           onIdle: (event: IdleEvent) => {
             if (import.meta.env.DEV) {
-              console.log('🔍 用户进入空闲状态:', event);
+              console.log("🔍 用户进入空闲状态:", event);
             }
           },
           onActive: (event: ActiveEvent) => {
             if (import.meta.env.DEV) {
-              console.log('🔍 用户恢复活动:', event);
+              console.log("🔍 用户恢复活动:", event);
             }
           },
           onPrompt: (event: PromptEvent) => {
             if (import.meta.env.DEV) {
-              console.log('⚠️ 显示空闲警告:', event);
+              console.log("⚠️ 显示空闲警告:", event);
             }
           },
           onTimeout: (event: TimeoutEvent) => {
-            console.log('⏰ 用户会话超时:', event);
+            console.log("⏰ 用户会话超时:", event);
           },
           onLogout: (event: LogoutEvent) => {
-            console.log('👋 用户登出:', event);
+            console.log("👋 用户登出:", event);
           },
         }}
       />

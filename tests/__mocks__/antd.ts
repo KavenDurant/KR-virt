@@ -11,45 +11,51 @@
  * 用于模拟Ant Design组件，简化测试环境
  */
 
-import React from 'react';
+import React from "react";
 
 // Mock常用的Ant Design组件
-export const Button = ({ children, onClick, ...props }: any) => 
-  React.createElement('button', { onClick, ...props }, children);
+export const Button = ({ children, onClick, ...props }: any) =>
+  React.createElement("button", { onClick, ...props }, children);
 
-export const Input = ({ onChange, ...props }: any) => 
-  React.createElement('input', { onChange, ...props });
+export const Input = ({ onChange, ...props }: any) =>
+  React.createElement("input", { onChange, ...props });
 
-export const Form = ({ children, onFinish, ...props }: any) => 
-  React.createElement('form', { onSubmit: onFinish, ...props }, children);
+export const Form = ({ children, onFinish, ...props }: any) =>
+  React.createElement("form", { onSubmit: onFinish, ...props }, children);
 
-export const Table = ({ dataSource, columns, ...props }: any) => 
-  React.createElement('table', props, 
-    React.createElement('tbody', {}, 
-      dataSource?.map((item: any, index: number) => 
-        React.createElement('tr', { key: index }, 
-          columns?.map((col: any, colIndex: number) => 
-            React.createElement('td', { key: colIndex }, item[col.dataIndex])
-          )
-        )
-      )
-    )
+export const Table = ({ dataSource, columns, ...props }: any) =>
+  React.createElement(
+    "table",
+    props,
+    React.createElement(
+      "tbody",
+      {},
+      dataSource?.map((item: any, index: number) =>
+        React.createElement(
+          "tr",
+          { key: index },
+          columns?.map((col: any, colIndex: number) =>
+            React.createElement("td", { key: colIndex }, item[col.dataIndex]),
+          ),
+        ),
+      ),
+    ),
   );
 
-export const Modal = ({ children, visible, open, ...props }: any) => 
-  (visible || open) ? React.createElement('div', props, children) : null;
+export const Modal = ({ children, visible, open, ...props }: any) =>
+  visible || open ? React.createElement("div", props, children) : null;
 
 export const message = {
   success: vi.fn(),
   error: vi.fn(),
   warning: vi.fn(),
   info: vi.fn(),
-  loading: vi.fn()
+  loading: vi.fn(),
 };
 
 export const notification = {
   success: vi.fn(),
   error: vi.fn(),
   warning: vi.fn(),
-  info: vi.fn()
+  info: vi.fn(),
 };

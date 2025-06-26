@@ -10,7 +10,7 @@
  * Axios Mock配置
  * 用于模拟HTTP请求，确保测试环境的一致性
  */
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 export default {
   get: vi.fn(() => Promise.resolve({ data: {} })),
@@ -26,11 +26,11 @@ export default {
     patch: vi.fn(() => Promise.resolve({ data: {} })),
     interceptors: {
       request: { use: vi.fn(), eject: vi.fn() },
-      response: { use: vi.fn(), eject: vi.fn() }
-    }
+      response: { use: vi.fn(), eject: vi.fn() },
+    },
   })),
   interceptors: {
     request: { use: vi.fn(), eject: vi.fn() },
-    response: { use: vi.fn(), eject: vi.fn() }
-  }
+    response: { use: vi.fn(), eject: vi.fn() },
+  },
 };

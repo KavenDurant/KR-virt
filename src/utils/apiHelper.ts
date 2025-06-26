@@ -3,11 +3,7 @@
  * 提供统一的 API 调用方法，简化服务层代码
  */
 
-import {
-  http,
-  type RequestConfig,
-  type ApiError,
-} from "./request";
+import { http, type RequestConfig, type ApiError } from "./request";
 
 // 标准响应格式
 export interface StandardResponse<T = unknown> {
@@ -36,7 +32,7 @@ export class ApiHelper {
   static async get<T = unknown>(
     url: string,
     params?: Record<string, unknown>,
-    options: ApiOptions = {}
+    options: ApiOptions = {},
   ): Promise<StandardResponse<T>> {
     const {
       defaultSuccessMessage = "获取数据成功",
@@ -69,7 +65,7 @@ export class ApiHelper {
   static async post<T = unknown>(
     url: string,
     data?: unknown,
-    options: ApiOptions = {}
+    options: ApiOptions = {},
   ): Promise<StandardResponse<T>> {
     const {
       defaultSuccessMessage = "操作成功",
@@ -84,9 +80,7 @@ export class ApiHelper {
         ...requestConfig,
       });
 
-      const responseData = returnRawData
-        ? response.data
-        : (response.data as T);
+      const responseData = returnRawData ? response.data : (response.data as T);
 
       return {
         success: true,
@@ -104,7 +98,7 @@ export class ApiHelper {
   static async put<T = unknown>(
     url: string,
     data?: unknown,
-    options: ApiOptions = {}
+    options: ApiOptions = {},
   ): Promise<StandardResponse<T>> {
     const {
       defaultSuccessMessage = "更新成功",
@@ -119,9 +113,7 @@ export class ApiHelper {
         ...requestConfig,
       });
 
-      const responseData = returnRawData
-        ? response.data
-        : (response.data as T);
+      const responseData = returnRawData ? response.data : (response.data as T);
 
       return {
         success: true,
@@ -138,7 +130,7 @@ export class ApiHelper {
    */
   static async delete<T = unknown>(
     url: string,
-    options: ApiOptions = {}
+    options: ApiOptions = {},
   ): Promise<StandardResponse<T>> {
     const {
       defaultSuccessMessage = "删除成功",
@@ -153,9 +145,7 @@ export class ApiHelper {
         ...requestConfig,
       });
 
-      const responseData = returnRawData
-        ? response.data
-        : (response.data as T);
+      const responseData = returnRawData ? response.data : (response.data as T);
 
       return {
         success: true,
@@ -172,7 +162,7 @@ export class ApiHelper {
    */
   private static handleError<T>(
     error: ApiError,
-    defaultMessage: string
+    defaultMessage: string,
   ): StandardResponse<T> {
     // request.ts 已经处理了错误显示，这里只需要返回统一格式
     return {
@@ -185,7 +175,7 @@ export class ApiHelper {
    * 批量请求（并发）
    */
   static async all<T extends readonly unknown[] | []>(
-    requests: T
+    requests: T,
   ): Promise<{ -readonly [P in keyof T]: Awaited<T[P]> }> {
     return http.all(requests);
   }
@@ -194,7 +184,7 @@ export class ApiHelper {
    * 请求竞速
    */
   static async race<T extends readonly unknown[] | []>(
-    requests: T
+    requests: T,
   ): Promise<Awaited<T[number]>> {
     return http.race(requests);
   }
@@ -205,7 +195,7 @@ export class ApiHelper {
   static async upload<T = unknown>(
     url: string,
     formData: FormData,
-    options: ApiOptions & { onProgress?: (progress: number) => void } = {}
+    options: ApiOptions & { onProgress?: (progress: number) => void } = {},
   ): Promise<StandardResponse<T>> {
     const {
       defaultSuccessMessage = "上传成功",
@@ -222,7 +212,7 @@ export class ApiHelper {
           showErrorMessage: false,
           ...requestConfig,
         },
-        onProgress
+        onProgress,
       );
 
       return {
@@ -241,7 +231,7 @@ export class ApiHelper {
   static async download(
     url: string,
     filename?: string,
-    options: ApiOptions & { onProgress?: (progress: number) => void } = {}
+    options: ApiOptions & { onProgress?: (progress: number) => void } = {},
   ): Promise<StandardResponse<void>> {
     const {
       defaultSuccessMessage = "下载成功",
@@ -258,7 +248,7 @@ export class ApiHelper {
           showErrorMessage: false,
           ...requestConfig,
         },
-        onProgress
+        onProgress,
       );
 
       return {
@@ -290,7 +280,7 @@ export class MockableApiHelper extends ApiHelper {
     options: ApiOptions & {
       mockData?: T;
       useMock?: boolean;
-    } = {}
+    } = {},
   ): Promise<StandardResponse<T>> {
     const { mockData, useMock, ...apiOptions } = options;
 
@@ -298,7 +288,7 @@ export class MockableApiHelper extends ApiHelper {
     if ((useMock || process.env.NODE_ENV === "development") && mockData) {
       // 模拟网络延迟
       await new Promise((resolve) =>
-        setTimeout(resolve, 300 + Math.random() * 700)
+        setTimeout(resolve, 300 + Math.random() * 700),
       );
 
       return {
@@ -320,13 +310,13 @@ export class MockableApiHelper extends ApiHelper {
     options: ApiOptions & {
       mockData?: T;
       useMock?: boolean;
-    } = {}
+    } = {},
   ): Promise<StandardResponse<T>> {
     const { mockData, useMock, ...apiOptions } = options;
 
     if ((useMock || process.env.NODE_ENV === "development") && mockData) {
       await new Promise((resolve) =>
-        setTimeout(resolve, 500 + Math.random() * 1000)
+        setTimeout(resolve, 500 + Math.random() * 1000),
       );
 
       return {
@@ -348,13 +338,13 @@ export class MockableApiHelper extends ApiHelper {
     options: ApiOptions & {
       mockData?: T;
       useMock?: boolean;
-    } = {}
+    } = {},
   ): Promise<StandardResponse<T>> {
     const { mockData, useMock, ...apiOptions } = options;
 
     if ((useMock || process.env.NODE_ENV === "development") && mockData) {
       await new Promise((resolve) =>
-        setTimeout(resolve, 500 + Math.random() * 1000)
+        setTimeout(resolve, 500 + Math.random() * 1000),
       );
 
       return {

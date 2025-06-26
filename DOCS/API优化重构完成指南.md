@@ -9,12 +9,14 @@
 ### 1. 创建了统一的 API 工具 (`src/utils/apiHelper.ts`)
 
 #### 核心特性
+
 - **自动错误处理**: 所有错误都会自动通过 `request.ts` 中的统一错误处理机制处理
 - **标准响应格式**: 统一返回 `{ success: boolean, data?: T, message: string }` 格式
 - **无需手写 catch**: 开发者不再需要在每个 API 调用中写 try-catch
 - **Mock 数据支持**: 内置对 Mock 数据的支持，方便开发和测试
 
 #### API 工具类方法
+
 ```typescript
 // 基础 API 工具
 api.get<T>(url, params?, options?)
@@ -34,6 +36,7 @@ mockApi.post<T>(url, data?, options & { mockData?, useMock? })
 #### 集群服务优化 (`src/services/cluster/index.ts`)
 
 **优化前的代码（冗余）:**
+
 ```typescript
 async getClusterNodes(): Promise<{
   success: boolean;
@@ -42,7 +45,7 @@ async getClusterNodes(): Promise<{
 }> {
   try {
     const response = await request.get<ClusterNodesResponse>(`/cluster/nodes`);
-    
+
     return {
       success: true,
       data: response.data,
@@ -50,13 +53,13 @@ async getClusterNodes(): Promise<{
     };
   } catch (error: unknown) {
     console.error("获取集群节点列表API调用失败:", error);
-    
+
     // 大量重复的错误处理代码...
     if (error && typeof error === "object" && "response" in error) {
       const httpError = error as {
         response?: { status?: number; data?: Record<string, unknown> };
       };
-      
+
       switch (httpError.response?.status) {
         case 401:
           return { success: false, message: "认证失败，请重新登录" };
@@ -65,13 +68,14 @@ async getClusterNodes(): Promise<{
         // ... 更多重复代码
       }
     }
-    
+
     return { success: false, message: "获取集群节点列表失败" };
   }
 }
 ```
 
 **优化后的代码（简洁）:**
+
 ```typescript
 async getClusterNodes(): Promise<StandardResponse<ClusterNodesResponse>> {
   if (USE_MOCK_DATA) {
@@ -93,11 +97,12 @@ async getClusterNodes(): Promise<StandardResponse<ClusterNodesResponse>> {
 #### 登录服务优化 (`src/services/login/index.ts`)
 
 **优化前的代码:**
+
 ```typescript
 async refreshToken(): Promise<AuthResponse> {
   try {
     const response = await http.get<RefreshTokenApiResponse>("/user/renew_access_token");
-    
+
     if (response.data.access_token) {
       // 处理成功逻辑...
       return { success: true, message: "Token刷新成功" };
@@ -106,18 +111,19 @@ async refreshToken(): Promise<AuthResponse> {
     }
   } catch (error: unknown) {
     console.error("Token刷新失败:", error);
-    
+
     // 大量重复的错误处理代码...
     if (error && typeof error === "object" && "status" in error) {
       // ... 重复的状态码处理
     }
-    
+
     return { success: false, message: "Token刷新失败" };
   }
 }
 ```
 
 **优化后的代码:**
+
 ```typescript
 async refreshToken(): Promise<AuthResponse> {
   const token = this.getToken();
@@ -151,20 +157,20 @@ async refreshToken(): Promise<AuthResponse> {
 ### 1. 基本用法
 
 ```typescript
-import { api, mockApi } from '@/utils/apiHelper';
+import { api, mockApi } from "@/utils/apiHelper";
 
 // 简单的 GET 请求
-const result = await api.get<UserInfo>('/user/profile');
+const result = await api.get<UserInfo>("/user/profile");
 if (result.success) {
-  console.log('用户信息:', result.data);
+  console.log("用户信息:", result.data);
 } else {
-  console.log('获取失败:', result.message);
+  console.log("获取失败:", result.message);
 }
 
 // POST 请求
-const createResult = await api.post<CreateResponse>('/user/create', userData);
+const createResult = await api.post<CreateResponse>("/user/create", userData);
 if (createResult.success) {
-  console.log('创建成功');
+  console.log("创建成功");
 }
 ```
 
@@ -172,56 +178,72 @@ if (createResult.success) {
 
 ```typescript
 // 自定义错误和成功消息
-const result = await api.get('/data', {}, {
-  defaultSuccessMessage: '数据获取成功',
-  defaultErrorMessage: '获取数据失败，请重试',
-  skipAuth: false,
-  showErrorMessage: true, // 是否显示错误提示
-});
+const result = await api.get(
+  "/data",
+  {},
+  {
+    defaultSuccessMessage: "数据获取成功",
+    defaultErrorMessage: "获取数据失败，请重试",
+    skipAuth: false,
+    showErrorMessage: true, // 是否显示错误提示
+  },
+);
 
 // 使用 Mock 数据
-const mockResult = await mockApi.get('/data', {}, {
-  useMock: true,
-  mockData: { id: 1, name: 'test' },
-  defaultSuccessMessage: '获取成功',
-});
+const mockResult = await mockApi.get(
+  "/data",
+  {},
+  {
+    useMock: true,
+    mockData: { id: 1, name: "test" },
+    defaultSuccessMessage: "获取成功",
+  },
+);
 ```
 
 ### 3. 文件上传/下载
 
 ```typescript
 // 文件上传
-const uploadResult = await api.upload('/upload', formData, {
+const uploadResult = await api.upload("/upload", formData, {
   onProgress: (progress) => console.log(`上传进度: ${progress}%`),
-  defaultSuccessMessage: '文件上传成功',
+  defaultSuccessMessage: "文件上传成功",
 });
 
 // 文件下载
-const downloadResult = await api.download('/download/file.pdf', 'document.pdf', {
-  onProgress: (progress) => console.log(`下载进度: ${progress}%`),
-});
+const downloadResult = await api.download(
+  "/download/file.pdf",
+  "document.pdf",
+  {
+    onProgress: (progress) => console.log(`下载进度: ${progress}%`),
+  },
+);
 ```
 
 ## 主要优势
 
 ### 1. 代码减少
+
 - **集群服务**: 从 ~800 行减少到 ~400 行（减少 50%）
 - **登录服务**: 从 ~600 行减少到 ~350 行（减少 42%）
 - 每个 API 方法的代码行数减少 60-80%
 
 ### 2. 错误处理统一
+
 - 所有 HTTP 状态码统一在 `request.ts` 中处理
 - 422 验证错误自动格式化为可读消息
 - 401 错误自动清除 Token 并跳转登录页
 - 无需在每个服务中重复错误处理逻辑
 
 ### 3. 开发体验改善
+
 - **无需手写 catch**: 错误自动处理，返回统一格式
 - **类型安全**: 完整的 TypeScript 支持
 - **Mock 支持**: 内置 Mock 数据支持，方便开发测试
 - **一致的 API**: 所有服务使用相同的调用模式
 
 ### 4. 维护性提升
+
 - 错误处理逻辑集中管理
 - 新增 API 接口时无需重复编写错误处理
 - 统一的响应格式便于前端处理
@@ -231,25 +253,31 @@ const downloadResult = await api.download('/download/file.pdf', 'document.pdf', 
 如果要将现有服务迁移到新的 API 工具：
 
 1. **导入新的 API 工具**
+
    ```typescript
-   import { api, mockApi, type StandardResponse } from '@/utils/apiHelper';
+   import { api, mockApi, type StandardResponse } from "@/utils/apiHelper";
    ```
 
 2. **替换 API 调用**
+
    ```typescript
    // 旧方式
    try {
-     const response = await http.get('/api/data');
+     const response = await http.get("/api/data");
      return { success: true, data: response.data };
    } catch (error) {
      // 大量错误处理代码...
    }
 
    // 新方式
-   return api.get('/api/data', {}, {
-     defaultSuccessMessage: '获取成功',
-     defaultErrorMessage: '获取失败',
-   });
+   return api.get(
+     "/api/data",
+     {},
+     {
+       defaultSuccessMessage: "获取成功",
+       defaultErrorMessage: "获取失败",
+     },
+   );
    ```
 
 3. **更新返回类型**

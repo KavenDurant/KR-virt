@@ -2,8 +2,8 @@
  * 用户活动监控工具函数
  */
 
-import type { UserActivityEvent } from '@/components/UserActivity/types';
-import { LOG_CONFIG, STORAGE_KEYS } from '@/components/UserActivity/config';
+import type { UserActivityEvent } from "@/components/UserActivity/types";
+import { LOG_CONFIG, STORAGE_KEYS } from "@/components/UserActivity/config";
 
 /**
  * 格式化时间显示
@@ -35,9 +35,9 @@ export const formatDuration = (milliseconds: number): string => {
   const hours = Math.floor(minutes / 60);
 
   if (hours > 0) {
-    return `${hours}:${String(minutes % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+    return `${hours}:${String(minutes % 60).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   } else {
-    return `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
+    return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
   }
 };
 
@@ -48,18 +48,18 @@ export const formatDuration = (milliseconds: number): string => {
  */
 export const isValidActivityEvent = (event: Event): boolean => {
   // 排除某些不应该被视为用户活动的事件
-  const excludeTargets = ['script', 'style', 'meta', 'link'];
+  const excludeTargets = ["script", "style", "meta", "link"];
   const target = event.target as HTMLElement;
-  
+
   if (target && excludeTargets.includes(target.tagName?.toLowerCase())) {
     return false;
   }
-  
+
   // 排除自动触发的事件
   if (event.isTrusted === false) {
     return false;
   }
-  
+
   return true;
 };
 
@@ -77,10 +77,13 @@ export const generateTabId = (): string => {
  */
 export const saveToStorage = (key: string, data: any): void => {
   try {
-    localStorage.setItem(key, JSON.stringify({
-      data,
-      timestamp: Date.now(),
-    }));
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        data,
+        timestamp: Date.now(),
+      }),
+    );
   } catch (error) {
     console.warn(`${LOG_CONFIG.prefix} Failed to save to localStorage:`, error);
   }
@@ -95,11 +98,14 @@ export const loadFromStorage = <T = any>(key: string): T | null => {
   try {
     const item = localStorage.getItem(key);
     if (!item) return null;
-    
+
     const parsed = JSON.parse(item);
     return parsed.data;
   } catch (error) {
-    console.warn(`${LOG_CONFIG.prefix} Failed to load from localStorage:`, error);
+    console.warn(
+      `${LOG_CONFIG.prefix} Failed to load from localStorage:`,
+      error,
+    );
     return null;
   }
 };
@@ -109,7 +115,7 @@ export const loadFromStorage = <T = any>(key: string): T | null => {
  */
 export const cleanupStorage = (): void => {
   try {
-    Object.values(STORAGE_KEYS).forEach(key => {
+    Object.values(STORAGE_KEYS).forEach((key) => {
       localStorage.removeItem(key);
     });
   } catch (error) {
@@ -124,14 +130,14 @@ export const cleanupStorage = (): void => {
  */
 export const logActivity = (event: UserActivityEvent, data?: any): void => {
   if (!import.meta.env.DEV) return;
-  
+
   const timestamp = new Date().toLocaleTimeString();
   const color = LOG_CONFIG.colors[getLogLevel(event)];
-  
+
   console.log(
     `%c${LOG_CONFIG.prefix} [${timestamp}] ${event.toUpperCase()}`,
     `color: ${color}; font-weight: bold;`,
-    data || ''
+    data || "",
   );
 };
 
@@ -140,18 +146,20 @@ export const logActivity = (event: UserActivityEvent, data?: any): void => {
  * @param event 事件类型
  * @returns 日志级别
  */
-const getLogLevel = (event: UserActivityEvent): keyof typeof LOG_CONFIG.colors => {
+const getLogLevel = (
+  event: UserActivityEvent,
+): keyof typeof LOG_CONFIG.colors => {
   switch (event) {
-    case 'timeout':
-    case 'logout':
-      return 'error';
-    case 'prompt':
-      return 'warn';
-    case 'active':
-    case 'promptCancel':
-      return 'success';
+    case "timeout":
+    case "logout":
+      return "error";
+    case "prompt":
+      return "warn";
+    case "active":
+    case "promptCancel":
+      return "success";
     default:
-      return 'info';
+      return "info";
   }
 };
 
@@ -163,10 +171,10 @@ const getLogLevel = (event: UserActivityEvent): keyof typeof LOG_CONFIG.colors =
  */
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
-  delay: number
+  delay: number,
 ): ((...args: Parameters<T>) => void) => {
   let timeoutId: NodeJS.Timeout;
-  
+
   return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func(...args), delay);
@@ -181,10 +189,10 @@ export const debounce = <T extends (...args: any[]) => any>(
  */
 export const throttle = <T extends (...args: any[]) => any>(
   func: T,
-  delay: number
+  delay: number,
 ): ((...args: Parameters<T>) => void) => {
   let lastCall = 0;
-  
+
   return (...args: Parameters<T>) => {
     const now = Date.now();
     if (now - lastCall >= delay) {
@@ -215,7 +223,7 @@ export const getVisibilityState = (): DocumentVisibilityState => {
  * @returns 是否支持
  */
 export const supportsBroadcastChannel = (): boolean => {
-  return typeof BroadcastChannel !== 'undefined';
+  return typeof BroadcastChannel !== "undefined";
 };
 
 /**
@@ -225,7 +233,7 @@ export const supportsBroadcastChannel = (): boolean => {
  */
 export const safeAsync = async <T>(
   asyncFn: () => Promise<T>,
-  errorMessage: string = 'Async operation failed'
+  errorMessage: string = "Async operation failed",
 ): Promise<T | null> => {
   try {
     return await asyncFn();
@@ -241,7 +249,7 @@ export const safeAsync = async <T>(
  * @returns Promise
  */
 export const delay = (ms: number): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 /**
@@ -253,10 +261,10 @@ export const formatError = (error: unknown): string => {
   if (error instanceof Error) {
     return error.message;
   }
-  if (typeof error === 'string') {
+  if (typeof error === "string") {
     return error;
   }
-  return 'Unknown error occurred';
+  return "Unknown error occurred";
 };
 
 /**
@@ -265,7 +273,7 @@ export const formatError = (error: unknown): string => {
  */
 export const isMobileDevice = (): boolean => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
+    navigator.userAgent,
   );
 };
 
@@ -273,16 +281,18 @@ export const isMobileDevice = (): boolean => {
  * 获取设备类型
  * @returns 设备类型
  */
-export const getDeviceType = (): 'mobile' | 'tablet' | 'desktop' => {
+export const getDeviceType = (): "mobile" | "tablet" | "desktop" => {
   const userAgent = navigator.userAgent;
-  
+
   if (/iPad|Android(?!.*Mobile)/i.test(userAgent)) {
-    return 'tablet';
+    return "tablet";
   }
-  
-  if (/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
-    return 'mobile';
+
+  if (
+    /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
+  ) {
+    return "mobile";
   }
-  
-  return 'desktop';
+
+  return "desktop";
 };

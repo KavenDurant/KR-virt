@@ -192,17 +192,19 @@ const ClusterProcessingPage: React.FC<ClusterProcessingPageProps> = ({
         boxSizing: "border-box",
         overflow: "hidden",
       }}
-    >        <Card
-          style={{
-            width: "100%",
-            maxWidth: 600,
-            maxHeight: "calc(100vh - 40px)",
-            overflowY: "auto",
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-            borderRadius: "12px",
-          }}
-          variant="borderless"
-        >
+    >
+      {" "}
+      <Card
+        style={{
+          width: "100%",
+          maxWidth: 600,
+          maxHeight: "calc(100vh - 40px)",
+          overflowY: "auto",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+          borderRadius: "12px",
+        }}
+        variant="borderless"
+      >
         <div style={{ textAlign: "center", marginBottom: "32px" }}>
           {isCompleted ? (
             <CheckCircleOutlined
@@ -238,13 +240,15 @@ const ClusterProcessingPage: React.FC<ClusterProcessingPageProps> = ({
         </div>
 
         {/* 进度条 */}
-        <div style={{ 
-          marginBottom: "32px",
-          padding: "16px",
-          backgroundColor: themeConfig.token.colorBgContainer,
-          borderRadius: "8px",
-          border: `1px solid ${themeConfig.token.colorBorder}`
-        }}>
+        <div
+          style={{
+            marginBottom: "32px",
+            padding: "16px",
+            backgroundColor: themeConfig.token.colorBgContainer,
+            borderRadius: "8px",
+            border: `1px solid ${themeConfig.token.colorBorder}`,
+          }}
+        >
           <Progress
             percent={progress}
             status={isCompleted ? "success" : "active"}
@@ -258,7 +262,10 @@ const ClusterProcessingPage: React.FC<ClusterProcessingPageProps> = ({
             format={(percent) => `${percent}%`}
           />
           <div style={{ textAlign: "center", marginTop: "12px" }}>
-            <Text type="secondary" style={{ fontSize: "14px", fontWeight: 500 }}>
+            <Text
+              type="secondary"
+              style={{ fontSize: "14px", fontWeight: 500 }}
+            >
               {currentStep}
             </Text>
           </div>

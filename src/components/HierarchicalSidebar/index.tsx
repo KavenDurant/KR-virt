@@ -239,8 +239,8 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
       detail: {
         action,
         hostname: host.name,
-        hostData: host
-      }
+        hostData: host,
+      },
     });
     window.dispatchEvent(event);
   };
@@ -475,7 +475,8 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
   // 创建存储节点
   const createStorageNode = (storage: Storage): TreeNodeData => {
     const statusColor = getStatusColor(storage.status);
-    const usagePercent = storage.size > 0 ? Math.round((storage.used / storage.size) * 100) : 0;
+    const usagePercent =
+      storage.size > 0 ? Math.round((storage.used / storage.size) * 100) : 0;
 
     return {
       key: storage.id,

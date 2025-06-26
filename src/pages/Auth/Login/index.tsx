@@ -38,7 +38,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
   const [passwordValidation, setPasswordValidation] = useState(
-    SecurityUtils.validatePassword("")
+    SecurityUtils.validatePassword(""),
   );
 
   // 在组件挂载时可以添加一些初始化逻辑（如果需要）
@@ -158,7 +158,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     return Promise.resolve();
                   }
                   return Promise.reject(
-                    new Error("密码强度不足，请参考安全建议")
+                    new Error("密码强度不足，请参考安全建议"),
                   );
                 },
               },

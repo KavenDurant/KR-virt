@@ -23,7 +23,7 @@ class UserService {
    * 创建用户
    */
   async createUser(
-    userData: CreateUserRequest
+    userData: CreateUserRequest,
   ): Promise<StandardResponse<CreateUserResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post(`${this.BASE_URL}/create`, userData, {
@@ -46,26 +46,34 @@ class UserService {
    * 获取用户列表
    */
   async getUserList(
-    params?: UserQueryParams
+    params?: UserQueryParams,
   ): Promise<StandardResponse<UserListResponse>> {
     if (USE_MOCK_DATA) {
-      return mockApi.get(`${this.BASE_URL}/list`, params as Record<string, unknown>, {
-        useMock: true,
-        mockData: this.getMockUserList(),
-        defaultSuccessMessage: "获取用户列表成功",
-      });
+      return mockApi.get(
+        `${this.BASE_URL}/list`,
+        params as Record<string, unknown>,
+        {
+          useMock: true,
+          mockData: this.getMockUserList(),
+          defaultSuccessMessage: "获取用户列表成功",
+        },
+      );
     }
 
     // 调用真实API
-    const response = await api.get<UserListApiResponse>(`${this.BASE_URL}/list`, params as Record<string, unknown>, {
-      defaultSuccessMessage: "获取用户列表成功",
-      defaultErrorMessage: "获取用户列表失败，请稍后重试",
-    });
+    const response = await api.get<UserListApiResponse>(
+      `${this.BASE_URL}/list`,
+      params as Record<string, unknown>,
+      {
+        defaultSuccessMessage: "获取用户列表成功",
+        defaultErrorMessage: "获取用户列表失败，请稍后重试",
+      },
+    );
 
     // 适配API响应格式到前端期望的格式
     if (response.success && response.data) {
       const adaptedData: UserListResponse = {
-        users: response.data.user_list.map(user => ({
+        users: response.data.user_list.map((user) => ({
           ...user,
           // 为前端显示添加默认状态
           status: user.is_first_time_login ? "disabled" : "active",
@@ -91,7 +99,7 @@ class UserService {
    */
   async updateUser(
     userId: number,
-    userData: UpdateUserRequest
+    userData: UpdateUserRequest,
   ): Promise<StandardResponse<void>> {
     if (USE_MOCK_DATA) {
       return mockApi.put(`${this.BASE_URL}/${userId}`, userData, {
@@ -113,7 +121,7 @@ class UserService {
   async deleteUser(userId: number): Promise<StandardResponse<void>> {
     if (USE_MOCK_DATA) {
       // MockableApiHelper doesn't have a delete method, use regular api with mock simulation
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate network delay
       return {
         success: true,
         message: "用户删除成功",
@@ -131,7 +139,7 @@ class UserService {
    */
   async toggleUserStatus(
     userId: number,
-    status: "active" | "disabled"
+    status: "active" | "disabled",
   ): Promise<StandardResponse<void>> {
     if (USE_MOCK_DATA) {
       return mockApi.put(
@@ -143,7 +151,7 @@ class UserService {
           defaultSuccessMessage: `用户已${
             status === "active" ? "启用" : "禁用"
           }`,
-        }
+        },
       );
     }
 
@@ -153,7 +161,7 @@ class UserService {
       {
         defaultSuccessMessage: `用户已${status === "active" ? "启用" : "禁用"}`,
         defaultErrorMessage: "用户状态更新失败，请稍后重试",
-      }
+      },
     );
   }
 

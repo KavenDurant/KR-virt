@@ -9,14 +9,16 @@
 ### 1. 环境变量控制
 
 **开启Mock数据：**
+
 ```bash
 # 修改 .env.development 文件
 VITE_ENABLE_MOCK=true
 ```
 
 **使用真实API：**
+
 ```bash
-# 修改 .env.development 文件  
+# 修改 .env.development 文件
 VITE_ENABLE_MOCK=false
 ```
 
@@ -28,6 +30,7 @@ npm run dev
 ```
 
 启动时会显示当前Mock状态：
+
 ```
 🚀 构建模式: development
 📡 API地址: /api
@@ -40,11 +43,13 @@ npm run dev
 目前已经集成Mock控制的服务：
 
 ### 1. 登录服务 (`src/services/login/index.ts`)
+
 - ✅ 登录验证
 - ✅ Token刷新
 - ✅ 用户信息获取
 
 ### 2. 集群服务 (`src/services/cluster/index.ts`)
+
 - ✅ 集群状态检查
 - ✅ 集群创建
 - ✅ 集群加入
@@ -80,8 +85,8 @@ import { EnvConfig } from "@/config/env";
 class YourService {
   async getData() {
     return await EnvConfig.mockOrApi(
-      () => this.getMockData(),    // Mock数据函数
-      () => this.getApiData()      // 真实API函数
+      () => this.getMockData(), // Mock数据函数
+      () => this.getApiData(), // 真实API函数
     );
   }
 }
@@ -101,7 +106,7 @@ export const mockUserList = [
 export const mockApiResponse = {
   success: true,
   data: mockUserList,
-  message: "获取成功"
+  message: "获取成功",
 };
 ```
 
@@ -118,14 +123,14 @@ class YourService {
     return await EnvConfig.mockOrApi(
       // Mock数据
       async () => {
-        await new Promise(resolve => setTimeout(resolve, 500)); // 模拟网络延迟
+        await new Promise((resolve) => setTimeout(resolve, 500)); // 模拟网络延迟
         return mockApiResponse;
       },
       // 真实API
       async () => {
         const response = await http.get("/users");
         return response.data;
-      }
+      },
     );
   }
 }
@@ -134,17 +139,20 @@ class YourService {
 ## 🔧 开发工作流
 
 ### 开发阶段
+
 1. **前端先行开发**：设置 `VITE_ENABLE_MOCK=true`，使用Mock数据进行界面开发
 2. **API联调**：设置 `VITE_ENABLE_MOCK=false`，切换到真实API进行联调
 3. **快速切换**：需要时可以随时切换Mock/API模式进行对比测试
 
 ### 测试阶段
+
 - 可以在Mock模式下测试各种边界情况和异常场景
 - 在API模式下测试真实的网络情况和数据格式
 
 ## 🌍 环境配置
 
 ### 开发环境 (.env.development)
+
 ```properties
 VITE_ENABLE_MOCK=false          # 根据需要设置
 VITE_API_BASE_URL=/api
@@ -152,6 +160,7 @@ VITE_PROXY_TARGET=http://192.168.1.187:8001
 ```
 
 ### 生产环境 (.env.production)
+
 ```properties
 VITE_ENABLE_MOCK=false          # 生产环境通常禁用Mock
 VITE_API_BASE_URL=https://api.kr-virt.com
@@ -176,11 +185,13 @@ VITE_API_BASE_URL=https://api.kr-virt.com
 ## 🔍 故障排除
 
 ### Mock数据不生效
+
 - 检查环境变量是否正确设置
 - 确认已重启开发服务器
 - 查看控制台是否显示正确的Mock状态
 
 ### 切换后出现错误
+
 - 检查Mock数据格式是否与API格式一致
 - 确认真实API地址配置正确
 - 查看浏览器开发者工具的网络面板

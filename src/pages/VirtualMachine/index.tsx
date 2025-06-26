@@ -1820,10 +1820,7 @@ const VirtualMachineManagement: React.FC = () => {
               {sidebarSelectedVM.status}
             </Tag>
           </h3>
-          <Button
-            style={{ marginTop: "8px" }}
-            onClick={() => clearSelection()}
-          >
+          <Button style={{ marginTop: "8px" }} onClick={() => clearSelection()}>
             返回列表
           </Button>
         </div>

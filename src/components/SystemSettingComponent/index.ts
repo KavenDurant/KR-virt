@@ -1,1 +1,1 @@
-export { default as TimeSyncComponent } from './TimeSyncComponent';
+export { default as TimeSyncComponent } from "./TimeSyncComponent";

@@ -234,7 +234,7 @@ const ClusterManagement: React.FC = () => {
           | "enter_maintenance"
           | "exit_maintenance"
           | "migrate",
-        hostname
+        hostname,
       );
     } else {
       console.warn(`未知的主机操作: ${operation}`);
@@ -248,13 +248,13 @@ const ClusterManagement: React.FC = () => {
   const withApiLock = useCallback(
     <T extends unknown[]>(
       apiName: string,
-      apiFunc: (...args: T) => Promise<void>
+      apiFunc: (...args: T) => Promise<void>,
     ) => {
       return async (...args: T) => {
         const timestamp = new Date().toLocaleTimeString();
         if (globalApiLockRef.current.has(apiName)) {
           console.log(
-            `⛔ [${timestamp}][API Lock] ${apiName} 正在执行中，跳过重复调用`
+            `⛔ [${timestamp}][API Lock] ${apiName} 正在执行中，跳过重复调用`,
           );
           return;
         }
@@ -270,7 +270,7 @@ const ClusterManagement: React.FC = () => {
         }
       };
     },
-    []
+    [],
   );
 
   const [activeTab, setActiveTab] = useState("overview");
@@ -286,17 +286,17 @@ const ClusterManagement: React.FC = () => {
     useState<ClusterSummaryResponse | null>(null);
   const [clusterSummaryLoading, setClusterSummaryLoading] = useState(false);
   const [clusterSummaryError, setClusterSummaryError] = useState<string | null>(
-    null
+    null,
   );
 
   // 时间转换Hook调用
   const { localTime: lastUpdatedTime, isValid: lastUpdatedValid } = useTimeZone(
     clusterSummaryData?.last_updated || "",
-    { format: "YYYY-MM-DD HH:mm:ss" }
+    { format: "YYYY-MM-DD HH:mm:ss" },
   );
   const { localTime: lastChangeTime, isValid: lastChangeValid } = useTimeZone(
     clusterSummaryData?.last_change_time || "",
-    { format: "YYYY-MM-DD HH:mm:ss" }
+    { format: "YYYY-MM-DD HH:mm:ss" },
   );
 
   // 集群资源数据状态
@@ -362,7 +362,7 @@ const ClusterManagement: React.FC = () => {
         // 如果没有节点详情数据，则直接允许进入维护模式
         // 后端会在实际操作时进行检查
         console.warn(
-          `没有找到节点 ${hostname} 的详情数据，允许尝试进入维护模式`
+          `没有找到节点 ${hostname} 的详情数据，允许尝试进入维护模式`,
         );
         return true;
       } catch (error) {
@@ -371,7 +371,7 @@ const ClusterManagement: React.FC = () => {
         return true;
       }
     },
-    [nodeDetailData]
+    [nodeDetailData],
   );
 
   // 当选择主机时，自动获取节点详细信息
@@ -403,7 +403,7 @@ const ClusterManagement: React.FC = () => {
 
     // 显示前8位和后8位
     return `${keyPart.substring(0, 8)}...${keyPart.substring(
-      keyPart.length - 8
+      keyPart.length - 8,
     )}`;
   };
 
@@ -434,7 +434,7 @@ const ClusterManagement: React.FC = () => {
     } catch (error) {
       console.error(
         `❌ [${timestamp}][API Exception] 获取集群节点数据异常:`,
-        error
+        error,
       );
       const errorMessage = "获取集群数据失败，请稍后重试";
       setRealClusterError(errorMessage);
@@ -447,7 +447,7 @@ const ClusterManagement: React.FC = () => {
   // 使用API锁包装的函数
   const fetchRealClusterData = useMemo(
     () => withApiLock("fetchRealClusterData", fetchRealClusterDataBase),
-    [withApiLock, fetchRealClusterDataBase]
+    [withApiLock, fetchRealClusterDataBase],
   );
 
   // 获取集群概览数据基础函数
@@ -457,7 +457,7 @@ const ClusterManagement: React.FC = () => {
     setClusterSummaryError(null);
     try {
       console.log(
-        `📡 [${timestamp}][API Call] 开始调用集群概览API (/cluster/summary)`
+        `📡 [${timestamp}][API Call] 开始调用集群概览API (/cluster/summary)`,
       );
       const result = await clusterInitService.getClusterSummary();
       if (result.success && result.data) {
@@ -466,7 +466,7 @@ const ClusterManagement: React.FC = () => {
       } else {
         console.error(
           `❌ [${timestamp}][API Error] 获取集群概览数据失败:`,
-          result.message
+          result.message,
         );
         setClusterSummaryError(result.message);
         message.error(result.message);
@@ -474,7 +474,7 @@ const ClusterManagement: React.FC = () => {
     } catch (error) {
       console.error(
         `❌ [${timestamp}][API Exception] 获取集群概览数据异常:`,
-        error
+        error,
       );
       const errorMessage = "获取集群概览数据失败，请稍后重试";
       setClusterSummaryError(errorMessage);
@@ -488,7 +488,7 @@ const ClusterManagement: React.FC = () => {
   // 使用API锁包装的函数
   const fetchClusterSummaryData = useMemo(
     () => withApiLock("fetchClusterSummaryData", fetchClusterSummaryDataBase),
-    [withApiLock, fetchClusterSummaryDataBase]
+    [withApiLock, fetchClusterSummaryDataBase],
   );
 
   // 获取集群资源数据基础函数
@@ -507,7 +507,7 @@ const ClusterManagement: React.FC = () => {
     } catch (error) {
       console.error(
         `❌ [${timestamp}][API Exception] 获取集群资源数据异常:`,
-        error
+        error,
       );
       const errorMessage = "获取集群资源数据失败，请稍后重试";
       setClusterResourcesError(errorMessage);
@@ -521,7 +521,7 @@ const ClusterManagement: React.FC = () => {
   const fetchClusterResourcesData = useMemo(
     () =>
       withApiLock("fetchClusterResourcesData", fetchClusterResourcesDataBase),
-    [withApiLock, fetchClusterResourcesDataBase]
+    [withApiLock, fetchClusterResourcesDataBase],
   );
 
   // 获取节点摘要数据基础函数
@@ -532,7 +532,7 @@ const ClusterManagement: React.FC = () => {
       setNodeDetailError(null);
       try {
         console.log(
-          `📡 [${timestamp}][API Call] 开始调用节点摘要API (/node/summary), hostname: ${hostname}`
+          `📡 [${timestamp}][API Call] 开始调用节点摘要API (/node/summary), hostname: ${hostname}`,
         );
         const result = await clusterInitService.getNodeSummary(hostname);
         if (result.success && result.data) {
@@ -541,7 +541,7 @@ const ClusterManagement: React.FC = () => {
         } else {
           console.error(
             `❌ [${timestamp}][API Error] 获取节点摘要数据失败:`,
-            result.message
+            result.message,
           );
           setNodeDetailError(result.message);
           message.error(result.message);
@@ -549,7 +549,7 @@ const ClusterManagement: React.FC = () => {
       } catch (error) {
         console.error(
           `❌ [${timestamp}][API Exception] 获取节点摘要数据异常:`,
-          error
+          error,
         );
         const errorMessage = "获取节点摘要数据失败，请稍后重试";
         setNodeDetailError(errorMessage);
@@ -559,13 +559,13 @@ const ClusterManagement: React.FC = () => {
         console.log(`🏁 [${timestamp}][API Complete] 节点摘要API调用完成`);
       }
     },
-    [message]
+    [message],
   );
 
   // 使用API锁包装的函数
   const fetchNodeDetailData = useMemo(
     () => withApiLock("fetchNodeDetailData", fetchNodeDetailDataBase),
-    [withApiLock, fetchNodeDetailDataBase]
+    [withApiLock, fetchNodeDetailDataBase],
   );
 
   // ===== 硬件信息获取函数 =====
@@ -583,7 +583,7 @@ const ClusterManagement: React.FC = () => {
         } else {
           console.error(
             `❌ [${timestamp}][API Error] 获取节点PCI设备数据失败:`,
-            result.message
+            result.message,
           );
           setNodePCIError(result.message);
           message.error(result.message);
@@ -591,7 +591,7 @@ const ClusterManagement: React.FC = () => {
       } catch (error) {
         console.error(
           `❌ [${timestamp}][API Exception] 获取节点PCI设备数据异常:`,
-          error
+          error,
         );
         const errorMessage = "获取节点PCI设备数据失败，请稍后重试";
         setNodePCIError(errorMessage);
@@ -600,7 +600,7 @@ const ClusterManagement: React.FC = () => {
         setNodePCILoading(false);
       }
     },
-    [message]
+    [message],
   );
 
   // 获取节点磁盘设备信息基础函数
@@ -620,7 +620,7 @@ const ClusterManagement: React.FC = () => {
       } catch (error) {
         console.error(
           `❌ [${timestamp}][API Exception] 获取节点磁盘设备数据异常:`,
-          error
+          error,
         );
         const errorMessage = "获取节点磁盘设备数据失败，请稍后重试";
         setNodeDisksError(errorMessage);
@@ -629,18 +629,18 @@ const ClusterManagement: React.FC = () => {
         setNodeDisksLoading(false);
       }
     },
-    [message]
+    [message],
   );
 
   // 使用API锁包装的硬件信息获取函数
   const fetchNodePCIData = useMemo(
     () => withApiLock("fetchNodePCIData", fetchNodePCIDataBase),
-    [withApiLock, fetchNodePCIDataBase]
+    [withApiLock, fetchNodePCIDataBase],
   );
 
   const fetchNodeDisksData = useMemo(
     () => withApiLock("fetchNodeDisksData", fetchNodeDisksDataBase),
-    [withApiLock, fetchNodeDisksDataBase]
+    [withApiLock, fetchNodeDisksDataBase],
   );
 
   // ===== 节点操作相关函数 =====
@@ -654,7 +654,7 @@ const ClusterManagement: React.FC = () => {
         | "enter_maintenance"
         | "exit_maintenance"
         | "migrate",
-      hostname: string
+      hostname: string,
     ) => {
       const operationNames = {
         reboot: "重启",
@@ -698,14 +698,12 @@ const ClusterManagement: React.FC = () => {
                   result = await clusterInitService.stopNode(hostname);
                   break;
                 case "enter_maintenance":
-                  result = await clusterInitService.enterMaintenanceMode(
-                    hostname
-                  );
+                  result =
+                    await clusterInitService.enterMaintenanceMode(hostname);
                   break;
                 case "exit_maintenance":
-                  result = await clusterInitService.exitMaintenanceMode(
-                    hostname
-                  );
+                  result =
+                    await clusterInitService.exitMaintenanceMode(hostname);
                   break;
                 case "migrate":
                   // 虚拟机迁移逻辑（暂时简化处理）
@@ -720,7 +718,7 @@ const ClusterManagement: React.FC = () => {
 
               if (result.success) {
                 message.success(
-                  result.message || `${operationNames[operation]}操作成功`
+                  result.message || `${operationNames[operation]}操作成功`,
                 );
                 // 操作成功后刷新节点详情
                 setTimeout(() => {
@@ -754,7 +752,7 @@ const ClusterManagement: React.FC = () => {
         setNodeOperationLoading(null);
       }
     },
-    [checkCanEnterMaintenance, fetchNodeDetailData, modal, message]
+    [checkCanEnterMaintenance, fetchNodeDetailData, modal, message],
   );
 
   // 添加节点处理函数
@@ -792,7 +790,7 @@ const ClusterManagement: React.FC = () => {
         setAddNodeLoading(false);
       }
     },
-    [modal, fetchRealClusterData]
+    [modal, fetchRealClusterData],
   );
 
   // 移除节点处理函数
@@ -805,7 +803,7 @@ const ClusterManagement: React.FC = () => {
       });
       setSafetyConfirmVisible(true);
     },
-    []
+    [],
   );
 
   // 执行移除节点操作
@@ -842,31 +840,32 @@ const ClusterManagement: React.FC = () => {
         setPendingAction(null);
       }
     },
-    [modal, fetchRealClusterData]
+    [modal, fetchRealClusterData],
   );
 
   // 监听主机选择变化，优化数据加载策略
   useEffect(() => {
     if (sidebarSelectedHost) {
       console.log(
-        `🔍 [Node Detail] 开始获取主机 ${sidebarSelectedHost.name} 的详细信息`
+        `🔍 [Node Detail] 开始获取主机 ${sidebarSelectedHost.name} 的详细信息`,
       );
 
       // 重置主机详情标签页到默认状态（基本信息）
       // 这确保了每次选择主机时都从默认标签页开始，提供一致的用户体验
       setHostDetailActiveTab("basic");
 
-      // 清空之前的节点详情数据
+      // 清空之前的所有数据，准备按需加载
       setNodeDetailData(null);
       setNodeDetailError(null);
-
-      // 清空硬件信息状态，准备按需加载
       setNodePCIData(null);
       setNodePCIError(null);
       setNodeDisksData(null);
       setNodeDisksError(null);
 
-      // 只获取基本节点信息（用于basic和performance Tab）
+      // 默认加载基本信息（因为默认显示basic Tab）
+      console.log(
+        `📊 [Default Loading] 默认加载基本信息: ${sidebarSelectedHost.name}`,
+      );
       fetchNodeDetailData(sidebarSelectedHost.name);
     }
   }, [sidebarSelectedHost, fetchNodeDetailData]);
@@ -883,7 +882,7 @@ const ClusterManagement: React.FC = () => {
       // 防止重复调用检查
       if (!force && loadingRef.current.has(tab)) {
         console.log(
-          `⚠️ [Duplicate Prevention] Tab ${tab} 正在加载中，跳过重复请求`
+          `⚠️ [Duplicate Prevention] Tab ${tab} 正在加载中，跳过重复请求`,
         );
         return;
       }
@@ -892,7 +891,7 @@ const ClusterManagement: React.FC = () => {
       console.log(
         `🎯 [Real-time Loading] 开始加载Tab: ${tab} - ${
           force ? "强制" : "正常"
-        }刷新`
+        }刷新`,
       );
 
       try {
@@ -925,13 +924,13 @@ const ClusterManagement: React.FC = () => {
         console.log(`🏁 [Loading Complete] Tab ${tab} 加载流程结束`);
       }
     },
-    [fetchClusterSummaryData, fetchRealClusterData, fetchClusterResourcesData]
+    [fetchClusterSummaryData, fetchRealClusterData, fetchClusterResourcesData],
   );
 
   // 监听Tab切换，使用防抖策略和严格的重复检查
   useEffect(() => {
     console.log(
-      `🔄 [Tab Switch Effect] 切换到Tab: ${activeTab}, 上次Tab: ${lastActiveTabRef.current}, 初始化状态: ${isInitialized}`
+      `🔄 [Tab Switch Effect] 切换到Tab: ${activeTab}, 上次Tab: ${lastActiveTabRef.current}, 初始化状态: ${isInitialized}`,
     );
 
     // 清除之前的定时器
@@ -960,7 +959,7 @@ const ClusterManagement: React.FC = () => {
         }
         loadTabData(activeTab);
       },
-      isInitialized ? 50 : 100
+      isInitialized ? 50 : 100,
     ); // 初始化时延迟更长
 
     // 清理函数
@@ -1016,7 +1015,7 @@ const ClusterManagement: React.FC = () => {
         if (pendingAction.data.hostname && pendingAction.data.nodeName) {
           executeRemoveNode(
             pendingAction.data.hostname,
-            pendingAction.data.nodeName
+            pendingAction.data.nodeName,
           );
         }
         break;
@@ -1071,7 +1070,7 @@ const ClusterManagement: React.FC = () => {
       key: "name",
       render: (
         name: string,
-        record: { node_id: string; name: string; ip: string; is_dc: boolean }
+        record: { node_id: string; name: string; ip: string; is_dc: boolean },
       ) => (
         <div>
           <div style={{ fontWeight: "bold" }}>
@@ -1133,19 +1132,19 @@ const ClusterManagement: React.FC = () => {
           cpu_used: number | null;
           mem_total: number | null;
           mem_used: number | null;
-        }
+        },
       ) => {
         // 使用格式化工具处理CPU和内存资源
         const cpuUsage = formatResourceUsage(
           record.cpu_used,
           record.cpu_total,
-          "核"
+          "核",
         );
 
         const memUsage = formatResourceUsage(
           record.mem_used,
           record.mem_total,
-          "GB"
+          "GB",
         );
 
         return (
@@ -1235,7 +1234,7 @@ const ClusterManagement: React.FC = () => {
       key: "action",
       render: (
         _: unknown,
-        record: { node_id: string; name: string; ip: string }
+        record: { node_id: string; name: string; ip: string },
       ) => (
         <Space size="middle">
           <Button
@@ -1340,7 +1339,7 @@ const ClusterManagement: React.FC = () => {
                         loading={nodeDetailLoading}
                         onClick={() => {
                           console.log(
-                            `🔄 [Basic Info Refresh] 刷新主机 ${sidebarSelectedHost.name} 的基本信息`
+                            `🔄 [Basic Info Refresh] 刷新主机 ${sidebarSelectedHost.name} 的基本信息`,
                           );
                           fetchNodeDetailData(sidebarSelectedHost.name);
                         }}
@@ -1406,7 +1405,7 @@ const ClusterManagement: React.FC = () => {
                               ? Math.round(
                                   (nodeDetailData.storage_used /
                                     nodeDetailData.storage_total) *
-                                    100
+                                    100,
                                 )
                               : 0
                           }
@@ -1571,7 +1570,7 @@ const ClusterManagement: React.FC = () => {
                               ? Math.round(
                                   (nodeDetailData.disk_used /
                                     nodeDetailData.disk_total) *
-                                    100
+                                    100,
                                 )
                               : 0
                           }
@@ -1586,13 +1585,13 @@ const ClusterManagement: React.FC = () => {
                                 80
                                 ? "#ff4d4f"
                                 : nodeDetailData?.disk_total &&
-                                  nodeDetailData?.disk_used &&
-                                  (nodeDetailData.disk_used /
-                                    nodeDetailData.disk_total) *
-                                    100 >
-                                    60
-                                ? "#faad14"
-                                : "#3f8600",
+                                    nodeDetailData?.disk_used &&
+                                    (nodeDetailData.disk_used /
+                                      nodeDetailData.disk_total) *
+                                      100 >
+                                      60
+                                  ? "#faad14"
+                                  : "#3f8600",
                           }}
                           prefix={<HddOutlined />}
                         />
@@ -1621,7 +1620,7 @@ const ClusterManagement: React.FC = () => {
                                   (
                                     nodeDetailData.disk_total -
                                     nodeDetailData.disk_used
-                                  ).toFixed(2)
+                                  ).toFixed(2),
                                 )
                               : 0
                           }
@@ -1664,7 +1663,7 @@ const ClusterManagement: React.FC = () => {
                           value={
                             nodeDetailData?.network_throughput
                               ? formatNetworkThroughput(
-                                  nodeDetailData.network_throughput
+                                  nodeDetailData.network_throughput,
                                 )
                               : "N/A"
                           }
@@ -1687,9 +1686,9 @@ const ClusterManagement: React.FC = () => {
                                   .status === "high"
                                 ? "#ff4d4f"
                                 : formatLoadAverage(nodeDetailData.load_average)
-                                    .status === "medium"
-                                ? "#faad14"
-                                : "#3f8600"
+                                      .status === "medium"
+                                  ? "#faad14"
+                                  : "#3f8600"
                               : "#666",
                           }}
                         />
@@ -1754,8 +1753,8 @@ const ClusterManagement: React.FC = () => {
                         cpuUsagePercent > 80
                           ? "#ff4d4f"
                           : cpuUsagePercent > 60
-                          ? "#faad14"
-                          : "#52c41a"
+                            ? "#faad14"
+                            : "#52c41a"
                       }
                     />
                     {nodeDetailData && (
@@ -1791,8 +1790,8 @@ const ClusterManagement: React.FC = () => {
                         memoryUsagePercent > 80
                           ? "#ff4d4f"
                           : memoryUsagePercent > 60
-                          ? "#faad14"
-                          : "#52c41a"
+                            ? "#faad14"
+                            : "#52c41a"
                       }
                     />
                     {nodeDetailData && (
@@ -1819,7 +1818,7 @@ const ClusterManagement: React.FC = () => {
                           ? Math.round(
                               (nodeDetailData.storage_used /
                                 nodeDetailData.storage_total) *
-                                100
+                                100,
                             )
                           : 0
                       }
@@ -1845,7 +1844,7 @@ const ClusterManagement: React.FC = () => {
                           ? Math.round(
                               (nodeDetailData.storage_used /
                                 nodeDetailData.storage_total) *
-                                100
+                                100,
                             )
                           : 0
                       }
@@ -1859,13 +1858,13 @@ const ClusterManagement: React.FC = () => {
                           80
                           ? "#ff4d4f"
                           : nodeDetailData?.storage_total &&
-                            nodeDetailData?.storage_used &&
-                            (nodeDetailData.storage_used /
-                              nodeDetailData.storage_total) *
-                              100 >
-                              60
-                          ? "#faad14"
-                          : "#52c41a"
+                              nodeDetailData?.storage_used &&
+                              (nodeDetailData.storage_used /
+                                nodeDetailData.storage_total) *
+                                100 >
+                                60
+                            ? "#faad14"
+                            : "#52c41a"
                       }
                     />
                     {nodeDetailData &&
@@ -1935,9 +1934,9 @@ const ClusterManagement: React.FC = () => {
                               .status === "high"
                             ? "#ff4d4f"
                             : formatLoadAverage(nodeDetailData.load_average)
-                                .status === "medium"
-                            ? "#faad14"
-                            : "#3f8600"
+                                  .status === "medium"
+                              ? "#faad14"
+                              : "#3f8600"
                           : "#666",
                       }}
                     />
@@ -1963,9 +1962,9 @@ const ClusterManagement: React.FC = () => {
                           .status === "high"
                           ? "高负载"
                           : formatLoadAverage(nodeDetailData.load_average)
-                              .status === "medium"
-                          ? "中等负载"
-                          : "低负载"}
+                                .status === "medium"
+                            ? "中等负载"
+                            : "低负载"}
                       </div>
                     )}
                   </Card>
@@ -1977,7 +1976,7 @@ const ClusterManagement: React.FC = () => {
                       value={
                         nodeDetailData?.network_throughput
                           ? formatNetworkThroughput(
-                              nodeDetailData.network_throughput
+                              nodeDetailData.network_throughput,
                             )
                           : "N/A"
                       }
@@ -2068,7 +2067,7 @@ const ClusterManagement: React.FC = () => {
                           ? Math.round(
                               (nodeDetailData.disk_used /
                                 nodeDetailData.disk_total) *
-                                100
+                                100,
                             )
                           : 0
                       }
@@ -2083,13 +2082,13 @@ const ClusterManagement: React.FC = () => {
                             80
                             ? "#ff4d4f"
                             : nodeDetailData?.disk_total &&
-                              nodeDetailData?.disk_used &&
-                              (nodeDetailData.disk_used /
-                                nodeDetailData.disk_total) *
-                                100 >
-                                60
-                            ? "#faad14"
-                            : "#3f8600",
+                                nodeDetailData?.disk_used &&
+                                (nodeDetailData.disk_used /
+                                  nodeDetailData.disk_total) *
+                                  100 >
+                                  60
+                              ? "#faad14"
+                              : "#3f8600",
                       }}
                       prefix={<HddOutlined />}
                       suffix="%"
@@ -2100,7 +2099,7 @@ const ClusterManagement: React.FC = () => {
                           ? Math.round(
                               (nodeDetailData.disk_used /
                                 nodeDetailData.disk_total) *
-                                100
+                                100,
                             )
                           : 0
                       }
@@ -2113,13 +2112,13 @@ const ClusterManagement: React.FC = () => {
                           80
                           ? "#ff4d4f"
                           : nodeDetailData?.disk_total &&
-                            nodeDetailData?.disk_used &&
-                            (nodeDetailData.disk_used /
-                              nodeDetailData.disk_total) *
-                              100 >
-                              60
-                          ? "#faad14"
-                          : "#52c41a"
+                              nodeDetailData?.disk_used &&
+                              (nodeDetailData.disk_used /
+                                nodeDetailData.disk_total) *
+                                100 >
+                                60
+                            ? "#faad14"
+                            : "#52c41a"
                       }
                     />
                     {nodeDetailData &&
@@ -2159,9 +2158,9 @@ const ClusterManagement: React.FC = () => {
                                   .color === "success"
                                 ? "#52c41a"
                                 : formatPowerState(nodeDetailData.power_state)
-                                    .color === "error"
-                                ? "#ff4d4f"
-                                : "#faad14"
+                                      .color === "error"
+                                  ? "#ff4d4f"
+                                  : "#faad14"
                               : "#52c41a",
                           }}
                         />
@@ -2421,7 +2420,7 @@ const ClusterManagement: React.FC = () => {
                 onClick={() =>
                   handleNodeOperation(
                     "enter_maintenance",
-                    sidebarSelectedHost.name
+                    sidebarSelectedHost.name,
                   )
                 }
               >
@@ -2433,7 +2432,7 @@ const ClusterManagement: React.FC = () => {
                 onClick={() =>
                   handleNodeOperation(
                     "exit_maintenance",
-                    sidebarSelectedHost.name
+                    sidebarSelectedHost.name,
                   )
                 }
               >
@@ -2457,22 +2456,48 @@ const ClusterManagement: React.FC = () => {
               console.log(`🔄 [Host Detail Tab] 切换到Tab: ${key}`);
               setHostDetailActiveTab(key);
 
-              // 当切换到hardware Tab时，按需加载硬件信息
-              if (key === "hardware" && sidebarSelectedHost) {
-                console.log(
-                  `🔧 [On-Demand Loading] 按需加载硬件信息: ${sidebarSelectedHost.name}`
-                );
+              // 按需加载：点击哪个Tab就调用对应的接口
+              if (sidebarSelectedHost) {
+                switch (key) {
+                  case "basic":
+                    // 切换到基本信息Tab时，每次都重新加载基本信息（真正的按需加载）
+                    if (!nodeDetailLoading) {
+                      fetchNodeDetailData(sidebarSelectedHost.name);
+                    } else {
+                      console.log(
+                        `⏳ [Loading] 基本信息正在加载中，跳过重复请求`,
+                      );
+                    }
+                    break;
 
-                // 如果还没有PCI设备数据，则加载
-                if (!nodePCIData) {
-                  console.log(`📡 [PCI Loading] 开始加载PCI设备信息`);
-                  fetchNodePCIData(sidebarSelectedHost.name);
-                }
+                  case "hardware":
+                    // 每次都重新加载PCI设备数据
+                    if (!nodePCILoading) {
+                      console.log(`📡 [PCI Loading] 重新加载PCI设备信息`);
+                      fetchNodePCIData(sidebarSelectedHost.name);
+                    } else {
+                      console.log(
+                        `⏳ [PCI Loading] PCI设备信息正在加载中，跳过重复请求`,
+                      );
+                    }
 
-                // 如果还没有磁盘设备数据，则加载
-                if (!nodeDisksData) {
-                  console.log(`💽 [Disks Loading] 开始加载磁盘设备信息`);
-                  fetchNodeDisksData(sidebarSelectedHost.name);
+                    // 每次都重新加载磁盘设备数据
+                    if (!nodeDisksLoading) {
+                      fetchNodeDisksData(sidebarSelectedHost.name);
+                    } else {
+                      console.log(
+                        `⏳ [Disks Loading] 磁盘设备信息正在加载中，跳过重复请求`,
+                      );
+                    }
+                    break;
+
+                  case "performance":
+                    // 性能监控Tab的数据由图表组件自己管理，无需在这里加载
+
+                    break;
+
+                  default:
+                    console.log(`❓ [Unknown Tab] 切换到未知Tab: ${key}`);
                 }
               }
             }}
@@ -2755,7 +2780,7 @@ const ClusterManagement: React.FC = () => {
                             title="在线节点数"
                             value={
                               clusterSummaryData.nodes.filter(
-                                (node) => node.status === "online"
+                                (node) => node.status === "online",
                               ).length
                             }
                             prefix={<CheckCircleOutlined />}
@@ -2779,7 +2804,7 @@ const ClusterManagement: React.FC = () => {
                             title="运行资源数"
                             value={
                               clusterSummaryData.resources.filter(
-                                (resource) => resource.status === "started"
+                                (resource) => resource.status === "started",
                               ).length
                             }
                             prefix={<ThunderboltOutlined />}
@@ -2879,7 +2904,7 @@ const ClusterManagement: React.FC = () => {
                                 </Space>
                               </Card>
                             </Col>
-                          )
+                          ),
                         )}
                       </Row>
                     </Card>
@@ -2954,7 +2979,7 @@ const ClusterManagement: React.FC = () => {
                             title="在线节点"
                             value={
                               realClusterData.nodes.filter(
-                                (node) => node.status === "online"
+                                (node) => node.status === "online",
                               ).length
                             }
                             prefix={<CheckCircleOutlined />}
@@ -3090,7 +3115,7 @@ const ClusterManagement: React.FC = () => {
                             value={
                               clusterResourcesData.group.reduce(
                                 (acc, group) => acc + group.resources.length,
-                                0
+                                0,
                               ) + clusterResourcesData.resources.length
                             }
                             prefix={<ClusterOutlined />}
@@ -3108,13 +3133,15 @@ const ClusterManagement: React.FC = () => {
                                   acc +
                                   group.resources.filter((r) =>
                                     r.operations.some(
-                                      (op) => op.name === "monitor"
-                                    )
+                                      (op) => op.name === "monitor",
+                                    ),
                                   ).length,
-                                0
+                                0,
                               ) +
                               clusterResourcesData.resources.filter((r) =>
-                                r.operations.some((op) => op.name === "monitor")
+                                r.operations.some(
+                                  (op) => op.name === "monitor",
+                                ),
                               ).length
                             }
                             prefix={<CheckCircleOutlined />}
@@ -3133,7 +3160,7 @@ const ClusterManagement: React.FC = () => {
                           <Tag color="processing">
                             {clusterResourcesData.group.reduce(
                               (acc, group) => acc + group.resources.length,
-                              0
+                              0,
                             ) + clusterResourcesData.resources.length}{" "}
                             个资源
                           </Tag>
@@ -3169,9 +3196,9 @@ const ClusterManagement: React.FC = () => {
                                   ...resource,
                                   isGroup: false,
                                   groupName: group.group,
-                                })
+                                }),
                               ),
-                            })
+                            }),
                           ),
                           // 独立资源组（如果有独立资源的话）
                           ...(clusterResourcesData.resources.length > 0
@@ -3193,7 +3220,7 @@ const ClusterManagement: React.FC = () => {
                                       ...resource,
                                       isGroup: false,
                                       groupName: "独立资源",
-                                    })
+                                    }),
                                   ),
                                 },
                               ]
@@ -3221,7 +3248,7 @@ const ClusterManagement: React.FC = () => {
                             width: "25%",
                             render: (
                               id: string,
-                              record: ExpandableResourceNode
+                              record: ExpandableResourceNode,
                             ) => {
                               if (record.isGroup) {
                                 return (
@@ -3334,7 +3361,7 @@ const ClusterManagement: React.FC = () => {
                             width: "30%",
                             render: (
                               attributes: Record<string, string>,
-                              record: ExpandableResourceNode
+                              record: ExpandableResourceNode,
                             ) => {
                               if (record.isGroup) {
                                 return (
@@ -3392,17 +3419,17 @@ const ClusterManagement: React.FC = () => {
                                 interval: string;
                                 timeout: string;
                               }>,
-                              record: ExpandableResourceNode
+                              record: ExpandableResourceNode,
                             ) => {
                               if (record.isGroup) {
                                 const totalOps = record.children
                                   ? record.children.reduce(
                                       (
                                         acc: number,
-                                        child: ExpandableResourceNode
+                                        child: ExpandableResourceNode,
                                       ) =>
                                         acc + (child.operations?.length || 0),
-                                      0
+                                      0,
                                     )
                                   : 0;
                                 return (
@@ -3471,7 +3498,7 @@ const ClusterManagement: React.FC = () => {
                                     icon={<InfoCircleOutlined />}
                                     onClick={() =>
                                       message.info(
-                                        `查看资源组 ${record.id} 详情`
+                                        `查看资源组 ${record.id} 详情`,
                                       )
                                     }
                                   >
@@ -3487,7 +3514,7 @@ const ClusterManagement: React.FC = () => {
                                       icon={<InfoCircleOutlined />}
                                       onClick={() =>
                                         message.info(
-                                          `查看资源 ${record.id} 详情`
+                                          `查看资源 ${record.id} 详情`,
                                         )
                                       }
                                     >

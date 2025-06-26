@@ -213,7 +213,9 @@ const UserManagement: React.FC = () => {
       const response = await userService.toggleUserStatus(user.id, newStatus);
       if (response.success) {
         setUsers(
-          users.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u))
+          users.map((u) =>
+            u.id === user.id ? { ...u, status: newStatus } : u,
+          ),
         );
         message.success(response.message);
       } else {
@@ -270,7 +272,7 @@ const UserManagement: React.FC = () => {
         };
         const response = await userService.updateUser(
           editingUser.id,
-          updateData
+          updateData,
         );
         if (response.success) {
           message.success(response.message);

@@ -39,7 +39,7 @@ class SystemSettingService {
           useMock: true,
           mockData: { address: "pool.ntp.org" },
           defaultSuccessMessage: "获取NTP服务器配置成功",
-        }
+        },
       );
     }
 
@@ -49,7 +49,7 @@ class SystemSettingService {
       {
         defaultSuccessMessage: "获取NTP服务器配置成功",
         defaultErrorMessage: "获取NTP服务器配置失败，请稍后重试",
-      }
+      },
     );
   }
 
@@ -118,7 +118,7 @@ class SystemSettingService {
           useMock: true,
           mockData,
           defaultSuccessMessage: "获取时间同步状态成功",
-        }
+        },
       );
     }
 
@@ -128,7 +128,7 @@ class SystemSettingService {
       {
         defaultSuccessMessage: "获取时间同步状态成功",
         defaultErrorMessage: "获取时间同步状态失败，请稍后重试",
-      }
+      },
     );
   }
 
@@ -136,7 +136,7 @@ class SystemSettingService {
    * 强制时间同步
    */
   async executeTimeSync(
-    params: TimeSyncExecuteRequest = {}
+    params: TimeSyncExecuteRequest = {},
   ): Promise<StandardResponse<TimeSyncExecuteResponse>> {
     if (USE_MOCK_DATA) {
       const mockData: TimeSyncExecuteResponse = {
@@ -158,7 +158,7 @@ class SystemSettingService {
       {
         defaultSuccessMessage: "时间同步任务已启动",
         defaultErrorMessage: "启动时间同步失败，请稍后重试",
-      }
+      },
     );
   }
 
@@ -175,46 +175,64 @@ class SystemSettingService {
         active_status: "active",
       };
 
-      return mockApi.get("/system_setting/license", {}, {
-        useMock: true,
-        mockData,
-        defaultSuccessMessage: "获取许可证信息成功",
-      });
+      return mockApi.get(
+        "/system_setting/license",
+        {},
+        {
+          useMock: true,
+          mockData,
+          defaultSuccessMessage: "获取许可证信息成功",
+        },
+      );
     }
 
-    return api.get<LicenseInfo>("/system_setting/license", {}, {
-      defaultSuccessMessage: "获取许可证信息成功",
-      defaultErrorMessage: "获取许可证信息失败，请稍后重试",
-    });
+    return api.get<LicenseInfo>(
+      "/system_setting/license",
+      {},
+      {
+        defaultSuccessMessage: "获取许可证信息成功",
+        defaultErrorMessage: "获取许可证信息失败，请稍后重试",
+      },
+    );
   }
 
   /**
    * 上传许可证文件
    */
-  async uploadLicense(file: File): Promise<StandardResponse<LicenseUploadResponse>> {
+  async uploadLicense(
+    file: File,
+  ): Promise<StandardResponse<LicenseUploadResponse>> {
     if (USE_MOCK_DATA) {
       const mockData: LicenseUploadResponse = {
         message: "许可证上传成功",
         success: true,
       };
 
-      return mockApi.post("/system_setting/license/upload", { file }, {
-        useMock: true,
-        mockData,
-        defaultSuccessMessage: "许可证上传成功",
-      });
+      return mockApi.post(
+        "/system_setting/license/upload",
+        { file },
+        {
+          useMock: true,
+          mockData,
+          defaultSuccessMessage: "许可证上传成功",
+        },
+      );
     }
 
     const formData = new FormData();
     formData.append("file", file);
 
-    return api.post<LicenseUploadResponse>("/system_setting/license/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
+    return api.post<LicenseUploadResponse>(
+      "/system_setting/license/upload",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        defaultSuccessMessage: "许可证上传成功",
+        defaultErrorMessage: "许可证上传失败，请检查文件格式",
       },
-      defaultSuccessMessage: "许可证上传成功",
-      defaultErrorMessage: "许可证上传失败，请检查文件格式",
-    });
+    );
   }
 
   // ===== 登录策略管理相关方法 =====
@@ -230,23 +248,33 @@ class SystemSettingService {
         enable_two_factor_auth: false,
       };
 
-      return mockApi.get("/system_setting/login_policy", {}, {
-        useMock: true,
-        mockData,
-        defaultSuccessMessage: "获取登录策略成功",
-      });
+      return mockApi.get(
+        "/system_setting/login_policy",
+        {},
+        {
+          useMock: true,
+          mockData,
+          defaultSuccessMessage: "获取登录策略成功",
+        },
+      );
     }
 
-    return api.get<LoginPolicyResponse>("/system_setting/login_policy", {}, {
-      defaultSuccessMessage: "获取登录策略成功",
-      defaultErrorMessage: "获取登录策略失败，请稍后重试",
-    });
+    return api.get<LoginPolicyResponse>(
+      "/system_setting/login_policy",
+      {},
+      {
+        defaultSuccessMessage: "获取登录策略成功",
+        defaultErrorMessage: "获取登录策略失败，请稍后重试",
+      },
+    );
   }
 
   /**
    * 更新登录策略配置
    */
-  async updateLoginPolicy(policy: LoginPolicyUpdateRequest): Promise<StandardResponse<void>> {
+  async updateLoginPolicy(
+    policy: LoginPolicyUpdateRequest,
+  ): Promise<StandardResponse<void>> {
     if (USE_MOCK_DATA) {
       return mockApi.put("/system_setting/login_policy", policy, {
         useMock: true,

@@ -40,7 +40,7 @@ export const CpuPerformanceChart: React.FC<PerformanceChartProps> = ({
   const [loading, setLoading] = useState(false);
   const [hiddenLines, setHiddenLines] = useState<Record<string, boolean>>({});
   const performanceData = useSelector(
-    (state: RootState) => state.app.performanceData[hostname]?.cpu || []
+    (state: RootState) => state.app.performanceData[hostname]?.cpu || [],
   );
 
   const fetchData = useCallback(async () => {
@@ -57,9 +57,9 @@ export const CpuPerformanceChart: React.FC<PerformanceChartProps> = ({
 
   // 处理图例点击切换显示/隐藏
   const handleLegendClick = useCallback((dataKey: string) => {
-    setHiddenLines(prev => ({
+    setHiddenLines((prev) => ({
       ...prev,
-      [dataKey]: !prev[dataKey]
+      [dataKey]: !prev[dataKey],
     }));
   }, []);
 
@@ -85,7 +85,7 @@ export const CpuPerformanceChart: React.FC<PerformanceChartProps> = ({
         />
       }
       styles={{
-        body: { padding: '12px' }
+        body: { padding: "12px" },
       }}
     >
       <Spin spinning={loading}>
@@ -110,28 +110,30 @@ export const CpuPerformanceChart: React.FC<PerformanceChartProps> = ({
                   })
                 }
                 tick={{ fontSize: 12 }}
-                axisLine={{ stroke: '#d9d9d9' }}
+                axisLine={{ stroke: "#d9d9d9" }}
               />
               <YAxis
                 domain={[0, 100]}
                 tickFormatter={(value) => `${value}%`}
                 tick={{ fontSize: 12 }}
-                axisLine={{ stroke: '#d9d9d9' }}
+                axisLine={{ stroke: "#d9d9d9" }}
                 width={50}
               />
               <Tooltip
                 labelFormatter={(label) => new Date(label).toLocaleString()}
-                formatter={(value: number) => [`${value.toFixed(1)}%`, '']}
+                formatter={(value: number) => [`${value.toFixed(1)}%`, ""]}
                 contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #d9d9d9',
-                  borderRadius: '6px',
-                  fontSize: '12px'
+                  backgroundColor: "#fff",
+                  border: "1px solid #d9d9d9",
+                  borderRadius: "6px",
+                  fontSize: "12px",
                 }}
               />
               <Legend
-                wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-                onClick={(e) => e.dataKey && handleLegendClick(String(e.dataKey))}
+                wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }}
+                onClick={(e) =>
+                  e.dataKey && handleLegendClick(String(e.dataKey))
+                }
                 iconType="line"
               />
               <Line
@@ -141,7 +143,7 @@ export const CpuPerformanceChart: React.FC<PerformanceChartProps> = ({
                 strokeWidth={2}
                 name="已使用"
                 dot={false}
-                activeDot={{ r: 4, stroke: '#1890ff', strokeWidth: 2 }}
+                activeDot={{ r: 4, stroke: "#1890ff", strokeWidth: 2 }}
                 hide={hiddenLines.used}
               />
               <Line
@@ -151,7 +153,7 @@ export const CpuPerformanceChart: React.FC<PerformanceChartProps> = ({
                 strokeWidth={2}
                 name="总量"
                 dot={false}
-                activeDot={{ r: 4, stroke: '#52c41a', strokeWidth: 2 }}
+                activeDot={{ r: 4, stroke: "#52c41a", strokeWidth: 2 }}
                 hide={hiddenLines.total}
               />
             </LineChart>
@@ -171,7 +173,7 @@ export const MemoryPerformanceChart: React.FC<PerformanceChartProps> = ({
   const [loading, setLoading] = useState(false);
   const [hiddenLines, setHiddenLines] = useState<Record<string, boolean>>({});
   const performanceData = useSelector(
-    (state: RootState) => state.app.performanceData[hostname]?.memory || []
+    (state: RootState) => state.app.performanceData[hostname]?.memory || [],
   );
 
   const fetchData = useCallback(async () => {
@@ -188,9 +190,9 @@ export const MemoryPerformanceChart: React.FC<PerformanceChartProps> = ({
 
   // 处理图例点击切换显示/隐藏
   const handleLegendClick = useCallback((dataKey: string) => {
-    setHiddenLines(prev => ({
+    setHiddenLines((prev) => ({
       ...prev,
-      [dataKey]: !prev[dataKey]
+      [dataKey]: !prev[dataKey],
     }));
   }, []);
 
@@ -216,7 +218,7 @@ export const MemoryPerformanceChart: React.FC<PerformanceChartProps> = ({
         />
       }
       styles={{
-        body: { padding: '12px' }
+        body: { padding: "12px" },
       }}
     >
       <Spin spinning={loading}>
@@ -241,10 +243,10 @@ export const MemoryPerformanceChart: React.FC<PerformanceChartProps> = ({
                   })
                 }
                 tick={{ fontSize: 12 }}
-                axisLine={{ stroke: '#d9d9d9' }}
+                axisLine={{ stroke: "#d9d9d9" }}
               />
               <YAxis
-                domain={[0, 'dataMax']}
+                domain={[0, "dataMax"]}
                 tickFormatter={(value) => {
                   if (value >= 1024) {
                     return `${(value / 1024).toFixed(1)}GB`;
@@ -252,27 +254,30 @@ export const MemoryPerformanceChart: React.FC<PerformanceChartProps> = ({
                   return `${value.toFixed(0)}MB`;
                 }}
                 tick={{ fontSize: 12 }}
-                axisLine={{ stroke: '#d9d9d9' }}
+                axisLine={{ stroke: "#d9d9d9" }}
                 width={60}
               />
               <Tooltip
                 labelFormatter={(label) => new Date(label).toLocaleString()}
                 formatter={(value: number) => {
-                  const formattedValue = value >= 1024 
-                    ? `${(value / 1024).toFixed(2)}GB` 
-                    : `${value.toFixed(0)}MB`;
-                  return [formattedValue, ''];
+                  const formattedValue =
+                    value >= 1024
+                      ? `${(value / 1024).toFixed(2)}GB`
+                      : `${value.toFixed(0)}MB`;
+                  return [formattedValue, ""];
                 }}
                 contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #d9d9d9',
-                  borderRadius: '6px',
-                  fontSize: '12px'
+                  backgroundColor: "#fff",
+                  border: "1px solid #d9d9d9",
+                  borderRadius: "6px",
+                  fontSize: "12px",
                 }}
               />
               <Legend
-                wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-                onClick={(e) => e.dataKey && handleLegendClick(String(e.dataKey))}
+                wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }}
+                onClick={(e) =>
+                  e.dataKey && handleLegendClick(String(e.dataKey))
+                }
                 iconType="line"
               />
               <Line
@@ -282,7 +287,7 @@ export const MemoryPerformanceChart: React.FC<PerformanceChartProps> = ({
                 strokeWidth={2}
                 name="已使用"
                 dot={false}
-                activeDot={{ r: 4, stroke: '#ff7875', strokeWidth: 2 }}
+                activeDot={{ r: 4, stroke: "#ff7875", strokeWidth: 2 }}
                 hide={hiddenLines.used}
               />
               <Line
@@ -292,7 +297,7 @@ export const MemoryPerformanceChart: React.FC<PerformanceChartProps> = ({
                 strokeWidth={2}
                 name="总量"
                 dot={false}
-                activeDot={{ r: 4, stroke: '#73d13d', strokeWidth: 2 }}
+                activeDot={{ r: 4, stroke: "#73d13d", strokeWidth: 2 }}
                 hide={hiddenLines.total}
               />
             </LineChart>
@@ -312,7 +317,7 @@ export const DiskPerformanceChart: React.FC<PerformanceChartProps> = ({
   const [loading, setLoading] = useState(false);
   const [hiddenLines, setHiddenLines] = useState<Record<string, boolean>>({});
   const performanceData = useSelector(
-    (state: RootState) => state.app.performanceData[hostname]?.disk || []
+    (state: RootState) => state.app.performanceData[hostname]?.disk || [],
   );
 
   const fetchData = useCallback(async () => {
@@ -329,9 +334,9 @@ export const DiskPerformanceChart: React.FC<PerformanceChartProps> = ({
 
   // 处理图例点击切换显示/隐藏
   const handleLegendClick = useCallback((dataKey: string) => {
-    setHiddenLines(prev => ({
+    setHiddenLines((prev) => ({
       ...prev,
-      [dataKey]: !prev[dataKey]
+      [dataKey]: !prev[dataKey],
     }));
   }, []);
 
@@ -357,7 +362,7 @@ export const DiskPerformanceChart: React.FC<PerformanceChartProps> = ({
         />
       }
       styles={{
-        body: { padding: '12px' }
+        body: { padding: "12px" },
       }}
     >
       <Spin spinning={loading}>
@@ -382,10 +387,10 @@ export const DiskPerformanceChart: React.FC<PerformanceChartProps> = ({
                   })
                 }
                 tick={{ fontSize: 12 }}
-                axisLine={{ stroke: '#d9d9d9' }}
+                axisLine={{ stroke: "#d9d9d9" }}
               />
               <YAxis
-                domain={[0, 'dataMax']}
+                domain={[0, "dataMax"]}
                 tickFormatter={(value) => {
                   if (value >= 1024) {
                     return `${(value / 1024).toFixed(1)}GB`;
@@ -393,27 +398,30 @@ export const DiskPerformanceChart: React.FC<PerformanceChartProps> = ({
                   return `${value.toFixed(0)}MB`;
                 }}
                 tick={{ fontSize: 12 }}
-                axisLine={{ stroke: '#d9d9d9' }}
+                axisLine={{ stroke: "#d9d9d9" }}
                 width={60}
               />
               <Tooltip
                 labelFormatter={(label) => new Date(label).toLocaleString()}
                 formatter={(value: number) => {
-                  const formattedValue = value >= 1024 
-                    ? `${(value / 1024).toFixed(2)}GB` 
-                    : `${value.toFixed(0)}MB`;
-                  return [formattedValue, ''];
+                  const formattedValue =
+                    value >= 1024
+                      ? `${(value / 1024).toFixed(2)}GB`
+                      : `${value.toFixed(0)}MB`;
+                  return [formattedValue, ""];
                 }}
                 contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #d9d9d9',
-                  borderRadius: '6px',
-                  fontSize: '12px'
+                  backgroundColor: "#fff",
+                  border: "1px solid #d9d9d9",
+                  borderRadius: "6px",
+                  fontSize: "12px",
                 }}
               />
               <Legend
-                wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-                onClick={(e) => e.dataKey && handleLegendClick(String(e.dataKey))}
+                wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }}
+                onClick={(e) =>
+                  e.dataKey && handleLegendClick(String(e.dataKey))
+                }
                 iconType="line"
               />
               <Line
@@ -423,7 +431,7 @@ export const DiskPerformanceChart: React.FC<PerformanceChartProps> = ({
                 strokeWidth={2}
                 name="已使用"
                 dot={false}
-                activeDot={{ r: 4, stroke: '#fa8c16', strokeWidth: 2 }}
+                activeDot={{ r: 4, stroke: "#fa8c16", strokeWidth: 2 }}
                 hide={hiddenLines.used}
               />
               <Line
@@ -433,7 +441,7 @@ export const DiskPerformanceChart: React.FC<PerformanceChartProps> = ({
                 strokeWidth={2}
                 name="总量"
                 dot={false}
-                activeDot={{ r: 4, stroke: '#13c2c2', strokeWidth: 2 }}
+                activeDot={{ r: 4, stroke: "#13c2c2", strokeWidth: 2 }}
                 hide={hiddenLines.total}
               />
             </LineChart>
@@ -453,7 +461,7 @@ export const NetworkPerformanceChart: React.FC<PerformanceChartProps> = ({
   const [loading, setLoading] = useState(false);
   const [hiddenLines, setHiddenLines] = useState<Record<string, boolean>>({});
   const performanceData = useSelector(
-    (state: RootState) => state.app.performanceData[hostname]?.network || []
+    (state: RootState) => state.app.performanceData[hostname]?.network || [],
   );
 
   const fetchData = useCallback(async () => {
@@ -470,9 +478,9 @@ export const NetworkPerformanceChart: React.FC<PerformanceChartProps> = ({
 
   // 处理图例点击切换显示/隐藏
   const handleLegendClick = useCallback((dataKey: string) => {
-    setHiddenLines(prev => ({
+    setHiddenLines((prev) => ({
       ...prev,
-      [dataKey]: !prev[dataKey]
+      [dataKey]: !prev[dataKey],
     }));
   }, []);
 
@@ -498,7 +506,7 @@ export const NetworkPerformanceChart: React.FC<PerformanceChartProps> = ({
         />
       }
       styles={{
-        body: { padding: '12px' }
+        body: { padding: "12px" },
       }}
     >
       <Spin spinning={loading}>
@@ -523,27 +531,29 @@ export const NetworkPerformanceChart: React.FC<PerformanceChartProps> = ({
                   })
                 }
                 tick={{ fontSize: 12 }}
-                axisLine={{ stroke: '#d9d9d9' }}
+                axisLine={{ stroke: "#d9d9d9" }}
               />
               <YAxis
                 tickFormatter={(value) => `${value.toFixed(1)} MB/s`}
                 tick={{ fontSize: 12 }}
-                axisLine={{ stroke: '#d9d9d9' }}
+                axisLine={{ stroke: "#d9d9d9" }}
                 width={70}
               />
               <Tooltip
                 labelFormatter={(label) => new Date(label).toLocaleString()}
-                formatter={(value: number) => [`${value.toFixed(2)} MB/s`, '']}
+                formatter={(value: number) => [`${value.toFixed(2)} MB/s`, ""]}
                 contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #d9d9d9',
-                  borderRadius: '6px',
-                  fontSize: '12px'
+                  backgroundColor: "#fff",
+                  border: "1px solid #d9d9d9",
+                  borderRadius: "6px",
+                  fontSize: "12px",
                 }}
               />
               <Legend
-                wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-                onClick={(e) => e.dataKey && handleLegendClick(String(e.dataKey))}
+                wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }}
+                onClick={(e) =>
+                  e.dataKey && handleLegendClick(String(e.dataKey))
+                }
                 iconType="line"
               />
               <Line
@@ -553,7 +563,7 @@ export const NetworkPerformanceChart: React.FC<PerformanceChartProps> = ({
                 strokeWidth={2}
                 name="接收"
                 dot={false}
-                activeDot={{ r: 4, stroke: '#722ed1', strokeWidth: 2 }}
+                activeDot={{ r: 4, stroke: "#722ed1", strokeWidth: 2 }}
                 hide={hiddenLines.net_in}
               />
               <Line
@@ -563,7 +573,7 @@ export const NetworkPerformanceChart: React.FC<PerformanceChartProps> = ({
                 strokeWidth={2}
                 name="发送"
                 dot={false}
-                activeDot={{ r: 4, stroke: '#eb2f96', strokeWidth: 2 }}
+                activeDot={{ r: 4, stroke: "#eb2f96", strokeWidth: 2 }}
                 hide={hiddenLines.net_out}
               />
             </LineChart>

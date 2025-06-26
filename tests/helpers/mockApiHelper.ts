@@ -10,7 +10,7 @@ import type { StandardResponse } from "@/utils/apiHelper";
 export const createMockResponse = <T>(
   data: T,
   success: boolean = true,
-  message: string = "操作成功"
+  message: string = "操作成功",
 ): StandardResponse<T> => ({
   success,
   data,
@@ -20,7 +20,7 @@ export const createMockResponse = <T>(
 // Mock API错误响应生成器
 export const createMockErrorResponse = (
   message: string = "操作失败",
-  status: number = 500
+  status: number = 500,
 ): StandardResponse => ({
   success: false,
   message,
@@ -56,7 +56,7 @@ export class MockApiHelper {
   // 设置成功响应
   static mockSuccessResponse<T>(
     method: "get" | "post" | "put" | "delete" | "patch",
-    data: T
+    data: T,
   ) {
     const mockMethod =
       this[`mock${method.charAt(0).toUpperCase() + method.slice(1)}`];
@@ -67,7 +67,7 @@ export class MockApiHelper {
   static mockErrorResponse(
     method: "get" | "post" | "put" | "delete" | "patch",
     message: string,
-    status: number = 500
+    status: number = 500,
   ) {
     const mockMethod =
       this[`mock${method.charAt(0).toUpperCase() + method.slice(1)}`];

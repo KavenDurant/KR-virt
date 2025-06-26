@@ -95,13 +95,13 @@ export class EnvConfig {
    */
   static async mockOrApi<T>(
     mockFn: () => T | Promise<T>,
-    apiFn: () => T | Promise<T>
+    apiFn: () => T | Promise<T>,
   ): Promise<T> {
     if (this.ENABLE_MOCK) {
-      console.log('🎭 使用Mock数据');
+      console.log("🎭 使用Mock数据");
       return await mockFn();
     } else {
-      console.log('🌐 使用真实API');
+      console.log("🌐 使用真实API");
       return await apiFn();
     }
   }

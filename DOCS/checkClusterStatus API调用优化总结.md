@@ -3,6 +3,7 @@
 ## 🔍 问题分析
 
 ### 原始问题
+
 在集群初始化流程中，`checkClusterStatus` API被重复调用了3-4次，导致不必要的网络请求。
 
 ### 问题原因分析
@@ -27,18 +28,20 @@
 ### 1. 状态传递优化
 
 **AppBootstrap组件改进**：
+
 ```typescript
 // 保存集群状态并传递给ClusterInitPage
 const [clusterStatus, setClusterStatus] = useState<ClusterStatusResponse | null>(null);
 
 // 传递初始状态
-<ClusterInitPage 
-  onComplete={handleClusterInitComplete} 
+<ClusterInitPage
+  onComplete={handleClusterInitComplete}
   initialStatus={clusterStatus || undefined}
 />
 ```
 
 **ClusterInitPage组件改进**：
+
 ```typescript
 // 接收初始状态，避免重复调用
 interface ClusterInitPageProps {
@@ -55,7 +58,7 @@ useEffect(() => {
     // 直接处理状态...
     return;
   }
-  
+
   // 只有没有初始状态时才调用API
   // ...
 }, [initialStatus, onComplete, message]);
@@ -64,18 +67,25 @@ useEffect(() => {
 ### 2. 服务级别缓存
 
 **添加缓存机制**：
+
 ```typescript
 class ClusterInitService {
-  private statusCache: { data: ClusterStatusResponse; timestamp: number } | null = null;
+  private statusCache: {
+    data: ClusterStatusResponse;
+    timestamp: number;
+  } | null = null;
   private readonly CACHE_DURATION = 5000; // 5秒缓存
 
   async checkClusterStatus(): Promise<ClusterStatusResponse> {
     // 检查缓存
-    if (this.statusCache && (Date.now() - this.statusCache.timestamp < this.CACHE_DURATION)) {
+    if (
+      this.statusCache &&
+      Date.now() - this.statusCache.timestamp < this.CACHE_DURATION
+    ) {
       console.log("📋 使用缓存的集群状态");
       return this.statusCache.data;
     }
-    
+
     // 调用API并缓存结果
     const result = await this.apiCall();
     this.statusCache = { data: result, timestamp: Date.now() };
@@ -87,9 +97,10 @@ class ClusterInitService {
 ### 3. 调用跟踪
 
 **添加调用日志**：
+
 ```typescript
 async checkClusterStatus(): Promise<ClusterStatusResponse> {
-  console.log("🔍 checkClusterStatus API调用 - 来源:", 
+  console.log("🔍 checkClusterStatus API调用 - 来源:",
     new Error().stack?.split('\n')[2]?.trim()
   );
   // ...
@@ -99,15 +110,18 @@ async checkClusterStatus(): Promise<ClusterStatusResponse> {
 ## 🚀 优化效果
 
 ### 调用次数减少
+
 - **优化前**：3-4次重复调用
 - **优化后**：1次实际API调用，其余使用缓存或传递状态
 
 ### 性能提升
+
 1. **减少网络请求**：避免不必要的HTTP请求
 2. **提升响应速度**：使用缓存和状态传递
 3. **改善用户体验**：减少加载时间
 
 ### 代码可维护性
+
 1. **清晰的数据流**：AppBootstrap → ClusterInitPage
 2. **统一的状态管理**：避免状态不一致
 3. **调试友好**：添加了详细的日志跟踪
@@ -115,17 +129,20 @@ async checkClusterStatus(): Promise<ClusterStatusResponse> {
 ## 📊 技术要点
 
 ### React最佳实践
+
 - ✅ 合理使用useEffect依赖
 - ✅ 避免不必要的重复渲染
 - ✅ 状态提升和传递
 - ✅ 处理StrictMode的双重执行
 
 ### 服务层优化
+
 - ✅ 添加缓存机制
 - ✅ 调用去重和节流
 - ✅ 错误处理和重试逻辑
 
 ### 开发体验
+
 - ✅ 详细的调用日志
 - ✅ 清晰的问题追踪
 - ✅ 性能监控和优化
@@ -133,25 +150,31 @@ async checkClusterStatus(): Promise<ClusterStatusResponse> {
 ## 🔧 进一步优化建议
 
 ### 1. 全局状态管理
+
 考虑使用Redux或Zustand来管理集群状态，避免props drilling。
 
 ### 2. React Query集成
+
 使用React Query来管理服务器状态，获得更好的缓存和同步能力。
 
 ### 3. 请求去重
+
 在请求层面实现去重，避免并发的相同请求。
 
 ### 4. 生产环境优化
+
 在生产环境中移除详细日志，只保留必要的错误信息。
 
 ## 📈 监控指标
 
 ### 开发环境
+
 - API调用次数：1次/页面加载
 - 缓存命中率：>80%
 - 响应时间：<500ms
 
 ### 生产环境建议
+
 - 监控API调用频率
 - 跟踪错误率和重试次数
 - 性能指标采集

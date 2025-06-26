@@ -28,7 +28,7 @@ export const HOST_ACTION_MAPPING = {
 export type HostActionCallback = (
   operation: keyof typeof HOST_ACTION_MAPPING | string,
   hostname: string,
-  hostData?: Node
+  hostData?: Node,
 ) => void;
 
 /**
@@ -67,7 +67,7 @@ export interface UseSidebarHostActionsOptions {
  */
 export const useSidebarHostActions = (
   callback: HostActionCallback,
-  options: UseSidebarHostActionsOptions = {}
+  options: UseSidebarHostActionsOptions = {},
 ): void => {
   const { enabled = true, filter } = options;
 
@@ -92,7 +92,7 @@ export const useSidebarHostActions = (
       // 调用回调函数
       callback(mappedOperation, hostname, hostData);
     },
-    [callback, filter]
+    [callback, filter],
   );
 
   /**
@@ -111,7 +111,7 @@ export const useSidebarHostActions = (
     return () => {
       window.removeEventListener(
         "hierarchical-sidebar-host-action",
-        eventListener
+        eventListener,
       );
     };
   }, [handleSidebarHostAction, enabled]);
@@ -130,7 +130,7 @@ export const useSidebarHostActions = (
 export const triggerSidebarHostAction = (
   action: string,
   hostname: string,
-  hostData?: Node
+  hostData?: Node,
 ): void => {
   const actionEvent = new CustomEvent("hierarchical-sidebar-host-action", {
     detail: {

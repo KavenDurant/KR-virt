@@ -70,8 +70,8 @@ const SafetyConfirmModal: React.FC<SafetyConfirmModalProps> = ({
       title={
         <Space>
           {danger && (
-            <ExclamationCircleOutlined 
-              style={{ color: "#ff4d4f", fontSize: "16px" }} 
+            <ExclamationCircleOutlined
+              style={{ color: "#ff4d4f", fontSize: "16px" }}
             />
           )}
           {title}
@@ -93,9 +93,7 @@ const SafetyConfirmModal: React.FC<SafetyConfirmModalProps> = ({
       <Space direction="vertical" style={{ width: "100%" }}>
         {/* 操作描述 */}
         {description && (
-          <Paragraph style={{ marginBottom: 16 }}>
-            {description}
-          </Paragraph>
+          <Paragraph style={{ marginBottom: 16 }}>{description}</Paragraph>
         )}
 
         {/* 安全警告 */}
@@ -112,7 +110,11 @@ const SafetyConfirmModal: React.FC<SafetyConfirmModalProps> = ({
         {/* 确认文本输入提示 */}
         <div style={{ marginBottom: 8 }}>
           <Text strong>
-            请输入 <Text code style={{ color: "#d32f2f" }}>{confirmText}</Text> 以确认此操作：
+            请输入{" "}
+            <Text code style={{ color: "#d32f2f" }}>
+              {confirmText}
+            </Text>{" "}
+            以确认此操作：
           </Text>
         </div>
 

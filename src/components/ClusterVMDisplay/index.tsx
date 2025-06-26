@@ -37,22 +37,22 @@ export const ClusterStats: React.FC<ClusterStatsProps> = ({ cluster }) => {
   // 计算集群统计信息
   const totalVMs = cluster.nodes.reduce(
     (sum, node) => sum + node.vms.length,
-    0
+    0,
   );
   const runningVMs = cluster.nodes.reduce(
     (sum, node) =>
       sum + node.vms.filter((vm) => vm.status === "running").length,
-    0
+    0,
   );
   const stoppedVMs = cluster.nodes.reduce(
     (sum, node) =>
       sum + node.vms.filter((vm) => vm.status === "stopped").length,
-    0
+    0,
   );
   const suspendedVMs = cluster.nodes.reduce(
     (sum, node) =>
       sum + node.vms.filter((vm) => vm.status === "suspended").length,
-    0
+    0,
   );
 
   const totalCpu =
@@ -153,15 +153,15 @@ export const ClusterStats: React.FC<ClusterStatsProps> = ({ cluster }) => {
                 totalCpu > 80
                   ? "exception"
                   : totalCpu > 60
-                  ? "active"
-                  : "success"
+                    ? "active"
+                    : "success"
               }
               strokeColor={
                 totalCpu > 80
                   ? "#f5222d"
                   : totalCpu > 60
-                  ? "#faad14"
-                  : "#52c41a"
+                    ? "#faad14"
+                    : "#52c41a"
               }
             />
             <Text type="secondary" style={{ fontSize: "12px" }}>
@@ -177,15 +177,15 @@ export const ClusterStats: React.FC<ClusterStatsProps> = ({ cluster }) => {
                 totalMemory > 80
                   ? "exception"
                   : totalMemory > 60
-                  ? "active"
-                  : "success"
+                    ? "active"
+                    : "success"
               }
               strokeColor={
                 totalMemory > 80
                   ? "#f5222d"
                   : totalMemory > 60
-                  ? "#faad14"
-                  : "#52c41a"
+                    ? "#faad14"
+                    : "#52c41a"
               }
             />
             <Text type="secondary" style={{ fontSize: "12px" }}>
@@ -222,10 +222,9 @@ export const ClusterStats: React.FC<ClusterStatsProps> = ({ cluster }) => {
                     style={{
                       color: node.status === "online" ? "#52c41a" : "#f5222d",
                     }}
-                  />                  <Text strong>{node.name}</Text>
-                  <Tag
-                    color={node.status === "online" ? "green" : "red"}
-                  >
+                  />{" "}
+                  <Text strong>{node.name}</Text>
+                  <Tag color={node.status === "online" ? "green" : "red"}>
                     {node.status}
                   </Tag>
                 </div>

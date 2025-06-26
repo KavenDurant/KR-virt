@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   Form,
@@ -18,7 +18,7 @@ import {
   Popconfirm,
   Tooltip,
   Badge,
-} from 'antd';
+} from "antd";
 import {
   SyncOutlined,
   ClockCircleOutlined,
@@ -28,14 +28,14 @@ import {
   ExclamationCircleOutlined,
   ReloadOutlined,
   ThunderboltOutlined,
-} from '@ant-design/icons';
-import { systemSettingService as timeSyncApi } from '../../services/systemSetting';
+} from "@ant-design/icons";
+import { systemSettingService as timeSyncApi } from "../../services/systemSetting";
 import type {
   NtpServerConfig,
   TimeSyncStatusResponse,
   NodeTimeSyncStatus,
   NtpServerStatus,
-} from '../../services/systemSetting/types';
+} from "../../services/systemSetting/types";
 
 const { Title, Text } = Typography;
 
@@ -48,8 +48,10 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [executing, setExecuting] = useState(false);
-  const [ntpServer, setNtpServer] = useState('');
-  const [syncStatus, setSyncStatus] = useState<TimeSyncStatusResponse | null>(null);
+  const [ntpServer, setNtpServer] = useState("");
+  const [syncStatus, setSyncStatus] = useState<TimeSyncStatusResponse | null>(
+    null,
+  );
 
   // 获取NTP服务器配置
   const loadNtpServer = useCallback(async () => {
@@ -60,7 +62,7 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
         form.setFieldsValue({ address: result.data.address });
       }
     } catch (error) {
-      console.error('Failed to load NTP server:', error);
+      console.error("Failed to load NTP server:", error);
     }
   }, [form]);
 
@@ -72,7 +74,7 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
         setSyncStatus(result.data);
       }
     } catch (error) {
-      console.error('Failed to load sync status:', error);
+      console.error("Failed to load sync status:", error);
     }
   }, []);
 
@@ -81,13 +83,10 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
     const loadData = async () => {
       setLoading(true);
       try {
-        await Promise.all([
-          loadNtpServer(),
-          loadSyncStatus(),
-        ]);
+        await Promise.all([loadNtpServer(), loadSyncStatus()]);
       } catch (error) {
-        console.error('Failed to load initial data:', error);
-        message.error('加载数据失败');
+        console.error("Failed to load initial data:", error);
+        message.error("加载数据失败");
       } finally {
         setLoading(false);
       }
@@ -103,13 +102,13 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
       const result = await timeSyncApi.setNtpServer(values);
       if (result.success) {
         setNtpServer(values.address);
-        message.success(result.message || 'NTP服务器配置保存成功');
+        message.success(result.message || "NTP服务器配置保存成功");
         // 保存后刷新状态
         await loadSyncStatus();
       }
     } catch (error) {
-      console.error('Failed to save NTP server:', error);
-      message.error('保存NTP服务器配置失败');
+      console.error("Failed to save NTP server:", error);
+      message.error("保存NTP服务器配置失败");
     } finally {
       setLoading(false);
     }
@@ -120,10 +119,10 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
     setRefreshing(true);
     try {
       await loadSyncStatus();
-      message.success('状态刷新成功');
+      message.success("状态刷新成功");
     } catch (error) {
-      console.error('Failed to refresh status:', error);
-      message.error('刷新状态失败');
+      console.error("Failed to refresh status:", error);
+      message.error("刷新状态失败");
     } finally {
       setRefreshing(false);
     }
@@ -134,19 +133,19 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
     setExecuting(true);
     try {
       const result = await timeSyncApi.executeTimeSync(
-        nodeIds ? { node_ids: nodeIds } : {}
+        nodeIds ? { node_ids: nodeIds } : {},
       );
       if (result.success) {
-        message.success(result.message || '时间同步任务已启动');
-        
+        message.success(result.message || "时间同步任务已启动");
+
         // 延迟刷新状态，等待同步完成
         setTimeout(() => {
           loadSyncStatus();
         }, 3000);
       }
     } catch (error) {
-      console.error('Failed to execute time sync:', error);
-      message.error('启动时间同步失败');
+      console.error("Failed to execute time sync:", error);
+      message.error("启动时间同步失败");
     } finally {
       setExecuting(false);
     }
@@ -155,21 +154,21 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
   // 获取服务状态标签
   const getServiceStatusTag = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'active':
-      case 'running':
+      case "active":
+      case "running":
         return (
           <Tag icon={<CheckCircleOutlined />} color="success">
             运行中
           </Tag>
         );
-      case 'inactive':
-      case 'stopped':
+      case "inactive":
+      case "stopped":
         return (
           <Tag icon={<ExclamationCircleOutlined />} color="error">
             已停止
           </Tag>
         );
-      case 'failed':
+      case "failed":
         return (
           <Tag icon={<WarningOutlined />} color="error">
             失败
@@ -187,22 +186,22 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
   // 获取NTP服务器状态标签
   const getNtpStatusTag = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'reachable':
-      case 'synchronized':
-      case 'ok':
+      case "reachable":
+      case "synchronized":
+      case "ok":
         return (
           <Tag icon={<CheckCircleOutlined />} color="success">
             正常
           </Tag>
         );
-      case 'unreachable':
-      case 'failed':
+      case "unreachable":
+      case "failed":
         return (
           <Tag icon={<ExclamationCircleOutlined />} color="error">
             不可达
           </Tag>
         );
-      case 'synchronizing':
+      case "synchronizing":
         return (
           <Tag icon={<SyncOutlined spin />} color="processing">
             同步中
@@ -220,9 +219,9 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
   // 节点列表表格列定义
   const nodeColumns = [
     {
-      title: '节点',
-      dataIndex: 'nodeId',
-      key: 'nodeId',
+      title: "节点",
+      dataIndex: "nodeId",
+      key: "nodeId",
       render: (nodeId: string) => (
         <Space>
           <GlobalOutlined />
@@ -231,23 +230,21 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
       ),
     },
     {
-      title: '同步服务',
-      dataIndex: 'sync_service',
-      key: 'sync_service',
-      render: (service: string) => (
-        <Tag color="blue">{service || 'NTP'}</Tag>
-      ),
+      title: "同步服务",
+      dataIndex: "sync_service",
+      key: "sync_service",
+      render: (service: string) => <Tag color="blue">{service || "NTP"}</Tag>,
     },
     {
-      title: '服务状态',
-      dataIndex: 'service_status',
-      key: 'service_status',
+      title: "服务状态",
+      dataIndex: "service_status",
+      key: "service_status",
       render: (status: string) => getServiceStatusTag(status),
     },
     {
-      title: 'NTP服务器',
-      dataIndex: 'ntp_server_list',
-      key: 'ntp_server_list',
+      title: "NTP服务器",
+      dataIndex: "ntp_server_list",
+      key: "ntp_server_list",
       render: (servers: NtpServerStatus[]) => (
         <Space direction="vertical" size="small">
           {servers?.map((server, index) => (
@@ -260,9 +257,12 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
       ),
     },
     {
-      title: '操作',
-      key: 'action',
-      render: (_: unknown, record: { nodeId: string; data: NodeTimeSyncStatus }) => (
+      title: "操作",
+      key: "action",
+      render: (
+        _: unknown,
+        record: { nodeId: string; data: NodeTimeSyncStatus },
+      ) => (
         <Space>
           <Tooltip title="强制同步此节点">
             <Button
@@ -280,7 +280,7 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
   ];
 
   // 准备节点数据
-  const nodeData = syncStatus?.nodes 
+  const nodeData = syncStatus?.nodes
     ? Object.entries(syncStatus.nodes).map(([nodeId, data]) => ({
         key: nodeId,
         nodeId,
@@ -291,21 +291,23 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
 
   // 计算统计信息
   const totalNodes = nodeData.length;
-  const activeNodes = nodeData.filter(node => 
-    node.service_status?.toLowerCase() === 'active' || 
-    node.service_status?.toLowerCase() === 'running'
+  const activeNodes = nodeData.filter(
+    (node) =>
+      node.service_status?.toLowerCase() === "active" ||
+      node.service_status?.toLowerCase() === "running",
   ).length;
-  const syncedNodes = nodeData.filter(node => 
-    node.ntp_server_list?.some(server => 
-      server.status?.toLowerCase() === 'synchronized' || 
-      server.status?.toLowerCase() === 'ok'
-    )
+  const syncedNodes = nodeData.filter((node) =>
+    node.ntp_server_list?.some(
+      (server) =>
+        server.status?.toLowerCase() === "synchronized" ||
+        server.status?.toLowerCase() === "ok",
+    ),
   ).length;
 
   return (
     <div className={className}>
       <Spin spinning={loading} tip="正在加载时间同步配置...">
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
           {/* NTP服务器配置 */}
           <Card
             title={
@@ -327,10 +329,11 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
                     name="address"
                     label="NTP服务器地址"
                     rules={[
-                      { required: true, message: '请输入NTP服务器地址' },
+                      { required: true, message: "请输入NTP服务器地址" },
                       {
-                        pattern: /^(?:(?:\d{1,3}\.){3}\d{1,3}|(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,})$/,
-                        message: '请输入有效的IP地址或域名',
+                        pattern:
+                          /^(?:(?:\d{1,3}\.){3}\d{1,3}|(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,})$/,
+                        message: "请输入有效的IP地址或域名",
                       },
                     ]}
                     extra="支持IP地址或域名，例如：pool.ntp.org 或 192.168.1.1"
@@ -351,9 +354,7 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
                       >
                         保存配置
                       </Button>
-                      <Button onClick={() => form.resetFields()}>
-                        重置
-                      </Button>
+                      <Button onClick={() => form.resetFields()}>重置</Button>
                     </Space>
                   </Form.Item>
                 </Form>
@@ -361,34 +362,46 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
 
               <Col span={8}>
                 <Card size="small">
-                  <Space direction="vertical" style={{ width: '100%' }}>
+                  <Space direction="vertical" style={{ width: "100%" }}>
                     <Title level={5}>常用NTP服务器</Title>
-                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                    <Space
+                      direction="vertical"
+                      size="small"
+                      style={{ width: "100%" }}
+                    >
                       <Button
                         type="link"
                         size="small"
-                        onClick={() => form.setFieldsValue({ address: 'pool.ntp.org' })}
+                        onClick={() =>
+                          form.setFieldsValue({ address: "pool.ntp.org" })
+                        }
                       >
                         pool.ntp.org
                       </Button>
                       <Button
                         type="link"
                         size="small"
-                        onClick={() => form.setFieldsValue({ address: 'time.windows.com' })}
+                        onClick={() =>
+                          form.setFieldsValue({ address: "time.windows.com" })
+                        }
                       >
                         time.windows.com
                       </Button>
                       <Button
                         type="link"
                         size="small"
-                        onClick={() => form.setFieldsValue({ address: 'ntp.aliyun.com' })}
+                        onClick={() =>
+                          form.setFieldsValue({ address: "ntp.aliyun.com" })
+                        }
                       >
                         ntp.aliyun.com
                       </Button>
                       <Button
                         type="link"
                         size="small"
-                        onClick={() => form.setFieldsValue({ address: 'cn.pool.ntp.org' })}
+                        onClick={() =>
+                          form.setFieldsValue({ address: "cn.pool.ntp.org" })
+                        }
                       >
                         cn.pool.ntp.org
                       </Button>
@@ -442,7 +455,7 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
                     title="总节点数"
                     value={totalNodes}
                     prefix={<GlobalOutlined />}
-                    valueStyle={{ color: '#1890ff' }}
+                    valueStyle={{ color: "#1890ff" }}
                   />
                 </Col>
                 <Col xs={24} sm={8} md={8}>
@@ -451,7 +464,9 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
                     value={activeNodes}
                     suffix={`/ ${totalNodes}`}
                     prefix={<CheckCircleOutlined />}
-                    valueStyle={{ color: activeNodes === totalNodes ? '#52c41a' : '#faad14' }}
+                    valueStyle={{
+                      color: activeNodes === totalNodes ? "#52c41a" : "#faad14",
+                    }}
                   />
                 </Col>
                 <Col xs={24} sm={8} md={8}>
@@ -460,7 +475,9 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
                     value={syncedNodes}
                     suffix={`/ ${totalNodes}`}
                     prefix={<SyncOutlined />}
-                    valueStyle={{ color: syncedNodes === totalNodes ? '#52c41a' : '#ff4d4f' }}
+                    valueStyle={{
+                      color: syncedNodes === totalNodes ? "#52c41a" : "#ff4d4f",
+                    }}
                   />
                 </Col>
               </Row>
@@ -471,10 +488,10 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
                   style={{ marginTop: 16 }}
                   message={
                     syncedNodes === totalNodes
-                      ? '所有节点时间同步正常'
+                      ? "所有节点时间同步正常"
                       : `有 ${totalNodes - syncedNodes} 个节点时间同步异常，建议检查网络连接或执行强制同步`
                   }
-                  type={syncedNodes === totalNodes ? 'success' : 'warning'}
+                  type={syncedNodes === totalNodes ? "success" : "warning"}
                   showIcon
                 />
               )}
@@ -521,20 +538,25 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
           >
             <Space direction="vertical" size="small">
               <Text>
-                <Text strong>时间同步服务</Text>用于确保集群中所有节点的系统时间保持一致，这对于分布式系统的正常运行至关重要。
+                <Text strong>时间同步服务</Text>
+                用于确保集群中所有节点的系统时间保持一致，这对于分布式系统的正常运行至关重要。
               </Text>
               <Divider />
               <Text>
-                • <Text strong>配置NTP服务器：</Text>设置可靠的时间源，建议使用就近的NTP服务器以减少延迟
+                • <Text strong>配置NTP服务器：</Text>
+                设置可靠的时间源，建议使用就近的NTP服务器以减少延迟
               </Text>
               <Text>
-                • <Text strong>监控同步状态：</Text>定期检查各节点的时间同步状态，确保服务正常运行
+                • <Text strong>监控同步状态：</Text>
+                定期检查各节点的时间同步状态，确保服务正常运行
               </Text>
               <Text>
-                • <Text strong>强制同步：</Text>当发现时间偏差较大时，可手动触发强制同步
+                • <Text strong>强制同步：</Text>
+                当发现时间偏差较大时，可手动触发强制同步
               </Text>
               <Text>
-                • <Text strong>故障排除：</Text>如果同步失败，请检查网络连接和NTP服务器可达性
+                • <Text strong>故障排除：</Text>
+                如果同步失败，请检查网络连接和NTP服务器可达性
               </Text>
             </Space>
           </Card>

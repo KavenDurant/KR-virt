@@ -78,7 +78,7 @@ export interface UseTimeZoneResult {
  */
 export const useTimeZone = (
   isoTimeString: string,
-  options: UseTimeZoneOptions = {}
+  options: UseTimeZoneOptions = {},
 ): UseTimeZoneResult => {
   const {
     format = "YYYY-MM-DD HH:mm:ss",
@@ -186,7 +186,7 @@ export const useTimeZone = (
  */
 export const useTimeZoneBatch = (
   timeStrings: string[],
-  options: UseTimeZoneOptions = {}
+  options: UseTimeZoneOptions = {},
 ): UseTimeZoneResult[] => {
   return useMemo(() => {
     return timeStrings.map((timeString) => {
@@ -210,7 +210,7 @@ export const useTimeZoneBatch = (
 
       const convertedTime = originalTime.tz(finalTargetTimezone);
       const localTime = convertedTime.format(
-        options.format || "YYYY-MM-DD HH:mm:ss"
+        options.format || "YYYY-MM-DD HH:mm:ss",
       );
 
       return {

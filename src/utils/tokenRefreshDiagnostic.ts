@@ -18,21 +18,21 @@ export class TokenRefreshDiagnostic {
       const isAuthenticated = loginService.isAuthenticated();
       console.log(
         "1️⃣ 用户登录状态:",
-        isAuthenticated ? "✅ 已登录" : "❌ 未登录"
+        isAuthenticated ? "✅ 已登录" : "❌ 未登录",
       );
 
       // 2. 检查Token
       const token = loginService.getToken();
       console.log(
         "2️⃣ Token状态:",
-        token ? `✅ 存在 (${token.substring(0, 20)}...)` : "❌ 不存在"
+        token ? `✅ 存在 (${token.substring(0, 20)}...)` : "❌ 不存在",
       );
 
       // 3. 检查用户信息
       const user = loginService.getCurrentUser();
       console.log(
         "3️⃣ 用户信息:",
-        user ? `✅ 存在 (用户名: ${user.username})` : "❌ 不存在"
+        user ? `✅ 存在 (用户名: ${user.username})` : "❌ 不存在",
       );
 
       // 4. 检查自动刷新状态
@@ -40,11 +40,11 @@ export class TokenRefreshDiagnostic {
       console.log("4️⃣ 自动刷新状态:");
       console.log(
         "   - 是否运行:",
-        refreshStatus.isRunning ? "✅ 是" : "❌ 否"
+        refreshStatus.isRunning ? "✅ 是" : "❌ 否",
       );
       console.log(
         "   - 是否刷新中:",
-        refreshStatus.isRefreshing ? "⏳ 是" : "💤 否"
+        refreshStatus.isRefreshing ? "⏳ 是" : "💤 否",
       );
 
       // 5. 检查环境信息
@@ -63,7 +63,7 @@ export class TokenRefreshDiagnostic {
           const isValidFormat = parts.length === 3;
           console.log(
             "6️⃣ Token格式检查:",
-            isValidFormat ? "✅ 有效" : "❌ 无效"
+            isValidFormat ? "✅ 有效" : "❌ 无效",
           );
 
           if (isValidFormat) {
@@ -76,12 +76,12 @@ export class TokenRefreshDiagnostic {
                 console.log("   - 过期时间:", expDate.toLocaleString());
                 console.log("   - 是否过期:", isExpired ? "❌ 是" : "✅ 否");
               }
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (error) {
               console.log("   - Payload解析:", "❌ 失败");
             }
           }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
           console.log("6️⃣ Token格式检查:", "❌ 解析失败");
         }
@@ -167,7 +167,7 @@ export class TokenRefreshDiagnostic {
       console.log(
         "🔄 Token刷新完成:",
         result.success ? "✅ 成功" : "❌ 失败",
-        result.message
+        result.message,
       );
       return result;
     };

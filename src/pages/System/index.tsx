@@ -363,7 +363,7 @@ const SystemSettings: React.FC = () => {
           break;
       }
     },
-    [loadedTabs, loadAboutTabData]
+    [loadedTabs, loadAboutTabData],
   );
 
   // 初始化数据加载（仅加载通用数据，不加载特定标签页数据）
@@ -533,7 +533,7 @@ const SystemSettings: React.FC = () => {
     message.success(
       `已切换到${
         value === "auto" ? "自动" : value === "dark" ? "深色" : "浅色"
-      }主题`
+      }主题`,
     );
   };
 
@@ -893,8 +893,8 @@ const SystemSettings: React.FC = () => {
                                   {themeMode === "dark"
                                     ? "深色模式"
                                     : themeMode === "light"
-                                    ? "浅色模式"
-                                    : "自动模式"}
+                                      ? "浅色模式"
+                                      : "自动模式"}
                                 </Tag>
                               </Form.Item>
                             </Col>
@@ -991,7 +991,7 @@ const SystemSettings: React.FC = () => {
                                 percent={Math.round(
                                   (mockSystemInfo.license.usedNodes /
                                     mockSystemInfo.license.nodes) *
-                                    100
+                                    100,
                                 )}
                                 size="small"
                                 format={() =>
@@ -1251,10 +1251,10 @@ const SystemSettings: React.FC = () => {
                               title="成功率"
                               value={Math.round(
                                 (mockBackups.filter(
-                                  (b) => b.status === "completed"
+                                  (b) => b.status === "completed",
                                 ).length /
                                   mockBackups.length) *
-                                  100
+                                  100,
                               )}
                               suffix="%"
                               valueStyle={{ color: "#3f8600" }}
@@ -1528,7 +1528,7 @@ const SystemSettings: React.FC = () => {
                             <Descriptions.Item label="到期日期">
                               <Text>
                                 {dayjs(licenseInfo.expiry_date).format(
-                                  "YYYY-MM-DD HH:mm:ss"
+                                  "YYYY-MM-DD HH:mm:ss",
                                 )}
                               </Text>
                             </Descriptions.Item>
@@ -1693,7 +1693,7 @@ const SystemSettings: React.FC = () => {
                   console.log("User form values:", values);
                   setUserModalVisible(false);
                   message.success(
-                    selectedUser ? "用户更新成功" : "用户创建成功"
+                    selectedUser ? "用户更新成功" : "用户创建成功",
                   );
                 }}
               >
@@ -1775,7 +1775,7 @@ const SystemSettings: React.FC = () => {
                                 return Promise.resolve();
                               }
                               return Promise.reject(
-                                new Error("两次输入的密码不一致")
+                                new Error("两次输入的密码不一致"),
                               );
                             },
                           }),

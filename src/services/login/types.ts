@@ -102,5 +102,5 @@ export interface FirstTimeLoginState {
   totpSetupRequired: boolean;
   passwordChangeRequired: boolean;
   totpSecret?: string;
-  currentStep: 'totp' | 'password' | 'complete';
+  currentStep: "totp" | "password" | "complete";
 }

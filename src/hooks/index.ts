@@ -7,7 +7,7 @@
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 // 导出现有的hooks
-export { useTheme } from './useTheme';
+export { useTheme } from "./useTheme";
 
 // 导出新的侧边栏相关hooks
 export {
@@ -17,7 +17,7 @@ export {
   type SidebarSelectionState,
   type SidebarSelectionActions,
   type UseSidebarSelectionReturn,
-} from './useSidebarSelection';
+} from "./useSidebarSelection";
 
 // 导出时区处理相关hooks
 export {
@@ -26,7 +26,7 @@ export {
   useTimezoneInfo,
   type UseTimeZoneOptions,
   type UseTimeZoneResult,
-} from './useTimeZone';
+} from "./useTimeZone";
 
 export {
   useSidebarRefresh,
@@ -37,7 +37,7 @@ export {
   type SidebarRefreshDetail,
   type SidebarRefreshCallback,
   type UseSidebarRefreshOptions,
-} from './useSidebarRefresh';
+} from "./useSidebarRefresh";
 
 export {
   useSidebarHostActions,
@@ -48,4 +48,4 @@ export {
   type SidebarHostActionDetail,
   type HostActionCallback,
   type UseSidebarHostActionsOptions,
-} from './useSidebarHostActions';
+} from "./useSidebarHostActions";

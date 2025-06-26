@@ -2,11 +2,15 @@
  * 空闲警告弹窗组件
  */
 
-import React, { useEffect, useState } from 'react';
-import { Modal, Button, Progress, Space, Typography, Alert } from 'antd';
-import { ExclamationCircleOutlined, ClockCircleOutlined, LogoutOutlined } from '@ant-design/icons';
-import type { IdleWarningModalProps } from './types';
-import { formatTime } from '@/utils/userActivityUtils';
+import React, { useEffect, useState } from "react";
+import { Modal, Button, Progress, Space, Typography, Alert } from "antd";
+import {
+  ExclamationCircleOutlined,
+  ClockCircleOutlined,
+  LogoutOutlined,
+} from "@ant-design/icons";
+import type { IdleWarningModalProps } from "./types";
+import { formatTime } from "@/utils/userActivityUtils";
 
 const { Title, Text } = Typography;
 
@@ -16,7 +20,7 @@ const IdleWarningModal: React.FC<IdleWarningModalProps> = ({
   onContinue,
   onLogout,
   onCancel,
-  title = '会话即将过期',
+  title = "会话即将过期",
   description,
   showCountdown = true,
   closable = false,
@@ -53,13 +57,16 @@ const IdleWarningModal: React.FC<IdleWarningModalProps> = ({
   }, [visible, remainingTime]);
 
   // 计算进度百分比
-  const progressPercent = Math.max(0, (countdown / Math.ceil(remainingTime / 1000)) * 100);
+  const progressPercent = Math.max(
+    0,
+    (countdown / Math.ceil(remainingTime / 1000)) * 100,
+  );
 
   // 获取进度条颜色
   const getProgressColor = () => {
-    if (countdown <= 5) return '#ff4d4f'; // 红色
-    if (countdown <= 10) return '#faad14'; // 橙色
-    return '#1890ff'; // 蓝色
+    if (countdown <= 5) return "#ff4d4f"; // 红色
+    if (countdown <= 10) return "#faad14"; // 橙色
+    return "#1890ff"; // 蓝色
   };
 
   // 处理键盘事件
@@ -68,13 +75,13 @@ const IdleWarningModal: React.FC<IdleWarningModalProps> = ({
       if (!visible) return;
 
       switch (event.key) {
-        case 'Enter':
-        case ' ':
+        case "Enter":
+        case " ":
           event.preventDefault();
           event.stopPropagation(); // 阻止事件冒泡
           onContinue();
           break;
-        case 'Escape':
+        case "Escape":
           // 在超时警告中，Esc键也应该执行"继续使用"操作
           // 而不是简单的关闭，这样更符合用户期望
           event.preventDefault();
@@ -90,8 +97,8 @@ const IdleWarningModal: React.FC<IdleWarningModalProps> = ({
     };
 
     // 使用capture模式，确保在其他监听器之前处理
-    document.addEventListener('keydown', handleKeyPress, true);
-    return () => document.removeEventListener('keydown', handleKeyPress, true);
+    document.addEventListener("keydown", handleKeyPress, true);
+    return () => document.removeEventListener("keydown", handleKeyPress, true);
   }, [visible, onContinue, onCancel, closable]);
 
   const defaultDescription = (
@@ -99,7 +106,7 @@ const IdleWarningModal: React.FC<IdleWarningModalProps> = ({
       <Text>
         由于您已经有一段时间没有操作，为了保护您的账户安全，系统将在
         <Text strong style={{ color: getProgressColor() }}>
-          {showCountdown ? ` ${countdown} 秒` : ' 短时间'}
+          {showCountdown ? ` ${countdown} 秒` : " 短时间"}
         </Text>
         后自动登出。
       </Text>
@@ -114,7 +121,7 @@ const IdleWarningModal: React.FC<IdleWarningModalProps> = ({
     <Modal
       title={
         <Space>
-          <ExclamationCircleOutlined style={{ color: '#faad14' }} />
+          <ExclamationCircleOutlined style={{ color: "#faad14" }} />
           {title}
         </Space>
       }
@@ -128,9 +135,9 @@ const IdleWarningModal: React.FC<IdleWarningModalProps> = ({
       destroyOnClose
       footer={null}
       className="idle-warning-modal"
-      style={{ userSelect: 'none' }}
+      style={{ userSelect: "none" }}
     >
-      <div style={{ padding: '16px 0' }}>
+      <div style={{ padding: "16px 0" }}>
         {/* 警告信息 */}
         <Alert
           message="会话即将过期"
@@ -143,7 +150,13 @@ const IdleWarningModal: React.FC<IdleWarningModalProps> = ({
         {/* 倒计时进度条 */}
         {showCountdown && (
           <div style={{ marginBottom: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}
+            >
               <Text strong>
                 <ClockCircleOutlined style={{ marginRight: 4 }} />
                 剩余时间
@@ -158,13 +171,13 @@ const IdleWarningModal: React.FC<IdleWarningModalProps> = ({
               trailColor="#f0f0f0"
               strokeWidth={8}
               showInfo={false}
-              status={countdown <= 5 ? 'exception' : 'normal'}
+              status={countdown <= 5 ? "exception" : "normal"}
             />
           </div>
         )}
 
         {/* 操作按钮 */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: 16 }}>
           <Button
             type="primary"
             size="large"
@@ -186,18 +199,17 @@ const IdleWarningModal: React.FC<IdleWarningModalProps> = ({
         </div>
 
         {/* 提示信息 */}
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
+        <div style={{ textAlign: "center", marginTop: 16 }}>
           <Text type="secondary" style={{ fontSize: 12 }}>
-            您也可以按 <Text code>Enter</Text> 键继续使用，或按 <Text code>Esc</Text> 键{closable ? '关闭' : ''}
+            您也可以按 <Text code>Enter</Text> 键继续使用，或按{" "}
+            <Text code>Esc</Text> 键{closable ? "关闭" : ""}
           </Text>
         </div>
 
         {/* 自动登出状态 */}
         {isAutoLogout && (
-          <div style={{ textAlign: 'center', marginTop: 16 }}>
-            <Text type="secondary">
-              正在自动登出...
-            </Text>
+          <div style={{ textAlign: "center", marginTop: 16 }}>
+            <Text type="secondary">正在自动登出...</Text>
           </div>
         )}
       </div>

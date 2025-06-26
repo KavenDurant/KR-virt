@@ -8,12 +8,15 @@
  * @param precision 小数位数，默认为2
  * @returns 格式化后的字符串，如 "1.23 GB", "1.5 TB", "N/A"
  */
-export const formatStorageSize = (value: number | null, precision: number = 2): string => {
+export const formatStorageSize = (
+  value: number | null,
+  precision: number = 2,
+): string => {
   if (value === null || value === undefined) {
-    return 'N/A';
+    return "N/A";
   }
 
-  const units = ['GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const units = ["GB", "TB", "PB", "EB", "ZB", "YB"];
   let unitIndex = 0;
   let size = value;
 
@@ -25,7 +28,7 @@ export const formatStorageSize = (value: number | null, precision: number = 2): 
 
   // 格式化数值，去除不必要的小数点
   const formattedSize = Number(size.toFixed(precision));
-  
+
   return `${formattedSize} ${units[unitIndex]}`;
 };
 
@@ -35,12 +38,15 @@ export const formatStorageSize = (value: number | null, precision: number = 2): 
  * @param precision 小数位数，默认为2
  * @returns 格式化后的字符串，如 "1.23GB", "1.5TB", "N/A"
  */
-export const formatMemorySize = (value: number | null, precision: number = 2): string => {
+export const formatMemorySize = (
+  value: number | null,
+  precision: number = 2,
+): string => {
   if (value === null || value === undefined) {
-    return 'N/A';
+    return "N/A";
   }
 
-  const units = ['GB', 'TB', 'PB', 'EB'];
+  const units = ["GB", "TB", "PB", "EB"];
   let unitIndex = 0;
   let size = value;
 
@@ -52,7 +58,7 @@ export const formatMemorySize = (value: number | null, precision: number = 2): s
 
   // 格式化数值，去除不必要的小数点
   const formattedSize = Number(size.toFixed(precision));
-  
+
   return `${formattedSize}${units[unitIndex]}`;
 };
 
@@ -62,7 +68,10 @@ export const formatMemorySize = (value: number | null, precision: number = 2): s
  * @param total 总量
  * @returns 百分比数值，如果无法计算则返回null
  */
-export const calculatePercentage = (used: number | null, total: number | null): number | null => {
+export const calculatePercentage = (
+  used: number | null,
+  total: number | null,
+): number | null => {
   if (!used || !total || used <= 0 || total <= 0) {
     return null;
   }
@@ -78,37 +87,37 @@ export const calculatePercentage = (used: number | null, total: number | null): 
  * @returns 格式化后的资源使用字符串
  */
 export const formatResourceUsage = (
-  used: number | null, 
-  total: number | null, 
-  unit: string = '',
-  precision: number = 2
+  used: number | null,
+  total: number | null,
+  unit: string = "",
+  precision: number = 2,
 ): { display: string; percentage: number | null } => {
   const percentage = calculatePercentage(used, total);
-  
+
   if (percentage === null) {
     return {
-      display: 'N/A',
-      percentage: null
+      display: "N/A",
+      percentage: null,
     };
   }
 
   // 如果是内存单位（GB），使用格式化函数
-  if (unit === 'GB' || unit === 'gb') {
+  if (unit === "GB" || unit === "gb") {
     const usedFormatted = formatMemorySize(used, precision);
     const totalFormatted = formatMemorySize(total, precision);
     return {
       display: `${usedFormatted}/${totalFormatted} (${percentage}%)`,
-      percentage
+      percentage,
     };
   }
 
   // 其他单位直接显示
   const usedFormatted = used ? Number(used.toFixed(precision)) : 0;
   const totalFormatted = total ? Number(total.toFixed(precision)) : 0;
-  
+
   return {
     display: `${usedFormatted}/${totalFormatted} ${unit} (${percentage}%)`,
-    percentage
+    percentage,
   };
 };
 
@@ -119,7 +128,7 @@ export const formatResourceUsage = (
  */
 export const formatUptime = (seconds: number | null): string => {
   if (!seconds || seconds <= 0) {
-    return '未知';
+    return "未知";
   }
 
   const days = Math.floor(seconds / 86400);
@@ -127,7 +136,7 @@ export const formatUptime = (seconds: number | null): string => {
   const minutes = Math.floor((seconds % 3600) / 60);
 
   const parts: string[] = [];
-  
+
   if (days > 0) {
     parts.push(`${days}天`);
   }
@@ -143,7 +152,7 @@ export const formatUptime = (seconds: number | null): string => {
     parts.push(`${seconds}秒`);
   }
 
-  return parts.join(' ');
+  return parts.join(" ");
 };
 
 /**
@@ -153,13 +162,13 @@ export const formatUptime = (seconds: number | null): string => {
  */
 export const formatNetworkThroughput = (mbps: number | null): string => {
   if (!mbps || mbps <= 0) {
-    return 'N/A';
+    return "N/A";
   }
 
   if (mbps >= 1000) {
     return `${(mbps / 1000).toFixed(1)} Gbps`;
   }
-  
+
   return `${mbps} Mbps`;
 };
 
@@ -168,29 +177,31 @@ export const formatNetworkThroughput = (mbps: number | null): string => {
  * @param loadAverage 系统负载字符串（格式: "0.8,1.2,1.5"）
  * @returns 格式化后的负载信息
  */
-export const formatLoadAverage = (loadAverage: string | null): { display: string; status: 'low' | 'medium' | 'high' } => {
+export const formatLoadAverage = (
+  loadAverage: string | null,
+): { display: string; status: "low" | "medium" | "high" } => {
   if (!loadAverage) {
-    return { display: 'N/A', status: 'low' };
+    return { display: "N/A", status: "low" };
   }
 
-  const loads = loadAverage.split(',').map(load => parseFloat(load.trim()));
+  const loads = loadAverage.split(",").map((load) => parseFloat(load.trim()));
   if (loads.length !== 3) {
-    return { display: 'N/A', status: 'low' };
+    return { display: "N/A", status: "low" };
   }
 
   const [load1, load5, load15] = loads;
   const maxLoad = Math.max(load1, load5, load15);
-  
-  let status: 'low' | 'medium' | 'high' = 'low';
+
+  let status: "low" | "medium" | "high" = "low";
   if (maxLoad > 2.0) {
-    status = 'high';
+    status = "high";
   } else if (maxLoad > 1.0) {
-    status = 'medium';
+    status = "medium";
   }
 
   return {
     display: `${load1.toFixed(1)}, ${load5.toFixed(1)}, ${load15.toFixed(1)}`,
-    status
+    status,
   };
 };
 
@@ -199,15 +210,17 @@ export const formatLoadAverage = (loadAverage: string | null): { display: string
  * @param powerState 电源状态
  * @returns 电源状态显示信息
  */
-export const formatPowerState = (powerState: string | null): { text: string; color: string } => {
+export const formatPowerState = (
+  powerState: string | null,
+): { text: string; color: string } => {
   switch (powerState) {
-    case 'powered_on':
-      return { text: '已开机', color: 'success' };
-    case 'powered_off':
-      return { text: '已关机', color: 'error' };
-    case 'standby':
-      return { text: '待机', color: 'warning' };
+    case "powered_on":
+      return { text: "已开机", color: "success" };
+    case "powered_off":
+      return { text: "已关机", color: "error" };
+    case "standby":
+      return { text: "待机", color: "warning" };
     default:
-      return { text: '未知', color: 'default' };
+      return { text: "未知", color: "default" };
   }
 };

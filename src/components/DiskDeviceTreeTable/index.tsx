@@ -72,7 +72,7 @@ const DiskDeviceTreeTable: React.FC<DiskDeviceTreeTableProps> = ({
         } else {
           // 父设备不存在，作为根节点
           console.warn(
-            `父设备 ${device.parent} 不存在，将 ${device.name} 作为根节点`
+            `父设备 ${device.parent} 不存在，将 ${device.name} 作为根节点`,
           );
           rootDevices.push(currentNode);
         }

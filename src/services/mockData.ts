@@ -462,7 +462,7 @@ export const getClusterSidebarData = async (): Promise<DataCenter | null> => {
 
 // 将集群树API响应转换为DataCenter格式
 const convertClusterTreeToDataCenter = (
-  treeData: ClusterTreeResponse
+  treeData: ClusterTreeResponse,
 ): DataCenter => {
   return {
     id: "datacenter-real",

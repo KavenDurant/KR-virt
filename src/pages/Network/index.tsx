@@ -340,7 +340,7 @@ const getStatusTag = (status: string) => {
 
 const NetworkManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
-  
+
   const [networkList, setNetworkList] = useState<Network[]>(mockNetworks);
   const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
   const [networkModalVisible, setNetworkModalVisible] = useState(false);

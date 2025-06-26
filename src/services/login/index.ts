@@ -72,7 +72,7 @@ class LoginService {
 
       // 验证用户名密码
       const user = mockUsers.find(
-        (u) => u.username === data.login_name && u.password === data.password
+        (u) => u.username === data.login_name && u.password === data.password,
       );
 
       if (!user) {
@@ -137,7 +137,6 @@ class LoginService {
    * 真实API登录实现
    */
   private async apiLogin(data: LoginData): Promise<AuthResponse> {
-
     const result = await api.post<LoginApiResponse>("/user/login", data, {
       skipAuth: true,
       showErrorMessage: false, // 不自动显示错误，由登录页面处理
@@ -150,9 +149,11 @@ class LoginService {
       let errorMessage = result.message || "登录失败，请检查用户名和密码";
 
       // 如果是常见的登录错误，提供更友好的提示
-      if (errorMessage.includes("用户名或密码") ||
-          errorMessage.includes("Unauthorized") ||
-          errorMessage.includes("401")) {
+      if (
+        errorMessage.includes("用户名或密码") ||
+        errorMessage.includes("Unauthorized") ||
+        errorMessage.includes("401")
+      ) {
         errorMessage = "用户名或密码不正确";
       }
 
@@ -204,7 +205,6 @@ class LoginService {
     // TODO: 根据实际的browser token格式添加验证逻辑
     // 当前暂时只检查token是否为非空字符串
     return token.trim().length > 0;
-
   }
 
   // ===== 自动刷新token区域 =====
@@ -245,7 +245,7 @@ class LoginService {
           skipAuth: true, // 跳过自动添加认证头，我们手动添加
           showErrorMessage: false, // 不自动显示错误，由调用方处理
           defaultErrorMessage: "Token刷新失败",
-        }
+        },
       );
 
       if (!result.success) {
@@ -279,12 +279,11 @@ class LoginService {
         message: "Token刷新成功",
         token: refreshData.access_token,
       };
-
     } catch (error) {
       console.error("Token刷新请求异常:", error);
 
       // 根据错误类型返回不同的错误信息
-      if (error && typeof error === 'object' && 'message' in error) {
+      if (error && typeof error === "object" && "message" in error) {
         return this.handleRefreshFailure(error.message as string);
       }
 
@@ -303,13 +302,20 @@ class LoginService {
 
     // 检查是否是认证相关的错误，需要清除本地数据
     const authErrorKeywords = [
-      "401", "403", "Unauthorized", "Forbidden",
-      "invalid", "expired", "已失效", "无效",
-      "DecodeError", "token"
+      "401",
+      "403",
+      "Unauthorized",
+      "Forbidden",
+      "invalid",
+      "expired",
+      "已失效",
+      "无效",
+      "DecodeError",
+      "token",
     ];
 
-    const isAuthError = authErrorKeywords.some(keyword =>
-      message.toLowerCase().includes(keyword.toLowerCase())
+    const isAuthError = authErrorKeywords.some((keyword) =>
+      message.toLowerCase().includes(keyword.toLowerCase()),
     );
 
     if (isAuthError) {
@@ -414,7 +420,7 @@ class LoginService {
           skipAuth: false,
           showErrorMessage: false, // 登出不显示错误
           defaultErrorMessage: "登出失败",
-        }
+        },
       );
     }
 
@@ -493,7 +499,7 @@ class LoginService {
    */
   static setUseMockData(useMock: boolean): void {
     console.warn(
-      `切换登录模式为: ${useMock ? "模拟" : "真实API"}，请确保在开发环境中使用`
+      `切换登录模式为: ${useMock ? "模拟" : "真实API"}，请确保在开发环境中使用`,
     );
   }
 
@@ -662,8 +668,12 @@ class LoginService {
 
     // 详细定时器信息
     console.log("=== 定时器详情 ===");
-    const timerExists = (refreshManager as unknown as { refreshTimer: NodeJS.Timeout | null }).refreshTimer !== null;
-    const timerId = (refreshManager as unknown as { refreshTimer: NodeJS.Timeout | null }).refreshTimer;
+    const timerExists =
+      (refreshManager as unknown as { refreshTimer: NodeJS.Timeout | null })
+        .refreshTimer !== null;
+    const timerId = (
+      refreshManager as unknown as { refreshTimer: NodeJS.Timeout | null }
+    ).refreshTimer;
     console.log("定时器对象存在:", timerExists);
     console.log("定时器ID:", timerId);
     console.log("定时器类型:", typeof timerId);
@@ -678,21 +688,23 @@ class LoginService {
     console.log("=== 手动测试 ===");
     console.log("即将进行手动刷新测试...");
 
-    this.refreshToken().then(result => {
-      console.log("手动刷新结果:", result);
-      if (result.success) {
-        console.log("✅ 刷新成功，新Token已保存");
-      } else {
-        console.warn("❌ 刷新失败:", result.message);
-        if (result.requireReauth) {
-          console.warn("🚨 需要重新认证");
+    this.refreshToken()
+      .then((result) => {
+        console.log("手动刷新结果:", result);
+        if (result.success) {
+          console.log("✅ 刷新成功，新Token已保存");
+        } else {
+          console.warn("❌ 刷新失败:", result.message);
+          if (result.requireReauth) {
+            console.warn("🚨 需要重新认证");
+          }
         }
-      }
-      console.groupEnd();
-    }).catch(error => {
-      console.error("手动刷新异常:", error);
-      console.groupEnd();
-    });
+        console.groupEnd();
+      })
+      .catch((error) => {
+        console.error("手动刷新异常:", error);
+        console.groupEnd();
+      });
   }
 
   /**
@@ -731,7 +743,7 @@ class LoginService {
       {
         defaultSuccessMessage: "2FA密钥生成成功",
         defaultErrorMessage: "2FA密钥生成失败，请稍后重试",
-      }
+      },
     );
 
     return {
@@ -745,7 +757,7 @@ class LoginService {
    * 验证2FA代码（可选，因为没有验证接口）
    */
   async verifyTotpCode(
-    request: TotpVerifyRequest
+    request: TotpVerifyRequest,
   ): Promise<TotpVerifyResponse> {
     if (USE_MOCK_DATA) {
       // Mock实现 - 简单验证
@@ -772,7 +784,7 @@ class LoginService {
    * 首次登录修改密码
    */
   async changePasswordFirstTime(
-    request: FirstTimePasswordChangeRequest
+    request: FirstTimePasswordChangeRequest,
   ): Promise<FirstTimePasswordChangeResponse> {
     if (USE_MOCK_DATA) {
       // Mock实现
@@ -811,10 +823,6 @@ class LoginService {
       this.updateUser({ isFirstLogin: isFirstTime });
     }
   }
-
-
-
-
 }
 
 // ===== Token自动刷新管理器 =====
@@ -843,7 +851,7 @@ class TokenRefreshManager {
    * 设置页面可见性监听器
    */
   private setupVisibilityListener(): void {
-    if (typeof document === 'undefined') return;
+    if (typeof document === "undefined") return;
 
     this.visibilityChangeHandler = () => {
       if (!document.hidden && this.loginServiceInstance?.isAuthenticated()) {
@@ -855,15 +863,18 @@ class TokenRefreshManager {
       }
     };
 
-    document.addEventListener('visibilitychange', this.visibilityChangeHandler);
+    document.addEventListener("visibilitychange", this.visibilityChangeHandler);
   }
 
   /**
    * 清理页面可见性监听器
    */
   private cleanupVisibilityListener(): void {
-    if (this.visibilityChangeHandler && typeof document !== 'undefined') {
-      document.removeEventListener('visibilitychange', this.visibilityChangeHandler);
+    if (this.visibilityChangeHandler && typeof document !== "undefined") {
+      document.removeEventListener(
+        "visibilitychange",
+        this.visibilityChangeHandler,
+      );
       this.visibilityChangeHandler = null;
     }
   }
@@ -887,7 +898,7 @@ class TokenRefreshManager {
     // 修复：统一使用30秒间隔，符合用户需求
     const interval = 30 * 1000; // 30秒
 
-    console.log(`🚀 启动Token自动刷新，间隔: ${interval/1000}秒`);
+    console.log(`🚀 启动Token自动刷新，间隔: ${interval / 1000}秒`);
 
     // 设置定时器 - 等待指定时间后开始第一次自动刷新
     this.refreshTimer = setInterval(() => {
@@ -943,7 +954,10 @@ class TokenRefreshManager {
       } else {
         // 刷新失败，增加重试计数
         this.retryCount++;
-        console.warn(`⚠️ Token刷新失败 (${this.retryCount}/${this.MAX_RETRY}):`, result.message);
+        console.warn(
+          `⚠️ Token刷新失败 (${this.retryCount}/${this.MAX_RETRY}):`,
+          result.message,
+        );
 
         // 检查是否需要重新认证
         if (result.requireReauth) {
@@ -959,11 +973,16 @@ class TokenRefreshManager {
           return;
         }
 
-        console.log(`🔄 将在下次定时刷新时重试 (${this.retryCount}/${this.MAX_RETRY})`);
+        console.log(
+          `🔄 将在下次定时刷新时重试 (${this.retryCount}/${this.MAX_RETRY})`,
+        );
       }
     } catch (error) {
       this.retryCount++;
-      console.error(`❌ Token刷新异常 (${this.retryCount}/${this.MAX_RETRY}):`, error);
+      console.error(
+        `❌ Token刷新异常 (${this.retryCount}/${this.MAX_RETRY}):`,
+        error,
+      );
 
       // 检查是否达到最大重试次数
       if (this.retryCount >= this.MAX_RETRY) {
@@ -972,7 +991,9 @@ class TokenRefreshManager {
         return;
       }
 
-      console.log(`🔄 网络异常，将在下次刷新时重试 (${this.retryCount}/${this.MAX_RETRY})`);
+      console.log(
+        `🔄 网络异常，将在下次刷新时重试 (${this.retryCount}/${this.MAX_RETRY})`,
+      );
     } finally {
       this.isRefreshing = false;
     }

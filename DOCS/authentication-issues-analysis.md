@@ -9,6 +9,7 @@
 ### 📋 完整逻辑流程
 
 #### 1. 集群状态检查流程 (`src/services/cluster/index.ts`)
+
 ```typescript
 async checkClusterStatus(): Promise<ClusterStatusResponse> {
   // 1. 检查缓存（5秒缓存）
@@ -25,12 +26,13 @@ async checkClusterStatus(): Promise<ClusterStatusResponse> {
 ```
 
 #### 2. 应用启动检查流程 (`src/components/AppBootstrap/index.tsx`)
+
 ```typescript
 const checkApplicationState = async () => {
   try {
     // 检查集群状态
     const status = await clusterInitService.checkClusterStatus();
-    
+
     if (!status.is_ready) {
       setAppState("cluster-init"); // 跳转到集群初始化
       return;
@@ -59,14 +61,17 @@ class TokenRefreshManager {
   private async performRefresh(): Promise<void> {
     try {
       const result = await this.loginServiceInstance.refreshToken();
-      
+
       if (result.success) {
         console.log("✅ Token自动刷新成功");
       } else {
         console.log("❌ Token自动刷新失败:", result.message);
-        
+
         // ⚠️ 关键：这里会触发强制登出
-        if (result.message?.includes("已失效") || result.message?.includes("无效")) {
+        if (
+          result.message?.includes("已失效") ||
+          result.message?.includes("无效")
+        ) {
           console.log("🚨 Token已失效，准备强制退出登录");
           await this.handleAuthFailure(); // 强制登出
         }
@@ -81,17 +86,16 @@ class TokenRefreshManager {
     try {
       // 1. 停止自动刷新
       this.stopAutoRefresh();
-      
+
       // 2. 清除认证数据
       if (this.loginServiceInstance) {
         await this.loginServiceInstance.clearAuthData();
       }
-      
+
       // 3. 强制跳转到登录页
       setTimeout(() => {
         window.location.href = "/login"; // ⚠️ 强制跳转
       }, 1000);
-      
     } catch (error) {
       console.error("处理认证失败时发生错误:", error);
     }
@@ -110,25 +114,26 @@ class TokenRefreshManager {
 ### 🛠️ 建议修复方案
 
 #### 1. 增强错误处理和日志记录
+
 ```typescript
 private async performRefresh(): Promise<void> {
   try {
     console.log("🔄 开始自动刷新Token...");
     const result = await this.loginServiceInstance.refreshToken();
-    
+
     if (result.success) {
       console.log("✅ Token自动刷新成功");
     } else {
       console.warn("❌ Token自动刷新失败:", result.message);
       console.warn("❌ 失败原因详情:", result);
-      
+
       // 更精确的失败条件判断
-      const shouldLogout = result.message?.includes("已失效") || 
+      const shouldLogout = result.message?.includes("已失效") ||
                           result.message?.includes("无效") ||
                           result.message?.includes("DecodeError") ||
                           result.message?.includes("401") ||
                           result.message?.includes("403");
-      
+
       if (shouldLogout) {
         console.log("🚨 Token已失效，准备强制退出登录");
         await this.handleAuthFailure(result.message);
@@ -145,6 +150,7 @@ private async performRefresh(): Promise<void> {
 ```
 
 #### 2. 添加重试机制
+
 ```typescript
 private retryCount = 0;
 private readonly MAX_RETRY = 3;
@@ -152,14 +158,14 @@ private readonly MAX_RETRY = 3;
 private async performRefresh(): Promise<void> {
   try {
     const result = await this.loginServiceInstance.refreshToken();
-    
+
     if (result.success) {
       this.retryCount = 0; // 重置重试计数
       console.log("✅ Token自动刷新成功");
     } else {
       this.retryCount++;
       console.warn(`❌ Token刷新失败 (${this.retryCount}/${this.MAX_RETRY}):`, result.message);
-      
+
       if (this.retryCount >= this.MAX_RETRY) {
         console.log("🚨 达到最大重试次数，强制退出登录");
         await this.handleAuthFailure(result.message);
@@ -168,7 +174,7 @@ private async performRefresh(): Promise<void> {
   } catch (error) {
     this.retryCount++;
     console.error(`❌ Token刷新异常 (${this.retryCount}/${this.MAX_RETRY}):`, error);
-    
+
     if (this.retryCount >= this.MAX_RETRY) {
       console.log("🚨 网络异常达到最大重试次数，强制退出登录");
       await this.handleAuthFailure("网络连接异常");
@@ -188,6 +194,7 @@ private async performRefresh(): Promise<void> {
 ### 📋 标志修改的完整流程
 
 #### 1. 登录时设置标志 (`src/services/login/index.ts`)
+
 ```typescript
 // API登录时从后端响应设置
 const userInfo: UserInfo = {
@@ -200,15 +207,19 @@ const userInfo: UserInfo = {
 ```
 
 #### 2. 密码修改完成后更新标志 (`src/pages/FirstTimeLogin/PasswordChange.tsx`)
+
 ```typescript
-const handleSubmit = async (values: { new_password: string; confirm_password: string }) => {
+const handleSubmit = async (values: {
+  new_password: string;
+  confirm_password: string;
+}) => {
   try {
     const response = await loginService.changePasswordFirstTime({
-      new_password: values.new_password
+      new_password: values.new_password,
     });
-    
+
     if (response.success) {
-      message.success('密码修改成功！');
+      message.success("密码修改成功！");
       // ⚠️ 关键：这里主动更新了首次登录状态
       loginService.updateFirstTimeLoginStatus(false);
       setTimeout(() => {
@@ -222,6 +233,7 @@ const handleSubmit = async (values: { new_password: string; confirm_password: st
 ```
 
 #### 3. 更新用户状态的实现 (`src/services/login/index.ts`)
+
 ```typescript
 /**
  * 更新首次登录状态
@@ -251,6 +263,7 @@ updateUser(updates: Partial<UserInfo>): boolean {
 ### 🚨 潜在的问题
 
 #### 1. Token刷新时可能覆盖用户状态
+
 ```typescript
 // Token刷新时的用户信息更新
 if (refreshResponse.permission) {
@@ -269,14 +282,15 @@ if (refreshResponse.permission) {
 ```
 
 #### 2. 首次登录检查逻辑
+
 ```typescript
 // 首次登录流程检查 (`src/pages/FirstTimeLogin/index.tsx`)
 useEffect(() => {
   const checkFirstTimeLogin = () => {
     // 检查是否为首次登录
     if (!loginService.isFirstTimeLogin()) {
-      message.info('您已完成首次登录设置');
-      navigate('/'); // ⚠️ 如果标志为false，会跳转到主页
+      message.info("您已完成首次登录设置");
+      navigate("/"); // ⚠️ 如果标志为false，会跳转到主页
       return;
     }
     setLoading(false);
@@ -289,35 +303,40 @@ useEffect(() => {
 ### 🛠️ 建议修复方案
 
 #### 1. 后端同步更新
+
 密码修改成功后，应该调用后端API同步更新用户的首次登录状态：
 
 ```typescript
-const handleSubmit = async (values: { new_password: string; confirm_password: string }) => {
+const handleSubmit = async (values: {
+  new_password: string;
+  confirm_password: string;
+}) => {
   try {
     const response = await loginService.changePasswordFirstTime({
-      new_password: values.new_password
+      new_password: values.new_password,
     });
-    
+
     if (response.success) {
-      message.success('密码修改成功！');
-      
+      message.success("密码修改成功！");
+
       // ✅ 更新本地首次登录状态（服务器接口已移除）
-      console.log('🔄 正在更新首次登录状态...');
+      console.log("🔄 正在更新首次登录状态...");
       loginService.updateFirstTimeLoginStatus(false);
-      console.log('✅ 首次登录状态更新完成');
-      
+      console.log("✅ 首次登录状态更新完成");
+
       setTimeout(() => {
         onComplete();
       }, 1500);
     }
   } catch (error) {
-    console.error('Failed to change password:', error);
-    message.error('密码修改失败，请重试');
+    console.error("Failed to change password:", error);
+    message.error("密码修改失败，请重试");
   }
 };
 ```
 
 #### 2. 本地状态管理（已移除服务器同步）
+
 ```typescript
 // 注意：updateFirstTimeLoginStatusOnServer 方法已移除
 // 现在只进行本地状态更新，因为后端没有提供相应接口
@@ -330,13 +349,14 @@ updateFirstTimeLoginStatus(isFirstTime: boolean): void {
 ```
 
 #### 3. 增强状态一致性检查
+
 ```typescript
 // 在首次登录流程中添加状态验证
 const checkFirstTimeLogin = async () => {
   // 检查用户是否已登录
   if (!loginService.isAuthenticated()) {
-    message.error('请先登录');
-    navigate('/login');
+    message.error("请先登录");
+    navigate("/login");
     return;
   }
 
@@ -345,8 +365,8 @@ const checkFirstTimeLogin = async () => {
 
   // 检查本地首次登录状态
   if (!loginService.isFirstTimeLogin()) {
-    message.info('您已完成首次登录设置');
-    navigate('/');
+    message.info("您已完成首次登录设置");
+    navigate("/");
     return;
   }
 

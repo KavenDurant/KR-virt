@@ -6,17 +6,11 @@
 
 import { it, expect, beforeEach, afterEach, vi } from "vitest";
 import { LoginService } from "@/services/login";
-import type {
-  LoginData,
-  UserInfo,
-  AuthResponse,
-} from "@/services/login/types";
+import type { LoginData, UserInfo, AuthResponse } from "@/services/login/types";
 import { api } from "@/utils/apiHelper";
 import { CookieUtils } from "@/utils/cookies";
 import { EnvConfig } from "@/config/env";
-import {
-  mockLoginResponse,
-} from "../../fixtures/api/auth";
+import { mockLoginResponse } from "../../fixtures/api/auth";
 
 // Mock依赖
 vi.mock("@/utils/apiHelper");
@@ -38,10 +32,10 @@ describe("LoginService", () => {
     loginServiceInstance = new LoginService();
 
     // 正确Mock EnvConfig.ENABLE_MOCK 属性
-    Object.defineProperty(mockEnvConfig, 'ENABLE_MOCK', {
+    Object.defineProperty(mockEnvConfig, "ENABLE_MOCK", {
       value: false,
       writable: true,
-      configurable: true
+      configurable: true,
     });
 
     // 设置默认的Cookie工具Mock
@@ -69,7 +63,11 @@ describe("LoginService", () => {
     it("应该在Mock模式下成功登录", async () => {
       // 由于USE_MOCK_DATA是编译时常量，我们直接测试mockLogin方法
       // 通过访问私有方法进行测试
-      const mockLogin = (loginServiceInstance as unknown as { mockLogin: (data: LoginData) => Promise<AuthResponse> }).mockLogin.bind(loginServiceInstance);
+      const mockLogin = (
+        loginServiceInstance as unknown as {
+          mockLogin: (data: LoginData) => Promise<AuthResponse>;
+        }
+      ).mockLogin.bind(loginServiceInstance);
 
       const loginData: LoginData = {
         login_name: "admin",
@@ -92,7 +90,11 @@ describe("LoginService", () => {
     });
 
     it("应该在Mock模式下处理错误的用户名密码", async () => {
-      const mockLogin = (loginServiceInstance as unknown as { mockLogin: (data: LoginData) => Promise<AuthResponse> }).mockLogin.bind(loginServiceInstance);
+      const mockLogin = (
+        loginServiceInstance as unknown as {
+          mockLogin: (data: LoginData) => Promise<AuthResponse>;
+        }
+      ).mockLogin.bind(loginServiceInstance);
 
       const loginData: LoginData = {
         login_name: "wrong_user",
@@ -112,7 +114,11 @@ describe("LoginService", () => {
     });
 
     it("应该在Mock模式下验证两步验证码", async () => {
-      const mockLogin = (loginServiceInstance as unknown as { mockLogin: (data: LoginData) => Promise<AuthResponse> }).mockLogin.bind(loginServiceInstance);
+      const mockLogin = (
+        loginServiceInstance as unknown as {
+          mockLogin: (data: LoginData) => Promise<AuthResponse>;
+        }
+      ).mockLogin.bind(loginServiceInstance);
 
       const loginData: LoginData = {
         login_name: "admin",
@@ -127,10 +133,10 @@ describe("LoginService", () => {
     });
 
     it("应该在API模式下成功登录", async () => {
-      Object.defineProperty(mockEnvConfig, 'ENABLE_MOCK', {
+      Object.defineProperty(mockEnvConfig, "ENABLE_MOCK", {
         value: false,
         writable: true,
-        configurable: true
+        configurable: true,
       });
 
       // Mock API响应
@@ -168,15 +174,17 @@ describe("LoginService", () => {
       });
 
       // 验证Cookie设置
-      expect(mockCookieUtils.setToken).toHaveBeenCalledWith(mockLoginResponse.access_token);
+      expect(mockCookieUtils.setToken).toHaveBeenCalledWith(
+        mockLoginResponse.access_token,
+      );
       expect(mockCookieUtils.setUser).toHaveBeenCalled();
     });
 
     it("应该在API模式下处理登录失败", async () => {
-      Object.defineProperty(mockEnvConfig, 'ENABLE_MOCK', {
+      Object.defineProperty(mockEnvConfig, "ENABLE_MOCK", {
         value: false,
         writable: true,
-        configurable: true
+        configurable: true,
       });
 
       // Mock API失败响应
@@ -205,10 +213,10 @@ describe("LoginService", () => {
     });
 
     it("应该处理API响应格式错误", async () => {
-      Object.defineProperty(mockEnvConfig, 'ENABLE_MOCK', {
+      Object.defineProperty(mockEnvConfig, "ENABLE_MOCK", {
         value: false,
         writable: true,
-        configurable: true
+        configurable: true,
       });
 
       // Mock API响应但缺少access_token
@@ -268,14 +276,18 @@ describe("LoginService", () => {
       expect(result.token).toBe("new_token");
 
       // 验证API调用
-      expect(mockApi.get).toHaveBeenCalledWith("/user/renew_access_token", {}, {
-        headers: {
-          Authorization: "Bearer current_token",
+      expect(mockApi.get).toHaveBeenCalledWith(
+        "/user/renew_access_token",
+        {},
+        {
+          headers: {
+            Authorization: "Bearer current_token",
+          },
+          skipAuth: true,
+          showErrorMessage: false,
+          defaultErrorMessage: "Token刷新失败",
         },
-        skipAuth: true,
-        showErrorMessage: false,
-        defaultErrorMessage: "Token刷新失败",
-      });
+      );
 
       // 验证Token更新
       expect(mockCookieUtils.setToken).toHaveBeenCalledWith("new_token");
@@ -407,11 +419,15 @@ describe("LoginService", () => {
       expect(result.message).toBe("登出成功");
 
       // 验证API调用
-      expect(mockApi.post).toHaveBeenCalledWith("/user/logout", {}, {
-        skipAuth: false,
-        showErrorMessage: false,
-        defaultErrorMessage: "登出失败",
-      });
+      expect(mockApi.post).toHaveBeenCalledWith(
+        "/user/logout",
+        {},
+        {
+          skipAuth: false,
+          showErrorMessage: false,
+          defaultErrorMessage: "登出失败",
+        },
+      );
 
       // 验证清除本地数据
       expect(mockCookieUtils.clearAuth).toHaveBeenCalled();
@@ -439,7 +455,7 @@ describe("LoginService", () => {
       // Mock API失败 - 使用Promise.resolve而不是reject，因为logout方法会捕获异常
       mockApi.post.mockResolvedValue({
         success: false,
-        message: "Network error"
+        message: "Network error",
       });
 
       const result = await loginServiceInstance.logout();
@@ -455,10 +471,14 @@ describe("LoginService", () => {
   // ===== 边界情况和错误处理测试 =====
   describe("错误处理", () => {
     it("应该处理Mock登录时的异常", async () => {
-      const mockLogin = (loginServiceInstance as unknown as { mockLogin: (data: LoginData) => Promise<AuthResponse> }).mockLogin.bind(loginServiceInstance);
+      const mockLogin = (
+        loginServiceInstance as unknown as {
+          mockLogin: (data: LoginData) => Promise<AuthResponse>;
+        }
+      ).mockLogin.bind(loginServiceInstance);
 
       // Mock setTimeout抛出异常
-      vi.spyOn(global, 'setTimeout').mockImplementation(() => {
+      vi.spyOn(global, "setTimeout").mockImplementation(() => {
         throw new Error("Timer error");
       });
 
@@ -474,16 +494,16 @@ describe("LoginService", () => {
     });
 
     it("应该处理API登录时的网络异常", async () => {
-      Object.defineProperty(mockEnvConfig, 'ENABLE_MOCK', {
+      Object.defineProperty(mockEnvConfig, "ENABLE_MOCK", {
         value: false,
         writable: true,
-        configurable: true
+        configurable: true,
       });
 
       // Mock API返回失败响应而不是抛出异常
       mockApi.post.mockResolvedValue({
         success: false,
-        message: "Network error"
+        message: "Network error",
       });
 
       const loginData: LoginData = {
@@ -513,10 +533,10 @@ describe("LoginService", () => {
   // ===== 集成测试 =====
   describe("集成测试", () => {
     it("应该完成完整的登录流程", async () => {
-      Object.defineProperty(mockEnvConfig, 'ENABLE_MOCK', {
+      Object.defineProperty(mockEnvConfig, "ENABLE_MOCK", {
         value: false,
         writable: true,
-        configurable: true
+        configurable: true,
       });
 
       // Mock登录API响应
@@ -566,10 +586,10 @@ describe("LoginService", () => {
     });
 
     it("应该处理首次登录用户", async () => {
-      Object.defineProperty(mockEnvConfig, 'ENABLE_MOCK', {
+      Object.defineProperty(mockEnvConfig, "ENABLE_MOCK", {
         value: false,
         writable: true,
-        configurable: true
+        configurable: true,
       });
 
       // Mock首次登录API响应

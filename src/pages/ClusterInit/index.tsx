@@ -24,7 +24,10 @@ interface ClusterInitPageProps {
   initialStatus?: ClusterStatusResponse; // 从AppBootstrap传入的初始状态
 }
 
-const ClusterInitPage: React.FC<ClusterInitPageProps> = ({ onComplete, initialStatus }) => {
+const ClusterInitPage: React.FC<ClusterInitPageProps> = ({
+  onComplete,
+  initialStatus,
+}) => {
   const { message } = App.useApp();
   const [currentStep, setCurrentStep] = useState<ClusterInitStep>("checking");
   const [clusterStatus, setClusterStatus] =
@@ -42,7 +45,7 @@ const ClusterInitPage: React.FC<ClusterInitPageProps> = ({ onComplete, initialSt
     if (initialStatus) {
       console.log("使用AppBootstrap传入的初始状态:", initialStatus);
       setClusterStatus(initialStatus);
-      
+
       if (initialStatus.is_ready) {
         onComplete();
       } else if (initialStatus.is_creating) {
@@ -59,7 +62,7 @@ const ClusterInitPage: React.FC<ClusterInitPageProps> = ({ onComplete, initialSt
 
     // 只有在没有初始状态时才调用API
     if (hasCheckedStatus.current) return;
-    
+
     const checkStatus = async () => {
       try {
         hasCheckedStatus.current = true;
@@ -104,7 +107,7 @@ const ClusterInitPage: React.FC<ClusterInitPageProps> = ({ onComplete, initialSt
   const handleConfigSubmit = async (
     type: ClusterConfigType,
     config: CreateClusterConfig | JoinClusterConfig,
-    additionalData?: { hostname?: string }
+    additionalData?: { hostname?: string },
   ) => {
     try {
       setLoading(true);
@@ -116,11 +119,11 @@ const ClusterInitPage: React.FC<ClusterInitPageProps> = ({ onComplete, initialSt
       if (type === "create") {
         result = await clusterInitService.createCluster(
           config as CreateClusterConfig,
-          additionalData?.hostname || ""
+          additionalData?.hostname || "",
         );
       } else {
         result = await clusterInitService.joinCluster(
-          config as JoinClusterConfig
+          config as JoinClusterConfig,
         );
       }
 

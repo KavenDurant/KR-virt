@@ -45,8 +45,8 @@ const MyComponent = ({ serverTime }: { serverTime: string }) => {
 ### 自定义格式
 
 ```typescript
-const { localTime } = useTimeZone('2025-06-25T15:54:29+00:00', {
-  format: 'MM/DD/YYYY HH:mm'
+const { localTime } = useTimeZone("2025-06-25T15:54:29+00:00", {
+  format: "MM/DD/YYYY HH:mm",
 });
 // 输出: 06/25/2025 23:54 (假设用户在 UTC+8 时区)
 ```
@@ -54,10 +54,7 @@ const { localTime } = useTimeZone('2025-06-25T15:54:29+00:00', {
 ### 批量处理
 
 ```typescript
-const timeStrings = [
-  '2025-06-25T15:54:29+00:00',
-  '2025-06-26T10:30:00+08:00'
-];
+const timeStrings = ["2025-06-25T15:54:29+00:00", "2025-06-26T10:30:00+08:00"];
 const results = useTimeZoneBatch(timeStrings);
 ```
 
@@ -115,4 +112,4 @@ npm test src/hooks/__tests__/useTimeZone.test.ts
 
 ---
 
-*此 Hook 专为 KR-virt 项目设计，确保了时间显示的一致性和用户体验。*
+_此 Hook 专为 KR-virt 项目设计，确保了时间显示的一致性和用户体验。_

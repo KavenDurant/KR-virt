@@ -107,7 +107,6 @@ const ClusterInitPage: React.FC<ClusterInitPageProps> = ({
   const handleConfigSubmit = async (
     type: ClusterConfigType,
     config: CreateClusterConfig | JoinClusterConfig,
-    additionalData?: { hostname?: string },
   ) => {
     try {
       setLoading(true);
@@ -119,7 +118,6 @@ const ClusterInitPage: React.FC<ClusterInitPageProps> = ({
       if (type === "create") {
         result = await clusterInitService.createCluster(
           config as CreateClusterConfig,
-          additionalData?.hostname || "",
         );
       } else {
         result = await clusterInitService.joinCluster(

@@ -31,7 +31,6 @@ const ClusterProcessingPage: React.FC<ClusterProcessingPageProps> = ({
 }) => {
   const { themeConfig } = useTheme();
   const [progress, setProgress] = useState(0);
-  const [currentStep, setCurrentStep] = useState("");
   const [isCompleted, setIsCompleted] = useState(false);
   const [hasError, setHasError] = useState(false);
 
@@ -58,15 +57,13 @@ const ClusterProcessingPage: React.FC<ClusterProcessingPageProps> = ({
           { step: "加入集群完成", progress: 100 },
         ];
 
-    // 立即设置第一步
-    setCurrentStep(steps[0].step);
+    // 设置初始进度
     setProgress(5); // 设置一个小的初始进度值
 
     let currentIndex = 0;
     const timer = setInterval(() => {
       if (currentIndex < steps.length) {
         const current = steps[currentIndex];
-        setCurrentStep(current.step);
         setProgress(current.progress);
 
         if (current.progress === 100) {
@@ -86,7 +83,6 @@ const ClusterProcessingPage: React.FC<ClusterProcessingPageProps> = ({
     const errorTimer = setTimeout(() => {
       if (Math.random() < 0.1) {
         setHasError(true);
-        setCurrentStep("配置过程中出现错误");
         clearInterval(timer);
       }
     }, 8000);
@@ -261,14 +257,6 @@ const ClusterProcessingPage: React.FC<ClusterProcessingPageProps> = ({
             showInfo={true}
             format={(percent) => `${percent}%`}
           />
-          <div style={{ textAlign: "center", marginTop: "12px" }}>
-            <Text
-              type="secondary"
-              style={{ fontSize: "14px", fontWeight: 500 }}
-            >
-              {currentStep}
-            </Text>
-          </div>
         </div>
 
         {/* 配置信息 */}

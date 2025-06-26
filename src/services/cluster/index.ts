@@ -57,7 +57,7 @@ class ClusterInitService {
           useMock: true,
           mockData: { hostname: "cluster-master-node" },
           defaultSuccessMessage: "获取主机名成功",
-        },
+        }
       );
     }
 
@@ -68,7 +68,7 @@ class ClusterInitService {
         skipAuth: true,
         defaultSuccessMessage: "获取主机名成功",
         defaultErrorMessage: "获取主机名失败，请稍后重试",
-      },
+      }
     );
   }
 
@@ -88,7 +88,7 @@ class ClusterInitService {
             ip_addresses: ["192.168.1.100", "192.168.1.101", "10.0.0.100"],
           },
           defaultSuccessMessage: "获取IP地址列表成功",
-        },
+        }
       );
     }
 
@@ -99,7 +99,7 @@ class ClusterInitService {
         skipAuth: true,
         defaultSuccessMessage: "获取IP地址列表成功",
         defaultErrorMessage: "获取IP地址列表失败，请稍后重试",
-      },
+      }
     );
   }
 
@@ -130,7 +130,7 @@ class ClusterInitService {
         {
           skipAuth: true,
           showErrorMessage: false, // 检查状态不显示错误
-        },
+        }
       );
 
       if (result.success && result.data) {
@@ -150,7 +150,7 @@ class ClusterInitService {
    * 验证一次性密码
    */
   async verifyOneTimePassword(
-    password: string,
+    password: string
   ): Promise<StandardResponse<{ token: string }>> {
     if (USE_MOCK_DATA) {
       const mockData =
@@ -165,7 +165,7 @@ class ClusterInitService {
           mockData,
           defaultSuccessMessage:
             password === "testCluster" ? "验证成功" : "一次性密码错误",
-        },
+        }
       ) as Promise<StandardResponse<{ token: string }>>;
     }
 
@@ -178,7 +178,7 @@ class ClusterInitService {
         skipAuth: true,
         defaultSuccessMessage: "验证成功",
         defaultErrorMessage: "验证失败，请稍后重试",
-      },
+      }
     );
 
     // 如果验证成功，保存token
@@ -193,8 +193,7 @@ class ClusterInitService {
    * 创建集群
    */
   async createCluster(
-    config: CreateClusterConfig,
-    hostname: string,
+    config: CreateClusterConfig
   ): Promise<StandardResponse<CreateClusterResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/cluster/create", config, {
@@ -206,7 +205,7 @@ class ClusterInitService {
 
     const requestPayload: CreateClusterRequest = {
       ip: config.selectedIp,
-      hostname: hostname,
+      hostname: config.hostname,
       disposable_secret_key: "moke_disposable_secret_key", // 模拟一次性密钥
     };
 
@@ -221,7 +220,7 @@ class ClusterInitService {
    * 加入集群
    */
   async joinCluster(
-    config: JoinClusterConfig,
+    config: JoinClusterConfig
   ): Promise<StandardResponse<{ message: string }>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/cluster/join", config, {
@@ -266,7 +265,7 @@ class ClusterInitService {
           useMock: true,
           mockData: { message: "集群解散成功" },
           defaultSuccessMessage: "集群解散成功",
-        },
+        }
       ) as Promise<StandardResponse<DissolveClusterResponse>>;
     }
 
@@ -277,7 +276,7 @@ class ClusterInitService {
         skipAuth: false,
         defaultSuccessMessage: "集群解散成功",
         defaultErrorMessage: "解散集群失败，请稍后重试",
-      },
+      }
     );
   }
 
@@ -285,7 +284,7 @@ class ClusterInitService {
    * 添加节点到集群
    */
   async addNode(
-    nodeData: AddNodeRequest,
+    nodeData: AddNodeRequest
   ): Promise<StandardResponse<AddNodeResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/cluster/approve", nodeData, {
@@ -310,7 +309,7 @@ class ClusterInitService {
    * 移除节点从集群
    */
   async removeNode(
-    nodeData: RemoveNodeRequest,
+    nodeData: RemoveNodeRequest
   ): Promise<StandardResponse<RemoveNodeResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/cluster/remove", nodeData, {
@@ -341,7 +340,7 @@ class ClusterInitService {
           useMock: true,
           mockData: this.getMockClusterNodes(),
           defaultSuccessMessage: "获取集群节点列表成功",
-        },
+        }
       );
     }
 
@@ -352,7 +351,7 @@ class ClusterInitService {
         skipAuth: false,
         defaultSuccessMessage: "获取集群节点列表成功",
         defaultErrorMessage: "获取集群节点列表失败，请检查网络连接",
-      },
+      }
     );
   }
 
@@ -368,7 +367,7 @@ class ClusterInitService {
           useMock: true,
           mockData: this.getMockClusterSummary(),
           defaultSuccessMessage: "获取集群概览成功",
-        },
+        }
       );
     }
 
@@ -379,7 +378,7 @@ class ClusterInitService {
         skipAuth: false,
         defaultSuccessMessage: "获取集群概览成功",
         defaultErrorMessage: "获取集群概览失败，请检查网络连接",
-      },
+      }
     );
   }
 
@@ -397,7 +396,7 @@ class ClusterInitService {
           useMock: true,
           mockData: this.getMockClusterResources(),
           defaultSuccessMessage: "获取集群资源成功",
-        },
+        }
       );
     }
 
@@ -408,7 +407,7 @@ class ClusterInitService {
         skipAuth: false,
         defaultSuccessMessage: "获取集群资源成功",
         defaultErrorMessage: "获取集群资源失败",
-      },
+      }
     );
   }
 
@@ -424,7 +423,7 @@ class ClusterInitService {
           useMock: true,
           mockData: this.getMockClusterTree(),
           defaultSuccessMessage: "获取集群树成功",
-        },
+        }
       );
     }
 
@@ -435,7 +434,7 @@ class ClusterInitService {
         skipAuth: false,
         defaultSuccessMessage: "获取集群树成功",
         defaultErrorMessage: "获取集群树失败，请检查网络连接",
-      },
+      }
     );
   }
 
@@ -443,7 +442,7 @@ class ClusterInitService {
    * 获取节点摘要信息
    */
   async getNodeSummary(
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<NodeSummaryResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post(
@@ -453,7 +452,7 @@ class ClusterInitService {
           useMock: true,
           mockData: this.getMockNodeSummary(hostname),
           defaultSuccessMessage: "获取节点摘要成功",
-        },
+        }
       );
     }
 
@@ -464,7 +463,7 @@ class ClusterInitService {
         skipAuth: false,
         defaultSuccessMessage: "获取节点摘要成功",
         defaultErrorMessage: "获取节点摘要失败，请检查网络连接",
-      },
+      }
     );
   }
 
@@ -472,7 +471,7 @@ class ClusterInitService {
    * 获取物理机PCI设备列表
    */
   async getNodePCIDevices(
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<NodePCIResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post(
@@ -482,7 +481,7 @@ class ClusterInitService {
           useMock: true,
           mockData: this.getMockNodePCIDevices(hostname),
           defaultSuccessMessage: "获取PCI设备列表成功",
-        },
+        }
       );
     }
 
@@ -493,7 +492,7 @@ class ClusterInitService {
         skipAuth: false,
         defaultSuccessMessage: "获取PCI设备列表成功",
         defaultErrorMessage: "获取PCI设备列表失败，请检查网络连接",
-      },
+      }
     );
   }
 
@@ -501,7 +500,7 @@ class ClusterInitService {
    * 获取物理机硬盘设备列表
    */
   async getNodeDiskDevices(
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<NodeDisksResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post(
@@ -511,7 +510,7 @@ class ClusterInitService {
           useMock: true,
           mockData: this.getMockNodeDiskDevices(hostname),
           defaultSuccessMessage: "获取硬盘设备列表成功",
-        },
+        }
       );
     }
 
@@ -522,7 +521,7 @@ class ClusterInitService {
         skipAuth: false,
         defaultSuccessMessage: "获取硬盘设备列表成功",
         defaultErrorMessage: "获取硬盘设备列表失败，请检查网络连接",
-      },
+      }
     );
   }
 
@@ -547,7 +546,7 @@ class ClusterInitService {
    * 注意：此接口暂不可用，请使用getNodeSummary获取节点信息
    */
   async checkNodeStatus(
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<NodeStatusResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.get(
@@ -557,7 +556,7 @@ class ClusterInitService {
           useMock: true,
           mockData: this.getMockNodeStatus(hostname),
           defaultSuccessMessage: "获取节点状态成功",
-        },
+        }
       );
     }
 
@@ -573,7 +572,7 @@ class ClusterInitService {
    * 关机节点
    */
   async stopNode(
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<NodeOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post(
@@ -586,7 +585,7 @@ class ClusterInitService {
             success: true,
           },
           defaultSuccessMessage: "节点关机指令已发送",
-        },
+        }
       );
     }
 
@@ -597,7 +596,7 @@ class ClusterInitService {
         skipAuth: false,
         defaultSuccessMessage: "节点关机指令已发送",
         defaultErrorMessage: "节点关机失败，请稍后重试",
-      },
+      }
     );
   }
 
@@ -605,7 +604,7 @@ class ClusterInitService {
    * 重启节点
    */
   async rebootNode(
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<NodeOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post(
@@ -618,7 +617,7 @@ class ClusterInitService {
             success: true,
           },
           defaultSuccessMessage: "节点重启指令已发送",
-        },
+        }
       );
     }
 
@@ -629,7 +628,7 @@ class ClusterInitService {
         skipAuth: false,
         defaultSuccessMessage: "节点重启指令已发送",
         defaultErrorMessage: "节点重启失败，请稍后重试",
-      },
+      }
     );
   }
 
@@ -637,7 +636,7 @@ class ClusterInitService {
    * 进入维护模式
    */
   async enterMaintenanceMode(
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<NodeOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post(
@@ -650,7 +649,7 @@ class ClusterInitService {
             success: true,
           },
           defaultSuccessMessage: "节点已进入维护模式",
-        },
+        }
       );
     }
 
@@ -661,7 +660,7 @@ class ClusterInitService {
         skipAuth: false,
         defaultSuccessMessage: "节点已进入维护模式",
         defaultErrorMessage: "进入维护模式失败，请稍后重试",
-      },
+      }
     );
   }
 
@@ -669,7 +668,7 @@ class ClusterInitService {
    * 退出维护模式
    */
   async exitMaintenanceMode(
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<NodeOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post(
@@ -682,7 +681,7 @@ class ClusterInitService {
             success: true,
           },
           defaultSuccessMessage: "节点已退出维护模式",
-        },
+        }
       );
     }
 
@@ -693,7 +692,7 @@ class ClusterInitService {
         skipAuth: false,
         defaultSuccessMessage: "节点已退出维护模式",
         defaultErrorMessage: "退出维护模式失败，请稍后重试",
-      },
+      }
     );
   }
 
@@ -701,7 +700,7 @@ class ClusterInitService {
    * 迁移虚拟机 (暂时只返回占位实现)
    */
   async migrateVM(
-    vmMigrationData: VMigrationRequest,
+    vmMigrationData: VMigrationRequest
   ): Promise<StandardResponse<VMigrationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/migrate", vmMigrationData, {
@@ -843,10 +842,10 @@ class ClusterInitService {
         },
       ],
       daemons: {
-        pacemaker: "active",
-        corosync: "active",
-        "pacemaker-remoted": "inactive",
-        dlm: "active",
+        corosync: "active/enabled",
+        pacemaker: "active/enabled",
+        pcsd: "active/enabled",
+        sbd: "active/enabled",
       },
     };
   }

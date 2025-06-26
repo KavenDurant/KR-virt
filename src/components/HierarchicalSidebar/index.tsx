@@ -19,7 +19,7 @@ import type {
   Network,
   Storage,
 } from "@/services/mockData";
-import { getStatusColor, getStatusIcon } from "@/services/mockData";
+import { getStatusColor, getStatusIcon, getNodeStatusConfig } from "@/services/mockData";
 import "./HierarchicalSidebar.css";
 
 export interface HierarchicalSidebarProps {
@@ -401,7 +401,8 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
 
   // 创建物理机（主机）节点
   const createHostNode = (node: Node): TreeNodeData => {
-    const statusColor = getStatusColor(node.status);
+    const statusConfig = getNodeStatusConfig(node.status);
+    const statusColor = statusConfig.color;
 
     return {
       key: node.id,
@@ -411,17 +412,30 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
           trigger={["contextMenu"]}
           overlayClassName="host-context-menu"
         >
-          <div className="tree-node-content">
+          <div className="tree-node-content" data-type="node" data-status={node.status}>
             <span className="tree-node-icon" style={{ color: statusColor }}>
               <HddOutlined />
             </span>
-            <span className="tree-node-title">{node.name}</span>
+            <span className="tree-node-title">
+              {node.name}
+              {node.is_dc && (
+                <span className="dc-badge" title="数据中心节点">
+                  DC
+                </span>
+              )}
+            </span>
+            {node.ip && (
+              <span className="tree-node-subtitle">
+                {node.ip}
+              </span>
+            )}
             <div className="tree-node-status">
               <span
                 className="status-dot"
                 style={{ backgroundColor: statusColor }}
+                title={`节点状态: ${statusConfig.label}`}
               />
-              <span className="status-text">{node.status}</span>
+              <span className="status-text">{statusConfig.label}</span>
             </div>
           </div>
         </Dropdown>

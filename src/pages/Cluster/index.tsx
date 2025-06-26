@@ -721,10 +721,15 @@ const ClusterManagement: React.FC = () => {
                 message.success(
                   result.message || `${operationNames[operation]}操作成功`,
                 );
-                // 操作成功后刷新节点详情
+                // 操作成功后同时刷新节点详情和侧边栏数据
                 setTimeout(() => {
+                  // 刷新节点详情数据
                   fetchNodeDetailData(hostname);
-                }, 2000);
+                  // 刷新侧边栏数据以更新主机状态
+                  fetchRealClusterData();
+                  // 触发侧边栏刷新事件
+                  SidebarRefreshTriggers.cluster(`host-${operation}-completed`);
+                }, 500);
               } else {
                 modal.error({
                   title: `${operationNames[operation]}失败`,
@@ -753,7 +758,7 @@ const ClusterManagement: React.FC = () => {
         setNodeOperationLoading(null);
       }
     },
-    [checkCanEnterMaintenance, fetchNodeDetailData, modal, message],
+    [checkCanEnterMaintenance, fetchNodeDetailData, fetchRealClusterData, modal, message],
   );
 
   // 添加节点处理函数
@@ -2410,59 +2415,68 @@ const ClusterManagement: React.FC = () => {
           {/* 物理机操作区域 */}
           <Card title="主机操作" style={{ marginBottom: "16px" }} size="small">
             <Space wrap>
-              <Button
-                icon={<ReloadOutlined />}
-                loading={nodeOperationLoading === "reboot"}
-                onClick={() =>
-                  handleNodeOperation("reboot", sidebarSelectedHost.name)
-                }
-              >
-                重启主机
-              </Button>
-              <Button
-                icon={<PoweroffOutlined />}
-                danger
-                loading={nodeOperationLoading === "stop"}
-                onClick={() =>
-                  handleNodeOperation("stop", sidebarSelectedHost.name)
-                }
-              >
-                关闭主机
-              </Button>
-              <Button
-                icon={<StopOutlined />}
-                loading={nodeOperationLoading === "enter_maintenance"}
-                onClick={() =>
-                  handleNodeOperation(
-                    "enter_maintenance",
-                    sidebarSelectedHost.name,
-                  )
-                }
-              >
-                进入维护模式
-              </Button>
-              <Button
-                icon={<PlayCircleOutlined />}
-                loading={nodeOperationLoading === "exit_maintenance"}
-                onClick={() =>
-                  handleNodeOperation(
-                    "exit_maintenance",
-                    sidebarSelectedHost.name,
-                  )
-                }
-              >
-                退出维护模式
-              </Button>
-              <Button
-                icon={<CloudServerOutlined />}
-                loading={nodeOperationLoading === "migrate"}
-                disabled
-                onClick={() =>
-                  handleNodeOperation("migrate", sidebarSelectedHost.name)
-                }
-              >
-                迁移虚拟机
-              </Button>
+              {/* 根据主机状态动态显示按钮 */}
+              {sidebarSelectedHost.status === "maintenance" ? (
+                <>
+                  {/* 维护模式下可用的操作 */}
+                  <Button
+                    icon={<ReloadOutlined />}
+                    loading={nodeOperationLoading === "reboot"}
+                    onClick={() =>
+                      handleNodeOperation("reboot", sidebarSelectedHost.name)
+                    }
+                  >
+                    重启主机
+                  </Button>
+                  <Button
+                    icon={<PoweroffOutlined />}
+                    danger
+                    loading={nodeOperationLoading === "stop"}
+                    onClick={() =>
+                      handleNodeOperation("stop", sidebarSelectedHost.name)
+                    }
+                  >
+                    关闭主机
+                  </Button>
+                  <Button
+                    icon={<PlayCircleOutlined />}
+                    loading={nodeOperationLoading === "exit_maintenance"}
+                    onClick={() =>
+                      handleNodeOperation(
+                        "exit_maintenance",
+                        sidebarSelectedHost.name,
+                      )
+                    }
+                  >
+                    退出维护模式
+                  </Button>
+                  <Button
+                    icon={<CloudServerOutlined />}
+                    loading={nodeOperationLoading === "migrate"}
+                    onClick={() =>
+                      handleNodeOperation("migrate", sidebarSelectedHost.name)
+                    }
+                  >
+                    迁移虚拟机
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {/* 非维护模式下只能进入维护模式 */}
+                  <Button
+                    icon={<StopOutlined />}
+                    loading={nodeOperationLoading === "enter_maintenance"}
+                    onClick={() =>
+                      handleNodeOperation(
+                        "enter_maintenance",
+                        sidebarSelectedHost.name,
+                      )
+                    }
+                  >
+                    进入维护模式
+                  </Button>
+                </>
+              )}
             </Space>
           </Card>
           <Tabs

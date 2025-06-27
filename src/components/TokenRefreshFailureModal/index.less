@@ -1,0 +1,190 @@
+/* Token刷新失败Modal样式 */
+
+.token-refresh-failure-modal {
+  /* 自定义Modal样式 */
+  .ant-modal-header {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 16px 24px;
+  }
+
+  .ant-modal-body {
+    padding: 24px;
+  }
+
+  .ant-modal-footer {
+    border-top: 1px solid #f0f0f0;
+    padding: 12px 24px;
+    text-align: right;
+  }
+
+  /* 进度条样式优化 */
+  .ant-progress-line {
+    .ant-progress-bg {
+      transition: all 0.3s ease;
+    }
+  }
+
+  /* 倒计时文字样式 */
+  .countdown-text {
+    font-weight: 600;
+    color: #ff4d4f;
+  }
+
+  /* 提示信息区域样式 */
+  .info-section {
+    background: #fafafa;
+    border-radius: 6px;
+    padding: 12px 16px;
+    
+    .ant-typography-title {
+      margin-bottom: 8px !important;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 20px;
+      
+      li {
+        margin-bottom: 4px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+
+  /* 按钮区域优化 */
+  .ant-btn {
+    height: 36px;
+    border-radius: 6px;
+    font-weight: 500;
+
+    &.ant-btn-primary {
+      background: #ff4d4f;
+      border-color: #ff4d4f;
+
+      &:hover {
+        background: #ff7875;
+        border-color: #ff7875;
+      }
+    }
+  }
+}
+
+/* 深色主题适配 */
+[data-theme="dark"] {
+  .token-refresh-failure-modal {
+    .ant-modal-content {
+      background: #1f1f1f;
+    }
+
+    .ant-modal-header {
+      background: #1f1f1f;
+      border-bottom-color: #434343;
+    }
+
+    .ant-modal-footer {
+      background: #1f1f1f;
+      border-top-color: #434343;
+    }
+
+    .info-section {
+      background: #262626;
+      color: #ffffff;
+    }
+
+    .ant-alert {
+      background: #2d1b1b;
+      border-color: #58292a;
+      
+      &.ant-alert-warning {
+        background: #2d2a1b;
+        border-color: #594a2a;
+      }
+    }
+  }
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+  .token-refresh-failure-modal {
+    width: 90% !important;
+    margin: 0 auto;
+
+    .ant-modal-body {
+      padding: 16px;
+    }
+
+    .ant-modal-footer {
+      padding: 12px 16px;
+      
+      .ant-btn {
+        width: 100%;
+        margin-bottom: 8px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}
+
+/* 动画效果 */
+.token-refresh-failure-modal {
+  .ant-modal-mask {
+    animation: fadeIn 0.3s ease;
+  }
+
+  .ant-modal-wrap {
+    animation: slideIn 0.3s ease;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 进度条特殊样式 */
+.countdown-progress {
+  .ant-progress-bg {
+    background: linear-gradient(90deg, #ff7875, #ff4d4f);
+    transition: all 0.8s ease;
+  }
+
+  &.urgent {
+    .ant-progress-bg {
+      background: linear-gradient(90deg, #ff4d4f, #cf1322);
+      animation: pulse 1s infinite;
+    }
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
+  }
+}

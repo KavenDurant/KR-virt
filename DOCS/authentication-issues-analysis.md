@@ -118,13 +118,11 @@ class TokenRefreshManager {
 ```typescript
 private async performRefresh(): Promise<void> {
   try {
-    console.log("🔄 开始自动刷新Token...");
     const result = await this.loginServiceInstance.refreshToken();
 
     if (result.success) {
       console.log("✅ Token自动刷新成功");
     } else {
-      console.warn("❌ Token自动刷新失败:", result.message);
       console.warn("❌ 失败原因详情:", result);
 
       // 更精确的失败条件判断
@@ -161,7 +159,6 @@ private async performRefresh(): Promise<void> {
 
     if (result.success) {
       this.retryCount = 0; // 重置重试计数
-      console.log("✅ Token自动刷新成功");
     } else {
       this.retryCount++;
       console.warn(`❌ Token刷新失败 (${this.retryCount}/${this.MAX_RETRY}):`, result.message);

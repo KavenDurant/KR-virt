@@ -72,7 +72,7 @@ class LoginService {
 
       // 验证用户名密码
       const user = mockUsers.find(
-        (u) => u.username === data.login_name && u.password === data.password,
+        (u) => u.username === data.login_name && u.password === data.password
       );
 
       if (!user) {
@@ -245,7 +245,7 @@ class LoginService {
           skipAuth: true, // 跳过自动添加认证头，我们手动添加
           showErrorMessage: false, // 不自动显示错误，由调用方处理
           defaultErrorMessage: "Token刷新失败",
-        },
+        }
       );
 
       if (!result.success) {
@@ -315,7 +315,7 @@ class LoginService {
     ];
 
     const isAuthError = authErrorKeywords.some((keyword) =>
-      message.toLowerCase().includes(keyword.toLowerCase()),
+      message.toLowerCase().includes(keyword.toLowerCase())
     );
 
     if (isAuthError) {
@@ -420,7 +420,7 @@ class LoginService {
           skipAuth: false,
           showErrorMessage: false, // 登出不显示错误
           defaultErrorMessage: "登出失败",
-        },
+        }
       );
     }
 
@@ -499,7 +499,7 @@ class LoginService {
    */
   static setUseMockData(useMock: boolean): void {
     console.warn(
-      `切换登录模式为: ${useMock ? "模拟" : "真实API"}，请确保在开发环境中使用`,
+      `切换登录模式为: ${useMock ? "模拟" : "真实API"}，请确保在开发环境中使用`
     );
   }
 
@@ -524,47 +524,7 @@ class LoginService {
     return [...mockUsers];
   }
 
-  /**
-   * 调试Token信息（仅开发环境使用）
-   * TODO: 当前使用browser token，暂时只显示基本信息，后期根据实际token格式添加解析逻辑
-   */
-  debugTokenInfo(): void {
-    if (import.meta.env.DEV) {
-      const token = this.getToken();
-      console.group("🔍 Token调试信息");
 
-      if (!token) {
-        console.log("❌ 未找到Token");
-        console.groupEnd();
-        return;
-      }
-
-      // 显示基本Token信息
-      console.log("📄 Token类型:", "Browser Token");
-      console.log("📏 Token长度:", token.length);
-      console.log("🔤 Token内容:", token);
-      console.log("✅ Token格式验证:", this.isValidTokenFormat(token));
-
-      // TODO: 根据实际的browser token格式添加解析逻辑
-      // 以下是原JWT解析代码，已注释掉
-      // try {
-      //   const parts = token.split(".");
-      //   if (parts.length === 3) {
-      //     const payload = JSON.parse(atob(parts[1]));
-      //     console.log("📄 Token Payload:", payload);
-      //     if (payload.exp) {
-      //       const expDate = new Date(payload.exp * 1000);
-      //       console.log("⏰ Token过期时间:", expDate.toLocaleString());
-      //       console.log("⌛ 是否已过期:", Date.now() > payload.exp * 1000);
-      //     }
-      //   }
-      // } catch (error) {
-      //   console.log("❌ Token解析失败:", error);
-      // }
-
-      console.groupEnd();
-    }
-  }
 
   /**
    * 清理无效Token
@@ -648,66 +608,6 @@ class LoginService {
   }
 
   /**
-   * 诊断Token自动刷新状态（用于调试）
-   */
-  diagnoseTokenRefresh(): void {
-    console.group("🔍 Token自动刷新诊断");
-
-    // 基本状态检查
-    console.log("=== 基本状态 ===");
-    console.log("用户认证状态:", this.isAuthenticated());
-    console.log("Token存在:", !!this.getToken());
-    console.log("用户信息存在:", !!this.getCurrentUser());
-
-    // 刷新管理器状态
-    const refreshManager = TokenRefreshManager.getInstance();
-    const status = refreshManager.getStatus();
-    console.log("=== 刷新管理器状态 ===");
-    console.log("定时器运行中:", status.isRunning);
-    console.log("正在刷新:", status.isRefreshing);
-
-    // 详细定时器信息
-    console.log("=== 定时器详情 ===");
-    const timerExists =
-      (refreshManager as unknown as { refreshTimer: NodeJS.Timeout | null })
-        .refreshTimer !== null;
-    const timerId = (
-      refreshManager as unknown as { refreshTimer: NodeJS.Timeout | null }
-    ).refreshTimer;
-    console.log("定时器对象存在:", timerExists);
-    console.log("定时器ID:", timerId);
-    console.log("定时器类型:", typeof timerId);
-
-    // 环境信息
-    console.log("=== 环境信息 ===");
-    console.log("开发环境:", import.meta.env.DEV);
-    console.log("当前URL:", window.location.href);
-    console.log("页面可见:", !document.hidden);
-
-    // 手动触发测试
-    console.log("=== 手动测试 ===");
-    console.log("即将进行手动刷新测试...");
-
-    this.refreshToken()
-      .then((result) => {
-        console.log("手动刷新结果:", result);
-        if (result.success) {
-          console.log("✅ 刷新成功，新Token已保存");
-        } else {
-          console.warn("❌ 刷新失败:", result.message);
-          if (result.requireReauth) {
-            console.warn("🚨 需要重新认证");
-          }
-        }
-        console.groupEnd();
-      })
-      .catch((error) => {
-        console.error("手动刷新异常:", error);
-        console.groupEnd();
-      });
-  }
-
-  /**
    * 检查用户是否为管理员
    */
   isAdmin(): boolean {
@@ -743,7 +643,7 @@ class LoginService {
       {
         defaultSuccessMessage: "2FA密钥生成成功",
         defaultErrorMessage: "2FA密钥生成失败，请稍后重试",
-      },
+      }
     );
 
     return {
@@ -757,7 +657,7 @@ class LoginService {
    * 验证2FA代码（可选，因为没有验证接口）
    */
   async verifyTotpCode(
-    request: TotpVerifyRequest,
+    request: TotpVerifyRequest
   ): Promise<TotpVerifyResponse> {
     if (USE_MOCK_DATA) {
       // Mock实现 - 简单验证
@@ -784,7 +684,7 @@ class LoginService {
    * 首次登录修改密码
    */
   async changePasswordFirstTime(
-    request: FirstTimePasswordChangeRequest,
+    request: FirstTimePasswordChangeRequest
   ): Promise<FirstTimePasswordChangeResponse> {
     if (USE_MOCK_DATA) {
       // Mock实现
@@ -821,6 +721,25 @@ class LoginService {
     const user = this.getCurrentUser();
     if (user) {
       this.updateUser({ isFirstLogin: isFirstTime });
+    }
+  }
+
+  /**
+   * 重置Token刷新定时器（用于用户活动时延长Token有效期）
+   */
+  resetTokenRefreshTimer(): void {
+    if (!this.isAuthenticated()) {
+      return;
+    }
+
+    const refreshManager = TokenRefreshManager.getInstance();
+    const status = refreshManager.getStatus();
+    
+    if (status.isRunning) {
+      // 重启定时器以重置计时
+      refreshManager.stopAutoRefresh();
+      refreshManager.setLoginService(this);
+      refreshManager.startAutoRefresh();
     }
   }
 }
@@ -873,7 +792,7 @@ class TokenRefreshManager {
     if (this.visibilityChangeHandler && typeof document !== "undefined") {
       document.removeEventListener(
         "visibilitychange",
-        this.visibilityChangeHandler,
+        this.visibilityChangeHandler
       );
       this.visibilityChangeHandler = null;
     }
@@ -950,13 +869,12 @@ class TokenRefreshManager {
       if (result.success) {
         // 刷新成功，重置重试计数
         this.retryCount = 0;
-        console.log("✅ Token自动刷新成功");
       } else {
         // 刷新失败，增加重试计数
         this.retryCount++;
         console.warn(
           `⚠️ Token刷新失败 (${this.retryCount}/${this.MAX_RETRY}):`,
-          result.message,
+          result.message
         );
 
         // 检查是否需要重新认证
@@ -974,14 +892,14 @@ class TokenRefreshManager {
         }
 
         console.log(
-          `🔄 将在下次定时刷新时重试 (${this.retryCount}/${this.MAX_RETRY})`,
+          `🔄 将在下次定时刷新时重试 (${this.retryCount}/${this.MAX_RETRY})`
         );
       }
     } catch (error) {
       this.retryCount++;
       console.error(
         `❌ Token刷新异常 (${this.retryCount}/${this.MAX_RETRY}):`,
-        error,
+        error
       );
 
       // 检查是否达到最大重试次数
@@ -992,7 +910,7 @@ class TokenRefreshManager {
       }
 
       console.log(
-        `🔄 网络异常，将在下次刷新时重试 (${this.retryCount}/${this.MAX_RETRY})`,
+        `🔄 网络异常，将在下次刷新时重试 (${this.retryCount}/${this.MAX_RETRY})`
       );
     } finally {
       this.isRefreshing = false;
@@ -1050,19 +968,33 @@ class TokenRefreshManager {
 
       // 尝试显示通知（如果可用）
       try {
-        // 检查是否有Ant Design的message组件可用
-        const globalWindow = window as unknown as {
-          antd?: { message?: { error: (msg: string) => void } };
-        };
-        if (typeof window !== "undefined" && globalWindow.antd?.message) {
-          globalWindow.antd.message.error(errorMessage);
-        } else {
-          // 降级到原生alert
+        // 优先使用自定义Modal
+        const { showTokenRefreshFailureModal } = await import(
+          "../../components/TokenRefreshFailureModal/manager"
+        );
+        showTokenRefreshFailureModal(errorMessage);
+      } catch (modalError) {
+        console.warn(
+          "自定义Modal加载失败，尝试使用Ant Design message:",
+          modalError
+        );
+
+        try {
+          // 检查是否有Ant Design的message组件可用
+          const globalWindow = window as unknown as {
+            antd?: { message?: { error: (msg: string) => void } };
+          };
+          if (typeof window !== "undefined" && globalWindow.antd?.message) {
+            globalWindow.antd.message.error(errorMessage);
+          } else {
+            // 最后降级到原生alert
+            alert(errorMessage);
+          }
+        } catch (notificationError) {
+          console.warn("显示错误通知失败:", notificationError);
+          // 最后降级到原生alert
           alert(errorMessage);
         }
-      } catch (notificationError) {
-        console.warn("显示错误通知失败:", notificationError);
-        // 即使通知失败也要继续执行清理和跳转
       }
 
       // 清除认证数据
@@ -1070,11 +1002,22 @@ class TokenRefreshManager {
         await this.loginServiceInstance.clearAuthData();
       }
 
-      // 延迟跳转到登录页，给用户时间看到错误消息
+      // 注意：跳转逻辑已移到Modal的确定按钮点击事件中
+      // 如果Modal显示失败，则使用延迟跳转作为备用方案
       setTimeout(() => {
-        console.log("🔄 跳转到登录页面");
-        window.location.href = "/login";
-      }, 2000);
+        // 检查Modal是否正在显示，如果没有则执行备用跳转
+        import("../../components/TokenRefreshFailureModal/manager")
+          .then((module) => {
+            if (!module.tokenRefreshFailureModalManager.isModalShowing()) {
+              console.log("🔄 Modal未显示，执行备用跳转到登录页面");
+              window.location.href = "/login";
+            }
+          })
+          .catch(() => {
+            console.log("🔄 备用跳转到登录页面");
+            window.location.href = "/login";
+          });
+      }, 3000); // 3秒后检查是否需要备用跳转
     } catch (error) {
       console.error("处理认证失败时发生错误:", error);
       // 即使出错也要尝试跳转到登录页
@@ -1090,6 +1033,11 @@ class TokenRefreshManager {
   private getLogoutMessage(reason?: string): string {
     if (!reason) {
       return "身份验证失败，系统将自动退出登录";
+    }
+
+    // 检查是否是多次失败的情况
+    if (reason.includes("多次失败") || reason.includes("达到最大重试次数")) {
+      return "Token验证连续失败超过3次，为保护账户安全，系统将自动退出登录";
     }
 
     if (reason.includes("网络")) {
@@ -1126,108 +1074,3 @@ export default loginService;
 
 // 导出工具类
 export { TokenRefreshManager };
-
-// 全局调试工具
-if (import.meta.env.DEV) {
-  // 扩展 window 对象类型以避免 TypeScript 错误
-  interface WindowWithDebug extends Window {
-    loginService: LoginService;
-    TokenRefreshManager: typeof TokenRefreshManager;
-    debugToken: {
-      status: () => void;
-      refresh: () => Promise<AuthResponse>;
-      start: () => void;
-      stop: () => void;
-      clear: () => void;
-      restart: () => void;
-      detailedStatus: () => void;
-      diagnose: () => void;
-    };
-  }
-
-  // 将 loginService 添加到全局 window 对象，方便在控制台中调试
-  (window as unknown as WindowWithDebug).loginService = loginService;
-  (window as unknown as WindowWithDebug).TokenRefreshManager =
-    TokenRefreshManager;
-
-  // 添加便捷的调试方法
-  (window as unknown as WindowWithDebug).debugToken = {
-    // 查看当前状态
-    status: () => {
-      console.log("=== Token 调试信息 ===");
-      console.log("用户登录状态:", loginService.isAuthenticated());
-      console.log("Token:", loginService.getToken());
-      console.log("用户信息:", loginService.getCurrentUser());
-      console.log("自动刷新状态:", loginService.getAutoRefreshStatus());
-      loginService.debugTokenInfo();
-    },
-
-    // 立即刷新 Token
-    refresh: async () => {
-      console.log("🔄 手动触发Token刷新...");
-      const result = await loginService.refreshToken();
-      console.log("刷新结果:", result);
-      return result;
-    },
-
-    // 启动自动刷新
-    start: () => {
-      console.log("🚀 手动启动Token自动刷新...");
-      loginService.startGlobalTokenRefresh();
-      console.log("自动刷新状态:", loginService.getAutoRefreshStatus());
-    },
-
-    // 停止自动刷新
-    stop: () => {
-      console.log("🛑 手动停止Token自动刷新...");
-      loginService.stopGlobalTokenRefresh();
-      console.log("自动刷新状态:", loginService.getAutoRefreshStatus());
-    },
-
-    // 清理 Token
-    clear: () => {
-      console.log("🧹 清理Token...");
-      loginService.clearAuthDataSync();
-      loginService.stopGlobalTokenRefresh();
-    },
-
-    // 强制重启自动刷新
-    restart: () => {
-      console.log("🔄 强制重启Token自动刷新...");
-      loginService.forceRestartTokenRefresh();
-    },
-
-    // 详细状态检查
-    detailedStatus: () => {
-      console.log("=== 详细Token状态检查 ===");
-      console.log("用户登录状态:", loginService.isAuthenticated());
-      console.log("Token:", loginService.getToken());
-      console.log("用户信息:", loginService.getCurrentUser());
-
-      const status = loginService.getAutoRefreshStatus();
-      console.log("自动刷新状态:", status);
-
-      // 检查定时器状态
-      const refreshManager = TokenRefreshManager.getInstance();
-      console.log("刷新管理器状态:", refreshManager.getStatus());
-
-      loginService.debugTokenInfo();
-    },
-
-    // 诊断Token自动刷新
-    diagnose: () => {
-      loginService.diagnoseTokenRefresh();
-    },
-  };
-
-  console.log("🛠️ Token调试工具已加载!");
-  console.log("在控制台中使用以下命令:");
-  console.log("- debugToken.status() - 查看当前状态");
-  console.log("- debugToken.detailedStatus() - 查看详细状态");
-  console.log("- debugToken.diagnose() - 诊断自动刷新问题");
-  console.log("- debugToken.refresh() - 立即刷新Token");
-  console.log("- debugToken.start() - 启动自动刷新");
-  console.log("- debugToken.stop() - 停止自动刷新");
-  console.log("- debugToken.restart() - 强制重启自动刷新");
-  console.log("- debugToken.clear() - 清理Token");
-}

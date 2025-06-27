@@ -47,7 +47,7 @@ export class CookieUtils {
     try {
       const finalOptions = { ...DEFAULT_SECURE_OPTIONS, ...options };
       let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(
-        value,
+        value
       )}`;
 
       // 设置过期时间
@@ -85,8 +85,6 @@ export class CookieUtils {
       }
 
       document.cookie = cookieString;
-
-      console.log(`🍪 Cookie已设置: ${name}`);
     } catch (error) {
       console.error("设置Cookie失败:", error);
       throw new Error(`设置Cookie失败: ${error}`);
@@ -173,7 +171,6 @@ export class CookieUtils {
       Object.keys(cookies).forEach((name) => {
         this.remove(name, options);
       });
-      console.log("🧹 已清除所有Cookie");
     } catch (error) {
       console.error("清除所有Cookie失败:", error);
     }
@@ -185,10 +182,6 @@ export class CookieUtils {
   static setToken(token: string, options: CookieOptions = {}): void {
     const tokenOptions = { ...TOKEN_COOKIE_OPTIONS, ...options };
     this.set("kr_virt_token", token, tokenOptions);
-
-    // 立即验证保存的Token
-    const savedToken = this.getToken();
-    console.log("保存后读取的Token:", savedToken);
   }
 
   /**
@@ -265,7 +258,7 @@ export class CookieUtils {
   static setWithExpiry(
     name: string,
     value: string,
-    expiryMinutes: number,
+    expiryMinutes: number
   ): void {
     const expiryTime = new Date(Date.now() + expiryMinutes * 60 * 1000);
     this.set(name, value, { expires: expiryTime });

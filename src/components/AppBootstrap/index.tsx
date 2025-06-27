@@ -12,10 +12,7 @@ import Login from "@/pages/Auth/Login";
 import { clusterInitService } from "@/services/cluster";
 import { loginService } from "@/services/login";
 import { CookieUtils } from "@/utils/cookies";
-// 在开发环境中加载诊断工具
-if (import.meta.env.DEV) {
-  import("@/utils/tokenRefreshDiagnostic");
-}
+
 import type { ClusterStatusResponse } from "@/services/cluster/types";
 
 type AppState = "loading" | "cluster-init" | "login" | "app";

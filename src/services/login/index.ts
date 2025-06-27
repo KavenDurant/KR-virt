@@ -7,6 +7,7 @@
 import { api } from "@/utils/apiHelper";
 import { CookieUtils } from "@/utils/cookies";
 import { EnvConfig } from "@/config/env";
+import { showTokenRefreshFailureModal } from "@/components/TokenRefreshFailureModal/utils";
 import type {
   LoginData,
   AuthResponse,
@@ -1048,33 +1049,33 @@ class TokenRefreshManager {
       // 显示用户友好的错误消息
       const errorMessage = this.getLogoutMessage(reason);
 
-      // 尝试显示通知（如果可用）
+      // 使用Modal组件替换alert
       try {
-        // 检查是否有Ant Design的message组件可用
-        const globalWindow = window as unknown as {
-          antd?: { message?: { error: (msg: string) => void } };
-        };
-        if (typeof window !== "undefined" && globalWindow.antd?.message) {
-          globalWindow.antd.message.error(errorMessage);
-        } else {
-          // 降级到原生alert
-          alert(errorMessage);
-        }
-      } catch (notificationError) {
-        console.warn("显示错误通知失败:", notificationError);
-        // 即使通知失败也要继续执行清理和跳转
+        showTokenRefreshFailureModal({
+          message: errorMessage,
+          reason,
+          countdown: 5,
+          autoRedirect: true,
+          showRetry: false,
+          onConfirm: () => {
+            console.log("🔄 用户确认跳转到登录页面");
+            window.location.href = "/login";
+          },
+        });
+      } catch (modalError) {
+        console.warn("显示Token刷新失败Modal失败:", modalError);
+        // 降级到原生alert
+        alert(errorMessage);
+        // 手动跳转
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
       }
 
       // 清除认证数据
       if (this.loginServiceInstance) {
         await this.loginServiceInstance.clearAuthData();
       }
-
-      // 延迟跳转到登录页，给用户时间看到错误消息
-      setTimeout(() => {
-        console.log("🔄 跳转到登录页面");
-        window.location.href = "/login";
-      }, 2000);
     } catch (error) {
       console.error("处理认证失败时发生错误:", error);
       // 即使出错也要尝试跳转到登录页

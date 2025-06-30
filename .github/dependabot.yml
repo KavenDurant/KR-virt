@@ -1,0 +1,43 @@
+version: 2
+updates:
+  # NPM 依赖更新
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "KavenDurant"
+    assignees:
+      - "KavenDurant"
+    commit-message:
+      prefix: "⬆️"
+      prefix-development: "⬆️ [dev]"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+    # 只更新安全补丁和次要版本
+    target-branch: "develop"
+    
+  # GitHub Actions 更新
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+      timezone: "Asia/Shanghai"
+    reviewers:
+      - "KavenDurant"
+    assignees:
+      - "KavenDurant"
+    commit-message:
+      prefix: "🔧"
+      include: "scope"
+    labels:
+      - "github-actions"
+      - "ci-cd" 

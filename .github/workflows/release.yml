@@ -1,0 +1,158 @@
+name: 📦 自动发布
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '发布版本号'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  release:
+    name: 📦 创建发布
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 检出代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+      
+    - name: 📦 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: 📦 安装依赖
+      run: npm ci
+      
+    - name: 🧪 运行测试
+      run: npm run test:run
+      
+    - name: 🏗️ 构建项目
+      run: npm run build:prod
+      env:
+        VITE_API_BASE_URL: /api
+        VITE_APP_TITLE: KR虚拟化管理系统
+        VITE_ENABLE_MOCK: false
+        
+    - name: 📦 创建发布包
+      run: |
+        VERSION=${{ github.ref_name }}
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION=${{ github.event.inputs.version }}
+        fi
+        
+        # 创建发布目录
+        mkdir -p release
+        
+        # 复制构建产物
+        cp -r dist/ release/kr-virt-${VERSION}/
+        
+        # 复制重要文件
+        cp README.md release/kr-virt-${VERSION}/
+        cp package.json release/kr-virt-${VERSION}/
+        
+        # 创建压缩包
+        cd release
+        zip -r kr-virt-${VERSION}.zip kr-virt-${VERSION}/
+        tar -czf kr-virt-${VERSION}.tar.gz kr-virt-${VERSION}/
+        
+        # 生成校验和
+        sha256sum kr-virt-${VERSION}.zip > kr-virt-${VERSION}.zip.sha256
+        sha256sum kr-virt-${VERSION}.tar.gz > kr-virt-${VERSION}.tar.gz.sha256
+        
+    - name: 📝 生成更新日志
+      id: changelog
+      run: |
+        if [ -f CHANGELOG.md ]; then
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          head -n 50 CHANGELOG.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        else
+          echo "CHANGELOG=🚀 KR-Virt 虚拟化管理系统发布" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: 📤 创建 GitHub Release
+      uses: actions/create-release@v1
+      id: create_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name || github.event.inputs.version }}
+        release_name: KR-Virt ${{ github.ref_name || github.event.inputs.version }}
+        body: |
+          ## 🎉 KR-Virt 虚拟化管理系统 ${{ github.ref_name || github.event.inputs.version }}
+          
+          ### 📋 主要功能
+          - ✅ 完整的虚拟化管理界面
+          - ✅ 集群管理和监控
+          - ✅ 用户认证和权限管理
+          - ✅ 审计日志和安全监控
+          - ✅ 响应式设计，支持多设备
+          
+          ### 🔧 技术栈
+          - React 19.1.0 + TypeScript 5.8.3
+          - Ant Design 5.25.2
+          - Vite 6.3.5
+          - 完整的测试覆盖
+          
+          ### 📦 下载说明
+          - `kr-virt-*.zip` - 完整发布包（Windows 推荐）
+          - `kr-virt-*.tar.gz` - 完整发布包（Linux/macOS 推荐）
+          - 包含 SHA256 校验和文件
+          
+          ### 🚀 部署方式
+          1. **静态部署**: 解压后部署到任何 Web 服务器
+          2. **Docker 部署**: 使用提供的 Dockerfile
+          3. **开发环境**: `npm install && npm run dev`
+          
+          ---
+          ${{ steps.changelog.outputs.CHANGELOG }}
+        draft: false
+        prerelease: false
+        
+    - name: 📤 上传 ZIP 包
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./release/kr-virt-${{ github.ref_name || github.event.inputs.version }}.zip
+        asset_name: kr-virt-${{ github.ref_name || github.event.inputs.version }}.zip
+        asset_content_type: application/zip
+        
+    - name: 📤 上传 TAR.GZ 包
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./release/kr-virt-${{ github.ref_name || github.event.inputs.version }}.tar.gz
+        asset_name: kr-virt-${{ github.ref_name || github.event.inputs.version }}.tar.gz
+        asset_content_type: application/gzip
+        
+    - name: 📤 上传 ZIP 校验和
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./release/kr-virt-${{ github.ref_name || github.event.inputs.version }}.zip.sha256
+        asset_name: kr-virt-${{ github.ref_name || github.event.inputs.version }}.zip.sha256
+        asset_content_type: text/plain
+        
+    - name: 📤 上传 TAR.GZ 校验和
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./release/kr-virt-${{ github.ref_name || github.event.inputs.version }}.tar.gz.sha256
+        asset_name: kr-virt-${{ github.ref_name || github.event.inputs.version }}.tar.gz.sha256
+        asset_content_type: text/plain 

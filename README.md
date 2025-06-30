@@ -1,11 +1,36 @@
-# React + TypeScript + Vite
+# 🚀 KR-Virt 虚拟化管理系统
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![CI/CD Pipeline](https://github.com/your-username/kr-virt/workflows/🚀%20KR-Virt%20CI/CD%20Pipeline/badge.svg)](https://github.com/your-username/kr-virt/actions)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/react-19.1.0-blue.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/typescript-5.8.3-blue.svg)](https://www.typescriptlang.org/)
 
-Currently, two official plugins are available:
+基于 React 19 + TypeScript 5.8 + Ant Design 5.25 构建的现代化企业级虚拟化管理平台。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ 在线演示
+
+- 🌐 **GitHub Pages**: [https://your-username.github.io/kr-virt/](https://your-username.github.io/kr-virt/)
+- 🐳 **Docker Demo**: `docker run -p 3000:80 kr-virt:latest`
+
+### 默认登录信息
+- **用户名**: `test_user`
+- **密码**: `-p0-p0-p0`
+- **验证码**: `123456`
+
+## 🚀 技术栈
+
+### 前端核心
+- **⚛️ React 19.1.0** - 最新的并发特性和 Suspense
+- **📘 TypeScript 5.8.3** - 类型安全的开发体验
+- **⚡ Vite 6.3.5** - 极速的构建工具
+- **🎨 Ant Design 5.25.2** - 企业级 UI 组件库
+
+### 开发工具
+- **🔧 ESLint + Prettier** - 代码质量保障
+- **🧪 Vitest + Testing Library** - 现代化测试框架
+- **🐺 Husky + lint-staged** - Git 钩子管理
+- **📦 Docker** - 容器化部署
 
 ## Expanding the ESLint configuration
 

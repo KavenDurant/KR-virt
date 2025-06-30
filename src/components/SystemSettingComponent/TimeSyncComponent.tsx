@@ -183,7 +183,8 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
     }
   };
 
-  // 获取NTP服务器状态标签
+  // TODO-获取NTP服务器状态标签
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getNtpStatusTag = (status: string) => {
     switch (status?.toLowerCase()) {
       case "reachable":
@@ -250,7 +251,7 @@ const TimeSyncComponent: React.FC<TimeSyncComponentProps> = ({ className }) => {
           {servers?.map((server, index) => (
             <Space key={index} size="small">
               <Text code>{server.address}</Text>
-              {getNtpStatusTag(server.status)}
+              {server.status}
             </Space>
           ))}
         </Space>

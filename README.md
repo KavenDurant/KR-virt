@@ -1,93 +1,111 @@
-# KRVirtManagerWebGUI
+# React + TypeScript + Vite
 
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+Currently, two official plugins are available:
 
-## Getting started
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Expanding the ESLint configuration
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
+```js
+export default tseslint.config({
+  extends: [
+    // Remove ...tseslint.configs.recommended and replace with this
+    ...tseslint.configs.recommendedTypeChecked,
+    // Alternatively, use this for stricter rules
+    ...tseslint.configs.strictTypeChecked,
+    // Optionally, add this for stylistic rules
+    ...tseslint.configs.stylisticTypeChecked,
+  ],
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ["./tsconfig.node.json", "./tsconfig.app.json"],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+});
 ```
-cd existing_repo
-git remote add origin https://git.kanrong.xyz/krvirtdevgroup/krvirtmanagerwebgui.git
-git branch -M main
-git push -uf origin main
+
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from "eslint-plugin-react-x";
+import reactDom from "eslint-plugin-react-dom";
+
+export default tseslint.config({
+  plugins: {
+    // Add the react-x and react-dom plugins
+    "react-x": reactX,
+    "react-dom": reactDom,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended typescript rules
+    ...reactX.configs["recommended-typescript"].rules,
+    ...reactDom.configs.recommended.rules,
+  },
+});
 ```
 
-## Integrate with your tools
+## 侧边栏拖拽卡顿问题修复总结
 
-- [ ] [Set up project integrations](https://git.kanrong.xyz/krvirtdevgroup/krvirtmanagerwebgui/-/settings/integrations)
+🐛 问题原因分析
+频繁的 React 状态更新：每次 mousemove 都触发 setSidebarWidth 导致组件重新渲染
+频繁的 localStorage 写入：每次拖拽都写入本地存储，造成 I/O 阻塞
+useCallback 依赖项问题：handleSidebarResize 依赖 sidebarWidth，导致函数频繁重新创建
+CSS 过渡效果干扰：拖拽手柄的 transition 效果在拖拽时造成性能损耗
+✅ 优化方案
 
-## Collaborate with your team
+1. 性能优化的拖拽逻辑
+   立即 DOM 更新：直接操作 DOM 样式，提供流畅的视觉反馈
+   节流状态更新：使用 16ms 节流（约 60FPS），减少 React 重新渲染
+   延迟持久化：仅在拖拽结束时写入 localStorage
+2. CSS 性能优化
+   移除过渡效果：在拖拽时禁用 transition，提高性能
+   扩大响应区域：通过 ::before 伪元素扩大拖拽手柄的响应范围
+   拖拽状态样式：添加 .sidebar-dragging 类，禁用文本选择和不必要的事件
+3. 函数优化
+   移除依赖项：从 useCallback 中移除 sidebarWidth 依赖，避免函数重新创建
+   分离关注点：将 DOM 更新和状态更新分离
+4. 用户体验优化
+   拖拽状态管理：添加 isDragging 状态，在拖拽时应用特殊样式
+   防止文本选择：在拖拽时禁用页面文本选择
+   // 优化后的拖拽逻辑
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+```Typescript
+const handleMouseMove = (moveEvent: MouseEvent) => {
+  const now = Date.now();
+  const newWidth = startWidth + (moveEvent.clientX - startX);
 
-## Test and Deploy
+  if (newWidth >= 200 && newWidth <= 400) {
+    // 1. 立即更新DOM - 流畅视觉反馈
+    handleSidebarResize(newWidth, false);
 
-Use the built-in continuous integration in GitLab.
+    // 2. 节流更新ref - 减少重新渲染
+    if (now - lastUpdateTime > 16) {
+      originalWidthRef.current = Math.max(200, Math.min(newWidth, 400));
+      lastUpdateTime = now;
+    }
+  }
+};
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+const handleMouseUp = () => {
+  // 3. 拖拽结束时才更新状态和localStorage
+  const finalWidth = originalWidthRef.current;
+  setSidebarWidth(finalWidth);
+  localStorage.setItem("sidebarWidth", finalWidth.toString());
+};
+```
 
-***
+-- 性能提升
 
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+1. 减少重新渲染：从每次 mousemove 重新渲染减少到 60FPS 节流更新
+2. 更流畅的视觉反馈：DOM 直接更新，无渲染延迟
+3. 减少 I/O 操作：从频繁 localStorage 写入改为拖拽结束时一次性写入（I/O 操作通常是阻塞性的，会暂停程序执行直到操作完成。）
+4. 更好的响应性：扩大拖拽区域，更容易抓取

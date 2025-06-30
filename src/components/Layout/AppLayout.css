@@ -1,0 +1,154 @@
+.sidebar-resize-handle {
+  width: 5px;
+  background-color: var(--resize-handle-color, #ccc);
+  cursor: col-resize;
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 10;
+  /* 移除过渡效果，提高拖拽性能 */
+}
+
+.sidebar-resize-handle:hover {
+  background-color: #007acc;
+}
+
+.sidebar-resize-handle:active {
+  background-color: #007acc;
+  /* 拖拽时禁用过渡效果 */
+  transition: none;
+}
+
+.sidebar {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  flex-shrink: 0;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+/* 面板样式 */
+[data-panel] {
+  overflow: hidden;
+}
+
+.app-layout {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden; /* 保持主容器 hidden 以防止水平滚动 */
+}
+
+.app-layout-panels {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  width: 100%;
+}
+
+/* 活动栏整体样式 */
+.activity-bar {
+  width: 50px !important;
+  background-color: #333333;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+}
+
+/* 确保Ant Design图标正确大小和位置 */
+.activity-bar .anticon {
+  font-size: 20px !important;
+  line-height: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.activity-bar-menu {
+  width: 50px !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.activity-bar-menu .ant-menu-item {
+  height: 50px !important;
+  line-height: 50px !important;
+  padding: 0 !important;
+  width: 50px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center;
+  position: relative !important;
+  margin: 0 !important;
+}
+
+/* 确保图标在菜单项中可见 */
+.activity-bar-menu .ant-menu-item span {
+  display: inline-block !important;
+  width: 100% !important;
+  text-align: center !important;
+}
+
+/* 确保图标居中 */
+.activity-bar-menu .ant-menu-item .anticon {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  margin: 0 auto !important;
+  font-size: 20px !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* 修复活动栏内图标偏移问题 */
+.activity-bar-menu .ant-menu-title-content {
+  flex: none !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 通知图标样式 */
+.notification-icon {
+  transition: background-color 0.2s;
+}
+
+.notification-icon:hover {
+  background-color: #444444;
+}
+
+/* 拖拽时的性能优化 */
+.sidebar-dragging {
+  user-select: none;
+  pointer-events: none;
+}
+
+.sidebar-dragging * {
+  user-select: none;
+  pointer-events: none;
+}
+
+/* 拖拽时禁用过渡效果，提高性能 */
+.sidebar-dragging .sidebar {
+  transition: none !important;
+}
+
+/* 拖拽手柄扩大响应区域 */
+.sidebar-resize-handle::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  cursor: col-resize;
+}

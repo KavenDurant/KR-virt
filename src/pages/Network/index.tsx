@@ -23,6 +23,7 @@ import {
   InputNumber,
   Switch,
   Drawer,
+  Spin,
 } from "antd";
 import {
   PlusOutlined,
@@ -695,7 +696,7 @@ const NetworkManagement: React.FC = () => {
 
   const onConnect = useCallback(
     (params: Edge | Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges],
+    [setEdges]
   );
 
   // 加载网络数据
@@ -718,7 +719,7 @@ const NetworkManagement: React.FC = () => {
         const updatedNetworks = networkList.map((network) =>
           network.id === selectedNetwork.id
             ? ({ ...network, ...values } as Network)
-            : network,
+            : network
         );
         setNetworkList(updatedNetworks);
       } else {
@@ -779,7 +780,7 @@ const NetworkManagement: React.FC = () => {
   const viewIPDetails = (record: Network) => {
     setSelectedNetwork(record);
     setSelectedNetworkIps(
-      mockIpDetails.filter((ip) => ip.networkId === record.id),
+      mockIpDetails.filter((ip) => ip.networkId === record.id)
     );
     setIpDetailsVisible(true);
   };
@@ -859,8 +860,8 @@ const NetworkManagement: React.FC = () => {
               calculateIPUsagePercent(record.usedIps, record.totalIps) > 80
                 ? "#ff4d4f"
                 : calculateIPUsagePercent(record.usedIps, record.totalIps) > 60
-                  ? "#faad14"
-                  : "#52c41a"
+                ? "#faad14"
+                : "#52c41a"
             }
           />
         </Tooltip>
@@ -1062,680 +1063,692 @@ const NetworkManagement: React.FC = () => {
   ];
 
   return (
-    <Layout className="network-management">
-      <Content style={{ minHeight: 280 }}>
-        <Card
-          title={
-            <Space>
-              <GlobalOutlined />
-              <span>网络管理</span>
-            </Space>
-          }
-          extra={
-            <Space>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setNetworkModalVisible(true)}
-              >
-                新建网络
-              </Button>
-              <Button
-                icon={<SyncOutlined />}
-                onClick={() => {
-                  setLoading(true);
-                  setTimeout(() => setLoading(false), 500);
-                }}
-              >
-                刷新
-              </Button>
-            </Space>
-          }
-        >
-          <Tabs activeKey={activeTab} onChange={setActiveTab}>
-            <TabPane tab="网络概览" key="overview">
-              <div className="network-overview">
-                <Row gutter={[16, 16]}>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card>
-                      <Statistic
-                        title="网络总数"
-                        value={networkList.length}
-                        prefix={<GlobalOutlined />}
-                      />
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card>
-                      <Statistic
-                        title="VLAN网络"
-                        value={
-                          networkList.filter(
-                            (network) => network.type === "VLAN",
-                          ).length
-                        }
-                        prefix={<ApartmentOutlined />}
-                      />
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card>
-                      <Statistic
-                        title="公网IP"
-                        value={networkList
-                          .filter((network) => network.type === "Public")
-                          .reduce((acc, curr) => acc + curr.totalIps, 0)}
-                        prefix={<CloudOutlined />}
-                      />
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card>
-                      <Statistic
-                        title="IP分配率"
-                        value={Math.round(
-                          (networkList.reduce(
-                            (acc, curr) => acc + curr.usedIps,
-                            0,
-                          ) /
-                            networkList.reduce(
-                              (acc, curr) => acc + curr.totalIps,
-                              0,
-                            )) *
-                            100,
-                        )}
-                        suffix="%"
-                        prefix={<ApiOutlined />}
-                      />
-                    </Card>
-                  </Col>
-                </Row>
-
-                <Divider orientation="left">网络使用情况</Divider>
-
-                <Row gutter={[16, 16]}>
-                  {networkList.map((network) => (
-                    <Col xs={24} sm={12} lg={8} key={network.id}>
-                      <Card
-                        title={
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                            }}
-                          >
-                            <span>{network.name}</span>
-                            {getStatusTag(network.status)}
-                          </div>
-                        }
-                        extra={
-                          <a onClick={() => viewNetworkDetails(network)}>
-                            详情
-                          </a>
-                        }
-                        style={{ height: "100%" }}
-                      >
-                        <Row gutter={[16, 8]}>
-                          <Col span={12}>
-                            <Text type="secondary">类型</Text>
-                            <div>{network.type}</div>
-                          </Col>
-                          <Col span={12}>
-                            {network.vlanId !== null && (
-                              <>
-                                <Text type="secondary">VLAN ID</Text>
-                                <div>{network.vlanId}</div>
-                              </>
-                            )}
-                          </Col>
-                          <Col span={24}>
-                            <Text type="secondary">CIDR</Text>
-                            <div>{network.cidr}</div>
-                          </Col>
-                          <Col span={12}>
-                            <Text type="secondary">网关</Text>
-                            <div>{network.gateway}</div>
-                          </Col>
-                          <Col span={12}>
-                            <Text type="secondary">DHCP</Text>
-                            <div>{network.dhcp ? "已开启" : "已关闭"}</div>
-                          </Col>
-                        </Row>
-
-                        <Divider style={{ margin: "12px 0" }} />
-
-                        <div>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              marginBottom: "8px",
-                            }}
-                          >
-                            <Text>IP使用率</Text>
-                            <Text>
-                              {network.usedIps}/{network.totalIps}
-                            </Text>
-                          </div>
-                          <Progress
-                            percent={calculateIPUsagePercent(
-                              network.usedIps,
-                              network.totalIps,
-                            )}
-                            size="small"
-                            strokeColor={
-                              calculateIPUsagePercent(
-                                network.usedIps,
-                                network.totalIps,
-                              ) > 80
-                                ? "#ff4d4f"
-                                : calculateIPUsagePercent(
-                                      network.usedIps,
-                                      network.totalIps,
-                                    ) > 60
-                                  ? "#faad14"
-                                  : "#52c41a"
-                            }
+    <Spin spinning={loading} tip="加载网络数据中...">
+      <div style={{ minHeight: loading ? "400px" : "auto" }}>
+        <Layout className="network-management">
+          <Content style={{ minHeight: 280 }}>
+            <Card
+              title={
+                <Space>
+                  <GlobalOutlined />
+                  <span>网络管理</span>
+                </Space>
+              }
+              extra={
+                <Space>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setNetworkModalVisible(true)}
+                  >
+                    新建网络
+                  </Button>
+                  <Button
+                    icon={<SyncOutlined />}
+                    onClick={() => {
+                      setLoading(true);
+                      setTimeout(() => setLoading(false), 500);
+                    }}
+                  >
+                    刷新
+                  </Button>
+                </Space>
+              }
+            >
+              <Tabs activeKey={activeTab} onChange={setActiveTab}>
+                <TabPane tab="网络概览" key="overview">
+                  <div className="network-overview">
+                    <Row gutter={[16, 16]}>
+                      <Col xs={24} sm={12} md={8} lg={6}>
+                        <Card>
+                          <Statistic
+                            title="网络总数"
+                            value={networkList.length}
+                            prefix={<GlobalOutlined />}
                           />
-                        </div>
+                        </Card>
+                      </Col>
+                      <Col xs={24} sm={12} md={8} lg={6}>
+                        <Card>
+                          <Statistic
+                            title="VLAN网络"
+                            value={
+                              networkList.filter(
+                                (network) => network.type === "VLAN"
+                              ).length
+                            }
+                            prefix={<ApartmentOutlined />}
+                          />
+                        </Card>
+                      </Col>
+                      <Col xs={24} sm={12} md={8} lg={6}>
+                        <Card>
+                          <Statistic
+                            title="公网IP"
+                            value={networkList
+                              .filter((network) => network.type === "Public")
+                              .reduce((acc, curr) => acc + curr.totalIps, 0)}
+                            prefix={<CloudOutlined />}
+                          />
+                        </Card>
+                      </Col>
+                      <Col xs={24} sm={12} md={8} lg={6}>
+                        <Card>
+                          <Statistic
+                            title="IP分配率"
+                            value={Math.round(
+                              (networkList.reduce(
+                                (acc, curr) => acc + curr.usedIps,
+                                0
+                              ) /
+                                networkList.reduce(
+                                  (acc, curr) => acc + curr.totalIps,
+                                  0
+                                )) *
+                                100
+                            )}
+                            suffix="%"
+                            prefix={<ApiOutlined />}
+                          />
+                        </Card>
+                      </Col>
+                    </Row>
 
-                        <div style={{ marginTop: "16px" }}>
-                          {network.tags.map((tag: string) => (
-                            <Tag key={tag}>{tag}</Tag>
-                          ))}
-                        </div>
-                      </Card>
-                    </Col>
-                  ))}
-                </Row>
-              </div>
-            </TabPane>
+                    <Divider orientation="left">网络使用情况</Divider>
 
-            <TabPane tab="网络列表" key="list">
-              <Table
-                columns={networkColumns}
-                dataSource={networkList}
-                rowKey="id"
-                loading={loading}
-                pagination={{ pageSize: 10 }}
-              />
-            </TabPane>
+                    <Row gutter={[16, 16]}>
+                      {networkList.map((network) => (
+                        <Col xs={24} sm={12} lg={8} key={network.id}>
+                          <Card
+                            title={
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <span>{network.name}</span>
+                                {getStatusTag(network.status)}
+                              </div>
+                            }
+                            extra={
+                              <a onClick={() => viewNetworkDetails(network)}>
+                                详情
+                              </a>
+                            }
+                            style={{ height: "100%" }}
+                          >
+                            <Row gutter={[16, 8]}>
+                              <Col span={12}>
+                                <Text type="secondary">类型</Text>
+                                <div>{network.type}</div>
+                              </Col>
+                              <Col span={12}>
+                                {network.vlanId !== null && (
+                                  <>
+                                    <Text type="secondary">VLAN ID</Text>
+                                    <div>{network.vlanId}</div>
+                                  </>
+                                )}
+                              </Col>
+                              <Col span={24}>
+                                <Text type="secondary">CIDR</Text>
+                                <div>{network.cidr}</div>
+                              </Col>
+                              <Col span={12}>
+                                <Text type="secondary">网关</Text>
+                                <div>{network.gateway}</div>
+                              </Col>
+                              <Col span={12}>
+                                <Text type="secondary">DHCP</Text>
+                                <div>{network.dhcp ? "已开启" : "已关闭"}</div>
+                              </Col>
+                            </Row>
 
-            <TabPane tab="路由表" key="routes">
-              <Card
-                title="路由表"
-                extra={
-                  <Button type="primary" size="small" icon={<PlusOutlined />}>
-                    添加路由
-                  </Button>
-                }
-              >
-                <Table
-                  columns={routeColumns}
-                  dataSource={mockRoutes}
-                  rowKey="id"
-                  pagination={false}
-                />
-              </Card>
-            </TabPane>
+                            <Divider style={{ margin: "12px 0" }} />
 
-            <TabPane tab="安全组规则" key="security">
-              <Card
-                title="安全组规则"
-                extra={
-                  <Button type="primary" size="small" icon={<PlusOutlined />}>
-                    添加规则
-                  </Button>
-                }
-              >
-                <Table
-                  columns={securityRuleColumns}
-                  dataSource={mockSecurityRules}
-                  rowKey="id"
-                  pagination={false}
-                />
-              </Card>
-            </TabPane>
+                            <div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  marginBottom: "8px",
+                                }}
+                              >
+                                <Text>IP使用率</Text>
+                                <Text>
+                                  {network.usedIps}/{network.totalIps}
+                                </Text>
+                              </div>
+                              <Progress
+                                percent={calculateIPUsagePercent(
+                                  network.usedIps,
+                                  network.totalIps
+                                )}
+                                size="small"
+                                strokeColor={
+                                  calculateIPUsagePercent(
+                                    network.usedIps,
+                                    network.totalIps
+                                  ) > 80
+                                    ? "#ff4d4f"
+                                    : calculateIPUsagePercent(
+                                        network.usedIps,
+                                        network.totalIps
+                                      ) > 60
+                                    ? "#faad14"
+                                    : "#52c41a"
+                                }
+                              />
+                            </div>
 
-            <TabPane tab="网络拓扑" key="topology">
-              <Card style={{ height: "600px" }}>
-                <div style={{ height: "500px", width: "100%" }}>
-                  <ReactFlow
-                    nodes={nodes}
-                    edges={edges}
-                    onNodesChange={onNodesChange}
-                    onEdgesChange={onEdgesChange}
-                    onConnect={onConnect}
-                    connectionMode={ConnectionMode.Loose}
-                    fitView
-                    attributionPosition="top-right"
-                  >
-                    <Controls />
-                    <MiniMap
-                      nodeStrokeColor="#333"
-                      nodeColor="#fff"
-                      nodeBorderRadius={2}
-                      maskColor="rgba(0, 0, 0, 0.1)"
-                    />
-                    <Background gap={12} size={1} />
-                  </ReactFlow>
-                </div>
-                <div
-                  style={{
-                    marginTop: "16px",
-                    display: "flex",
-                    gap: "16px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "16px",
-                        height: "16px",
-                        background: "#1890ff",
-                        borderRadius: "2px",
-                      }}
-                    ></div>
-                    <span>路由器/交换机</span>
+                            <div style={{ marginTop: "16px" }}>
+                              {network.tags.map((tag: string) => (
+                                <Tag key={tag}>{tag}</Tag>
+                              ))}
+                            </div>
+                          </Card>
+                        </Col>
+                      ))}
+                    </Row>
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "16px",
-                        height: "16px",
-                        background: "#722ed1",
-                        borderRadius: "2px",
-                      }}
-                    ></div>
-                    <span>NAT网络</span>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "16px",
-                        height: "16px",
-                        background: "#1890ff",
-                        borderRadius: "2px",
-                      }}
-                    ></div>
-                    <span>桥接网络</span>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "16px",
-                        height: "16px",
-                        background: "#fa8c16",
-                        borderRadius: "2px",
-                      }}
-                    ></div>
-                    <span>隔离网络</span>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "16px",
-                        height: "16px",
-                        background: "#13c2c2",
-                        borderRadius: "2px",
-                      }}
-                    ></div>
-                    <span>直连网络</span>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "16px",
-                        height: "16px",
-                        background: "#52c41a",
-                        borderRadius: "2px",
-                      }}
-                    ></div>
-                    <span>在线虚拟机</span>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "16px",
-                        height: "16px",
-                        background: "#ff7875",
-                        borderRadius: "2px",
-                      }}
-                    ></div>
-                    <span>离线虚拟机</span>
-                  </div>
-                </div>
-              </Card>
-            </TabPane>
-          </Tabs>
-        </Card>
+                </TabPane>
 
-        {/* 创建/编辑网络的模态框 */}
-        <Modal
-          title={selectedNetwork ? "编辑网络" : "新建网络"}
-          open={networkModalVisible}
-          onOk={handleNetworkModalOk}
-          onCancel={handleNetworkModalCancel}
-          width={700}
-          destroyOnHidden
-        >
-          <Form form={networkForm} layout="vertical">
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="name"
-                  label="网络名称"
-                  rules={[{ required: true, message: "请输入网络名称" }]}
-                >
-                  <Input placeholder="请输入网络名称" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="type"
-                  label="网络类型"
-                  rules={[{ required: true, message: "请选择网络类型" }]}
-                >
-                  <Select placeholder="请选择网络类型">
-                    <Select.Option value="VLAN">VLAN</Select.Option>
-                    <Select.Option value="Public">公网</Select.Option>
-                    <Select.Option value="Private">私有网络</Select.Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="vlanId"
-                  label="VLAN ID"
-                  rules={[
-                    {
-                      required: false,
-                      type: "number",
-                      min: 1,
-                      max: 4094,
-                      message: "VLAN ID必须在1-4094之间",
-                    },
-                  ]}
-                >
-                  <InputNumber
-                    style={{ width: "100%" }}
-                    placeholder="请输入VLAN ID (1-4094)"
+                <TabPane tab="网络列表" key="list">
+                  <Table
+                    columns={networkColumns}
+                    dataSource={networkList}
+                    rowKey="id"
+                    loading={loading}
+                    pagination={{ pageSize: 10 }}
                   />
+                </TabPane>
+
+                <TabPane tab="路由表" key="routes">
+                  <Card
+                    title="路由表"
+                    extra={
+                      <Button
+                        type="primary"
+                        size="small"
+                        icon={<PlusOutlined />}
+                      >
+                        添加路由
+                      </Button>
+                    }
+                  >
+                    <Table
+                      columns={routeColumns}
+                      dataSource={mockRoutes}
+                      rowKey="id"
+                      pagination={false}
+                    />
+                  </Card>
+                </TabPane>
+
+                <TabPane tab="安全组规则" key="security">
+                  <Card
+                    title="安全组规则"
+                    extra={
+                      <Button
+                        type="primary"
+                        size="small"
+                        icon={<PlusOutlined />}
+                      >
+                        添加规则
+                      </Button>
+                    }
+                  >
+                    <Table
+                      columns={securityRuleColumns}
+                      dataSource={mockSecurityRules}
+                      rowKey="id"
+                      pagination={false}
+                    />
+                  </Card>
+                </TabPane>
+
+                <TabPane tab="网络拓扑" key="topology">
+                  <Card style={{ height: "600px" }}>
+                    <div style={{ height: "500px", width: "100%" }}>
+                      <ReactFlow
+                        nodes={nodes}
+                        edges={edges}
+                        onNodesChange={onNodesChange}
+                        onEdgesChange={onEdgesChange}
+                        onConnect={onConnect}
+                        connectionMode={ConnectionMode.Loose}
+                        fitView
+                        attributionPosition="top-right"
+                      >
+                        <Controls />
+                        <MiniMap
+                          nodeStrokeColor="#333"
+                          nodeColor="#fff"
+                          nodeBorderRadius={2}
+                          maskColor="rgba(0, 0, 0, 0.1)"
+                        />
+                        <Background gap={12} size={1} />
+                      </ReactFlow>
+                    </div>
+                    <div
+                      style={{
+                        marginTop: "16px",
+                        display: "flex",
+                        gap: "16px",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "16px",
+                            height: "16px",
+                            background: "#1890ff",
+                            borderRadius: "2px",
+                          }}
+                        ></div>
+                        <span>路由器/交换机</span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "16px",
+                            height: "16px",
+                            background: "#722ed1",
+                            borderRadius: "2px",
+                          }}
+                        ></div>
+                        <span>NAT网络</span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "16px",
+                            height: "16px",
+                            background: "#1890ff",
+                            borderRadius: "2px",
+                          }}
+                        ></div>
+                        <span>桥接网络</span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "16px",
+                            height: "16px",
+                            background: "#fa8c16",
+                            borderRadius: "2px",
+                          }}
+                        ></div>
+                        <span>隔离网络</span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "16px",
+                            height: "16px",
+                            background: "#13c2c2",
+                            borderRadius: "2px",
+                          }}
+                        ></div>
+                        <span>直连网络</span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "16px",
+                            height: "16px",
+                            background: "#52c41a",
+                            borderRadius: "2px",
+                          }}
+                        ></div>
+                        <span>在线虚拟机</span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "16px",
+                            height: "16px",
+                            background: "#ff7875",
+                            borderRadius: "2px",
+                          }}
+                        ></div>
+                        <span>离线虚拟机</span>
+                      </div>
+                    </div>
+                  </Card>
+                </TabPane>
+              </Tabs>
+            </Card>
+
+            {/* 创建/编辑网络的模态框 */}
+            <Modal
+              title={selectedNetwork ? "编辑网络" : "新建网络"}
+              open={networkModalVisible}
+              onOk={handleNetworkModalOk}
+              onCancel={handleNetworkModalCancel}
+              width={700}
+              destroyOnHidden
+            >
+              <Form form={networkForm} layout="vertical">
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="name"
+                      label="网络名称"
+                      rules={[{ required: true, message: "请输入网络名称" }]}
+                    >
+                      <Input placeholder="请输入网络名称" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="type"
+                      label="网络类型"
+                      rules={[{ required: true, message: "请选择网络类型" }]}
+                    >
+                      <Select placeholder="请选择网络类型">
+                        <Select.Option value="VLAN">VLAN</Select.Option>
+                        <Select.Option value="Public">公网</Select.Option>
+                        <Select.Option value="Private">私有网络</Select.Option>
+                      </Select>
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="vlanId"
+                      label="VLAN ID"
+                      rules={[
+                        {
+                          required: false,
+                          type: "number",
+                          min: 1,
+                          max: 4094,
+                          message: "VLAN ID必须在1-4094之间",
+                        },
+                      ]}
+                    >
+                      <InputNumber
+                        style={{ width: "100%" }}
+                        placeholder="请输入VLAN ID (1-4094)"
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item name="clusterId" label="所属集群">
+                      <Select placeholder="请选择所属集群">
+                        <Select.Option value="1">生产环境集群</Select.Option>
+                        <Select.Option value="2">测试环境集群</Select.Option>
+                        <Select.Option value="3">DMZ集群</Select.Option>
+                        <Select.Option value="4">备份集群</Select.Option>
+                      </Select>
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="cidr"
+                      label="CIDR"
+                      rules={[
+                        { required: true, message: "请输入CIDR" },
+                        {
+                          pattern:
+                            /^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))$/,
+                          message: "CIDR格式不正确",
+                        },
+                      ]}
+                    >
+                      <Input placeholder="例如: 192.168.1.0/24" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="gateway"
+                      label="网关"
+                      rules={[
+                        { required: true, message: "请输入网关地址" },
+                        {
+                          pattern: /^([0-9]{1,3}\.){3}[0-9]{1,3}$/,
+                          message: "IP地址格式不正确",
+                        },
+                      ]}
+                    >
+                      <Input placeholder="例如: 192.168.1.1" />
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item name="dns" label="DNS服务器">
+                      <Select mode="tags" placeholder="请输入DNS服务器IP地址" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item name="dhcp" label="DHCP" valuePropName="checked">
+                      <Switch />
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                <Form.Item name="description" label="描述">
+                  <Input.TextArea rows={3} placeholder="请输入网络描述" />
                 </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item name="clusterId" label="所属集群">
-                  <Select placeholder="请选择所属集群">
-                    <Select.Option value="1">生产环境集群</Select.Option>
-                    <Select.Option value="2">测试环境集群</Select.Option>
-                    <Select.Option value="3">DMZ集群</Select.Option>
-                    <Select.Option value="4">备份集群</Select.Option>
-                  </Select>
+
+                <Form.Item name="tags" label="标签">
+                  <Select mode="tags" placeholder="请输入标签" />
                 </Form.Item>
-              </Col>
-            </Row>
+              </Form>
+            </Modal>
 
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="cidr"
-                  label="CIDR"
-                  rules={[
-                    { required: true, message: "请输入CIDR" },
-                    {
-                      pattern:
-                        /^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))$/,
-                      message: "CIDR格式不正确",
-                    },
-                  ]}
-                >
-                  <Input placeholder="例如: 192.168.1.0/24" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="gateway"
-                  label="网关"
-                  rules={[
-                    { required: true, message: "请输入网关地址" },
-                    {
-                      pattern: /^([0-9]{1,3}\.){3}[0-9]{1,3}$/,
-                      message: "IP地址格式不正确",
-                    },
-                  ]}
-                >
-                  <Input placeholder="例如: 192.168.1.1" />
-                </Form.Item>
-              </Col>
-            </Row>
+            {/* 网络详情模态框 */}
+            <Modal
+              title={`网络详情: ${selectedNetwork?.name}`}
+              open={detailModalVisible}
+              onCancel={() => setDetailModalVisible(false)}
+              width={800}
+              footer={null}
+            >
+              {selectedNetwork && (
+                <>
+                  <Descriptions
+                    title="基本信息"
+                    bordered
+                    column={{ xxl: 3, xl: 3, lg: 2, md: 2, sm: 1, xs: 1 }}
+                  >
+                    <Descriptions.Item label="网络名称">
+                      {selectedNetwork.name}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="网络类型">
+                      {selectedNetwork.type}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="状态">
+                      {getStatusTag(selectedNetwork.status)}
+                    </Descriptions.Item>
 
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item name="dns" label="DNS服务器">
-                  <Select mode="tags" placeholder="请输入DNS服务器IP地址" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item name="dhcp" label="DHCP" valuePropName="checked">
-                  <Switch />
-                </Form.Item>
-              </Col>
-            </Row>
+                    {selectedNetwork.vlanId && (
+                      <Descriptions.Item label="VLAN ID">
+                        {selectedNetwork.vlanId}
+                      </Descriptions.Item>
+                    )}
 
-            <Form.Item name="description" label="描述">
-              <Input.TextArea rows={3} placeholder="请输入网络描述" />
-            </Form.Item>
+                    <Descriptions.Item label="CIDR">
+                      {selectedNetwork.cidr}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="网关">
+                      {selectedNetwork.gateway}
+                    </Descriptions.Item>
 
-            <Form.Item name="tags" label="标签">
-              <Select mode="tags" placeholder="请输入标签" />
-            </Form.Item>
-          </Form>
-        </Modal>
+                    <Descriptions.Item label="DHCP">
+                      {selectedNetwork.dhcp ? (
+                        <Tag color="green">开启</Tag>
+                      ) : (
+                        <Tag color="default">关闭</Tag>
+                      )}
+                    </Descriptions.Item>
 
-        {/* 网络详情模态框 */}
-        <Modal
-          title={`网络详情: ${selectedNetwork?.name}`}
-          open={detailModalVisible}
-          onCancel={() => setDetailModalVisible(false)}
-          width={800}
-          footer={null}
-        >
-          {selectedNetwork && (
-            <>
-              <Descriptions
-                title="基本信息"
-                bordered
-                column={{ xxl: 3, xl: 3, lg: 2, md: 2, sm: 1, xs: 1 }}
-              >
-                <Descriptions.Item label="网络名称">
-                  {selectedNetwork.name}
-                </Descriptions.Item>
-                <Descriptions.Item label="网络类型">
-                  {selectedNetwork.type}
-                </Descriptions.Item>
-                <Descriptions.Item label="状态">
-                  {getStatusTag(selectedNetwork.status)}
-                </Descriptions.Item>
+                    <Descriptions.Item label="DNS服务器">
+                      {selectedNetwork.dns.join(", ")}
+                    </Descriptions.Item>
 
-                {selectedNetwork.vlanId && (
-                  <Descriptions.Item label="VLAN ID">
-                    {selectedNetwork.vlanId}
-                  </Descriptions.Item>
-                )}
+                    <Descriptions.Item
+                      label="IP使用情况"
+                      span={selectedNetwork.vlanId ? 1 : 2}
+                    >
+                      <div>
+                        <div style={{ marginBottom: "8px" }}>
+                          {selectedNetwork.usedIps}/{selectedNetwork.totalIps}(
+                          {calculateIPUsagePercent(
+                            selectedNetwork.usedIps,
+                            selectedNetwork.totalIps
+                          )}
+                          %)
+                        </div>
+                        <Progress
+                          percent={calculateIPUsagePercent(
+                            selectedNetwork.usedIps,
+                            selectedNetwork.totalIps
+                          )}
+                          size="small"
+                        />
+                      </div>
+                    </Descriptions.Item>
 
-                <Descriptions.Item label="CIDR">
-                  {selectedNetwork.cidr}
-                </Descriptions.Item>
-                <Descriptions.Item label="网关">
-                  {selectedNetwork.gateway}
-                </Descriptions.Item>
+                    <Descriptions.Item label="所属集群">
+                      {selectedNetwork.cluster || "-"}
+                    </Descriptions.Item>
 
-                <Descriptions.Item label="DHCP">
-                  {selectedNetwork.dhcp ? (
-                    <Tag color="green">开启</Tag>
-                  ) : (
-                    <Tag color="default">关闭</Tag>
-                  )}
-                </Descriptions.Item>
+                    <Descriptions.Item label="描述" span={3}>
+                      {selectedNetwork.description}
+                    </Descriptions.Item>
 
-                <Descriptions.Item label="DNS服务器">
-                  {selectedNetwork.dns.join(", ")}
-                </Descriptions.Item>
+                    <Descriptions.Item label="标签" span={3}>
+                      {selectedNetwork.tags.map((tag: string) => (
+                        <Tag key={tag}>{tag}</Tag>
+                      ))}
+                    </Descriptions.Item>
+                  </Descriptions>
 
-                <Descriptions.Item
-                  label="IP使用情况"
-                  span={selectedNetwork.vlanId ? 1 : 2}
-                >
-                  <div>
-                    <div style={{ marginBottom: "8px" }}>
+                  <Divider />
+
+                  <Button
+                    type="primary"
+                    onClick={() => viewIPDetails(selectedNetwork)}
+                    icon={<ApiOutlined />}
+                    style={{ marginRight: "16px" }}
+                  >
+                    IP地址分配
+                  </Button>
+
+                  <Button
+                    onClick={() => editNetwork(selectedNetwork)}
+                    icon={<EditOutlined />}
+                  >
+                    编辑网络
+                  </Button>
+                </>
+              )}
+            </Modal>
+
+            {/* IP详情抽屉 */}
+            <Drawer
+              title={`${selectedNetwork?.name} - IP地址分配`}
+              placement="right"
+              width={800}
+              onClose={() => setIpDetailsVisible(false)}
+              open={ipDetailsVisible}
+              extra={
+                <Button type="primary" icon={<PlusOutlined />}>
+                  分配IP
+                </Button>
+              }
+            >
+              {selectedNetwork && (
+                <>
+                  <Descriptions
+                    bordered
+                    column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
+                  >
+                    <Descriptions.Item label="CIDR">
+                      {selectedNetwork.cidr}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="网关">
+                      {selectedNetwork.gateway}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="IP使用率">
                       {selectedNetwork.usedIps}/{selectedNetwork.totalIps}(
                       {calculateIPUsagePercent(
                         selectedNetwork.usedIps,
-                        selectedNetwork.totalIps,
+                        selectedNetwork.totalIps
                       )}
                       %)
-                    </div>
-                    <Progress
-                      percent={calculateIPUsagePercent(
-                        selectedNetwork.usedIps,
-                        selectedNetwork.totalIps,
-                      )}
-                      size="small"
-                    />
-                  </div>
-                </Descriptions.Item>
+                    </Descriptions.Item>
+                  </Descriptions>
 
-                <Descriptions.Item label="所属集群">
-                  {selectedNetwork.cluster || "-"}
-                </Descriptions.Item>
+                  <Divider />
 
-                <Descriptions.Item label="描述" span={3}>
-                  {selectedNetwork.description}
-                </Descriptions.Item>
-
-                <Descriptions.Item label="标签" span={3}>
-                  {selectedNetwork.tags.map((tag: string) => (
-                    <Tag key={tag}>{tag}</Tag>
-                  ))}
-                </Descriptions.Item>
-              </Descriptions>
-
-              <Divider />
-
-              <Button
-                type="primary"
-                onClick={() => viewIPDetails(selectedNetwork)}
-                icon={<ApiOutlined />}
-                style={{ marginRight: "16px" }}
-              >
-                IP地址分配
-              </Button>
-
-              <Button
-                onClick={() => editNetwork(selectedNetwork)}
-                icon={<EditOutlined />}
-              >
-                编辑网络
-              </Button>
-            </>
-          )}
-        </Modal>
-
-        {/* IP详情抽屉 */}
-        <Drawer
-          title={`${selectedNetwork?.name} - IP地址分配`}
-          placement="right"
-          width={800}
-          onClose={() => setIpDetailsVisible(false)}
-          open={ipDetailsVisible}
-          extra={
-            <Button type="primary" icon={<PlusOutlined />}>
-              分配IP
-            </Button>
-          }
-        >
-          {selectedNetwork && (
-            <>
-              <Descriptions
-                bordered
-                column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
-              >
-                <Descriptions.Item label="CIDR">
-                  {selectedNetwork.cidr}
-                </Descriptions.Item>
-                <Descriptions.Item label="网关">
-                  {selectedNetwork.gateway}
-                </Descriptions.Item>
-                <Descriptions.Item label="IP使用率">
-                  {selectedNetwork.usedIps}/{selectedNetwork.totalIps}(
-                  {calculateIPUsagePercent(
-                    selectedNetwork.usedIps,
-                    selectedNetwork.totalIps,
-                  )}
-                  %)
-                </Descriptions.Item>
-              </Descriptions>
-
-              <Divider />
-
-              <Table
-                columns={ipColumns}
-                dataSource={selectedNetworkIps}
-                rowKey="ip"
-                pagination={{ pageSize: 10 }}
-              />
-            </>
-          )}
-        </Drawer>
-      </Content>
-    </Layout>
+                  <Table
+                    columns={ipColumns}
+                    dataSource={selectedNetworkIps}
+                    rowKey="ip"
+                    pagination={{ pageSize: 10 }}
+                  />
+                </>
+              )}
+            </Drawer>
+          </Content>
+        </Layout>
+      </div>
+    </Spin>
   );
 };
 

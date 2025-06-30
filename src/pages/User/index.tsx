@@ -213,9 +213,7 @@ const UserManagement: React.FC = () => {
       const response = await userService.toggleUserStatus(user.id, newStatus);
       if (response.success) {
         setUsers(
-          users.map((u) =>
-            u.id === user.id ? { ...u, status: newStatus } : u,
-          ),
+          users.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u))
         );
         message.success(response.message);
       } else {
@@ -272,7 +270,7 @@ const UserManagement: React.FC = () => {
         };
         const response = await userService.updateUser(
           editingUser.id,
-          updateData,
+          updateData
         );
         if (response.success) {
           message.success(response.message);
@@ -318,259 +316,251 @@ const UserManagement: React.FC = () => {
     administrators: users.filter((u) => u.user_type === "system_admin").length,
   };
 
-  // 如果正在加载，显示Loading状态
-  if (loading) {
-    return (
+  return (
+    <Spin spinning={loading} tip="加载用户数据中...">
       <div
         style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "400px",
+          minHeight: loading ? "400px" : "auto",
           background: themeConfig.token.colorBgLayout,
         }}
       >
-        <Spin size="large" tip="加载用户数据中..." />
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ background: themeConfig.token.colorBgLayout }}>
-      <Card
-        title={
-          <Space>
-            <UserOutlined />
-            <span>用户管理</span>
-          </Space>
-        }
-        extra={
-          <Space>
-            <Button
-              icon={<PlusOutlined />}
-              type="primary"
-              onClick={() => {
-                setEditingUser(null);
-                setCreateUserResult(null);
-                form.resetFields();
-                setModalVisible(true);
-              }}
-            >
-              新增用户
-            </Button>
-            <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
-              刷新
-            </Button>
-          </Space>
-        }
-      >
-        {/* 统计信息 */}
-        <Row gutter={16} style={{ marginBottom: 24 }}>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="总用户数"
-                value={statistics.total}
-                prefix={<TeamOutlined />}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="活跃用户"
-                value={statistics.active}
-                valueStyle={{ color: "#3f8600" }}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="禁用用户"
-                value={statistics.disabled}
-                valueStyle={{ color: "#cf1322" }}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="管理员"
-                value={statistics.administrators}
-                valueStyle={{ color: "#1890ff" }}
-              />
-            </Card>
-          </Col>
-        </Row>
-
-        {/* 筛选区域 */}
-        <Row gutter={16} style={{ marginBottom: 16 }}>
-          <Col span={8}>
-            <Search
-              placeholder="搜索用户名、姓名、邮箱..."
-              allowClear
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-            />
-          </Col>
-          <Col span={4}>
-            <Select
-              placeholder="用户类型"
-              style={{ width: "100%" }}
-              value={roleFilter}
-              onChange={setRoleFilter}
-            >
-              <Option value="all">全部类型</Option>
-              <Option value="system_admin">系统管理员</Option>
-              <Option value="security_admin">安全保密管理员</Option>
-              <Option value="security_auditor">安全审计员</Option>
-            </Select>
-          </Col>
-          <Col span={4}>
-            <Select
-              placeholder="状态"
-              style={{ width: "100%" }}
-              value={statusFilter}
-              onChange={setStatusFilter}
-            >
-              <Option value="all">全部状态</Option>
-              <Option value="active">正常</Option>
-              <Option value="disabled">禁用</Option>
-              <Option value="locked">锁定</Option>
-            </Select>
-          </Col>
-        </Row>
-
-        {/* 用户表格 */}
-        <Table
-          columns={columns}
-          dataSource={users}
-          rowKey="id"
-          loading={loading}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total) => `共 ${total} 条记录`,
-          }}
-        />
-      </Card>
-
-      {/* 用户编辑模态框 */}
-      <Modal
-        title={editingUser ? "编辑用户" : "新增用户"}
-        open={modalVisible}
-        onCancel={() => {
-          setModalVisible(false);
-          setCreateUserResult(null);
-        }}
-        footer={null}
-        width={600}
-      >
-        <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="login_name"
-                label="登录名"
-                rules={[{ required: true, message: "请输入登录名" }]}
-              >
-                <Input placeholder="用于登录的用户名" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="user_name"
-                label="用户名"
-                rules={[{ required: true, message: "请输入用户名" }]}
-              >
-                <Input placeholder="用户的显示名称" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="user_type"
-                label="用户类型"
-                rules={[{ required: true, message: "请选择用户类型" }]}
-              >
-                <Select placeholder="请选择用户类型">
-                  <Option value="system_admin">系统管理员</Option>
-                  <Option value="security_admin">安全保密管理员</Option>
-                  <Option value="security_auditor">安全审计员</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item>
+        <Card
+          title={
             <Space>
-              <Button type="primary" htmlType="submit">
-                {editingUser ? "更新" : "创建"}
-              </Button>
+              <UserOutlined />
+              <span>用户管理</span>
+            </Space>
+          }
+          extra={
+            <Space>
               <Button
+                icon={<PlusOutlined />}
+                type="primary"
                 onClick={() => {
-                  setModalVisible(false);
+                  setEditingUser(null);
                   setCreateUserResult(null);
+                  form.resetFields();
+                  setModalVisible(true);
                 }}
               >
-                取消
+                新增用户
+              </Button>
+              <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
+                刷新
               </Button>
             </Space>
-          </Form.Item>
-        </Form>
+          }
+        >
+          {/* 统计信息 */}
+          <Row gutter={16} style={{ marginBottom: 24 }}>
+            <Col span={6}>
+              <Card>
+                <Statistic
+                  title="总用户数"
+                  value={statistics.total}
+                  prefix={<TeamOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card>
+                <Statistic
+                  title="活跃用户"
+                  value={statistics.active}
+                  valueStyle={{ color: "#3f8600" }}
+                />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card>
+                <Statistic
+                  title="禁用用户"
+                  value={statistics.disabled}
+                  valueStyle={{ color: "#cf1322" }}
+                />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card>
+                <Statistic
+                  title="管理员"
+                  value={statistics.administrators}
+                  valueStyle={{ color: "#1890ff" }}
+                />
+              </Card>
+            </Col>
+          </Row>
 
-        {/* 显示创建用户结果 */}
-        {createUserResult && !editingUser && (
-          <Alert
-            message="用户创建成功！"
-            description={
-              <div>
-                <p>
-                  <strong>登录名：</strong>
-                  {createUserResult.login_name}
-                </p>
-                <p>
-                  <strong>初始密码：</strong>
-                  <Text code copyable={{ text: createUserResult.password }}>
-                    {createUserResult.password}
-                  </Text>
-                  <Button
-                    type="link"
-                    icon={<CopyOutlined />}
-                    onClick={() => {
-                      navigator.clipboard.writeText(createUserResult.password);
-                      message.success("密码已复制到剪贴板");
-                    }}
-                  >
-                    复制密码
-                  </Button>
-                </p>
-                <p style={{ color: "#ff4d4f", fontSize: "12px" }}>
-                  请妥善保存此密码，用户首次登录后建议修改密码。
-                </p>
-              </div>
-            }
-            type="success"
-            showIcon
-            style={{ marginTop: 16 }}
-            action={
-              <Button
-                size="small"
-                onClick={() => {
-                  setModalVisible(false);
-                  setCreateUserResult(null);
-                }}
+          {/* 筛选区域 */}
+          <Row gutter={16} style={{ marginBottom: 16 }}>
+            <Col span={8}>
+              <Search
+                placeholder="搜索用户名、姓名、邮箱..."
+                allowClear
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
+            </Col>
+            <Col span={4}>
+              <Select
+                placeholder="用户类型"
+                style={{ width: "100%" }}
+                value={roleFilter}
+                onChange={setRoleFilter}
               >
-                关闭
-              </Button>
-            }
+                <Option value="all">全部类型</Option>
+                <Option value="system_admin">系统管理员</Option>
+                <Option value="security_admin">安全保密管理员</Option>
+                <Option value="security_auditor">安全审计员</Option>
+              </Select>
+            </Col>
+            <Col span={4}>
+              <Select
+                placeholder="状态"
+                style={{ width: "100%" }}
+                value={statusFilter}
+                onChange={setStatusFilter}
+              >
+                <Option value="all">全部状态</Option>
+                <Option value="active">正常</Option>
+                <Option value="disabled">禁用</Option>
+                <Option value="locked">锁定</Option>
+              </Select>
+            </Col>
+          </Row>
+
+          {/* 用户表格 */}
+          <Table
+            columns={columns}
+            dataSource={users}
+            rowKey="id"
+            loading={loading}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total) => `共 ${total} 条记录`,
+            }}
           />
-        )}
-      </Modal>
-    </div>
+        </Card>
+
+        {/* 用户编辑模态框 */}
+        <Modal
+          title={editingUser ? "编辑用户" : "新增用户"}
+          open={modalVisible}
+          onCancel={() => {
+            setModalVisible(false);
+            setCreateUserResult(null);
+          }}
+          footer={null}
+          width={600}
+        >
+          <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="login_name"
+                  label="登录名"
+                  rules={[{ required: true, message: "请输入登录名" }]}
+                >
+                  <Input placeholder="用于登录的用户名" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="user_name"
+                  label="用户名"
+                  rules={[{ required: true, message: "请输入用户名" }]}
+                >
+                  <Input placeholder="用户的显示名称" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="user_type"
+                  label="用户类型"
+                  rules={[{ required: true, message: "请选择用户类型" }]}
+                >
+                  <Select placeholder="请选择用户类型">
+                    <Option value="system_admin">系统管理员</Option>
+                    <Option value="security_admin">安全保密管理员</Option>
+                    <Option value="security_auditor">安全审计员</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item>
+              <Space>
+                <Button type="primary" htmlType="submit">
+                  {editingUser ? "更新" : "创建"}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setModalVisible(false);
+                    setCreateUserResult(null);
+                  }}
+                >
+                  取消
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+
+          {/* 显示创建用户结果 */}
+          {createUserResult && !editingUser && (
+            <Alert
+              message="用户创建成功！"
+              description={
+                <div>
+                  <p>
+                    <strong>登录名：</strong>
+                    {createUserResult.login_name}
+                  </p>
+                  <p>
+                    <strong>初始密码：</strong>
+                    <Text code copyable={{ text: createUserResult.password }}>
+                      {createUserResult.password}
+                    </Text>
+                    <Button
+                      type="link"
+                      icon={<CopyOutlined />}
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          createUserResult.password
+                        );
+                        message.success("密码已复制到剪贴板");
+                      }}
+                    >
+                      复制密码
+                    </Button>
+                  </p>
+                  <p style={{ color: "#ff4d4f", fontSize: "12px" }}>
+                    请妥善保存此密码，用户首次登录后建议修改密码。
+                  </p>
+                </div>
+              }
+              type="success"
+              showIcon
+              style={{ marginTop: 16 }}
+              action={
+                <Button
+                  size="small"
+                  onClick={() => {
+                    setModalVisible(false);
+                    setCreateUserResult(null);
+                  }}
+                >
+                  关闭
+                </Button>
+              }
+            />
+          )}
+        </Modal>
+      </div>
+    </Spin>
   );
 };
 

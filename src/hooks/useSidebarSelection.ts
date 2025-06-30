@@ -88,7 +88,7 @@ export const useSidebarSelection = (): UseSidebarSelectionReturn => {
       clearSelection();
       setSelectedCluster(cluster);
     },
-    [clearSelection],
+    [clearSelection]
   );
 
   /**
@@ -100,7 +100,7 @@ export const useSidebarSelection = (): UseSidebarSelectionReturn => {
       clearSelection();
       setSelectedHost(host);
     },
-    [clearSelection],
+    [clearSelection]
   );
 
   /**
@@ -112,7 +112,7 @@ export const useSidebarSelection = (): UseSidebarSelectionReturn => {
       clearSelection();
       setSelectedVM(vm);
     },
-    [clearSelection],
+    [clearSelection]
   );
 
   /**
@@ -124,7 +124,7 @@ export const useSidebarSelection = (): UseSidebarSelectionReturn => {
       clearSelection();
       setSelectedNetwork(network);
     },
-    [clearSelection],
+    [clearSelection]
   );
 
   /**
@@ -136,7 +136,7 @@ export const useSidebarSelection = (): UseSidebarSelectionReturn => {
       clearSelection();
       setSelectedStorage(storage);
     },
-    [clearSelection],
+    [clearSelection]
   );
 
   /**
@@ -179,7 +179,7 @@ export const useSidebarSelection = (): UseSidebarSelectionReturn => {
 
       setIsLoading(false);
     },
-    [selectHost, selectVM, selectNetwork, selectStorage, clearSelection],
+    [selectHost, selectVM, selectNetwork, selectStorage, clearSelection]
   );
 
   /**

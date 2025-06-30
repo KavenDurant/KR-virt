@@ -28,8 +28,6 @@ const AppBootstrap: React.FC = () => {
 
   // Token自动刷新初始化
   useEffect(() => {
-    console.log("🔧 应用启动器：初始化Token自动刷新...");
-
     // 清理可能存在的无效Token
     const hasInvalidToken = loginService.cleanupInvalidToken();
     if (hasInvalidToken) {
@@ -40,8 +38,6 @@ const AppBootstrap: React.FC = () => {
     const isAuthenticated = loginService.isAuthenticated();
     const token = loginService.getToken();
     const user = loginService.getCurrentUser();
-
-    console.log("📊 当前状态检查:");
     console.log("  - 认证状态:", isAuthenticated);
     console.log("  - Token存在:", !!token);
     console.log("  - 用户信息:", !!user);
@@ -58,7 +54,6 @@ const AppBootstrap: React.FC = () => {
       // 在开发环境中额外打印调试信息
       if (import.meta.env.DEV) {
         setTimeout(() => {
-          console.log("🔍 5秒后检查自动刷新状态:");
           const laterStatus = loginService.getAutoRefreshStatus();
           console.log("  - 运行状态:", laterStatus.isRunning);
           console.log("  - 刷新状态:", laterStatus.isRefreshing);
@@ -84,14 +79,10 @@ const AppBootstrap: React.FC = () => {
     } else {
       console.log("❌ 用户未登录，跳过Token自动刷新");
     }
-
-    // 修复：不在组件卸载时停止Token自动刷新
     // Token自动刷新应该在整个应用生命周期中保持运行
     // 只有在用户主动登出时才停止
     return () => {
       console.log("🔧 AppBootstrap组件卸载，但保持Token自动刷新运行");
-      // 注释掉这行，避免导航时停止Token自动刷新
-      // loginService.stopGlobalTokenRefresh();
     };
   }, []);
 

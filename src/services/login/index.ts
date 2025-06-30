@@ -414,7 +414,7 @@ class LoginService {
 
     // 如果有token，尝试调用后端登出API
     if (token) {
-      await api.post(
+      await api.get(
         "/user/logout",
         {},
         {

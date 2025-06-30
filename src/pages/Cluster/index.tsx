@@ -995,15 +995,10 @@ const ClusterManagement: React.FC = () => {
       console.log("解散集群API返回结果:", result);
 
       if (result.success) {
-        console.log("解散集群成功，显示成功消息:", result.message);
         message.success(result.message);
-
-        // 解散集群成功后，退出登录并跳转到项目最开始的页面
-        console.log("解散集群成功，开始退出登录流程...");
 
         // 调用登出API清除认证状态
         await loginService.logout();
-        console.log("登出成功，准备跳转到bootstrap页面");
 
         // 延迟跳转，让用户看到成功消息
         setTimeout(() => {

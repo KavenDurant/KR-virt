@@ -9,7 +9,7 @@ import {
   Modal,
   Form,
   Input,
-  message,
+  App,
 } from "antd";
 import {
   Routes,
@@ -38,6 +38,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { loginService } from "@/services/login";
 import type { UserInfo } from "@/services/login";
 import { UserActivityMonitor } from "@/components/UserActivity";
+
 import type {
   IdleEvent,
   ActiveEvent,
@@ -52,6 +53,7 @@ import "./AppLayout.css";
 const AppLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { message } = App.useApp();
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { actualTheme } = useTheme();
 
@@ -128,7 +130,7 @@ const AppLayout: React.FC = () => {
         originalWidthRef.current = validWidth;
       }
     },
-    [], // 移除sidebarWidth依赖，避免频繁重新创建函数
+    [] // 移除sidebarWidth依赖，避免频繁重新创建函数
   );
 
   // 根据当前路径确定选中的菜单项
@@ -138,7 +140,7 @@ const AppLayout: React.FC = () => {
   }, [location.pathname]);
 
   const [selectedActivityItem, setSelectedActivityItem] = useState(
-    getCurrentSelectedPath,
+    getCurrentSelectedPath
   );
 
   // 获取侧边栏数据的异步函数
@@ -201,13 +203,13 @@ const AppLayout: React.FC = () => {
 
     window.addEventListener(
       "refresh-sidebar",
-      handleSidebarRefresh as EventListener,
+      handleSidebarRefresh as EventListener
     );
 
     return () => {
       window.removeEventListener(
         "refresh-sidebar",
-        handleSidebarRefresh as EventListener,
+        handleSidebarRefresh as EventListener
       );
     };
   }, [shouldShowSidebar, selectedActivityItem, loadSidebarData]);
@@ -265,7 +267,9 @@ const AppLayout: React.FC = () => {
     try {
       // 调用异步登出API
       const result = await loginService.logout();
-      console.log("登出结果:", result.message);
+
+      // 显示登出成功消息
+      message.success(result.message);
 
       // 使用React Router进行导航，避免URL问题
       navigate("/login", { replace: true });
@@ -379,8 +383,8 @@ const AppLayout: React.FC = () => {
                             ? "#ffffff"
                             : "#000000"
                           : actualTheme === "dark"
-                            ? "#858585"
-                            : "#666666",
+                          ? "#858585"
+                          : "#666666",
                     },
                   })}
                 </Tooltip>
@@ -392,8 +396,8 @@ const AppLayout: React.FC = () => {
                       ? "#444444"
                       : "#e6f7ff"
                     : actualTheme === "dark"
-                      ? "#333333"
-                      : "#f3f3f3",
+                    ? "#333333"
+                    : "#f3f3f3",
                 height: "50px",
               },
             }))}
@@ -447,8 +451,8 @@ const AppLayout: React.FC = () => {
                           ? "#ffffff"
                           : "#000000"
                         : actualTheme === "dark"
-                          ? "#858585"
-                          : "#666666",
+                        ? "#858585"
+                        : "#666666",
                       cursor: "pointer",
                     }}
                     onClick={() => {
@@ -556,7 +560,7 @@ const AppLayout: React.FC = () => {
                 data={sidebarData}
                 onSelect={(
                   selectedKeys: string[],
-                  info: Record<string, unknown>,
+                  info: Record<string, unknown>
                 ) => {
                   // 处理树节点选择事件，传递选择信息到主内容区域
                   const selectedKey = selectedKeys[0];
@@ -574,7 +578,7 @@ const AppLayout: React.FC = () => {
                           nodeType: nodeInfo.type,
                           nodeData: nodeInfo.data,
                         },
-                      }),
+                      })
                     );
                   }
                 }}
@@ -598,7 +602,7 @@ const AppLayout: React.FC = () => {
                     routes.find((route) => route.path === selectedActivityItem)
                       ?.name || "仪表盘",
                   icon: routes.find(
-                    (route) => route.path === selectedActivityItem,
+                    (route) => route.path === selectedActivityItem
                   )?.icon,
                   children: [],
                   className: "sidebar-menu-item",
@@ -634,7 +638,7 @@ const AppLayout: React.FC = () => {
                   if (now - lastUpdateTime > throttleDelay) {
                     originalWidthRef.current = Math.max(
                       200,
-                      Math.min(newWidth, 400),
+                      Math.min(newWidth, 400)
                     );
                     lastUpdateTime = now;
                   }

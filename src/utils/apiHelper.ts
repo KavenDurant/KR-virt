@@ -43,7 +43,7 @@ export class ApiHelper {
 
     try {
       const response = await http.get<T>(url, params, {
-        showErrorMessage: false, // 我们自己处理错误
+        showErrorMessage: false,
         ...requestConfig,
       });
 

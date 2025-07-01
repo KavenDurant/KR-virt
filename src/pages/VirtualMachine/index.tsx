@@ -20,6 +20,7 @@ import {
   message,
   Switch,
   Empty,
+  Spin,
 } from "antd";
 import type { MenuProps, TabsProps } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -66,7 +67,6 @@ import { useSidebarSelection } from "../../hooks";
 import type {
   VirtualMachine as VMData,
   VMManagementData,
-  Node,
 } from "../../services/mockData";
 import { mockVMManagementData } from "../../services/mockData";
 import { CreateVMModal } from "./components";
@@ -1957,8 +1957,12 @@ const VirtualMachineManagement: React.FC = () => {
   }
 
   return (
-    <div style={{ width: "100%" }}>
-      <div
+    <Spin spinning={loading} tip="加载虚拟机数据中...">
+      <div style={{ 
+        width: "100%",
+        minHeight: loading ? "400px" : "auto"
+      }}>
+        <div
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -2161,7 +2165,7 @@ const VirtualMachineManagement: React.FC = () => {
                       showTotal: (total, range) =>
                         `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
                     }}
-                    loading={loading}
+
                     scroll={{ x: 1400 }}
                     bordered
                     size="middle"
@@ -2335,7 +2339,8 @@ const VirtualMachineManagement: React.FC = () => {
         onCancel={() => setCreateVMModal(false)}
         onFinish={handleCreateVM}
       />
-    </div>
+      </div>
+    </Spin>
   );
 };
 

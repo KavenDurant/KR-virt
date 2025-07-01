@@ -329,25 +329,14 @@ const StorageManagement: React.FC = () => {
       ? Math.round((statistics.usedCapacity / statistics.totalCapacity) * 100)
       : 0;
 
-  // 如果正在加载，显示Loading状态
-  if (loading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "400px",
-          background: themeConfig.token.colorBgLayout,
+  return (
+    <Spin spinning={loading} tip="加载存储数据中...">
+      <div 
+        style={{ 
+          minHeight: loading ? "400px" : "auto",
+          background: themeConfig.token.colorBgLayout 
         }}
       >
-        <Spin size="large" tip="加载存储数据中..." />
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ background: themeConfig.token.colorBgLayout }}>
       <Card
         title={
           <Space>
@@ -561,7 +550,8 @@ const StorageManagement: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+      </div>
+    </Spin>
   );
 };
 

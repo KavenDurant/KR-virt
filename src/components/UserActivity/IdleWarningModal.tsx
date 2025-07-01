@@ -132,7 +132,7 @@ const IdleWarningModal: React.FC<IdleWarningModalProps> = ({
       maskClosable={maskClosable}
       width={480}
       centered
-      destroyOnClose
+      destroyOnHidden
       footer={null}
       className="idle-warning-modal"
       style={{ userSelect: "none" }}

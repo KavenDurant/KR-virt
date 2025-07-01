@@ -101,7 +101,8 @@ export const useUserActivity = (
       // 重置Token刷新计时器
       if (finalConfig.resetTokenOnActivity && loginService.isAuthenticated()) {
         try {
-          loginService.resetTokenRefreshTimer?.();
+          // 重新触发token刷新机制
+          loginService.startGlobalTokenRefresh();
         } catch (error) {
           console.warn("Failed to reset token refresh timer:", error);
         }
@@ -282,14 +283,14 @@ export const useUserActivity = (
   // 配置react-idle-timer
   const idleTimer = useIdleTimer({
     timeout: finalConfig.timeout,
-    promptTimeout: finalConfig.promptTimeout,
+    promptBeforeIdle: finalConfig.promptTimeout,
     onIdle: handleIdle,
     onActive: handleActive,
     onPrompt: handlePrompt,
     onAction: handleActivity,
     debounce: finalConfig.debounce,
     throttle: finalConfig.throttle,
-    events: finalConfig.events as any,
+    events: finalConfig.events as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     crossTab: finalConfig.crossTab,
     startOnMount: true,
     startManually: false,
@@ -395,7 +396,7 @@ export const useUserActivity = (
   const getConfig = useCallback(() => finalConfig, [finalConfig]);
 
   // 更新配置（注意：这会重新创建idleTimer）
-  const updateConfig = useCallback((newConfig: Partial<UserActivityConfig>) => {
+  const updateConfig = useCallback((newConfig: Partial<UserActivityConfig>) => { // eslint-disable-line @typescript-eslint/no-unused-vars
     // 这里需要重新初始化，实际使用中可能需要更复杂的逻辑
     console.warn("updateConfig is not fully implemented yet");
   }, []);

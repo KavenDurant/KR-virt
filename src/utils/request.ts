@@ -320,6 +320,11 @@ const handleCommonErrors = (
     return errorDetails.message;
   }
 
+  // 如果有 error 字段，也使用
+  if (errorDetails?.error && typeof errorDetails.error === "string") {
+    return errorDetails.error;
+  }
+
   // 根据状态码和请求URL判断错误类型
   switch (status) {
     case 200:
@@ -333,6 +338,12 @@ const handleCommonErrors = (
         return "用户名或密码不正确";
       }
       return "登录已过期，请重新登录";
+    case 403:
+      return "权限不足";
+    case 404:
+      return "请求的资源不存在";
+    case 422:
+      return "请求参数错误";
     case 498:
       return "账户需要激活，请联系管理员";
     default:

@@ -38,7 +38,7 @@ interface LogManagementProps {
   logs: LogEntry[];
   onRefresh?: () => void;
   onExport?: () => void;
-  onSearch?: (filters: any) => void;
+  onSearch?: () => void;
 }
 
 // 模拟日志数据
@@ -160,7 +160,7 @@ const LogManagement: React.FC<LogManagementProps> = ({
         { text: "错误", value: "error" },
         { text: "调试", value: "debug" },
       ],
-      onFilter: (value: any, record: LogEntry) => 
+      onFilter: (value: unknown, record: LogEntry) => 
         record.level === value,
     },
     {
@@ -176,7 +176,7 @@ const LogManagement: React.FC<LogManagementProps> = ({
         { text: "网络管理", value: "网络管理" },
         { text: "备份服务", value: "备份服务" },
       ],
-      onFilter: (value: any, record: LogEntry) => 
+      onFilter: (value: unknown, record: LogEntry) => 
         record.module === value,
     },
     {

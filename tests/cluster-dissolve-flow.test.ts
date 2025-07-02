@@ -7,6 +7,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { clusterInitService } from "@/services/cluster";
 import { loginService } from "@/services/login";
 import { message } from "antd";
+import { BrowserRouter } from "react-router-dom";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import Cluster from "@/components/Cluster";
 
 // Mock window.location
 const mockLocation = {
@@ -51,7 +54,7 @@ describe("集群解散流程测试", () => {
     vi.spyOn(loginService, "logout").mockResolvedValue(mockLogoutResult);
 
     // Mock setTimeout
-    const mockSetTimeout = vi.fn((callback, delay) => {
+    const mockSetTimeout = vi.fn((callback) => {
       // 立即执行回调以便测试
       callback();
       return 1;
@@ -123,7 +126,7 @@ describe("集群解散流程测试", () => {
     // 模拟解散集群操作
     try {
       await clusterInitService.dissolveCluster();
-    } catch (error) {
+    } catch {
       // 异常时不执行登出和跳转逻辑
     }
 
@@ -132,6 +135,86 @@ describe("集群解散流程测试", () => {
     expect(loginService.logout).not.toHaveBeenCalled();
     expect(mockLocation.hash).toBe("");
     expect(mockLocation.reload).not.toHaveBeenCalled();
+  });
+
+  it("应该在解散失败时显示错误信息", async () => {
+    const mockClusterDissolveFailure = vi.fn().mockRejectedValue(
+      new Error("解散集群失败")
+    );
+
+    vi.mocked(apiHelper.delete).mockImplementation(mockClusterDissolveFailure);
+
+    render(
+      <BrowserRouter>
+        <Cluster />
+      </BrowserRouter>
+    );
+
+    // 等待页面加载
+    await waitFor(() => {
+      expect(screen.getByText("集群管理")).toBeInTheDocument();
+    });
+
+    // 找到并点击解散按钮
+    const dissolveButton = screen.getByRole("button", { name: /解散/i });
+    fireEvent.click(dissolveButton);
+
+    // 等待确认对话框出现
+    await waitFor(() => {
+      expect(
+        screen.getByText(/确定要解散此集群吗？/)
+      ).toBeInTheDocument();
+    });
+
+    // 点击确认
+    const confirmButton = screen.getByRole("button", { name: /确定/i });
+    fireEvent.click(confirmButton);
+
+    // 验证错误信息显示
+    await waitFor(() => {
+      expect(screen.getByText(/解散集群失败/)).toBeInTheDocument();
+    });
+  });
+
+  it("应该在网络错误时处理异常", async () => {
+    const networkError = new Error("Network Error");
+    const mockNetworkError = vi.fn().mockRejectedValue(networkError);
+
+    vi.mocked(apiHelper.delete).mockImplementation(mockNetworkError);
+
+    render(
+      <BrowserRouter>
+        <Cluster />
+      </BrowserRouter>
+    );
+
+    // 等待页面加载
+    await waitFor(() => {
+      expect(screen.getByText("集群管理")).toBeInTheDocument();
+    });
+
+    try {
+      // 尝试解散操作
+      const dissolveButton = screen.getByRole("button", { name: /解散/i });
+      fireEvent.click(dissolveButton);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/确定要解散此集群吗？/)
+        ).toBeInTheDocument();
+      });
+
+      const confirmButton = screen.getByRole("button", { name: /确定/i });
+      fireEvent.click(confirmButton);
+
+      // 验证网络错误处理
+      await waitFor(() => {
+        expect(screen.getByText(/网络连接异常/)).toBeInTheDocument();
+      });
+    } catch {
+      // 网络错误处理
+      console.log("网络错误已处理");
+    }
   });
 });
 

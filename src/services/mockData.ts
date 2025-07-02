@@ -1,5 +1,7 @@
 import { clusterInitService } from "./cluster";
 import type { ClusterTreeResponse } from "./cluster/types";
+import { vmService } from "./vm";
+import type { VMTreeResponse } from "./vm/types";
 
 // Mock数据服务 - 模拟PVE风格的集群和虚拟机数据
 export interface VirtualMachine {
@@ -462,9 +464,68 @@ export const getClusterSidebarData = async (): Promise<DataCenter | null> => {
   }
 };
 
+// 新增：获取虚拟机树数据的异步函数
+export const getVMSidebarData = async (): Promise<DataCenter | null> => {
+  try {
+    // 调用虚拟机树API
+    const result = await vmService.getVMTree();
+
+    if (result.success && result.data) {
+      // 将API数据转换为侧边栏数据格式
+      return convertVMTreeToDataCenter(result.data);
+    } else {
+      console.warn("获取虚拟机树失败:", result.message);
+      // 不再回退到mock数据，抛出错误让上层处理
+      throw new Error(result.message || "获取虚拟机树失败");
+    }
+  } catch (error) {
+    console.error("获取虚拟机树数据异常:", error);
+    // 不再回退到mock数据，重新抛出错误
+    throw error;
+  }
+};
+
+// 将VM树API响应转换为DataCenter格式
+const convertVMTreeToDataCenter = (treeData: VMTreeResponse): DataCenter => {
+  return {
+    id: "datacenter-vm-real",
+    name: "虚拟机管理环境",
+    type: "datacenter",
+    clusters: [
+      {
+        id: "cluster-vm-real",
+        name: "虚拟机集群",
+        type: "cluster",
+        status: "healthy",
+        nodes: treeData.nodes.map((hostNode) => ({
+          id: `host-${hostNode.hostname}`,
+          name: hostNode.hostname,
+          type: "node" as const,
+          status: hostNode.status === "online" ? ("online" as const) : ("offline" as const),
+          cpu: 0, // VM Tree API中没有CPU使用率信息
+          memory: 0, // VM Tree API中没有内存使用率信息
+          uptime: hostNode.status === "online" ? "在线" : "离线",
+          vms: hostNode.vms.map((vm) => ({
+            id: vm.uuid,
+            name: vm.name,
+            status: vm.status as "running" | "stopped" | "suspended" | "error",
+            type: "qemu", // 默认为qemu类型
+            vmid: parseInt(vm.uuid.slice(-4), 16) % 10000, // 从UUID生成一个数字ID
+            cpu: vm.cpu_count,
+            memory: vm.memory_gb,
+            diskSize: 50, // 默认磁盘大小，API中没有此信息
+            node: vm.hostname,
+            uptime: vm.status === "running" ? "运行中" : undefined,
+          })),
+        })),
+      },
+    ],
+  };
+};
+
 // 将集群树API响应转换为DataCenter格式
 const convertClusterTreeToDataCenter = (
-  treeData: ClusterTreeResponse,
+  treeData: ClusterTreeResponse
 ): DataCenter => {
   return {
     id: "datacenter-real",
@@ -517,39 +578,41 @@ const convertClusterTreeToDataCenter = (
 };
 
 // 节点状态类型定义
-export type NodeStatus = 'online' | 'offline' | 'standby' | 'maintenance';
+export type NodeStatus = "online" | "offline" | "standby" | "maintenance";
 
 // 节点状态映射配置
 export const NODE_STATUS_CONFIG = {
   online: {
-    label: '在线',
-    color: '#52c41a',
-    icon: '🟢',
+    label: "在线",
+    color: "#52c41a",
+    icon: "🟢",
   },
   offline: {
-    label: '离线',
-    color: '#8c8c8c',
-    icon: '⚫',
+    label: "离线",
+    color: "#8c8c8c",
+    icon: "⚫",
   },
   standby: {
-    label: '节点待命',
-    color: '#faad14',
-    icon: '🟡',
+    label: "节点待命",
+    color: "#faad14",
+    icon: "🟡",
   },
   maintenance: {
-    label: '维护模式',
-    color: '#ff7a00',
-    icon: '🟠',
+    label: "维护模式",
+    color: "#ff7a00",
+    icon: "🟠",
   },
 } as const;
 
 // 获取节点状态配置
 export const getNodeStatusConfig = (status: string) => {
-  return NODE_STATUS_CONFIG[status as NodeStatus] || {
+  return (
+    NODE_STATUS_CONFIG[status as NodeStatus] || {
     label: status,
-    color: '#d9d9d9',
-    icon: '⚪',
-  };
+      color: "#d9d9d9",
+      icon: "⚪",
+    }
+  );
 };
 
 // 获取状态颜色
@@ -593,200 +656,32 @@ export const getStatusIcon = (type: string) => {
   return "📁";
 };
 
-// 虚拟机管理页面数据类型
+// 虚拟机管理页面Table数据类型
 export interface VMManagementData {
-  id: string;
   name: string;
+  hostname: string;
+  uuid: string;
   status: string;
-  ip: string;
-  cpu: string | number;
-  memory: string | number;
-  storage: string | number;
-  createTime: string;
-  os: string;
-  hypervisor: string;
-  zone: string;
-  cluster: string;
-  host: string;
-  description: string;
-  owner: string;
-  cpuUsage: string;
-  memoryUsage: string;
-  rootDisk: string;
-  dataDisk: string;
-  instanceType: string;
-  networkType: string;
-  securityGroup: string;
-  hostName: string;
-  expireTime: string;
-  tags: string[];
-  platform: string;
-  uptime?: string;
-  powerState?: string;
-  tools?: string;
-  snapshots?: number;
+  cpu_count: number;
+  memory_gb: number;
 }
 
-// 虚拟机管理页面模拟数据
+// 虚拟机管理页面简化模拟数据（只保留API返回的原始字段）
 export const mockVMManagementData: VMManagementData[] = [
   {
-    id: "vm-001",
-    name: "Web服务器01",
-    status: "运行中",
-    ip: "192.168.1.101",
-    cpu: "4核",
-    memory: "8GB",
-    storage: "100GB",
-    createTime: "2025-05-10",
-    os: "CentOS 8.4",
-    hypervisor: "KVM",
-    zone: "可用区A",
-    cluster: "集群-01",
-    host: "物理主机-01",
-    description: "主要Web服务",
-    owner: "系统管理员",
-    cpuUsage: "25%",
-    memoryUsage: "45%",
-    rootDisk: "100GB / 系统盘",
-    dataDisk: "无",
-    instanceType: "通用型m1.large",
-    networkType: "经典网络",
-    securityGroup: "默认安全组",
-    hostName: "web-server-01",
-    expireTime: "永久",
-    tags: ["生产环境", "Web服务"],
-    platform: "Linux",
-    uptime: "15天8小时",
-    powerState: "开机",
-    tools: "已安装",
-    snapshots: 3,
+    name: "test001",
+    hostname: "DC-node-187",
+    uuid: "1068d7c5-24f8-43cc-8a9c-17cbcd5fc49d",
+    status: "stopped",
+    cpu_count: 1,
+    memory_gb: 1.0,
   },
   {
-    id: "vm-002",
-    name: "DB服务器01",
-    status: "已停止",
-    ip: "192.168.1.102",
-    cpu: "8核",
-    memory: "16GB",
-    storage: "500GB",
-    createTime: "2025-05-12",
-    os: "Oracle Linux 8",
-    hypervisor: "KVM",
-    zone: "可用区A",
-    cluster: "集群-01",
-    host: "物理主机-02",
-    description: "主数据库服务器",
-    owner: "DBA团队",
-    cpuUsage: "0%",
-    memoryUsage: "0%",
-    rootDisk: "100GB / 系统盘",
-    dataDisk: "400GB / 数据盘",
-    instanceType: "内存优化型r1.large",
-    networkType: "经典网络",
-    securityGroup: "数据库安全组",
-    hostName: "db-server-01",
-    expireTime: "永久",
-    tags: ["生产环境", "数据库"],
-    platform: "Linux",
-    uptime: "0天0小时",
-    powerState: "关机",
-    tools: "已安装",
-    snapshots: 1,
-  },
-  {
-    id: "vm-003",
-    name: "应用服务器01",
-    status: "运行中",
-    ip: "192.168.1.103",
-    cpu: "8核",
-    memory: "32GB",
-    storage: "200GB",
-    createTime: "2025-05-15",
-    os: "Ubuntu 20.04",
-    hypervisor: "KVM",
-    zone: "可用区B",
-    cluster: "集群-02",
-    host: "物理主机-03",
-    description: "应用服务器",
-    owner: "开发团队",
-    cpuUsage: "60%",
-    memoryUsage: "75%",
-    rootDisk: "100GB / 系统盘",
-    dataDisk: "100GB / 数据盘",
-    instanceType: "计算优化型c1.xlarge",
-    networkType: "VPC网络",
-    securityGroup: "应用安全组",
-    hostName: "app-server-01",
-    expireTime: "2025-12-31",
-    tags: ["测试环境", "应用服务"],
-    platform: "Linux",
-    uptime: "10天12小时",
-    powerState: "开机",
-    tools: "已安装",
-    snapshots: 5,
-  },
-  {
-    id: "vm-004",
-    name: "Windows服务器01",
-    status: "运行中",
-    ip: "192.168.1.104",
-    cpu: "4核",
-    memory: "16GB",
-    storage: "150GB",
-    createTime: "2025-05-18",
-    os: "Windows Server 2019",
-    hypervisor: "KVM",
-    zone: "可用区A",
-    cluster: "集群-01",
-    host: "物理主机-01",
-    description: "Windows应用服务器",
-    owner: "运维团队",
-    cpuUsage: "35%",
-    memoryUsage: "55%",
-    rootDisk: "150GB / 系统盘",
-    dataDisk: "无",
-    instanceType: "通用型m1.large",
-    networkType: "经典网络",
-    securityGroup: "默认安全组",
-    hostName: "win-server-01",
-    expireTime: "永久",
-    tags: ["生产环境", "Windows"],
-    platform: "Windows",
-    uptime: "8天6小时",
-    powerState: "开机",
-    tools: "已安装",
-    snapshots: 2,
-  },
-  {
-    id: "vm-005",
-    name: "缓存服务器01",
-    status: "异常",
-    ip: "192.168.1.105",
-    cpu: "2核",
-    memory: "8GB",
-    storage: "50GB",
-    createTime: "2025-05-20",
-    os: "CentOS 7.9",
-    hypervisor: "KVM",
-    zone: "可用区B",
-    cluster: "集群-02",
-    host: "物理主机-04",
-    description: "Redis缓存服务器",
-    owner: "开发团队",
-    cpuUsage: "15%",
-    memoryUsage: "80%",
-    rootDisk: "50GB / 系统盘",
-    dataDisk: "无",
-    instanceType: "内存优化型r1.medium",
-    networkType: "VPC网络",
-    securityGroup: "缓存安全组",
-    hostName: "cache-server-01",
-    expireTime: "2025-10-31",
-    tags: ["开发环境", "缓存"],
-    platform: "Linux",
-    uptime: "2天4小时",
-    powerState: "开机",
-    tools: "未安装",
-    snapshots: 0,
+    name: "vm-test187",
+    hostname: "DC-node-187", 
+    uuid: "dbe6c5bd-fb1d-40b0-8d31-0bb6a3cea047",
+    status: "stopped",
+    cpu_count: 1,
+    memory_gb: 1.0,
   },
 ];

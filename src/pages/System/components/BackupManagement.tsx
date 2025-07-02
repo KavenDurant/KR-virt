@@ -13,8 +13,8 @@ import {
   Alert,
   Divider,
 } from "antd";
+import type { FormInstance } from "antd";
 import {
-
   DownloadOutlined,
   DeleteOutlined,
   PlusOutlined,
@@ -40,13 +40,18 @@ interface Backup {
 interface BackupManagementProps {
   backups: Backup[];
   backupModalVisible: boolean;
-  backupForm: any;
+  backupForm: FormInstance;
   onCreateBackup: () => void;
   onDeleteBackup: (backupId: string) => Promise<void>;
   onBackupModalCancel: () => void;
-  onBackupFormSubmit: (values: any) => Promise<void>;
+  onBackupFormSubmit: (values: BackupFormValues) => Promise<void>;
 }
 
+interface BackupFormValues {
+  name: string;
+  type: string;
+  description?: string;
+}
 // 模拟备份数据
 const mockBackups: Backup[] = [
   {

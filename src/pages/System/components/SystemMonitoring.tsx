@@ -10,16 +10,14 @@ import {
   Space,
   Button,
   Alert,
-
 } from "antd";
 import {
   MonitorOutlined,
-
   DeploymentUnitOutlined,
   ReloadOutlined,
   CheckCircleOutlined,
   WarningOutlined,
-  ExclamationCircleOutlined,
+      ExclamationCircleOutlined,
 } from "@ant-design/icons";
 
 interface SystemMonitoringProps {
@@ -139,7 +137,7 @@ const SystemMonitoring: React.FC<SystemMonitoringProps> = ({ onRefresh }) => {
     {
       title: "操作",
       key: "action",
-      render: (_: unknown, record: any) => (
+      render: (_: unknown, record: { status: string; name: string }) => (
         <Space>
           {record.status === "running" ? (
             <Button type="link" size="small" danger>

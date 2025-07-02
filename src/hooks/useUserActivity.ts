@@ -32,7 +32,7 @@ import {
  */
 export const useUserActivity = (
   config: Partial<UserActivityConfig> = {},
-  callbacks: UserActivityCallbacks = {},
+  callbacks: UserActivityCallbacks = {}
 ): UseUserActivityReturn => {
   const navigate = useNavigate();
   const finalConfig = mergeConfig(config);
@@ -76,7 +76,7 @@ export const useUserActivity = (
         if (finalConfig.debug) {
           console.log(
             "⚠️ [UserActivity] 警告弹窗显示中，忽略用户活动:",
-            event?.type,
+            event?.type
           );
         }
         return;
@@ -115,7 +115,7 @@ export const useUserActivity = (
         target: event?.target || null,
       });
     },
-    [finalConfig, callbacks],
+    [finalConfig, callbacks]
   );
 
   // 处理空闲状态
@@ -302,7 +302,7 @@ export const useUserActivity = (
   const logout = useCallback(
     async (
       reason: "timeout" | "manual" | "force" = "manual",
-      saveData: boolean = false,
+      saveData: boolean = false
     ) => {
       if (finalConfig.debug) {
         logActivity("logout", { reason, saveData });
@@ -350,7 +350,7 @@ export const useUserActivity = (
         });
       }
     },
-    [finalConfig, callbacks, navigate],
+    [finalConfig, callbacks, navigate]
   );
 
   // 处理警告取消（用户选择继续使用）
@@ -358,7 +358,7 @@ export const useUserActivity = (
     if (finalConfig.debug) {
       logActivity("promptCancel", { timestamp: new Date().toISOString() });
       console.log(
-        "✅ [UserActivity] 用户选择继续使用，设置 isPrompted = false",
+        "✅ [UserActivity] 用户选择继续使用，设置 isPrompted = false"
       );
     }
 
@@ -396,7 +396,8 @@ export const useUserActivity = (
   const getConfig = useCallback(() => finalConfig, [finalConfig]);
 
   // 更新配置（注意：这会重新创建idleTimer）
-  const updateConfig = useCallback((newConfig: Partial<UserActivityConfig>) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+  const updateConfig = useCallback((newConfig: Partial<UserActivityConfig>) => {
+    // eslint-disable-line @typescript-eslint/no-unused-vars
     // 这里需要重新初始化，实际使用中可能需要更复杂的逻辑
     console.warn("updateConfig is not fully implemented yet");
   }, []);
@@ -412,7 +413,7 @@ export const useUserActivity = (
       sessionStartTime: sessionStartTimeRef.current,
       statistics: { ...statisticsRef.current },
     }),
-    [state, finalConfig, idleTimer],
+    [state, finalConfig, idleTimer]
   );
 
   // 页面可见性变化处理
@@ -448,7 +449,7 @@ export const useUserActivity = (
       console.log(
         "⏰ [UserActivity] 开始倒计时，剩余时间:",
         Math.ceil(state.remainingTime / 1000),
-        "秒",
+        "秒"
       );
     }
 
@@ -460,7 +461,7 @@ export const useUserActivity = (
           console.log(
             "⏰ [UserActivity] 倒计时:",
             Math.ceil(newRemainingTime / 1000),
-            "秒",
+            "秒"
           );
         }
 

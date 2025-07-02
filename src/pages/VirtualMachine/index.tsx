@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 13:47:21
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-02 15:21:00
+ * @LastEditTime: 2025-07-02 19:13:03
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -54,7 +54,6 @@ import {
   HddOutlined,
   WifiOutlined,
   DesktopOutlined,
-
   WarningOutlined,
   CheckCircleOutlined,
   StopOutlined,
@@ -66,6 +65,7 @@ import {
   CameraOutlined,
   SaveOutlined,
   CaretRightOutlined,
+  QuestionCircleOutlined,
 } from "@ant-design/icons";
 import { useTheme } from "../../hooks/useTheme";
 import { useSidebarSelection } from "../../hooks";
@@ -78,8 +78,89 @@ import { mockVMManagementData } from "../../services/mockData";
 import { CreateVMModal } from "./components";
 import { vmService, type VMInfo, type CreateVMRequest } from "@/services/vm";
 
-// 使用统一的虚拟机数据类型
-type VirtualMachine = VMManagementData;
+// 使用统一的虚拟机数据类型 - 使用包含完整配置信息的 VMInfo
+type VirtualMachine = VMInfo;
+
+// 虚拟机状态分析结果接口
+interface VMStatusAnalysis {
+  total: number;
+  runningCount: number;
+  stoppedCount: number;
+  errorCount: number;
+  configuringCount: number;
+  pausedCount: number;
+  hasIssues: boolean;
+  healthyPercentage: number;
+}
+
+/**
+ * 分析虚拟机状态统计
+ * @param vms 虚拟机列表
+ * @returns 状态分析结果
+ */
+const analyzeVMStatus = (vms: VirtualMachine[]): VMStatusAnalysis => {
+  const total = vms.length;
+  const runningCount = vms.filter((vm) => vm.status === "running").length;
+  const stoppedCount = vms.filter(
+    (vm) => vm.status === "stopped" || vm.status === "shutoff"
+  ).length;
+  const errorCount = vms.filter((vm) => vm.status === "error").length;
+  const configuringCount = vms.filter(
+    (vm) => vm.status === "configuring"
+  ).length;
+  const pausedCount = vms.filter(
+    (vm) => vm.status === "paused" || vm.status === "suspended"
+  ).length;
+
+  const hasIssues = errorCount > 0 || configuringCount > 0;
+  const healthyCount = runningCount + stoppedCount + pausedCount;
+  const healthyPercentage = total > 0 ? Math.round((healthyCount / total) * 100) : 100;
+
+  return {
+    total,
+    runningCount,
+    stoppedCount,
+    errorCount,
+    configuringCount,
+    pausedCount,
+    hasIssues,
+    healthyPercentage,
+  };
+};
+
+/**
+ * 智能重试机制
+ * @param operation 要执行的操作
+ * @param maxRetries 最大重试次数
+ * @param delay 重试延迟（毫秒）
+ * @returns 操作结果
+ */
+const withRetry = async <T,>(
+  operation: () => Promise<T>,
+  maxRetries: number = 2,
+  delay: number = 1000
+): Promise<T> => {
+  let lastError: Error;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+
+      // 如果是最后一次尝试，直接抛出错误
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+
+      // 等待一段时间后重试
+      await new Promise((resolve) => setTimeout(resolve, delay * (attempt + 1)));
+      console.warn(`操作失败，正在进行第 ${attempt + 1} 次重试...`, error);
+    }
+  }
+
+  throw lastError!;
+};
 
 // 数据磁盘接口
 interface DataDisk {
@@ -126,6 +207,8 @@ interface VMStats {
   cpuUsage: number;
   memoryUsage: number;
   storageUsage: number;
+  paused?: number;
+  configuring?: number;
 }
 
 /**
@@ -133,8 +216,6 @@ interface VMStats {
  *
  * 重构说明：
  * - 使用 useSidebarSelection Hook 统一管理侧边栏选择状态
- * - 移除了重复的事件监听逻辑
- * - 简化了状态管理，提高了代码复用性
  */
 const VirtualMachineManagement: React.FC = () => {
   const { themeConfig } = useTheme();
@@ -150,10 +231,8 @@ const VirtualMachineManagement: React.FC = () => {
    * - 类型安全的状态访问
    * - 统一的状态清理接口
    */
-  const {
-    selectedHost: sidebarSelectedHost,
-    selectedVM: sidebarSelectedVM,
-  } = useSidebarSelection();
+  const { selectedHost: sidebarSelectedHost, selectedVM: sidebarSelectedVM } =
+    useSidebarSelection();
 
   const [activeTab, setActiveTab] = useState("list");
   const [loading, setLoading] = useState(false);
@@ -168,25 +247,52 @@ const VirtualMachineManagement: React.FC = () => {
   /**
    * 侧边栏选择事件处理
    *
-   * 重构前：需要手动监听 hierarchical-sidebar-select 事件
-   * 重构后：useSidebarSelection Hook 自动处理所有事件监听
-   *
-   * 移除的代码：
-   * - 30+ 行的事件监听逻辑
-   * - 手动状态清理
-   * - 复杂的条件判断
-   *
-   * 现在只需要使用 Hook 返回的状态即可
+   * useSidebarSelection Hook 自动处理所有事件监听
    */
 
   // 数据加载函数
   const loadVmData = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await vmService.getVMList();
-      if (response.success && response.data) {
-        // 直接使用API返回的原始数据，不进行字段映射
-        const vms: VMManagementData[] = response.data.vms.map((vm: VMInfo) => ({
+      // 根据侧边栏选择状态构建请求参数
+      let requestParams: {
+        hostnames: string[] | null;
+        vm_names: string[] | null;
+      };
+
+      if (sidebarSelectedVM) {
+        // 如果选中了虚拟机，传递虚拟机名和对应的物理机名
+        requestParams = {
+          hostnames: [sidebarSelectedVM.node],
+          vm_names: [sidebarSelectedVM.name],
+        };
+      } else if (sidebarSelectedHost) {
+        // 如果选中了物理机，传递物理机名，虚拟机名为null
+        requestParams = {
+          hostnames: [sidebarSelectedHost.name],
+          vm_names: null,
+        };
+      } else {
+        // 选中集群或无选择时，获取所有虚拟机
+        requestParams = {
+          hostnames: null,
+          vm_names: null,
+        };
+      }
+
+      console.log("请求参数:", requestParams);
+
+      // 使用重试机制调用API
+      const response = await withRetry(
+        () => vmService.getVMList(requestParams),
+        2, // 最多重试2次
+        1000 // 重试间隔1秒
+      );
+
+      if (response.success) {
+        // 安全地获取数据，处理可能的空值情况
+        const responseData = response.data || { vms: [] };
+        const vms: VMManagementData[] = responseData.vms.map((vm: VMInfo) => ({
           name: vm.name,
           hostname: vm.hostname,
           uuid: vm.uuid,
@@ -194,32 +300,134 @@ const VirtualMachineManagement: React.FC = () => {
           cpu_count: vm.cpu_count,
           memory_gb: vm.memory_gb,
         }));
+
         setVmList(vms);
+
+        // 优化的用户提示逻辑
+        if (vms.length === 0) {
+          // 根据选择状态提供更精确的提示
+          if (sidebarSelectedHost) {
+            message.info({
+              content: `物理机 "${sidebarSelectedHost.name}" 上暂无虚拟机`,
+              duration: 3,
+            });
+          } else if (sidebarSelectedVM) {
+            message.warning({
+              content: `未找到指定的虚拟机 "${sidebarSelectedVM.name}"，可能已被删除或移动`,
+              duration: 4,
+            });
+          } else {
+            message.info({
+              content: "当前集群中暂无虚拟机，您可以创建新的虚拟机",
+              duration: 3,
+            });
+          }
+        } else {
+          // 使用状态分析函数进行智能提示
+          const statusAnalysis = analyzeVMStatus(vms);
+
+          // 显示状态分析结果
+          if (statusAnalysis.hasIssues) {
+            if (statusAnalysis.errorCount > 0) {
+              message.warning({
+                content: `发现 ${statusAnalysis.errorCount} 台虚拟机存在配置错误，请检查详情`,
+                duration: 5,
+              });
+            }
+
+            if (statusAnalysis.configuringCount > 0) {
+              message.info({
+                content: `有 ${statusAnalysis.configuringCount} 台虚拟机正在配置中，请稍候`,
+                duration: 4,
+              });
+            }
+          } else if (vms.length > 0) {
+            // 成功加载且无问题时的简洁提示（仅在控制台）
+            console.log(`成功加载 ${vms.length} 台虚拟机，健康度: ${statusAnalysis.healthyPercentage}%`);
+          }
+
+          // 显示加载成功的详细信息（仅在控制台）
+          console.log("虚拟机状态统计:", statusAnalysis);
+        }
       } else {
-        // 如果API调用失败，回退到使用模拟数据
-        console.warn("API调用失败，使用模拟数据:", response.message);
-        setVmList(mockVMManagementData);
+        // API调用失败的优化处理
+        console.error("API调用失败:", response.message);
+
+        // 根据错误类型提供不同的处理方式
+        if (response.message?.includes("网络")) {
+          message.error({
+            content: "网络连接异常，请检查网络后重试",
+            duration: 5,
+          });
+        } else if (response.message?.includes("权限")) {
+          message.error({
+            content: "权限不足，请联系管理员",
+            duration: 5,
+          });
+        } else {
+          message.error({
+            content: `加载虚拟机列表失败: ${response.message}`,
+            duration: 5,
+          });
+        }
+
+        // 设置空列表，避免显示旧数据
+        setVmList([]);
       }
     } catch (error) {
       console.error("加载虚拟机数据失败:", error);
-      // 出错时使用模拟数据
-      setVmList(mockVMManagementData);
+
+      // 异常情况的用户友好提示
+      if (error instanceof Error) {
+        if (error.message.includes("timeout")) {
+          message.error({
+            content: "请求超时，请检查网络连接后重试",
+            duration: 5,
+          });
+        } else if (error.message.includes("abort")) {
+          message.warning({
+            content: "请求已取消",
+            duration: 3,
+          });
+        } else {
+          message.error({
+            content: "系统异常，请稍后重试或联系管理员",
+            duration: 5,
+          });
+        }
+      } else {
+        message.error({
+          content: "未知错误，请刷新页面后重试",
+          duration: 5,
+        });
+      }
+
+      // 异常时也要清空列表
+      setVmList([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sidebarSelectedVM, sidebarSelectedHost, message]);
 
-  // 数据加载effect - 只在组件挂载时执行一次
+  // 数据加载effect - 在组件挂载和侧边栏选择状态变化时执行
   useEffect(() => {
     loadVmData();
-  }, []); // 空依赖数组，避免无限循环
+  }, [loadVmData]); // 当loadVmData函数变化时（即侧边栏选择状态变化时）重新加载数据
 
   // 计算统计信息
   const vmStats: VMStats = useMemo(() => {
     const total = vmList.length;
     const running = vmList.filter((vm) => vm.status === "running").length;
-    const stopped = vmList.filter((vm) => vm.status === "stopped").length;
+    const stopped = vmList.filter(
+      (vm) => vm.status === "stopped" || vm.status === "shutoff"
+    ).length;
     const error = vmList.filter((vm) => vm.status === "error").length;
+    const configuring = vmList.filter(
+      (vm) => vm.status === "configuring"
+    ).length;
+    const paused = vmList.filter(
+      (vm) => vm.status === "paused" || vm.status === "suspended"
+    ).length;
 
     // 由于API只返回基础字段，没有使用率信息，这里设置为0
     const avgCpuUsage = 0;
@@ -229,10 +437,12 @@ const VirtualMachineManagement: React.FC = () => {
       total,
       running,
       stopped,
-      error,
+      error: error + configuring, // 将配置中状态也归类为需要关注的状态
       cpuUsage: avgCpuUsage,
       memoryUsage: avgMemoryUsage,
       storageUsage: 0, // API暂无存储使用率信息
+      paused, // 添加暂停状态统计
+      configuring, // 添加配置中状态统计
     };
   }, [vmList]);
 
@@ -263,7 +473,7 @@ const VirtualMachineManagement: React.FC = () => {
       setLoading(false);
       message.success("数据刷新成功");
     }, 800);
-  }, []); // 移除mockVmData依赖，因为它是组件外部的常量
+  }, [message]); // 添加message依赖
 
   // 自动刷新
   useEffect(() => {
@@ -281,132 +491,199 @@ const VirtualMachineManagement: React.FC = () => {
   }, [autoRefresh, handleRefresh]);
 
   // 虚拟机操作处理函数
-  const handleVMAction = async (action: string, vm: VirtualMachine | SidebarVM) => {
-    try {
-      let response;
-      
-      // 提取虚拟机名称和主机名，兼容两种数据格式
-      const vmName = vm.name;
-      const hostname = 'hostname' in vm ? vm.hostname : ('node' in vm ? vm.node : 'unknown');
+  const handleVMAction = useCallback(
+    async (
+      action: string,
+      vm: VirtualMachine | SidebarVM,
+      fromSidebar: boolean = false
+    ) => {
+      try {
+        let response;
 
-      switch (action) {
-        case "start":
-        case "启动":
-          response = await vmService.startVM(vmName, hostname);
-          if (response.success) {
-            message.success(`启动虚拟机 ${vm.name} 成功`);
-            // 重新加载虚拟机列表
-            window.location.reload();
-          } else {
-            message.error(response.message || `启动虚拟机 ${vm.name} 失败`);
-          }
-          break;
+        // 提取虚拟机名称和主机名，兼容两种数据格式
+        const vmName = vm.name;
+        const hostname =
+          "hostname" in vm ? vm.hostname : "node" in vm ? vm.node : "unknown";
 
-        case "stop":
-        case "停止":
-          response = await vmService.stopVM(vm.name, hostname);
-          if (response.success) {
-            message.success(`停止虚拟机 ${vm.name} 成功`);
-            // 重新加载虚拟机列表
-            window.location.reload();
-          } else {
-            message.error(response.message || `停止虚拟机 ${vm.name} 失败`);
-          }
-          break;
-
-        case "restart":
-        case "重启":
-          response = await vmService.restartVM(vm.name, hostname);
-          if (response.success) {
-            message.success(`重启虚拟机 ${vm.name} 成功`);
-            // 重新加载虚拟机列表
-            window.location.reload();
-          } else {
-            message.error(response.message || `重启虚拟机 ${vm.name} 失败`);
-          }
-          break;
-
-        case "destroy":
-        case "强制停止":
-          response = await vmService.destroyVM(vm.name, hostname);
-          if (response.success) {
-            message.success(`强制停止虚拟机 ${vm.name} 成功`);
-            // 重新加载虚拟机列表
-            window.location.reload();
-          } else {
-            message.error(response.message || `强制停止虚拟机 ${vm.name} 失败`);
-          }
-          break;
-
-        case "delete":
-          // 删除前确认
-          modal.confirm({
-            title: "确认删除",
-            content: `确定要删除虚拟机 "${vm.name}" 吗？此操作不可逆。`,
-            okText: "确认删除",
-            okType: "danger",
-            cancelText: "取消",
-            onOk: async () => {
-              const deleteResponse = await vmService.deleteVM(
-                vm.name,
-                hostname,
-                true
-              );
-              if (deleteResponse.success) {
-                message.success(`删除虚拟机 ${vm.name} 成功`);
-                // 重新加载虚拟机列表
-                await loadVmData();
+        switch (action) {
+          case "start":
+          case "启动":
+            response = await vmService.startVM(vmName, hostname);
+            if (response.success) {
+              message.success(response.message || `启动虚拟机 ${vm.name} 成功`);
+              // 根据来源决定刷新方式
+              if (fromSidebar) {
+                await loadVmData(); // 重新加载数据而不刷新页面
               } else {
-                message.error(
-                  deleteResponse.message || `删除虚拟机 ${vm.name} 失败`
-                );
+                window.location.reload();
               }
-            },
-          });
-          return; // 提前返回，不执行后续代码
+            } else {
+              message.error(response.message || `启动虚拟机 ${vm.name} 失败`);
+            }
+            break;
 
-        case "pause":
-        case "suspend":
-        case "挂起":
-          response = await vmService.pauseVM(vm.name, hostname);
-          if (response.success) {
-            message.success(`挂起虚拟机 ${vm.name} 成功`);
-            // 重新加载虚拟机列表
-            window.location.reload();
-          } else {
-            message.error(response.message || `挂起虚拟机 ${vm.name} 失败`);
-          }
-          break;
+          case "stop":
+          case "停止":
+          case "shutdown":
+            response = await vmService.stopVM(vm.name, hostname);
+            if (response.success) {
+              message.success(response.message || `停止虚拟机 ${vm.name} 成功`);
+              // 根据来源决定刷新方式
+              if (fromSidebar) {
+                await loadVmData(); // 重新加载数据而不刷新页面
+              } else {
+                window.location.reload();
+              }
+            } else {
+              message.error(response.message || `停止虚拟机 ${vm.name} 失败`);
+            }
+            break;
 
-        case "resume":
-        case "恢复":
-          response = await vmService.resumeVM(vm.name, hostname);
-          if (response.success) {
-            message.success(`恢复虚拟机 ${vm.name} 成功`);
-            // 重新加载虚拟机列表
-            window.location.reload();
-          } else {
-            message.error(response.message || `恢复虚拟机 ${vm.name} 失败`);
-          }
-          break;
+          case "restart":
+          case "重启":
+            response = await vmService.restartVM(vm.name, hostname);
+            if (response.success) {
+              message.success(response.message || `重启虚拟机 ${vm.name} 成功`);
+              // 根据来源决定刷新方式
+              if (fromSidebar) {
+                await loadVmData(); // 重新加载数据而不刷新页面
+              } else {
+                window.location.reload();
+              }
+            } else {
+              message.error(response.message || `重启虚拟机 ${vm.name} 失败`);
+            }
+            break;
 
-        case "clone":
-          message.info(`克隆功能开发中，虚拟机: ${vm.name}`);
-          break;
+          case "destroy":
+          case "强制停止":
+            response = await vmService.destroyVM(vm.name, hostname);
+            if (response.success) {
+              message.success(
+                response.message || `强制停止虚拟机 ${vm.name} 成功`
+              );
+              // 根据来源决定刷新方式
+              if (fromSidebar) {
+                await loadVmData(); // 重新加载数据而不刷新页面
+              } else {
+                window.location.reload();
+              }
+            } else {
+              message.error(
+                response.message || `强制停止虚拟机 ${vm.name} 失败`
+              );
+            }
+            break;
 
-        case "template":
-          message.info(`模板转换功能开发中，虚拟机: ${vm.name}`);
-          break;
+          case "delete":
+            // 删除前确认
+            modal.confirm({
+              title: "确认删除",
+              content: `确定要删除虚拟机 "${vm.name}" 吗？此操作不可逆。`,
+              okText: "确认删除",
+              okType: "danger",
+              cancelText: "取消",
+              onOk: async () => {
+                const deleteResponse = await vmService.deleteVM(
+                  vm.name,
+                  hostname,
+                  true
+                );
+                if (deleteResponse.success) {
+                  message.success(
+                    deleteResponse.message || `删除虚拟机 ${vm.name} 成功`
+                  );
+                  // 重新加载虚拟机列表
+                  await loadVmData();
+                } else {
+                  message.error(
+                    deleteResponse.message || `删除虚拟机 ${vm.name} 失败`
+                  );
+                }
+              },
+            });
+            return; // 提前返回，不执行后续代码
 
-        default:
-          message.info(`${action} ${vm.name} 操作功能开发中`);
-          break;
+          case "pause":
+          case "suspend":
+          case "挂起":
+            response = await vmService.pauseVM(vm.name, hostname);
+            if (response.success) {
+              message.success(response.message || `挂起虚拟机 ${vm.name} 成功`);
+              // 根据来源决定刷新方式
+              if (fromSidebar) {
+                await loadVmData(); // 重新加载数据而不刷新页面
+              } else {
+                window.location.reload();
+              }
+            } else {
+              message.error(response.message || `挂起虚拟机 ${vm.name} 失败`);
+            }
+            break;
+
+          case "resume":
+          case "恢复":
+            response = await vmService.resumeVM(vm.name, hostname);
+            if (response.success) {
+              message.success(response.message || `恢复虚拟机 ${vm.name} 成功`);
+              // 根据来源决定刷新方式
+              if (fromSidebar) {
+                await loadVmData(); // 重新加载数据而不刷新页面
+              } else {
+                window.location.reload();
+              }
+            } else {
+              message.error(response.message || `恢复虚拟机 ${vm.name} 失败`);
+            }
+            break;
+
+          case "clone":
+            message.info(`克隆功能开发中，虚拟机: ${vm.name}`);
+            break;
+
+          case "template":
+            message.info(`模板转换功能开发中，虚拟机: ${vm.name}`);
+            break;
+
+          default:
+            message.info(`${action} ${vm.name} 操作功能开发中`);
+            break;
+        }
+      } catch (error) {
+        console.error(`虚拟机操作失败:`, error);
+        message.error(`虚拟机操作失败，请检查网络连接`);
       }
-    } catch (error) {
-      console.error(`虚拟机操作失败:`, error);
-      message.error(`虚拟机操作失败，请检查网络连接`);
-    }
-  };
+    },
+    [message, modal, loadVmData]
+  );
+
+  /**
+   * 监听侧边栏虚拟机操作事件
+   * 处理来自侧边栏右键菜单的虚拟机操作
+   */
+  useEffect(() => {
+    const handleSidebarVMAction = async (event: CustomEvent) => {
+      const { action, vmName, hostname, vmData } = event.detail;
+      console.log("收到侧边栏虚拟机操作事件:", { action, vmName, hostname });
+
+      // 调用虚拟机操作处理函数，标记为来自侧边栏的操作
+      await handleVMAction(action, vmData, true);
+    };
+
+    // 添加事件监听器
+    window.addEventListener(
+      "hierarchical-sidebar-vm-action",
+      handleSidebarVMAction as unknown as EventListener
+    );
+
+    // 清理函数
+    return () => {
+      window.removeEventListener(
+        "hierarchical-sidebar-vm-action",
+        handleSidebarVMAction as unknown as EventListener
+      );
+    };
+  }, [handleVMAction]);
 
   // 批量操作
   const handleBatchAction = (action: string) => {
@@ -440,7 +717,7 @@ const VirtualMachineManagement: React.FC = () => {
       const response = await vmService.createVM(payload);
 
       if (response.success) {
-        message.success("虚拟机创建任务已提交");
+        message.success(response.message || "虚拟机创建成功");
         // 创建成功后，重新加载虚拟机列表
         await loadVmData();
         setCreateVMModal(false);
@@ -460,7 +737,7 @@ const VirtualMachineManagement: React.FC = () => {
     {
       title: "虚拟机",
       key: "vm",
-      width: 200,
+      width: 80,
       fixed: "left",
       render: (_, record) => (
         <div style={{ fontWeight: "bold", fontSize: "14px" }}>
@@ -471,7 +748,7 @@ const VirtualMachineManagement: React.FC = () => {
     {
       title: "物理机",
       key: "hostname",
-      width: 120,
+      width: 50,
       render: (_, record) => (
         <div style={{ fontSize: "12px" }}>{record.hostname || "N/A"}</div>
       ),
@@ -480,38 +757,63 @@ const VirtualMachineManagement: React.FC = () => {
       title: "状态",
       dataIndex: "status",
       key: "status",
-      width: 100,
+      width: 50,
       render: (status: string) => {
         const getStatusConfig = (status: string) => {
           switch (status) {
             case "running":
               return { color: "success", icon: <CheckCircleOutlined /> };
             case "stopped":
+            case "shutoff":
               return { color: "error", icon: <StopOutlined /> };
+            case "paused":
+            case "suspended":
+              return { color: "warning", icon: <PauseOutlined /> };
+            case "configuring":
+              return { color: "processing", icon: <SyncOutlined spin /> };
             case "error":
-              return { color: "warning", icon: <WarningOutlined /> };
+              return { color: "error", icon: <WarningOutlined /> };
             default:
-              return { color: "default", icon: <CheckCircleOutlined /> };
+              return { color: "default", icon: <QuestionCircleOutlined /> };
           }
         };
 
         const config = getStatusConfig(status);
+        const statusText = (() => {
+          switch (status) {
+            case "running":
+              return "运行中";
+            case "stopped":
+              return "已停止";
+            case "shutoff":
+              return "已关闭";
+            case "paused":
+              return "已挂起";
+            case "suspended":
+              return "已暂停";
+            case "configuring":
+              return "配置中";
+            case "error":
+              return "错误";
+            default:
+              return "未知状态";
+          }
+        })();
+
         return (
           <Tag color={config.color} icon={config.icon}>
-            {status === "running" ? "运行中" : status === "stopped" ? "已停止" : status}
+            {statusText}
           </Tag>
         );
       },
     },
     {
       title: "UUID",
-      dataIndex: "uuid", 
+      dataIndex: "uuid",
       key: "uuid",
       width: 180,
       render: (uuid: string) => (
-        <div style={{ fontSize: "12px", fontFamily: "monospace" }}>
-          {uuid}
-        </div>
+        <div style={{ fontSize: "12px", fontFamily: "monospace" }}>{uuid}</div>
       ),
     },
     {
@@ -535,7 +837,7 @@ const VirtualMachineManagement: React.FC = () => {
       title: "操作",
       key: "action",
       fixed: "right" as const,
-      width: 200,
+      width: 120,
       render: (_, record) => (
         <Space size="small">
           <Tooltip title="查看详情">
@@ -545,25 +847,22 @@ const VirtualMachineManagement: React.FC = () => {
               onClick={() => showVMDetail(record)}
             />
           </Tooltip>
-          {record.status === "stopped" ? (
-            <Tooltip title="启动">
-              <Button
-                type="primary"
-                size="small"
-                icon={<PlayCircleOutlined />}
-                onClick={() => handleVMAction("启动", record)}
-              />
-            </Tooltip>
-          ) : (
-            <Tooltip title="停止">
-              <Button
-                danger
-                size="small"
-                icon={<PoweroffOutlined />}
-                onClick={() => handleVMAction("停止", record)}
-              />
-            </Tooltip>
-          )}
+          <Tooltip title="启动">
+            <Button
+              type="primary"
+              size="small"
+              icon={<PlayCircleOutlined />}
+              onClick={() => handleVMAction("启动", record)}
+            />
+          </Tooltip>
+          <Tooltip title="停止">
+            <Button
+              danger
+              size="small"
+              icon={<PoweroffOutlined />}
+              onClick={() => handleVMAction("停止", record)}
+            />
+          </Tooltip>
           <Tooltip title="重启">
             <Button
               size="small"
@@ -920,6 +1219,10 @@ const VirtualMachineManagement: React.FC = () => {
                           ? "运行中"
                           : status === "stopped"
                           ? "已停止"
+                          : status === "paused"
+                          ? "已挂起"
+                          : status === "shutoff"
+                          ? "已关闭"
                           : status}
                       </Tag>
                     ),
@@ -1844,7 +2147,7 @@ const VirtualMachineManagement: React.FC = () => {
     ];
 
     return (
-      <div style={{ padding: "20px" }}>
+      <div>
         <div style={{ marginBottom: "24px" }}>
           <h3
             style={{
@@ -1916,7 +2219,9 @@ const VirtualMachineManagement: React.FC = () => {
                   </Button>
                   <Button
                     icon={<FileImageOutlined />}
-                    onClick={() => handleVMAction("template", sidebarSelectedVM)}
+                    onClick={() =>
+                      handleVMAction("template", sidebarSelectedVM)
+                    }
                   >
                     转换为模板
                   </Button>
@@ -1956,7 +2261,7 @@ const VirtualMachineManagement: React.FC = () => {
               </Button>
             </Space>
           </div>
-          
+
           {/* 第二行：没有接口的功能 */}
           <div>
             <Space wrap>
@@ -2175,11 +2480,55 @@ const VirtualMachineManagement: React.FC = () => {
                       scroll={{ x: 1400 }}
                       bordered
                       size="middle"
+                      style={{
+                        fontSize: "14px",
+                      }}
                       rowSelection={{
                         type: "checkbox",
-                        columnWidth: 48,
+                        columnWidth: 32,
                         selectedRowKeys,
                         onChange: setSelectedRowKeys,
+                      }}
+                      locale={{
+                        emptyText: (
+                          <Empty
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            description={
+                              <div>
+                                {sidebarSelectedHost ? (
+                                  <div>
+                                    <p>物理机 "{sidebarSelectedHost.name}" 上暂无虚拟机</p>
+                                    <p style={{ color: "#666", fontSize: "12px" }}>
+                                      您可以在此物理机上创建新的虚拟机
+                                    </p>
+                                  </div>
+                                ) : sidebarSelectedVM ? (
+                                  <div>
+                                    <p>未找到指定的虚拟机 "{sidebarSelectedVM.name || '未知'}"</p>
+                                    <p style={{ color: "#666", fontSize: "12px" }}>
+                                      虚拟机可能已被删除或移动到其他物理机
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <p>当前集群中暂无虚拟机</p>
+                                    <p style={{ color: "#666", fontSize: "12px" }}>
+                                      点击"创建虚拟机"按钮开始创建您的第一台虚拟机
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            }
+                          >
+                            <Button
+                              type="primary"
+                              icon={<PlusOutlined />}
+                              onClick={() => setCreateVMModal(true)}
+                            >
+                              创建虚拟机
+                            </Button>
+                          </Empty>
+                        ),
                       }}
                     />
                   </>
@@ -2220,26 +2569,30 @@ const VirtualMachineManagement: React.FC = () => {
                       <Descriptions.Item label="状态">
                         <Tag
                           color={
-                            selectedVM.status === "running" ? "success" : "error"
+                            selectedVM.status === "running"
+                              ? "success"
+                              : "error"
                           }
                         >
                           {selectedVM.status}
                         </Tag>
                       </Descriptions.Item>
-                      <Descriptions.Item label="开机时间">
-                        N/A
+                      <Descriptions.Item label="配置状态">
+                        <Tag color={selectedVM.config_status ? "success" : "warning"}>
+                          {selectedVM.config_status ? "已配置" : "配置中"}
+                        </Tag>
                       </Descriptions.Item>
-                      <Descriptions.Item label="IP地址">
-                        N/A
+                      <Descriptions.Item label="启动顺序">
+                        {selectedVM.boot_order?.join(", ") || "N/A"}
                       </Descriptions.Item>
-                      <Descriptions.Item label="主机名">
+                      <Descriptions.Item label="物理主机">
                         {selectedVM.hostname}
                       </Descriptions.Item>
-                      <Descriptions.Item label="操作系统">
-                        N/A
+                      <Descriptions.Item label="网络接口数量">
+                        {selectedVM.network_info?.length || 0}
                       </Descriptions.Item>
-                      <Descriptions.Item label="虚拟化工具">
-                        N/A
+                      <Descriptions.Item label="磁盘数量">
+                        {selectedVM.disk_info?.length || 0}
                       </Descriptions.Item>
                       <Descriptions.Item label="CPU">
                         {selectedVM.cpu_count}
@@ -2247,35 +2600,30 @@ const VirtualMachineManagement: React.FC = () => {
                       <Descriptions.Item label="内存">
                         {selectedVM.memory_gb}GB
                       </Descriptions.Item>
-                      <Descriptions.Item label="存储">
-                        N/A
+                      <Descriptions.Item label="存储信息">
+                        {selectedVM.disk_info?.map(disk => disk.format).join(", ") || "N/A"}
                       </Descriptions.Item>
-                      <Descriptions.Item label="快照数量">
-                        N/A
+                      <Descriptions.Item label="网络配置">
+                        {selectedVM.network_info?.map(net => net.bridge).join(", ") || "N/A"}
                       </Descriptions.Item>
-                      <Descriptions.Item label="集群">
-                        N/A
+                      <Descriptions.Item label="MAC地址">
+                        {selectedVM.network_info?.[0]?.mac || "N/A"}
                       </Descriptions.Item>
-                      <Descriptions.Item label="物理主机">
-                        {selectedVM.hostname}
+                      <Descriptions.Item label="配置摘要">
+                        {selectedVM.metadata?.digested?.substring(0, 8) || "N/A"}
                       </Descriptions.Item>
-                      <Descriptions.Item label="可用区">
-                        N/A
-                      </Descriptions.Item>
-                      <Descriptions.Item label="网络类型">
-                        N/A
-                      </Descriptions.Item>
-                      <Descriptions.Item label="安全组">
-                        N/A
-                      </Descriptions.Item>
-                      <Descriptions.Item label="负责人">
-                        N/A
+                      <Descriptions.Item label="错误信息">
+                        {selectedVM.error ? (
+                          <Tag color="error">{selectedVM.error}</Tag>
+                        ) : (
+                          <Tag color="success">正常</Tag>
+                        )}
                       </Descriptions.Item>
                       <Descriptions.Item label="创建时间">
-                        N/A
+                        {selectedVM.created_at || "N/A"}
                       </Descriptions.Item>
-                      <Descriptions.Item label="到期时间">
-                        N/A
+                      <Descriptions.Item label="更新时间">
+                        {selectedVM.updated_at || "N/A"}
                       </Descriptions.Item>
                       <Descriptions.Item label="标签" span={2}>
                         N/A
@@ -2294,7 +2642,14 @@ const VirtualMachineManagement: React.FC = () => {
                       <Col span={12}>
                         <Card title="CPU使用率" size="small">
                           <Progress percent={0} />
-                          <div style={{ textAlign: "center", color: "#999", fontSize: "12px", marginTop: "8px" }}>
+                          <div
+                            style={{
+                              textAlign: "center",
+                              color: "#999",
+                              fontSize: "12px",
+                              marginTop: "8px",
+                            }}
+                          >
                             暂无数据
                           </div>
                         </Card>
@@ -2302,7 +2657,14 @@ const VirtualMachineManagement: React.FC = () => {
                       <Col span={12}>
                         <Card title="内存使用率" size="small">
                           <Progress percent={0} />
-                          <div style={{ textAlign: "center", color: "#999", fontSize: "12px", marginTop: "8px" }}>
+                          <div
+                            style={{
+                              textAlign: "center",
+                              color: "#999",
+                              fontSize: "12px",
+                              marginTop: "8px",
+                            }}
+                          >
                             暂无数据
                           </div>
                         </Card>
@@ -2314,26 +2676,90 @@ const VirtualMachineManagement: React.FC = () => {
                   key: "hardware",
                   label: "硬件配置",
                   children: (
-                    <Descriptions column={1} bordered>
-                      <Descriptions.Item label="处理器">
-                        {selectedVM.cpu_count} 核心
-                      </Descriptions.Item>
-                      <Descriptions.Item label="内存">
-                        {selectedVM.memory_gb} GB
-                      </Descriptions.Item>
-                      <Descriptions.Item label="系统盘">
-                        N/A
-                      </Descriptions.Item>
-                      <Descriptions.Item label="数据盘">
-                        N/A
-                      </Descriptions.Item>
-                      <Descriptions.Item label="网络适配器">
-                        N/A
-                      </Descriptions.Item>
-                      <Descriptions.Item label="虚拟化平台">
-                        N/A
-                      </Descriptions.Item>
-                    </Descriptions>
+                    <div>
+                      <Descriptions column={1} bordered style={{ marginBottom: 16 }}>
+                        <Descriptions.Item label="处理器">
+                          {selectedVM.cpu_count} 核心
+                        </Descriptions.Item>
+                        <Descriptions.Item label="内存">
+                          {selectedVM.memory_gb} GB
+                        </Descriptions.Item>
+                        <Descriptions.Item label="启动设备">
+                          {selectedVM.boot_order?.join(" → ") || "N/A"}
+                        </Descriptions.Item>
+                      </Descriptions>
+
+                      {/* 磁盘信息 */}
+                      {selectedVM.disk_info && selectedVM.disk_info.length > 0 && (
+                        <Card title="磁盘配置" size="small" style={{ marginBottom: 16 }}>
+                          <Table
+                            size="small"
+                            dataSource={selectedVM.disk_info}
+                            pagination={false}
+                            columns={[
+                              {
+                                title: "设备名",
+                                dataIndex: "name",
+                                key: "name",
+                              },
+                              {
+                                title: "总线类型",
+                                dataIndex: "bus_type",
+                                key: "bus_type",
+                              },
+                              {
+                                title: "格式",
+                                dataIndex: "format",
+                                key: "format",
+                                render: (format: string) => (
+                                  <Tag color="blue">{format}</Tag>
+                                ),
+                              },
+                              {
+                                title: "路径",
+                                dataIndex: "path",
+                                key: "path",
+                                ellipsis: true,
+                              },
+                            ]}
+                          />
+                        </Card>
+                      )}
+
+                      {/* 网络配置 */}
+                      {selectedVM.network_info && selectedVM.network_info.length > 0 && (
+                        <Card title="网络配置" size="small">
+                          <Table
+                            size="small"
+                            dataSource={selectedVM.network_info}
+                            pagination={false}
+                            columns={[
+                              {
+                                title: "网卡类型",
+                                dataIndex: "name",
+                                key: "name",
+                              },
+                              {
+                                title: "MAC地址",
+                                dataIndex: "mac",
+                                key: "mac",
+                                render: (mac: string) => (
+                                  <code style={{ fontSize: "12px" }}>{mac}</code>
+                                ),
+                              },
+                              {
+                                title: "网桥",
+                                dataIndex: "bridge",
+                                key: "bridge",
+                                render: (bridge: string) => (
+                                  <Tag color="green">{bridge}</Tag>
+                                ),
+                              },
+                            ]}
+                          />
+                        </Card>
+                      )}
+                    </div>
                   ),
                 },
               ]}

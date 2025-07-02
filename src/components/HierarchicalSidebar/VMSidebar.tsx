@@ -9,6 +9,8 @@ import {
   MonitorOutlined,
   HddOutlined,
   ClusterOutlined,
+  PauseOutlined,
+  CaretRightOutlined,
 } from "@ant-design/icons";
 import { useTheme } from "@/hooks/useTheme";
 import type {
@@ -121,7 +123,6 @@ const VMSidebar: React.FC<VMSidebarProps> = ({ data, onSelect }) => {
 
   // 物理机操作处理函数
 
-
   // 集群操作处理函数
   const handleClusterAction = (
     action: string,
@@ -143,6 +144,7 @@ const VMSidebar: React.FC<VMSidebarProps> = ({ data, onSelect }) => {
   const getVMContextMenu = (vm: SidebarVMInfo): MenuProps["items"] => {
     const isRunning = vm.status === "running";
     const isStopped = vm.status === "shutoff" || vm.status === "stopped";
+    const isPaused = vm.status === "paused" || vm.status === "suspended";
 
     return [
       {
@@ -160,45 +162,96 @@ const VMSidebar: React.FC<VMSidebarProps> = ({ data, onSelect }) => {
             )}
           </span>
         ),
-        disabled: isRunning,
-        onClick: () => handleVMAction("start", vm),
+        disabled: isRunning || isPaused,
+        onClick: (e) => {
+          e?.domEvent?.stopPropagation();
+          handleVMAction("start", vm);
+        },
       },
       {
         key: "shutdown",
         icon: <PoweroffOutlined />,
-        label: (
-          <span>
-            关机
-          </span>
-        ),
+        label: <span>关机</span>,
         disabled: isStopped,
-        onClick: () => handleVMAction("shutdown", vm),
+        onClick: (e) => {
+          e?.domEvent?.stopPropagation();
+          handleVMAction("shutdown", vm);
+        },
       },
       {
         key: "restart",
         icon: <ReloadOutlined />,
         label: "重启",
         disabled: !isRunning,
-        onClick: () => handleVMAction("restart", vm),
+        onClick: (e) => {
+          e?.domEvent?.stopPropagation();
+          handleVMAction("restart", vm);
+        },
+      },
+      {
+        key: "pause",
+        icon: <PauseOutlined />,
+        label: (
+          <span>
+            挂起
+            {isRunning && (
+              <span
+                style={{ color: "#faad14", marginLeft: 8, fontSize: "11px" }}
+              >
+                可用
+              </span>
+            )}
+          </span>
+        ),
+        disabled: !isRunning,
+        onClick: (e) => {
+          e?.domEvent?.stopPropagation();
+          handleVMAction("pause", vm);
+        },
+      },
+      {
+        key: "resume",
+        icon: <CaretRightOutlined />,
+        label: (
+          <span>
+            恢复
+            {isPaused && (
+              <span
+                style={{ color: "#1890ff", marginLeft: 8, fontSize: "11px" }}
+              >
+                可用
+              </span>
+            )}
+          </span>
+        ),
+        disabled: !isPaused,
+        onClick: (e) => {
+          e?.domEvent?.stopPropagation();
+          handleVMAction("resume", vm);
+        },
       },
       {
         key: "destroy",
         icon: <StopOutlined />,
         label: "强制停止",
         disabled: isStopped,
-        onClick: () => handleVMAction("destroy", vm),
+        onClick: (e) => {
+          e?.domEvent?.stopPropagation();
+          handleVMAction("destroy", vm);
+        },
       },
       { type: "divider" },
       {
         key: "console",
         icon: <MonitorOutlined />,
         label: "打开控制台",
-        onClick: () => handleVMAction("console", vm),
+        onClick: (e) => {
+          e?.domEvent?.stopPropagation();
+          handleVMAction("console", vm);
+        },
       },
     ];
   };
-
-
 
   // 获取集群右键菜单项
   const getClusterContextMenu = (
@@ -343,7 +396,7 @@ const VMSidebar: React.FC<VMSidebarProps> = ({ data, onSelect }) => {
               {statusIcon}
             </span>
             <span className="tree-node-title">{vm.name}</span>
-            
+
             <div className="tree-node-status">
               <span
                 className="status-dot"

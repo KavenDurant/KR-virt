@@ -397,7 +397,7 @@ export const useUserActivity = (
 
   // 更新配置（注意：这会重新创建idleTimer）
   const updateConfig = useCallback((newConfig: Partial<UserActivityConfig>) => {
-    // eslint-disable-line @typescript-eslint/no-unused-vars
+     
     // 这里需要重新初始化，实际使用中可能需要更复杂的逻辑
     console.warn("updateConfig is not fully implemented yet");
   }, []);

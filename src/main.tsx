@@ -14,7 +14,8 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { EnvConfig } from "@/config/env";
 import "./index.css";
 import Router from "@/router";
-import { App } from "antd";
+import { App, ConfigProvider } from "antd";
+import zhCN from "antd/locale/zh_CN";
 
 // 设置页面标题
 document.title = EnvConfig.APP_TITLE;
@@ -22,9 +23,11 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
       <ThemeProvider>
-        <App>
-          <Router />
-        </App>
+        <ConfigProvider locale={zhCN}>
+          <App>
+            <Router />
+          </App>
+        </ConfigProvider>
       </ThemeProvider>
     </Provider>
   </StrictMode>,

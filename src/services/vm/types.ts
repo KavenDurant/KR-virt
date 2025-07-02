@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 14:04:19
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-02 14:18:02
+ * @LastEditTime: 2025-07-02 19:09:57
  * @FilePath: /KR-virt/src/services/vm/types.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -16,7 +16,7 @@ export interface CreateVMRequest {
   cpu_num: number;
   disk_size_gb: number;
   disk_dir: string;
-  iso_file_path: string | null; // 修改此行
+  iso_file_path: string | null;
 }
 
 // 虚拟机操作请求参数
@@ -30,7 +30,51 @@ export interface DeleteVMRequest extends VMOperationRequest {
   delete_disk: boolean;
 }
 
-// 虚拟机信息
+// 虚拟机磁盘配置
+export interface VMDiskConfig {
+  name: string;
+  bus_type: string;
+  path: string;
+  format: string;
+}
+
+// 虚拟机网络配置
+export interface VMNetConfig {
+  name: string;
+  mac: string;
+  bridge: string;
+}
+
+// 虚拟机元数据
+export interface VMMetadata {
+  digested: string;
+  digesting: string;
+  updated_at: string;
+}
+
+// 虚拟机详细配置
+export interface VMDetailConfig {
+  cpu_num: number;
+  memory_gb: number;
+  boot: string[];
+  disk: VMDiskConfig[];
+  cdrom: unknown[];
+  net: VMNetConfig[];
+  usb: unknown[];
+  pci: unknown[];
+  metadata: VMMetadata;
+}
+
+// 实际API返回的虚拟机信息
+export interface VMApiInfo {
+  vm_name: string;
+  hostname: string;
+  config_status: boolean;
+  config: VMDetailConfig;
+  error: string | null;
+}
+
+// 适配后的虚拟机信息（用于UI显示）
 export interface VMInfo {
   name: string;
   hostname: string;
@@ -38,10 +82,25 @@ export interface VMInfo {
   status: string;
   cpu_count: number;
   memory_gb: number;
+  config_status?: boolean;
+  error?: string | null;
+  // 新增：详细配置信息
+  config?: VMDetailConfig;
+  boot_order?: string[];
+  disk_info?: VMDiskConfig[];
+  network_info?: VMNetConfig[];
+  metadata?: VMMetadata;
+  created_at?: string;
+  updated_at?: string;
 }
 
-// 虚拟机列表响应
+// 虚拟机列表响应（API原始格式）
 export interface VMListResponse {
+  vms: VMApiInfo[];
+}
+
+// 虚拟机列表响应（UI适配格式）
+export interface VMListUIResponse {
   vms: VMInfo[];
 }
 

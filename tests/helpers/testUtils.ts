@@ -16,7 +16,7 @@ export const delay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 // 创建Mock函数
-export const createMockFn = <T extends (...args: any[]) => any>(
+export const createMockFn = <T extends (...args: unknown[]) => unknown>(
   implementation?: T,
 ): vi.MockedFunction<T> => {
   return vi.fn(implementation);
@@ -80,7 +80,7 @@ export const mockTime = (date: string | Date = "2024-01-01T00:00:00Z") => {
 
 // 模拟Window对象属性
 export const mockWindowProperty = <T>(property: string, value: T) => {
-  const originalValue = (window as any)[property];
+  const originalValue = (window as Record<string, unknown>)[property];
 
   beforeEach(() => {
     Object.defineProperty(window, property, {
@@ -117,7 +117,7 @@ export const mockEnvVar = (key: string, value: string) => {
 // 创建测试用的Promise
 export const createTestPromise = <T>() => {
   let resolve: (value: T) => void;
-  let reject: (reason?: any) => void;
+  let reject: (reason?: unknown) => void;
 
   const promise = new Promise<T>((res, rej) => {
     resolve = res;

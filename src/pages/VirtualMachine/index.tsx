@@ -1,3 +1,11 @@
+/*
+ * @Author: KavenDurant luojiaxin888@gmail.com
+ * @Date: 2025-07-01 13:47:21
+ * @LastEditors: KavenDurant luojiaxin888@gmail.com
+ * @LastEditTime: 2025-07-02 15:21:00
+ * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Card,
@@ -9,7 +17,6 @@ import {
   Tag,
   Space,
   Input,
-  Select,
   Dropdown,
   Tooltip,
   Progress,
@@ -17,7 +24,7 @@ import {
   Tabs,
   Modal,
   Alert,
-  message,
+  App,
   Switch,
   Empty,
   Spin,
@@ -29,7 +36,6 @@ import {
   PlayCircleOutlined,
   ReloadOutlined,
   SearchOutlined,
-  FilterOutlined,
   SettingOutlined,
   DownOutlined,
   PlusOutlined,
@@ -48,9 +54,7 @@ import {
   HddOutlined,
   WifiOutlined,
   DesktopOutlined,
-  ClusterOutlined,
-  UserOutlined,
-  CalendarOutlined,
+
   WarningOutlined,
   CheckCircleOutlined,
   StopOutlined,
@@ -61,15 +65,18 @@ import {
   CodeOutlined,
   CameraOutlined,
   SaveOutlined,
+  CaretRightOutlined,
 } from "@ant-design/icons";
 import { useTheme } from "../../hooks/useTheme";
 import { useSidebarSelection } from "../../hooks";
+
 import type {
-  VirtualMachine as VMData,
+  VirtualMachine as SidebarVM,
   VMManagementData,
 } from "../../services/mockData";
 import { mockVMManagementData } from "../../services/mockData";
 import { CreateVMModal } from "./components";
+import { vmService, type VMInfo, type CreateVMRequest } from "@/services/vm";
 
 // 使用统一的虚拟机数据类型
 type VirtualMachine = VMManagementData;
@@ -131,6 +138,8 @@ interface VMStats {
  */
 const VirtualMachineManagement: React.FC = () => {
   const { themeConfig } = useTheme();
+  const { message } = App.useApp();
+  const [modal, contextHolder] = Modal.useModal();
 
   /**
    * 侧边栏选择状态管理
@@ -144,17 +153,12 @@ const VirtualMachineManagement: React.FC = () => {
   const {
     selectedHost: sidebarSelectedHost,
     selectedVM: sidebarSelectedVM,
-    clearSelection,
   } = useSidebarSelection();
 
   const [activeTab, setActiveTab] = useState("list");
   const [loading, setLoading] = useState(false);
   const [vmList, setVmList] = useState<VirtualMachine[]>([]);
   const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState("全部");
-  const [zoneFilter, setZoneFilter] = useState("全部");
-  const [platformFilter, setPlatformFilter] = useState("全部");
-  const [ownerFilter, setOwnerFilter] = useState("全部");
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [detailModal, setDetailModal] = useState(false);
@@ -175,44 +179,60 @@ const VirtualMachineManagement: React.FC = () => {
    * 现在只需要使用 Hook 返回的状态即可
    */
 
-  // 数据加载effect
-  useEffect(() => {
-    const loadVmData = () => {
-      setLoading(true);
-      setTimeout(() => {
+  // 数据加载函数
+  const loadVmData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await vmService.getVMList();
+      if (response.success && response.data) {
+        // 直接使用API返回的原始数据，不进行字段映射
+        const vms: VMManagementData[] = response.data.vms.map((vm: VMInfo) => ({
+          name: vm.name,
+          hostname: vm.hostname,
+          uuid: vm.uuid,
+          status: vm.status,
+          cpu_count: vm.cpu_count,
+          memory_gb: vm.memory_gb,
+        }));
+        setVmList(vms);
+      } else {
+        // 如果API调用失败，回退到使用模拟数据
+        console.warn("API调用失败，使用模拟数据:", response.message);
         setVmList(mockVMManagementData);
-        setLoading(false);
-      }, 500);
-    };
+      }
+    } catch (error) {
+      console.error("加载虚拟机数据失败:", error);
+      // 出错时使用模拟数据
+      setVmList(mockVMManagementData);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
+  // 数据加载effect - 只在组件挂载时执行一次
+  useEffect(() => {
     loadVmData();
-  }, []); // 使用统一的数据源
+  }, []); // 空依赖数组，避免无限循环
 
   // 计算统计信息
   const vmStats: VMStats = useMemo(() => {
     const total = vmList.length;
-    const running = vmList.filter((vm) => vm.status === "运行中").length;
-    const stopped = vmList.filter((vm) => vm.status === "已停止").length;
-    const error = vmList.filter((vm) => vm.status === "异常").length;
+    const running = vmList.filter((vm) => vm.status === "running").length;
+    const stopped = vmList.filter((vm) => vm.status === "stopped").length;
+    const error = vmList.filter((vm) => vm.status === "error").length;
 
-    const avgCpuUsage =
-      vmList.reduce((acc, vm) => {
-        return acc + parseInt(vm.cpuUsage.replace("%", ""));
-      }, 0) / total;
-
-    const avgMemoryUsage =
-      vmList.reduce((acc, vm) => {
-        return acc + parseInt(vm.memoryUsage.replace("%", ""));
-      }, 0) / total;
+    // 由于API只返回基础字段，没有使用率信息，这里设置为0
+    const avgCpuUsage = 0;
+    const avgMemoryUsage = 0;
 
     return {
       total,
       running,
       stopped,
       error,
-      cpuUsage: Math.round(avgCpuUsage),
-      memoryUsage: Math.round(avgMemoryUsage),
-      storageUsage: 65, // 模拟存储使用率
+      cpuUsage: avgCpuUsage,
+      memoryUsage: avgMemoryUsage,
+      storageUsage: 0, // API暂无存储使用率信息
     };
   }, [vmList]);
 
@@ -222,28 +242,12 @@ const VirtualMachineManagement: React.FC = () => {
       const matchSearch =
         searchText === "" ||
         vm.name.toLowerCase().includes(searchText.toLowerCase()) ||
-        vm.id.toLowerCase().includes(searchText.toLowerCase()) ||
-        (vm.ip && vm.ip.includes(searchText)) ||
-        vm.hostName.toLowerCase().includes(searchText.toLowerCase());
+        vm.uuid.toLowerCase().includes(searchText.toLowerCase()) ||
+        vm.hostname.toLowerCase().includes(searchText.toLowerCase());
 
-      const matchStatus = statusFilter === "全部" || vm.status === statusFilter;
-      const matchZone = zoneFilter === "全部" || vm.zone === zoneFilter;
-      const matchPlatform =
-        platformFilter === "全部" || vm.platform === platformFilter;
-      const matchOwner = ownerFilter === "全部" || vm.owner === ownerFilter;
-
-      return (
-        matchSearch && matchStatus && matchZone && matchPlatform && matchOwner
-      );
+      return matchSearch;
     });
-  }, [
-    vmList,
-    searchText,
-    statusFilter,
-    zoneFilter,
-    platformFilter,
-    ownerFilter,
-  ]);
+  }, [vmList, searchText]);
 
   // 刷新数据函数
   const handleRefresh = useCallback(() => {
@@ -277,41 +281,130 @@ const VirtualMachineManagement: React.FC = () => {
   }, [autoRefresh, handleRefresh]);
 
   // 虚拟机操作处理函数
-  const handleVMAction = (action: string, vm?: VirtualMachine) => {
-    const targetVM = vm || sidebarSelectedVM;
-    if (!targetVM) return;
+  const handleVMAction = async (action: string, vm: VirtualMachine | SidebarVM) => {
+    try {
+      let response;
+      
+      // 提取虚拟机名称和主机名，兼容两种数据格式
+      const vmName = vm.name;
+      const hostname = 'hostname' in vm ? vm.hostname : ('node' in vm ? vm.node : 'unknown');
 
-    switch (action) {
-      case "start":
-      case "启动":
-        message.success(`启动虚拟机 ${targetVM.name} 成功`);
-        break;
-      case "stop":
-      case "停止":
-        message.success(`停止虚拟机 ${targetVM.name} 成功`);
-        break;
-      case "restart":
-      case "重启":
-        message.success(`重启虚拟机 ${targetVM.name} 成功`);
-        break;
-      case "suspend":
-        message.success(`挂起虚拟机 ${targetVM.name} 成功`);
-        break;
-      case "resume":
-        message.success(`恢复虚拟机 ${targetVM.name} 成功`);
-        break;
-      case "clone":
-        message.success(`克隆虚拟机 ${targetVM.name} 成功`);
-        break;
-      case "template":
-        message.success(`转换虚拟机 ${targetVM.name} 为模板成功`);
-        break;
-      case "delete":
-        message.success(`删除虚拟机 ${targetVM.name} 成功`);
-        break;
-      default:
-        message.success(`${action} ${targetVM.name} 操作已执行`);
-        break;
+      switch (action) {
+        case "start":
+        case "启动":
+          response = await vmService.startVM(vmName, hostname);
+          if (response.success) {
+            message.success(`启动虚拟机 ${vm.name} 成功`);
+            // 重新加载虚拟机列表
+            window.location.reload();
+          } else {
+            message.error(response.message || `启动虚拟机 ${vm.name} 失败`);
+          }
+          break;
+
+        case "stop":
+        case "停止":
+          response = await vmService.stopVM(vm.name, hostname);
+          if (response.success) {
+            message.success(`停止虚拟机 ${vm.name} 成功`);
+            // 重新加载虚拟机列表
+            window.location.reload();
+          } else {
+            message.error(response.message || `停止虚拟机 ${vm.name} 失败`);
+          }
+          break;
+
+        case "restart":
+        case "重启":
+          response = await vmService.restartVM(vm.name, hostname);
+          if (response.success) {
+            message.success(`重启虚拟机 ${vm.name} 成功`);
+            // 重新加载虚拟机列表
+            window.location.reload();
+          } else {
+            message.error(response.message || `重启虚拟机 ${vm.name} 失败`);
+          }
+          break;
+
+        case "destroy":
+        case "强制停止":
+          response = await vmService.destroyVM(vm.name, hostname);
+          if (response.success) {
+            message.success(`强制停止虚拟机 ${vm.name} 成功`);
+            // 重新加载虚拟机列表
+            window.location.reload();
+          } else {
+            message.error(response.message || `强制停止虚拟机 ${vm.name} 失败`);
+          }
+          break;
+
+        case "delete":
+          // 删除前确认
+          modal.confirm({
+            title: "确认删除",
+            content: `确定要删除虚拟机 "${vm.name}" 吗？此操作不可逆。`,
+            okText: "确认删除",
+            okType: "danger",
+            cancelText: "取消",
+            onOk: async () => {
+              const deleteResponse = await vmService.deleteVM(
+                vm.name,
+                hostname,
+                true
+              );
+              if (deleteResponse.success) {
+                message.success(`删除虚拟机 ${vm.name} 成功`);
+                // 重新加载虚拟机列表
+                await loadVmData();
+              } else {
+                message.error(
+                  deleteResponse.message || `删除虚拟机 ${vm.name} 失败`
+                );
+              }
+            },
+          });
+          return; // 提前返回，不执行后续代码
+
+        case "pause":
+        case "suspend":
+        case "挂起":
+          response = await vmService.pauseVM(vm.name, hostname);
+          if (response.success) {
+            message.success(`挂起虚拟机 ${vm.name} 成功`);
+            // 重新加载虚拟机列表
+            window.location.reload();
+          } else {
+            message.error(response.message || `挂起虚拟机 ${vm.name} 失败`);
+          }
+          break;
+
+        case "resume":
+        case "恢复":
+          response = await vmService.resumeVM(vm.name, hostname);
+          if (response.success) {
+            message.success(`恢复虚拟机 ${vm.name} 成功`);
+            // 重新加载虚拟机列表
+            window.location.reload();
+          } else {
+            message.error(response.message || `恢复虚拟机 ${vm.name} 失败`);
+          }
+          break;
+
+        case "clone":
+          message.info(`克隆功能开发中，虚拟机: ${vm.name}`);
+          break;
+
+        case "template":
+          message.info(`模板转换功能开发中，虚拟机: ${vm.name}`);
+          break;
+
+        default:
+          message.info(`${action} ${vm.name} 操作功能开发中`);
+          break;
+      }
+    } catch (error) {
+      console.error(`虚拟机操作失败:`, error);
+      message.error(`虚拟机操作失败，请检查网络连接`);
     }
   };
 
@@ -322,7 +415,7 @@ const VirtualMachineManagement: React.FC = () => {
       return;
     }
     message.success(
-      `批量${action}操作已执行，影响${selectedRowKeys.length}台虚拟机`,
+      `批量${action}操作已执行，影响${selectedRowKeys.length}台虚拟机`
     );
     setSelectedRowKeys([]);
   };
@@ -334,10 +427,32 @@ const VirtualMachineManagement: React.FC = () => {
   };
 
   // 创建虚拟机
-  const handleCreateVM = (values: Record<string, unknown>) => {
-    console.log("创建虚拟机:", values);
-    setCreateVMModal(false);
-    // 这里可以调用API创建虚拟机
+  const handleCreateVM = async (values: CreateVMRequest) => {
+    const payload = {
+      ...values,
+      iso_file_path: values.iso_file_path?.trim() ? values.iso_file_path : null,
+    };
+    console.log("创建虚拟机参数:", payload);
+    setLoading(true);
+
+    try {
+      // 调用创建虚拟机API
+      const response = await vmService.createVM(payload);
+
+      if (response.success) {
+        message.success("虚拟机创建任务已提交");
+        // 创建成功后，重新加载虚拟机列表
+        await loadVmData();
+        setCreateVMModal(false);
+      } else {
+        message.error(response.message || "虚拟机创建失败");
+      }
+    } catch (error) {
+      console.error("创建虚拟机失败:", error);
+      message.error("虚拟机创建失败，请检查网络连接和参数配置");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 表格列定义
@@ -348,15 +463,17 @@ const VirtualMachineManagement: React.FC = () => {
       width: 200,
       fixed: "left",
       render: (_, record) => (
-        <div>
-          <div style={{ fontWeight: "bold", fontSize: "14px" }}>
-            {record.name}
-          </div>
-          <div style={{ color: "#666", fontSize: "12px" }}>{record.id}</div>
-          <div style={{ fontSize: "12px", marginBottom: "4px" }}>
-            <Tag>{record.platform}</Tag>
-          </div>
+        <div style={{ fontWeight: "bold", fontSize: "14px" }}>
+          {record.name}
         </div>
+      ),
+    },
+    {
+      title: "物理机",
+      key: "hostname",
+      width: 120,
+      render: (_, record) => (
+        <div style={{ fontSize: "12px" }}>{record.hostname || "N/A"}</div>
       ),
     },
     {
@@ -367,11 +484,11 @@ const VirtualMachineManagement: React.FC = () => {
       render: (status: string) => {
         const getStatusConfig = (status: string) => {
           switch (status) {
-            case "运行中":
+            case "running":
               return { color: "success", icon: <CheckCircleOutlined /> };
-            case "已停止":
+            case "stopped":
               return { color: "error", icon: <StopOutlined /> };
-            case "异常":
+            case "error":
               return { color: "warning", icon: <WarningOutlined /> };
             default:
               return { color: "default", icon: <CheckCircleOutlined /> };
@@ -381,24 +498,19 @@ const VirtualMachineManagement: React.FC = () => {
         const config = getStatusConfig(status);
         return (
           <Tag color={config.color} icon={config.icon}>
-            {status}
+            {status === "running" ? "运行中" : status === "stopped" ? "已停止" : status}
           </Tag>
         );
       },
     },
     {
-      title: "网络",
-      key: "network",
-      width: 130,
-      render: (_, record) => (
-        <div>
-          <div style={{ fontSize: "12px" }}>
-            <WifiOutlined style={{ marginRight: 4 }} />
-            {record.ip}
-          </div>
-          <div style={{ color: "#666", fontSize: "11px" }}>
-            {record.networkType}
-          </div>
+      title: "UUID",
+      dataIndex: "uuid", 
+      key: "uuid",
+      width: 180,
+      render: (uuid: string) => (
+        <div style={{ fontSize: "12px", fontFamily: "monospace" }}>
+          {uuid}
         </div>
       ),
     },
@@ -410,88 +522,12 @@ const VirtualMachineManagement: React.FC = () => {
         <div style={{ fontSize: "12px" }}>
           <div>
             <ThunderboltOutlined style={{ marginRight: 4 }} />
-            CPU: {record.cpu} ({record.cpuUsage})
+            CPU: {record.cpu_count}核
           </div>
           <div>
             <DatabaseOutlined style={{ marginRight: 4 }} />
-            内存: {record.memory} ({record.memoryUsage})
+            内存: {record.memory_gb}GB
           </div>
-          <div>
-            <HddOutlined style={{ marginRight: 4 }} />
-            存储: {record.storage}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "标签",
-      key: "tags",
-      width: 160,
-      render: (_, record) => (
-        <div>
-          <div
-            style={{ fontSize: "12px", display: "flex", flexWrap: "nowrap" }}
-          >
-            {record.tags.map((tag) => (
-              <Tag key={tag} color="blue" style={{ marginBottom: "2px" }}>
-                {tag}
-              </Tag>
-            ))}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "操作系统",
-      dataIndex: "os",
-      key: "os",
-      width: 140,
-      render: (os: string) => (
-        <div>
-          <DesktopOutlined style={{ marginRight: 4 }} />
-          {os}
-        </div>
-      ),
-    },
-    {
-      title: "位置信息",
-      key: "location",
-      width: 140,
-      render: (_, record) => (
-        <div style={{ fontSize: "12px" }}>
-          <div>
-            <ClusterOutlined style={{ marginRight: 4 }} />
-            {record.cluster}
-          </div>
-          <div style={{ color: "#666" }}>
-            <CloudServerOutlined style={{ marginRight: 4 }} />
-            {record.host}
-          </div>
-          <div style={{ color: "#666" }}>{record.zone}</div>
-        </div>
-      ),
-    },
-    {
-      title: "创建时间",
-      dataIndex: "createTime",
-      key: "createTime",
-      width: 120,
-      render: (time: string) => (
-        <div style={{ fontSize: "12px" }}>
-          <CalendarOutlined style={{ marginRight: 4 }} />
-          {time}
-        </div>
-      ),
-    },
-    {
-      title: "负责人",
-      dataIndex: "owner",
-      key: "owner",
-      width: 100,
-      render: (owner: string) => (
-        <div style={{ fontSize: "12px" }}>
-          <UserOutlined style={{ marginRight: 4 }} />
-          {owner}
         </div>
       ),
     },
@@ -509,7 +545,7 @@ const VirtualMachineManagement: React.FC = () => {
               onClick={() => showVMDetail(record)}
             />
           </Tooltip>
-          {record.status === "已停止" ? (
+          {record.status === "stopped" ? (
             <Tooltip title="启动">
               <Button
                 type="primary"
@@ -542,6 +578,15 @@ const VirtualMachineManagement: React.FC = () => {
                 { key: "clone", icon: <CopyOutlined />, label: "克隆" },
                 { key: "snapshot", icon: <ApiOutlined />, label: "创建快照" },
                 { key: "console", icon: <MonitorOutlined />, label: "控制台" },
+                { type: "divider" },
+                {
+                  key: "destroy",
+                  icon: <StopOutlined />,
+                  label: "强制停止",
+                  danger: true,
+                },
+                { key: "pause", icon: <PauseOutlined />, label: "挂起" },
+                { key: "resume", icon: <CaretRightOutlined />, label: "恢复" },
                 { type: "divider" },
                 {
                   key: "delete",
@@ -848,7 +893,7 @@ const VirtualMachineManagement: React.FC = () => {
                     title: "虚拟机名称",
                     dataIndex: "name",
                     key: "name",
-                    render: (name: string, record: VMData) => (
+                    render: (name: string, record: SidebarVM) => (
                       <div>
                         <div style={{ fontWeight: "bold" }}>{name}</div>
                         <div style={{ fontSize: "12px", color: "#666" }}>
@@ -867,22 +912,22 @@ const VirtualMachineManagement: React.FC = () => {
                           status === "running"
                             ? "success"
                             : status === "stopped"
-                              ? "default"
-                              : "error"
+                            ? "default"
+                            : "error"
                         }
                       >
                         {status === "running"
                           ? "运行中"
                           : status === "stopped"
-                            ? "已停止"
-                            : status}
+                          ? "已停止"
+                          : status}
                       </Tag>
                     ),
                   },
                   {
                     title: "配置",
                     key: "config",
-                    render: (_, record: VMData) => (
+                    render: (_, record: SidebarVM) => (
                       <div style={{ fontSize: "12px" }}>
                         <div>CPU: {record.cpu}核</div>
                         <div>内存: {record.memory}GB</div>
@@ -1567,7 +1612,7 @@ const VirtualMachineManagement: React.FC = () => {
                     key: "name",
                     render: (
                       name: string,
-                      record: Snapshot & { current?: boolean },
+                      record: Snapshot & { current?: boolean }
                     ) => (
                       <div>
                         <strong>{name}</strong>
@@ -1696,8 +1741,8 @@ const VirtualMachineManagement: React.FC = () => {
                         type === "完整备份"
                           ? "blue"
                           : type === "增量备份"
-                            ? "green"
-                            : "orange";
+                          ? "green"
+                          : "orange";
                       return <Tag color={color}>{type}</Tag>;
                     },
                   },
@@ -1716,8 +1761,8 @@ const VirtualMachineManagement: React.FC = () => {
                         status === "完成"
                           ? "success"
                           : status === "进行中"
-                            ? "processing"
-                            : "error";
+                          ? "processing"
+                          : "error";
                       return <Tag color={color}>{status}</Tag>;
                     },
                   },
@@ -1820,9 +1865,6 @@ const VirtualMachineManagement: React.FC = () => {
               {sidebarSelectedVM.status}
             </Tag>
           </h3>
-          <Button style={{ marginTop: "8px" }} onClick={() => clearSelection()}>
-            返回列表
-          </Button>
         </div>
 
         {/* 虚拟机操作区域 */}
@@ -1832,121 +1874,130 @@ const VirtualMachineManagement: React.FC = () => {
             marginBottom: "16px",
           }}
         >
-          <Space wrap>
-            {sidebarSelectedVM.status === "running" ? (
-              <>
-                <Button
-                  icon={<PoweroffOutlined />}
-                  danger
-                  onClick={() => handleVMAction("stop")}
-                >
-                  关机
-                </Button>
-                <Button
-                  icon={<ReloadOutlined />}
-                  onClick={() => handleVMAction("restart")}
-                >
-                  重启
-                </Button>
-                <Button
-                  icon={<PauseOutlined />}
-                  onClick={() => handleVMAction("suspend")}
-                >
-                  挂起
-                </Button>
-              </>
-            ) : sidebarSelectedVM.status === "stopped" ? (
-              <>
+          {/* 第一行：有接口的功能 */}
+          <div style={{ marginBottom: "12px" }}>
+            <Space wrap>
+              {sidebarSelectedVM.status === "running" ? (
+                <>
+                  <Button
+                    icon={<PoweroffOutlined />}
+                    danger
+                    onClick={() => handleVMAction("stop", sidebarSelectedVM)}
+                  >
+                    关机
+                  </Button>
+                  <Button
+                    icon={<ReloadOutlined />}
+                    onClick={() => handleVMAction("restart", sidebarSelectedVM)}
+                  >
+                    重启
+                  </Button>
+                  <Button
+                    icon={<PauseOutlined />}
+                    onClick={() => handleVMAction("suspend", sidebarSelectedVM)}
+                  >
+                    挂起
+                  </Button>
+                </>
+              ) : sidebarSelectedVM.status === "stopped" ? (
+                <>
+                  <Button
+                    type="primary"
+                    icon={<PlayCircleOutlined />}
+                    onClick={() => handleVMAction("start", sidebarSelectedVM)}
+                  >
+                    开机
+                  </Button>
+                  <Button
+                    icon={<CopyOutlined />}
+                    onClick={() => handleVMAction("clone", sidebarSelectedVM)}
+                  >
+                    克隆
+                  </Button>
+                  <Button
+                    icon={<FileImageOutlined />}
+                    onClick={() => handleVMAction("template", sidebarSelectedVM)}
+                  >
+                    转换为模板
+                  </Button>
+                </>
+              ) : sidebarSelectedVM.status === "suspended" ? (
+                <>
+                  <Button
+                    type="primary"
+                    icon={<PlayCircleOutlined />}
+                    onClick={() => handleVMAction("resume", sidebarSelectedVM)}
+                  >
+                    继续
+                  </Button>
+                  <Button
+                    icon={<PoweroffOutlined />}
+                    danger
+                    onClick={() => handleVMAction("stop", sidebarSelectedVM)}
+                  >
+                    关机
+                  </Button>
+                </>
+              ) : (
                 <Button
                   type="primary"
                   icon={<PlayCircleOutlined />}
-                  onClick={() => handleVMAction("start")}
+                  onClick={() => handleVMAction("start", sidebarSelectedVM)}
                 >
                   开机
                 </Button>
-                <Button
-                  icon={<CopyOutlined />}
-                  onClick={() => handleVMAction("clone")}
-                >
-                  克隆
-                </Button>
-                <Button
-                  icon={<FileImageOutlined />}
-                  onClick={() => handleVMAction("template")}
-                >
-                  转换为模板
-                </Button>
-              </>
-            ) : sidebarSelectedVM.status === "suspended" ? (
-              <>
-                <Button
-                  type="primary"
-                  icon={<PlayCircleOutlined />}
-                  onClick={() => handleVMAction("resume")}
-                >
-                  继续
-                </Button>
-                <Button
-                  icon={<PoweroffOutlined />}
-                  danger
-                  onClick={() => handleVMAction("stop")}
-                >
-                  关机
-                </Button>
-              </>
-            ) : (
+              )}
               <Button
-                type="primary"
-                icon={<PlayCircleOutlined />}
-                onClick={() => handleVMAction("start")}
+                icon={<DeleteOutlined />}
+                danger
+                onClick={() => handleVMAction("delete", sidebarSelectedVM)}
               >
-                开机
+                删除
               </Button>
-            )}
-            <Button
-              icon={<SettingOutlined />}
-              onClick={() => message.info("修改计算规格")}
-            >
-              修改规格
-            </Button>
-            <Button
-              icon={<WifiOutlined />}
-              onClick={() => message.info("修改IP地址")}
-            >
-              修改IP
-            </Button>
-            <Button
-              icon={<SyncOutlined />}
-              onClick={() => message.info("更新操作系统")}
-            >
-              更新系统
-            </Button>
-            <Button
-              icon={<TagOutlined />}
-              onClick={() => message.info("标签配置")}
-            >
-              标签配置
-            </Button>
-            <Button
-              icon={<ThunderboltOutlined />}
-              onClick={() => message.info("高可用设置")}
-            >
-              高可用
-            </Button>
-            <Button
-              icon={<MenuOutlined />}
-              onClick={() => message.info("引导项设置")}
-            >
-              引导设置
-            </Button>
-            <Button
-              icon={<DeleteOutlined />}
-              danger
-              onClick={() => handleVMAction("delete")}
-            >
-              删除
-            </Button>
-          </Space>
+            </Space>
+          </div>
+          
+          {/* 第二行：没有接口的功能 */}
+          <div>
+            <Space wrap>
+              <Button
+                icon={<SettingOutlined />}
+                onClick={() => message.info("修改计算规格")}
+              >
+                修改规格
+              </Button>
+              <Button
+                icon={<WifiOutlined />}
+                onClick={() => message.info("修改IP地址")}
+              >
+                修改IP
+              </Button>
+              <Button
+                icon={<SyncOutlined />}
+                onClick={() => message.info("更新操作系统")}
+              >
+                更新系统
+              </Button>
+              <Button
+                icon={<TagOutlined />}
+                onClick={() => message.info("标签配置")}
+              >
+                标签配置
+              </Button>
+              <Button
+                icon={<ThunderboltOutlined />}
+                onClick={() => message.info("高可用设置")}
+              >
+                高可用
+              </Button>
+              <Button
+                icon={<MenuOutlined />}
+                onClick={() => message.info("引导项设置")}
+              >
+                引导设置
+              </Button>
+            </Space>
+          </div>
         </Card>
 
         <Card>
@@ -1958,387 +2009,345 @@ const VirtualMachineManagement: React.FC = () => {
 
   return (
     <Spin spinning={loading} tip="加载虚拟机数据中...">
-      <div style={{ 
-        width: "100%",
-        minHeight: loading ? "400px" : "auto"
-      }}>
-        <div
+      {/* Modal contextHolder 必须在这里渲染，否则 modal.confirm 不会工作 */}
+      {contextHolder}
+      <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "24px",
+          width: "100%",
+          minHeight: loading ? "400px" : "auto",
         }}
       >
-        <h3 style={{ color: themeConfig.token.colorTextBase, margin: 0 }}>
-          虚拟机管理
-        </h3>
-        <Space>
-          <span style={{ fontSize: "12px", color: "#666" }}>自动刷新</span>
-          <Switch
-            size="small"
-            checked={autoRefresh}
-            onChange={setAutoRefresh}
-          />
-        </Space>
-      </div>
-
-      {/* 统计卡片 */}
-      <Row gutter={16} style={{ marginBottom: "24px", width: "100%" }}>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="总虚拟机数量"
-              value={vmStats.total}
-              prefix={<CloudServerOutlined />}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "24px",
+          }}
+        >
+          <h3 style={{ color: themeConfig.token.colorTextBase, margin: 0 }}>
+            虚拟机管理
+          </h3>
+          <Space>
+            <span style={{ fontSize: "12px", color: "#666" }}>自动刷新</span>
+            <Switch
+              size="small"
+              checked={autoRefresh}
+              onChange={setAutoRefresh}
             />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="运行中"
-              value={vmStats.running}
-              valueStyle={{ color: "#52c41a" }}
-              prefix={<CheckCircleOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="已停止"
-              value={vmStats.stopped}
-              valueStyle={{ color: "#ff4d4f" }}
-              prefix={<StopOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="异常"
-              value={vmStats.error}
-              valueStyle={{ color: "#faad14" }}
-              prefix={<WarningOutlined />}
-            />
-          </Card>
-        </Col>
-      </Row>
+          </Space>
+        </div>
 
-      {/* 主要内容区域 */}
-      <Card>
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          tabBarExtraContent={
-            <Space>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setCreateVMModal(true)}
-              >
-                创建虚拟机
-              </Button>
-              <Button icon={<SyncOutlined />} onClick={handleRefresh}>
-                刷新
-              </Button>
-            </Space>
-          }
-          items={[
-            {
-              key: "list",
-              label: "虚拟机列表",
-              children: (
-                <>
-                  {/* 筛选工具栏 */}
-                  <div
-                    style={{
-                      marginBottom: 16,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      flexWrap: "wrap",
-                      gap: 8,
-                    }}
-                  >
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <Input
-                        placeholder="搜索虚拟机名称、IP、ID或主机名"
-                        prefix={<SearchOutlined />}
-                        style={{ width: 280 }}
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                        allowClear
-                      />
-                      <Select
-                        style={{ width: 120 }}
-                        placeholder="状态"
-                        value={statusFilter}
-                        onChange={setStatusFilter}
-                        options={[
-                          { value: "全部", label: "全部状态" },
-                          { value: "运行中", label: "运行中" },
-                          { value: "已停止", label: "已停止" },
-                          { value: "异常", label: "异常" },
-                        ]}
-                      />
-                      <Select
-                        style={{ width: 140 }}
-                        placeholder="可用区"
-                        value={zoneFilter}
-                        onChange={setZoneFilter}
-                        options={[
-                          { value: "全部", label: "全部可用区" },
-                          { value: "可用区A", label: "可用区A" },
-                          { value: "可用区B", label: "可用区B" },
-                        ]}
-                      />
-                      <Select
-                        style={{ width: 120 }}
-                        placeholder="平台"
-                        value={platformFilter}
-                        onChange={setPlatformFilter}
-                        options={[
-                          { value: "全部", label: "全部平台" },
-                          { value: "Linux", label: "Linux" },
-                          { value: "Windows", label: "Windows" },
-                        ]}
-                      />
-                      <Select
-                        style={{ width: 120 }}
-                        placeholder="负责人"
-                        value={ownerFilter}
-                        onChange={setOwnerFilter}
-                        options={[
-                          { value: "全部", label: "全部负责人" },
-                          { value: "系统管理员", label: "系统管理员" },
-                          { value: "DBA团队", label: "DBA团队" },
-                          { value: "开发团队", label: "开发团队" },
-                          { value: "运维团队", label: "运维团队" },
-                        ]}
-                      />
-                      <Tooltip title="更多筛选条件">
-                        <Button icon={<FilterOutlined />} />
-                      </Tooltip>
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <Tooltip title="导出">
-                        <Button icon={<ExportOutlined />} />
-                      </Tooltip>
-                      <Dropdown
-                        menu={{
-                          items: menuItems,
-                          onClick: ({ key }) => handleBatchAction(key),
-                        }}
-                        disabled={selectedRowKeys.length === 0}
-                      >
-                        <Button>
-                          批量操作 <DownOutlined />
-                        </Button>
-                      </Dropdown>
-                      <Tooltip title="表格列设置">
-                        <Button icon={<SettingOutlined />} />
-                      </Tooltip>
-                    </div>
-                  </div>
+        {/* 统计卡片 */}
+        <Row gutter={16} style={{ marginBottom: "24px", width: "100%" }}>
+          <Col span={6}>
+            <Card>
+              <Statistic
+                title="总虚拟机数量"
+                value={vmStats.total}
+                prefix={<CloudServerOutlined />}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic
+                title="运行中"
+                value={vmStats.running}
+                valueStyle={{ color: "#52c41a" }}
+                prefix={<CheckCircleOutlined />}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic
+                title="已停止"
+                value={vmStats.stopped}
+                valueStyle={{ color: "#ff4d4f" }}
+                prefix={<StopOutlined />}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic
+                title="异常"
+                value={vmStats.error}
+                valueStyle={{ color: "#faad14" }}
+                prefix={<WarningOutlined />}
+              />
+            </Card>
+          </Col>
+        </Row>
 
-                  {/* 选中提示 */}
-                  {selectedRowKeys.length > 0 && (
-                    <Alert
-                      message={`已选择 ${selectedRowKeys.length} 台虚拟机`}
-                      type="info"
-                      style={{ marginBottom: 16 }}
-                      closable
-                      onClose={() => setSelectedRowKeys([])}
-                    />
-                  )}
-
-                  {/* 虚拟机表格 */}
-                  <Table
-                    columns={columns}
-                    dataSource={filteredData}
-                    rowKey="id"
-                    pagination={{
-                      pageSize: 10,
-                      showSizeChanger: true,
-                      showQuickJumper: true,
-                      showTotal: (total, range) =>
-                        `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-                    }}
-
-                    scroll={{ x: 1400 }}
-                    bordered
-                    size="middle"
-                    rowSelection={{
-                      type: "checkbox",
-                      columnWidth: 48,
-                      selectedRowKeys,
-                      onChange: setSelectedRowKeys,
-                    }}
-                  />
-                </>
-              ),
-            },
-            ...tabItems.map((item) => ({
-              key: item.key,
-              label: item.label,
-              children: item.children,
-            })),
-          ]}
-        ></Tabs>
-      </Card>
-
-      {/* 虚拟机详情模态框 */}
-      <Modal
-        title={`虚拟机详情 - ${selectedVM?.name}`}
-        open={detailModal}
-        onCancel={() => setDetailModal(false)}
-        footer={null}
-        width={800}
-      >
-        {selectedVM && (
+        {/* 主要内容区域 */}
+        <Card>
           <Tabs
-            defaultActiveKey="basic"
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            tabBarExtraContent={
+              <Space>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setCreateVMModal(true)}
+                >
+                  创建虚拟机
+                </Button>
+                <Button icon={<SyncOutlined />} onClick={handleRefresh}>
+                  刷新
+                </Button>
+              </Space>
+            }
             items={[
               {
-                key: "basic",
-                label: "基本信息",
+                key: "list",
+                label: "虚拟机列表",
                 children: (
-                  <Descriptions column={2} bordered>
-                    <Descriptions.Item label="虚拟机ID">
-                      {selectedVM.id}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="名称">
-                      {selectedVM.name}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="状态">
-                      <Tag
-                        color={
-                          selectedVM.status === "运行中" ? "success" : "error"
-                        }
+                  <>
+                    {/* 筛选工具栏 */}
+                    <div
+                      style={{
+                        marginBottom: 16,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: 8,
+                      }}
+                    >
+                      <div
+                        style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
                       >
-                        {selectedVM.status}
-                      </Tag>
-                    </Descriptions.Item>
-                    <Descriptions.Item label="开机时间">
-                      {selectedVM.uptime}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="IP地址">
-                      {selectedVM.ip}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="主机名">
-                      {selectedVM.hostName}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="操作系统">
-                      {selectedVM.os}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="虚拟化工具">
-                      {selectedVM.tools}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="CPU">
-                      {selectedVM.cpu}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="内存">
-                      {selectedVM.memory}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="存储">
-                      {selectedVM.storage}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="快照数量">
-                      {selectedVM.snapshots}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="集群">
-                      {selectedVM.cluster}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="物理主机">
-                      {selectedVM.host}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="可用区">
-                      {selectedVM.zone}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="网络类型">
-                      {selectedVM.networkType}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="安全组">
-                      {selectedVM.securityGroup}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="负责人">
-                      {selectedVM.owner}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="创建时间">
-                      {selectedVM.createTime}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="到期时间">
-                      {selectedVM.expireTime}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="标签" span={2}>
-                      {selectedVM.tags.map((tag) => (
-                        <Tag key={tag} color="blue">
-                          {tag}
-                        </Tag>
-                      ))}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="描述" span={2}>
-                      {selectedVM.description}
-                    </Descriptions.Item>
-                  </Descriptions>
-                ),
-              },
-              {
-                key: "performance",
-                label: "性能监控",
-                children: (
-                  <Row gutter={16}>
-                    <Col span={12}>
-                      <Card title="CPU使用率" size="small">
-                        <Progress percent={parseInt(selectedVM.cpuUsage)} />
-                      </Card>
-                    </Col>
-                    <Col span={12}>
-                      <Card title="内存使用率" size="small">
-                        <Progress percent={parseInt(selectedVM.memoryUsage)} />
-                      </Card>
-                    </Col>
-                  </Row>
-                ),
-              },
-              {
-                key: "hardware",
-                label: "硬件配置",
-                children: (
-                  <Descriptions column={1} bordered>
-                    <Descriptions.Item label="处理器">
-                      {selectedVM.cpu}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="内存">
-                      {selectedVM.memory}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="系统盘">
-                      {selectedVM.rootDisk}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="数据盘">
-                      {selectedVM.dataDisk}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="网络适配器">
-                      {selectedVM.networkType}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="虚拟化平台">
-                      {selectedVM.hypervisor}
-                    </Descriptions.Item>
-                  </Descriptions>
-                ),
-              },
-            ]}
-          />
-        )}
-      </Modal>
+                        <Input
+                          placeholder="搜索虚拟机名称、ID或主机名"
+                          prefix={<SearchOutlined />}
+                          style={{ width: 280 }}
+                          value={searchText}
+                          onChange={(e) => setSearchText(e.target.value)}
+                          allowClear
+                        />
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <Tooltip title="导出">
+                          <Button icon={<ExportOutlined />} />
+                        </Tooltip>
+                        <Dropdown
+                          menu={{
+                            items: menuItems,
+                            onClick: ({ key }) => handleBatchAction(key),
+                          }}
+                          disabled={selectedRowKeys.length === 0}
+                        >
+                          <Button>
+                            批量操作 <DownOutlined />
+                          </Button>
+                        </Dropdown>
+                        <Tooltip title="表格列设置">
+                          <Button icon={<SettingOutlined />} />
+                        </Tooltip>
+                      </div>
+                    </div>
 
-      {/* 创建虚拟机模态框 */}
-      <CreateVMModal
-        visible={createVMModal}
-        onCancel={() => setCreateVMModal(false)}
-        onFinish={handleCreateVM}
-      />
+                    {/* 选中提示 */}
+                    {selectedRowKeys.length > 0 && (
+                      <Alert
+                        message={`已选择 ${selectedRowKeys.length} 台虚拟机`}
+                        type="info"
+                        style={{ marginBottom: 16 }}
+                        closable
+                        onClose={() => setSelectedRowKeys([])}
+                      />
+                    )}
+
+                    {/* 虚拟机表格 */}
+                    <Table
+                      columns={columns}
+                      dataSource={filteredData}
+                      rowKey="uuid"
+                      pagination={{
+                        pageSize: 10,
+                        showSizeChanger: true,
+                        showQuickJumper: true,
+                        showTotal: (total, range) =>
+                          `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+                      }}
+                      scroll={{ x: 1400 }}
+                      bordered
+                      size="middle"
+                      rowSelection={{
+                        type: "checkbox",
+                        columnWidth: 48,
+                        selectedRowKeys,
+                        onChange: setSelectedRowKeys,
+                      }}
+                    />
+                  </>
+                ),
+              },
+              ...tabItems.map((item) => ({
+                key: item.key,
+                label: item.label,
+                children: item.children,
+              })),
+            ]}
+          ></Tabs>
+        </Card>
+
+        {/* 虚拟机详情模态框 */}
+        <Modal
+          title={`虚拟机详情 - ${selectedVM?.name}`}
+          open={detailModal}
+          onCancel={() => setDetailModal(false)}
+          footer={null}
+          width={800}
+        >
+          {selectedVM && (
+            <Tabs
+              defaultActiveKey="basic"
+              items={[
+                {
+                  key: "basic",
+                  label: "基本信息",
+                  children: (
+                    <Descriptions column={2} bordered>
+                      <Descriptions.Item label="虚拟机UUID">
+                        {selectedVM.uuid}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="名称">
+                        {selectedVM.name}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="状态">
+                        <Tag
+                          color={
+                            selectedVM.status === "running" ? "success" : "error"
+                          }
+                        >
+                          {selectedVM.status}
+                        </Tag>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="开机时间">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="IP地址">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="主机名">
+                        {selectedVM.hostname}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="操作系统">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="虚拟化工具">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="CPU">
+                        {selectedVM.cpu_count}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="内存">
+                        {selectedVM.memory_gb}GB
+                      </Descriptions.Item>
+                      <Descriptions.Item label="存储">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="快照数量">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="集群">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="物理主机">
+                        {selectedVM.hostname}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="可用区">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="网络类型">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="安全组">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="负责人">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="创建时间">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="到期时间">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="标签" span={2}>
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="描述" span={2}>
+                        N/A
+                      </Descriptions.Item>
+                    </Descriptions>
+                  ),
+                },
+                {
+                  key: "performance",
+                  label: "性能监控",
+                  children: (
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Card title="CPU使用率" size="small">
+                          <Progress percent={0} />
+                          <div style={{ textAlign: "center", color: "#999", fontSize: "12px", marginTop: "8px" }}>
+                            暂无数据
+                          </div>
+                        </Card>
+                      </Col>
+                      <Col span={12}>
+                        <Card title="内存使用率" size="small">
+                          <Progress percent={0} />
+                          <div style={{ textAlign: "center", color: "#999", fontSize: "12px", marginTop: "8px" }}>
+                            暂无数据
+                          </div>
+                        </Card>
+                      </Col>
+                    </Row>
+                  ),
+                },
+                {
+                  key: "hardware",
+                  label: "硬件配置",
+                  children: (
+                    <Descriptions column={1} bordered>
+                      <Descriptions.Item label="处理器">
+                        {selectedVM.cpu_count} 核心
+                      </Descriptions.Item>
+                      <Descriptions.Item label="内存">
+                        {selectedVM.memory_gb} GB
+                      </Descriptions.Item>
+                      <Descriptions.Item label="系统盘">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="数据盘">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="网络适配器">
+                        N/A
+                      </Descriptions.Item>
+                      <Descriptions.Item label="虚拟化平台">
+                        N/A
+                      </Descriptions.Item>
+                    </Descriptions>
+                  ),
+                },
+              ]}
+            />
+          )}
+        </Modal>
+
+        {/* 创建虚拟机模态框 */}
+        <CreateVMModal
+          visible={createVMModal}
+          onCancel={() => setCreateVMModal(false)}
+          onFinish={handleCreateVM}
+          loading={loading}
+        />
       </div>
     </Spin>
   );

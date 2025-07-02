@@ -16,7 +16,6 @@ import type {
   TimeSyncExecuteResponse,
   LicenseInfo,
   LicenseUploadResponse,
-  LoginPolicy,
   LoginPolicyUpdateRequest,
   LoginPolicyResponse,
 } from "./types";

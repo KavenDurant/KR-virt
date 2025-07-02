@@ -14,20 +14,19 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 // 扩展的渲染选项
 interface ExtendedRenderOptions extends Omit<RenderOptions, "wrapper"> {
   initialEntries?: string[];
-  store?: any;
+  store?: unknown;
   theme?: "light" | "dark";
 }
 
 // 创建包含所有Provider的包装器
 const createWrapper = (options: ExtendedRenderOptions = {}) => {
   const {
-    initialEntries = ["/"],
     store: customStore,
     theme = "light",
   } = options;
 
   return ({ children }: { children: React.ReactNode }) => (
-    <Provider store={customStore || store}>
+    <Provider store={(customStore || store) as never}>
       <BrowserRouter>
         <ThemeProvider>
           <ConfigProvider>
@@ -47,11 +46,10 @@ export const renderWithProviders = (
   const {
     store: customStore,
     theme,
-    initialEntries,
     ...renderOptions
   } = options;
 
-  const Wrapper = createWrapper({ initialEntries, store: customStore, theme });
+  const Wrapper = createWrapper({ store: customStore, theme });
 
   return {
     store: customStore || store,
@@ -76,10 +74,10 @@ export const renderWithBasicProviders = (
 // 只包含Redux的渲染函数
 export const renderWithRedux = (
   ui: React.ReactElement,
-  { store: customStore, ...options }: { store?: any } & RenderOptions = {},
+  { store: customStore, ...options }: { store?: unknown } & RenderOptions = {},
 ) => {
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <Provider store={customStore || store}>{children}</Provider>
+    <Provider store={(customStore || store) as never}>{children}</Provider>
   );
 
   return {

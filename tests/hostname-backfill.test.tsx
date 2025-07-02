@@ -3,17 +3,12 @@
  * 验证从node/hostname接口获取的名称能够正确回填到表单中并允许修改
  */
 
-import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { App } from "antd";
 import ClusterConfigPage from "@/pages/ClusterInit/ClusterConfigPage";
 import { clusterInitService } from "@/services/cluster";
-import type {
-  ClusterConfigType,
-  CreateClusterConfig,
-  JoinClusterConfig,
-} from "@/services/cluster/types";
+
 
 // Mock clusterInitService
 vi.mock("@/services/cluster", () => ({

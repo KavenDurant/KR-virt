@@ -34,10 +34,13 @@ import {
 import routes from "@/router/routes";
 import TaskDrawer from "@/components/TaskDrawer";
 import HierarchicalSidebar from "@/components/HierarchicalSidebar";
+import VMSidebar from "@/components/HierarchicalSidebar/VMSidebar";
 import { useTheme } from "@/hooks/useTheme";
 import { loginService } from "@/services/login";
 import type { UserInfo } from "@/services/login";
 import { UserActivityMonitor } from "@/components/UserActivity";
+import { vmService } from "@/services/vm";
+import type { VMTreeResponse } from "@/services/vm/types";
 
 import type {
   IdleEvent,
@@ -107,6 +110,9 @@ const AppLayout: React.FC = () => {
 
   // 侧边栏数据状态
   const [sidebarData, setSidebarData] = useState<DataCenter | null>(null);
+  const [vmSidebarData, setVmSidebarData] = useState<VMTreeResponse | null>(
+    null
+  );
   const [sidebarLoading, setSidebarLoading] = useState(false);
   const [sidebarError, setSidebarError] = useState<string | null>(null);
 
@@ -152,10 +158,33 @@ const AppLayout: React.FC = () => {
       try {
         const clusterData = await getClusterSidebarData();
         setSidebarData(clusterData);
+        setVmSidebarData(null); // 清除VM数据
       } catch (error) {
         console.error("获取集群侧边栏数据失败:", error);
         // 设置错误状态，不再回退到mock数据
         setSidebarError("获取集群数据失败，请检查网络连接或联系管理员");
+        setSidebarData(null);
+        setVmSidebarData(null); // 清除VM数据
+      } finally {
+        setSidebarLoading(false);
+      }
+    } else if (modulePath === "/virtual-machine") {
+      // 虚拟机页面使用API数据
+      setSidebarLoading(true);
+      setSidebarError(null); // 清除之前的错误
+      try {
+        const result = await vmService.getVMTree();
+        if (result.success && result.data) {
+          setVmSidebarData(result.data);
+          setSidebarData(null); // 清除集群数据
+        } else {
+          throw new Error(result.message || "获取虚拟机树失败");
+        }
+      } catch (error) {
+        console.error("获取虚拟机侧边栏数据失败:", error);
+        // 设置错误状态，不再回退到mock数据
+        setSidebarError("获取虚拟机数据失败，请检查网络连接或联系管理员");
+        setVmSidebarData(null);
         setSidebarData(null);
       } finally {
         setSidebarLoading(false);
@@ -164,6 +193,7 @@ const AppLayout: React.FC = () => {
       // 其他页面使用静态数据
       setSidebarError(null);
       setSidebarData(getSidebarData(modulePath));
+      setVmSidebarData(null); // 清除VM数据
     }
   }, []);
 
@@ -555,6 +585,34 @@ const AppLayout: React.FC = () => {
                   点击重试
                 </div>
               </div>
+            ) : selectedActivityItem === "/virtual-machine" ? (
+              <VMSidebar
+                data={vmSidebarData}
+                onSelect={(
+                  selectedKeys: string[],
+                  info: Record<string, unknown>
+                ) => {
+                  // 处理树节点选择事件，传递选择信息到主内容区域
+                  const selectedKey = selectedKeys[0];
+                  const nodeInfo = info.node as {
+                    type?: string;
+                    data?: unknown;
+                  };
+
+                  if (nodeInfo && nodeInfo.data) {
+                    // 通过自定义事件传递选择信息到页面组件
+                    window.dispatchEvent(
+                      new CustomEvent("hierarchical-sidebar-select", {
+                        detail: {
+                          selectedKey,
+                          nodeType: nodeInfo.type,
+                          nodeData: nodeInfo.data,
+                        },
+                      })
+                    );
+                  }
+                }}
+              />
             ) : (
               <HierarchicalSidebar
                 data={sidebarData}

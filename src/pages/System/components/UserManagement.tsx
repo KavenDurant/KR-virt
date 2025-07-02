@@ -7,9 +7,10 @@ import {
   Tag,
   Modal,
   Form,
-  Input,
-  Select,
-} from "antd";
+      Input,
+    Select,
+  } from "antd";
+import type { FormInstance } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -35,12 +36,12 @@ interface UserManagementProps {
   users: User[];
   editingUser: User | null;
   userModalVisible: boolean;
-  userForm: any;
+  userForm: FormInstance;
   onEditUser: (user: User) => void;
   onDeleteUser: (userId: string) => Promise<void>;
   onAddUser: () => void;
   onUserModalCancel: () => void;
-  onUserFormSubmit: (values: any) => Promise<void>;
+  onUserFormSubmit: (values: Record<string, unknown>) => Promise<void>;
 }
 
 // 模拟用户数据
@@ -295,3 +296,4 @@ const UserManagement: React.FC<UserManagementProps> = ({
 };
 
 export default UserManagement;
+ 

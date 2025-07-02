@@ -19,7 +19,11 @@ import type {
   Network,
   Storage,
 } from "@/services/mockData";
-import { getStatusColor, getStatusIcon, getNodeStatusConfig } from "@/services/mockData";
+import {
+  getStatusColor,
+  getStatusIcon,
+  getNodeStatusConfig,
+} from "@/services/mockData";
 import "./HierarchicalSidebar.css";
 
 export interface HierarchicalSidebarProps {
@@ -319,12 +323,33 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
     ];
   };
 
-  // 当数据加载时，默认选中第一个集群
+  // 递归获取所有应该展开的key
+  const getAllExpandableKeys = (data: DataCenter): string[] => {
+    const keys: string[] = [];
+
+    data.clusters.forEach((cluster) => {
+      // 添加集群key
+      keys.push(cluster.id);
+
+      // 添加所有物理主机key
+      cluster.nodes.forEach((node) => {
+        keys.push(node.id);
+      });
+    });
+
+    return keys;
+  };
+
+  // 当数据加载时，默认选中第一个集群并展开所有节点
   useEffect(() => {
     if (data && data.clusters.length > 0) {
       const firstCluster = data.clusters[0];
+
+      // 获取所有应该展开的key
+      const allExpandableKeys = getAllExpandableKeys(data);
+
       setSelectedKeys([firstCluster.id]);
-      setExpandedKeys([firstCluster.id]);
+      setExpandedKeys(allExpandableKeys); // 展开所有可展开的节点
 
       // 触发默认选择回调
       if (onSelect) {
@@ -369,9 +394,7 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
             <span className="tree-node-icon" style={{ color: statusColor }}>
               {statusIcon}
             </span>
-            <span className="tree-node-title">
-              {vm.name} ({vm.vmid})
-            </span>
+            <span className="tree-node-title">{vm.name}</span>
             <span
               className="tree-node-subtitle"
               style={{
@@ -412,7 +435,11 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
           trigger={["contextMenu"]}
           overlayClassName="host-context-menu"
         >
-          <div className="tree-node-content" data-type="node" data-status={node.status}>
+          <div
+            className="tree-node-content"
+            data-type="node"
+            data-status={node.status}
+          >
             <span className="tree-node-icon" style={{ color: statusColor }}>
               <HddOutlined />
             </span>
@@ -424,11 +451,7 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
                 </span>
               )}
             </span>
-            {node.ip && (
-              <span className="tree-node-subtitle">
-                {node.ip}
-              </span>
-            )}
+            {node.ip && <span className="tree-node-subtitle">{node.ip}</span>}
             <div className="tree-node-status">
               <span
                 className="status-dot"
@@ -566,7 +589,7 @@ const HierarchicalSidebar: React.FC<HierarchicalSidebarProps> = ({
   const treeData: TreeNodeData[] = data.clusters.map(createClusterNode);
   const handleSelect = (
     newSelectedKeys: React.Key[],
-    info: Record<string, unknown>,
+    info: Record<string, unknown>
   ) => {
     const selectedKeysAsStrings = newSelectedKeys.map(String);
 

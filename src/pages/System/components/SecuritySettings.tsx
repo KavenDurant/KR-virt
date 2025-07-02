@@ -12,6 +12,7 @@ import {
   Alert,
   Divider,
 } from "antd";
+import type { FormInstance } from "antd";
 import {
   SecurityScanOutlined,
   SafetyOutlined,
@@ -23,9 +24,9 @@ import { useTheme } from "../../../hooks/useTheme";
 const { TextArea } = Input;
 
 interface SecuritySettingsProps {
-  securityForm: any;
+  securityForm: FormInstance;
   loading: boolean;
-  onSave: (values: any) => Promise<void>;
+  onSave: (values: Record<string, unknown>) => Promise<void>;
 }
 
 const SecuritySettings: React.FC<SecuritySettingsProps> = ({
@@ -388,3 +389,4 @@ const SecuritySettings: React.FC<SecuritySettingsProps> = ({
 };
 
 export default SecuritySettings;
+ 

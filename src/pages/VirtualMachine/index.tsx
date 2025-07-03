@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 13:47:21
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-02 19:13:03
+ * @LastEditTime: 2025-07-03 18:06:09
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -52,14 +52,12 @@ import {
   AreaChartOutlined,
   ThunderboltOutlined,
   HddOutlined,
-  WifiOutlined,
   DesktopOutlined,
   WarningOutlined,
   CheckCircleOutlined,
   StopOutlined,
   PauseOutlined,
   FileImageOutlined,
-  TagOutlined,
   MenuOutlined,
   CodeOutlined,
   CameraOutlined,
@@ -70,16 +68,46 @@ import {
 import { useTheme } from "../../hooks/useTheme";
 import { useSidebarSelection } from "../../hooks";
 
-import type {
-  VirtualMachine as SidebarVM,
-  VMManagementData,
-} from "../../services/mockData";
+import type { VirtualMachine as SidebarVM } from "../../services/mockData";
 import { mockVMManagementData } from "../../services/mockData";
 import { CreateVMModal } from "./components";
 import { vmService, type VMInfo, type CreateVMRequest } from "@/services/vm";
 
 // 使用统一的虚拟机数据类型 - 使用包含完整配置信息的 VMInfo
 type VirtualMachine = VMInfo;
+
+// 定义接口返回的原始数据类型
+interface APIVirtualMachine {
+  vm_name: string;
+  hostname: string;
+  config_status: boolean;
+  config: {
+    cpu_num: number;
+    memory_gb: number;
+    boot: string[];
+    disk: Array<{
+      name: string;
+      bus_type: string;
+      path: string;
+      format: string;
+    }>;
+    cdrom: Array<unknown>;
+    net: Array<{
+      name: string;
+      mac: string;
+      bridge: string;
+    }>;
+    usb: Array<unknown>;
+    pci: Array<unknown>;
+    metadata: {
+      digested: string;
+      digesting: string;
+      updated_at: string;
+    };
+  };
+  error: string | null;
+  status?: string;
+}
 
 // 虚拟机状态分析结果接口
 interface VMStatusAnalysis {
@@ -114,7 +142,8 @@ const analyzeVMStatus = (vms: VirtualMachine[]): VMStatusAnalysis => {
 
   const hasIssues = errorCount > 0 || configuringCount > 0;
   const healthyCount = runningCount + stoppedCount + pausedCount;
-  const healthyPercentage = total > 0 ? Math.round((healthyCount / total) * 100) : 100;
+  const healthyPercentage =
+    total > 0 ? Math.round((healthyCount / total) * 100) : 100;
 
   return {
     total,
@@ -154,7 +183,9 @@ const withRetry = async <T,>(
       }
 
       // 等待一段时间后重试
-      await new Promise((resolve) => setTimeout(resolve, delay * (attempt + 1)));
+      await new Promise((resolve) =>
+        setTimeout(resolve, delay * (attempt + 1))
+      );
       console.warn(`操作失败，正在进行第 ${attempt + 1} 次重试...`, error);
     }
   }
@@ -292,17 +323,33 @@ const VirtualMachineManagement: React.FC = () => {
       if (response.success) {
         // 安全地获取数据，处理可能的空值情况
         const responseData = response.data || { vms: [] };
-        const vms: VMManagementData[] = responseData.vms.map((vm: VMInfo) => ({
-          name: vm.name,
+        console.log("responseData", responseData);
+
+        // 直接保存接口返回的完整数据，只做字段名映射
+        const vms: VirtualMachine[] = (
+          responseData.vms as unknown as APIVirtualMachine[]
+        ).map((vm) => ({
+          // 映射字段名，确保与接口返回的字段名一致
+          name: vm.vm_name,
           hostname: vm.hostname,
-          uuid: vm.uuid,
-          status: vm.status,
-          cpu_count: vm.cpu_count,
-          memory_gb: vm.memory_gb,
+          uuid: vm.vm_name + "-" + vm.hostname,
+          status: vm.status || "N/A", 
+          cpu_count: vm.config?.cpu_num || 0,
+          memory_gb: vm.config?.memory_gb || 0,
+          // 保留接口返回的完整配置信息
+          config_status: vm.config_status,
+          config: vm.config,
+          error: vm.error,
+
+          // 为了兼容性，也映射一些老字段名
+          boot_order: vm.config?.boot,
+          disk_info: vm.config?.disk,
+          network_info: vm.config?.net,
+          metadata: vm.config?.metadata,
         }));
 
         setVmList(vms);
-
+        console.log("处理后的完整虚拟机数据:", vms);
         // 优化的用户提示逻辑
         if (vms.length === 0) {
           // 根据选择状态提供更精确的提示
@@ -343,7 +390,9 @@ const VirtualMachineManagement: React.FC = () => {
             }
           } else if (vms.length > 0) {
             // 成功加载且无问题时的简洁提示（仅在控制台）
-            console.log(`成功加载 ${vms.length} 台虚拟机，健康度: ${statusAnalysis.healthyPercentage}%`);
+            console.log(
+              `成功加载 ${vms.length} 台虚拟机，健康度: ${statusAnalysis.healthyPercentage}%`
+            );
           }
 
           // 显示加载成功的详细信息（仅在控制台）
@@ -735,8 +784,8 @@ const VirtualMachineManagement: React.FC = () => {
   // 表格列定义
   const columns: ColumnsType<VirtualMachine> = [
     {
-      title: "虚拟机",
-      key: "vm",
+      title: "虚拟机名称",
+      key: "name",
       width: 80,
       fixed: "left",
       render: (_, record) => (
@@ -1307,105 +1356,386 @@ const VirtualMachineManagement: React.FC = () => {
 
   // 如果从侧边栏选中了虚拟机，显示虚拟机详情
   if (sidebarSelectedVM) {
+    // 根据选择情况决定如何获取虚拟机数据
+    let selectedVMData: VirtualMachine | undefined;
+
+    console.log("虚拟机详情页面调试信息:", {
+      sidebarSelectedVM: sidebarSelectedVM.name,
+      hasSelectedHost: !!sidebarSelectedHost,
+      vmListLength: vmList.length,
+    });
+
+    if (sidebarSelectedHost) {
+      // 选中物理机时，从该物理机的虚拟机列表中查找对应的虚拟机
+      selectedVMData = vmList.find((vm) => vm.name === sidebarSelectedVM.name);
+      console.log("物理机模式 - 查找结果:", selectedVMData?.name);
+    } else {
+      // 选中虚拟机时，接口直接返回对应的虚拟机数据，直接使用第一个元素
+      selectedVMData = vmList.length > 0 ? vmList[0] : undefined;
+      console.log("虚拟机模式 - 直接使用第一个:", selectedVMData?.name);
+    }
+
     const vmDetailTabs = [
       {
         key: "basic",
         label: "基本信息",
-        children: (
+        children: selectedVMData ? (
           <div>
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <Card title="基本配置" size="small">
-                  <Row>
-                    <Col span={12}>
-                      <Statistic
-                        title="CPU 核心数"
-                        value={sidebarSelectedVM.cpu}
-                        suffix="核"
-                      />
-                    </Col>
-                    <Col span={12}>
-                      <Statistic
-                        title="内存大小"
-                        value={sidebarSelectedVM.memory}
-                        suffix="GB"
-                      />
-                    </Col>
-                  </Row>
-                  <div style={{ margin: "16px 0" }}>
-                    <Row>
-                      <Col span={24}>
-                        <Statistic
-                          title="磁盘大小"
-                          value={sidebarSelectedVM.diskSize}
-                          suffix="GB"
-                        />
-                      </Col>
-                    </Row>
-                  </div>
-                </Card>
-              </Col>
+            {/* 基本配置信息 */}
+            <Descriptions column={2} bordered style={{ marginBottom: 16 }}>
+              <Descriptions.Item label="虚拟机名称">
+                {selectedVMData.name}
+              </Descriptions.Item>
+              <Descriptions.Item label="物理主机">
+                {selectedVMData.hostname}
+              </Descriptions.Item>
+              <Descriptions.Item label="配置状态">
+                <Tag
+                  color={selectedVMData.config_status ? "success" : "warning"}
+                >
+                  {selectedVMData.config_status ? "已配置" : "配置中"}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="运行状态">
+                <Tag
+                  color={
+                    sidebarSelectedVM.status === "running"
+                      ? "success"
+                      : sidebarSelectedVM.status === "stopped"
+                      ? "default"
+                      : "error"
+                  }
+                >
+                  {(() => {
+                    switch (sidebarSelectedVM.status) {
+                      case "running":
+                        return "运行中";
+                      case "stopped":
+                        return "已停止";
+                      default:
+                        return "已停止";
+                    }
+                  })()}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="错误信息">
+                {selectedVMData.error ? (
+                  <Tag color="error">{selectedVMData.error}</Tag>
+                ) : (
+                  <Tag color="success">正常</Tag>
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item label="虚拟机ID">
+                {sidebarSelectedVM.vmid}
+              </Descriptions.Item>
+              <Descriptions.Item label="CPU核心数">
+                {selectedVMData.config?.cpu_num || selectedVMData.cpu_count}核
+              </Descriptions.Item>
+              <Descriptions.Item label="内存大小">
+                {selectedVMData.config?.memory_gb || selectedVMData.memory_gb}GB
+              </Descriptions.Item>
+              <Descriptions.Item label="启动设备">
+                {selectedVMData.config?.boot?.join(" → ") ||
+                  selectedVMData.boot_order?.join(" → ") ||
+                  "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="虚拟机类型">
+                <Tag color="blue">{sidebarSelectedVM.type.toUpperCase()}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="磁盘数量">
+                {selectedVMData.config?.disk?.length ||
+                  selectedVMData.disk_info?.length ||
+                  0}
+                个
+              </Descriptions.Item>
+              <Descriptions.Item label="网络接口数量">
+                {selectedVMData.config?.net?.length ||
+                  selectedVMData.network_info?.length ||
+                  0}
+                个
+              </Descriptions.Item>
+              <Descriptions.Item label="主MAC地址">
+                {selectedVMData.config?.net?.[0]?.mac ||
+                  selectedVMData.network_info?.[0]?.mac ||
+                  "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="主网桥">
+                {selectedVMData.config?.net?.[0]?.bridge ||
+                  selectedVMData.network_info?.[0]?.bridge ||
+                  "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="配置摘要">
+                {selectedVMData.config?.metadata?.digested?.substring(0, 16) ||
+                  selectedVMData.metadata?.digested?.substring(0, 16) ||
+                  "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="配置更新时间">
+                {selectedVMData.config?.metadata?.updated_at
+                  ? new Date(
+                      parseFloat(selectedVMData.config.metadata.updated_at) *
+                        1000
+                    ).toLocaleString()
+                  : selectedVMData.metadata?.updated_at
+                  ? new Date(
+                      parseFloat(selectedVMData.metadata.updated_at) * 1000
+                    ).toLocaleString()
+                  : "N/A"}
+              </Descriptions.Item>
+            </Descriptions>
 
-              <Col xs={24} md={12}>
-                <Card title="运行状态" size="small">
-                  <div style={{ marginBottom: "16px" }}>
-                    <strong>物理节点:</strong>
-                    <Tag style={{ marginLeft: "8px" }}>
-                      {sidebarSelectedVM.node}
-                    </Tag>
-                  </div>
-                  {sidebarSelectedVM.uptime && (
-                    <div style={{ marginBottom: "16px" }}>
-                      <strong>运行时间:</strong>
-                      <span style={{ marginLeft: "8px", color: "#52c41a" }}>
-                        {sidebarSelectedVM.uptime}
-                      </span>
-                    </div>
-                  )}
-                  <div>
-                    <strong>虚拟机类型:</strong>
-                    <Tag color="blue" style={{ marginLeft: "8px" }}>
-                      {sidebarSelectedVM.type.toUpperCase()}
-                    </Tag>
-                  </div>
-                </Card>
-              </Col>
-            </Row>
-
-            {/* 详细信息面板 */}
-            <Card title="详细信息" style={{ marginTop: "16px" }} size="small">
-              <Row gutter={[24, 16]}>
-                <Col xs={24} sm={8}>
-                  <div>
-                    <strong>虚拟机ID:</strong>
-                    <br />
-                    <span>{sidebarSelectedVM.vmid}</span>
-                  </div>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <div>
-                    <strong>状态:</strong>
-                    <br />
-                    <Tag
-                      color={
-                        sidebarSelectedVM.status === "running"
-                          ? "success"
-                          : "error"
-                      }
-                    >
-                      {sidebarSelectedVM.status}
-                    </Tag>
-                  </div>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <div>
-                    <strong>物理节点:</strong>
-                    <br />
-                    <span>{sidebarSelectedVM.node}</span>
-                  </div>
-                </Col>
-              </Row>
+            {/* 磁盘配置详情 */}
+            <Card title="磁盘配置" size="small" style={{ marginBottom: 16 }}>
+              <Table
+                size="small"
+                dataSource={
+                  selectedVMData.config?.disk || selectedVMData.disk_info || []
+                }
+                pagination={false}
+                locale={{
+                  emptyText: (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description="暂无磁盘设备"
+                    />
+                  ),
+                }}
+                columns={[
+                  {
+                    title: "设备名",
+                    dataIndex: "name",
+                    key: "name",
+                  },
+                  {
+                    title: "总线类型",
+                    dataIndex: "bus_type",
+                    key: "bus_type",
+                  },
+                  {
+                    title: "格式",
+                    dataIndex: "format",
+                    key: "format",
+                    render: (format: string) => (
+                      <Tag color="blue">{format}</Tag>
+                    ),
+                  },
+                  {
+                    title: "路径",
+                    dataIndex: "path",
+                    key: "path",
+                    ellipsis: true,
+                  },
+                ]}
+              />
             </Card>
+
+            {/* 网络配置详情 */}
+            <Card title="网络配置" size="small" style={{ marginBottom: 16 }}>
+              <Table
+                size="small"
+                dataSource={
+                  selectedVMData.config?.net ||
+                  selectedVMData.network_info ||
+                  []
+                }
+                pagination={false}
+                locale={{
+                  emptyText: (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description="暂无网络设备"
+                    />
+                  ),
+                }}
+                columns={[
+                  {
+                    title: "网卡类型",
+                    dataIndex: "name",
+                    key: "name",
+                  },
+                  {
+                    title: "MAC地址",
+                    dataIndex: "mac",
+                    key: "mac",
+                    render: (mac: string) => (
+                      <code style={{ fontSize: "12px" }}>{mac}</code>
+                    ),
+                  },
+                  {
+                    title: "网桥",
+                    dataIndex: "bridge",
+                    key: "bridge",
+                    render: (bridge: string) => (
+                      <Tag color="green">{bridge}</Tag>
+                    ),
+                  },
+                ]}
+              />
+            </Card>
+
+            {/* 光驱配置详情 */}
+            <Card title="光驱配置" size="small" style={{ marginBottom: 16 }}>
+              <Table
+                size="small"
+                dataSource={selectedVMData.config?.cdrom || []}
+                pagination={false}
+                locale={{
+                  emptyText: (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description="暂无光驱设备"
+                    />
+                  ),
+                }}
+                columns={[
+                  {
+                    title: "设备名",
+                    dataIndex: "name",
+                    key: "name",
+                  },
+                  {
+                    title: "ISO文件",
+                    dataIndex: "file",
+                    key: "file",
+                  },
+                  {
+                    title: "总线类型",
+                    dataIndex: "bus_type",
+                    key: "bus_type",
+                  },
+                  {
+                    title: "状态",
+                    dataIndex: "mounted",
+                    key: "mounted",
+                    render: (mounted: boolean) => (
+                      <Tag color={mounted ? "success" : "default"}>
+                        {mounted ? "已挂载" : "未挂载"}
+                      </Tag>
+                    ),
+                  },
+                ]}
+              />
+            </Card>
+
+            {/* USB设备配置详情 */}
+            <Card title="USB设备配置" size="small" style={{ marginBottom: 16 }}>
+              <Table
+                size="small"
+                dataSource={selectedVMData.config?.usb || []}
+                pagination={false}
+                locale={{
+                  emptyText: (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description="暂无USB设备"
+                    />
+                  ),
+                }}
+                columns={[
+                  {
+                    title: "设备名",
+                    dataIndex: "name",
+                    key: "name",
+                  },
+                  {
+                    title: "设备类型",
+                    dataIndex: "device_type",
+                    key: "device_type",
+                  },
+                  {
+                    title: "厂商ID",
+                    dataIndex: "vendor_id",
+                    key: "vendor_id",
+                  },
+                  {
+                    title: "产品ID",
+                    dataIndex: "product_id",
+                    key: "product_id",
+                  },
+                  {
+                    title: "连接状态",
+                    dataIndex: "connected",
+                    key: "connected",
+                    render: (connected: boolean) => (
+                      <Tag color={connected ? "success" : "default"}>
+                        {connected ? "已连接" : "未连接"}
+                      </Tag>
+                    ),
+                  },
+                ]}
+              />
+            </Card>
+
+            {/* PCI设备配置详情 */}
+            <Card title="PCI设备配置" size="small" style={{ marginBottom: 16 }}>
+              <Table
+                size="small"
+                dataSource={selectedVMData.config?.pci || []}
+                pagination={false}
+                locale={{
+                  emptyText: (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description="暂无PCI设备"
+                    />
+                  ),
+                }}
+                columns={[
+                  {
+                    title: "设备名",
+                    dataIndex: "name",
+                    key: "name",
+                  },
+                  {
+                    title: "设备类型",
+                    dataIndex: "device_type",
+                    key: "device_type",
+                  },
+                  {
+                    title: "PCI地址",
+                    dataIndex: "address",
+                    key: "address",
+                  },
+                  {
+                    title: "厂商",
+                    dataIndex: "vendor",
+                    key: "vendor",
+                  },
+                  {
+                    title: "状态",
+                    dataIndex: "enabled",
+                    key: "enabled",
+                    render: (enabled: boolean) => (
+                      <Tag color={enabled ? "success" : "default"}>
+                        {enabled ? "启用" : "禁用"}
+                      </Tag>
+                    ),
+                  },
+                ]}
+              />
+            </Card>
+
+            {/* 运行时信息 */}
+            {sidebarSelectedVM.uptime && (
+              <Card title="运行时信息" size="small" style={{ marginTop: 16 }}>
+                <Descriptions column={2} size="small">
+                  <Descriptions.Item label="运行时间">
+                    <span style={{ color: "#52c41a" }}>
+                      {sidebarSelectedVM.uptime}
+                    </span>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="磁盘使用">
+                    {sidebarSelectedVM.diskSize}GB
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
+            )}
+          </div>
+        ) : (
+          <div style={{ textAlign: "center", padding: "40px" }}>
+            <Spin size="large" />
+            <div style={{ marginTop: "16px", color: "#666" }}>
+              正在加载虚拟机详细信息...
+            </div>
           </div>
         ),
       },
@@ -2173,99 +2503,111 @@ const VirtualMachineManagement: React.FC = () => {
         {/* 虚拟机操作区域 */}
         <Card
           title="虚拟机操作"
-          style={{
-            marginBottom: "16px",
-          }}
-        >
-          {/* 第一行：有接口的功能 */}
-          <div style={{ marginBottom: "12px" }}>
-            <Space wrap>
-              {sidebarSelectedVM.status === "running" ? (
-                <>
+          extra={
+            <div style={{ display: "flex", gap: "8px" }}>
+              {/* 第一行：有接口的功能 */}
+              <div>
+                <Space wrap>
+                  {sidebarSelectedVM.status === "running" ? (
+                    <>
+                      <Button
+                        icon={<PoweroffOutlined />}
+                        danger
+                        onClick={() =>
+                          handleVMAction("stop", sidebarSelectedVM)
+                        }
+                      >
+                        关机
+                      </Button>
+                      <Button
+                        icon={<ReloadOutlined />}
+                        onClick={() =>
+                          handleVMAction("restart", sidebarSelectedVM)
+                        }
+                      >
+                        重启
+                      </Button>
+                      <Button
+                        icon={<PauseOutlined />}
+                        onClick={() =>
+                          handleVMAction("suspend", sidebarSelectedVM)
+                        }
+                      >
+                        挂起
+                      </Button>
+                    </>
+                  ) : sidebarSelectedVM.status === "stopped" ? (
+                    <>
+                      <Button
+                        type="primary"
+                        icon={<PlayCircleOutlined />}
+                        onClick={() =>
+                          handleVMAction("start", sidebarSelectedVM)
+                        }
+                      >
+                        开机
+                      </Button>
+                      <Button
+                        icon={<CopyOutlined />}
+                        onClick={() =>
+                          handleVMAction("clone", sidebarSelectedVM)
+                        }
+                      >
+                        克隆
+                      </Button>
+                      <Button
+                        icon={<FileImageOutlined />}
+                        onClick={() =>
+                          handleVMAction("template", sidebarSelectedVM)
+                        }
+                      >
+                        转换为模板
+                      </Button>
+                    </>
+                  ) : sidebarSelectedVM.status === "suspended" ? (
+                    <>
+                      <Button
+                        type="primary"
+                        icon={<PlayCircleOutlined />}
+                        onClick={() =>
+                          handleVMAction("resume", sidebarSelectedVM)
+                        }
+                      >
+                        继续
+                      </Button>
+                      <Button
+                        icon={<PoweroffOutlined />}
+                        danger
+                        onClick={() =>
+                          handleVMAction("stop", sidebarSelectedVM)
+                        }
+                      >
+                        关机
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      type="primary"
+                      icon={<PlayCircleOutlined />}
+                      onClick={() => handleVMAction("start", sidebarSelectedVM)}
+                    >
+                      开机
+                    </Button>
+                  )}
                   <Button
-                    icon={<PoweroffOutlined />}
+                    icon={<DeleteOutlined />}
                     danger
-                    onClick={() => handleVMAction("stop", sidebarSelectedVM)}
+                    onClick={() => handleVMAction("delete", sidebarSelectedVM)}
                   >
-                    关机
+                    删除
                   </Button>
-                  <Button
-                    icon={<ReloadOutlined />}
-                    onClick={() => handleVMAction("restart", sidebarSelectedVM)}
-                  >
-                    重启
-                  </Button>
-                  <Button
-                    icon={<PauseOutlined />}
-                    onClick={() => handleVMAction("suspend", sidebarSelectedVM)}
-                  >
-                    挂起
-                  </Button>
-                </>
-              ) : sidebarSelectedVM.status === "stopped" ? (
-                <>
-                  <Button
-                    type="primary"
-                    icon={<PlayCircleOutlined />}
-                    onClick={() => handleVMAction("start", sidebarSelectedVM)}
-                  >
-                    开机
-                  </Button>
-                  <Button
-                    icon={<CopyOutlined />}
-                    onClick={() => handleVMAction("clone", sidebarSelectedVM)}
-                  >
-                    克隆
-                  </Button>
-                  <Button
-                    icon={<FileImageOutlined />}
-                    onClick={() =>
-                      handleVMAction("template", sidebarSelectedVM)
-                    }
-                  >
-                    转换为模板
-                  </Button>
-                </>
-              ) : sidebarSelectedVM.status === "suspended" ? (
-                <>
-                  <Button
-                    type="primary"
-                    icon={<PlayCircleOutlined />}
-                    onClick={() => handleVMAction("resume", sidebarSelectedVM)}
-                  >
-                    继续
-                  </Button>
-                  <Button
-                    icon={<PoweroffOutlined />}
-                    danger
-                    onClick={() => handleVMAction("stop", sidebarSelectedVM)}
-                  >
-                    关机
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  type="primary"
-                  icon={<PlayCircleOutlined />}
-                  onClick={() => handleVMAction("start", sidebarSelectedVM)}
-                >
-                  开机
-                </Button>
-              )}
-              <Button
-                icon={<DeleteOutlined />}
-                danger
-                onClick={() => handleVMAction("delete", sidebarSelectedVM)}
-              >
-                删除
-              </Button>
-            </Space>
-          </div>
+                </Space>
+              </div>
 
-          {/* 第二行：没有接口的功能 */}
-          <div>
-            <Space wrap>
-              <Button
+              {/* 第二行：没有接口的功能 */}
+              <div>
+                <Space wrap>
+                  {/* <Button
                 icon={<SettingOutlined />}
                 onClick={() => message.info("修改计算规格")}
               >
@@ -2288,24 +2630,24 @@ const VirtualMachineManagement: React.FC = () => {
                 onClick={() => message.info("标签配置")}
               >
                 标签配置
-              </Button>
-              <Button
-                icon={<ThunderboltOutlined />}
-                onClick={() => message.info("高可用设置")}
-              >
-                高可用
-              </Button>
-              <Button
-                icon={<MenuOutlined />}
-                onClick={() => message.info("引导项设置")}
-              >
-                引导设置
-              </Button>
-            </Space>
-          </div>
-        </Card>
-
-        <Card>
+                  </Button> */}
+                  <Button
+                    icon={<ThunderboltOutlined />}
+                    onClick={() => message.info("高可用设置")}
+                  >
+                    高可用
+                  </Button>
+                  <Button
+                    icon={<MenuOutlined />}
+                    onClick={() => message.info("引导项设置")}
+                  >
+                    引导设置
+                  </Button>
+                </Space>
+              </div>
+            </div>
+          }
+        >
           <Tabs defaultActiveKey="basic" items={vmDetailTabs} />
         </Card>
       </div>
@@ -2495,28 +2837,10 @@ const VirtualMachineManagement: React.FC = () => {
                             image={Empty.PRESENTED_IMAGE_SIMPLE}
                             description={
                               <div>
-                                {sidebarSelectedHost ? (
-                                  <div>
-                                    <p>物理机 "{sidebarSelectedHost.name}" 上暂无虚拟机</p>
-                                    <p style={{ color: "#666", fontSize: "12px" }}>
-                                      您可以在此物理机上创建新的虚拟机
-                                    </p>
-                                  </div>
-                                ) : sidebarSelectedVM ? (
-                                  <div>
-                                    <p>未找到指定的虚拟机 "{sidebarSelectedVM.name || '未知'}"</p>
-                                    <p style={{ color: "#666", fontSize: "12px" }}>
-                                      虚拟机可能已被删除或移动到其他物理机
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <p>当前集群中暂无虚拟机</p>
-                                    <p style={{ color: "#666", fontSize: "12px" }}>
-                                      点击"创建虚拟机"按钮开始创建您的第一台虚拟机
-                                    </p>
-                                  </div>
-                                )}
+                                <p>当前暂无虚拟机</p>
+                                <p style={{ color: "#666", fontSize: "12px" }}>
+                                  点击"创建虚拟机"按钮开始创建您的第一台虚拟机
+                                </p>
                               </div>
                             }
                           >
@@ -2559,79 +2883,170 @@ const VirtualMachineManagement: React.FC = () => {
                   key: "basic",
                   label: "基本信息",
                   children: (
-                    <Descriptions column={2} bordered>
-                      <Descriptions.Item label="虚拟机UUID">
-                        {selectedVM.uuid}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="名称">
-                        {selectedVM.name}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="状态">
-                        <Tag
-                          color={
-                            selectedVM.status === "running"
-                              ? "success"
-                              : "error"
-                          }
-                        >
-                          {selectedVM.status}
-                        </Tag>
-                      </Descriptions.Item>
-                      <Descriptions.Item label="配置状态">
-                        <Tag color={selectedVM.config_status ? "success" : "warning"}>
-                          {selectedVM.config_status ? "已配置" : "配置中"}
-                        </Tag>
-                      </Descriptions.Item>
-                      <Descriptions.Item label="启动顺序">
-                        {selectedVM.boot_order?.join(", ") || "N/A"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="物理主机">
-                        {selectedVM.hostname}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="网络接口数量">
-                        {selectedVM.network_info?.length || 0}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="磁盘数量">
-                        {selectedVM.disk_info?.length || 0}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="CPU">
-                        {selectedVM.cpu_count}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="内存">
-                        {selectedVM.memory_gb}GB
-                      </Descriptions.Item>
-                      <Descriptions.Item label="存储信息">
-                        {selectedVM.disk_info?.map(disk => disk.format).join(", ") || "N/A"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="网络配置">
-                        {selectedVM.network_info?.map(net => net.bridge).join(", ") || "N/A"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="MAC地址">
-                        {selectedVM.network_info?.[0]?.mac || "N/A"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="配置摘要">
-                        {selectedVM.metadata?.digested?.substring(0, 8) || "N/A"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="错误信息">
-                        {selectedVM.error ? (
-                          <Tag color="error">{selectedVM.error}</Tag>
-                        ) : (
-                          <Tag color="success">正常</Tag>
+                    <div>
+                      <Descriptions column={2} bordered>
+                        <Descriptions.Item label="虚拟机名称">
+                          {selectedVM.name}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="物理主机">
+                          {selectedVM.hostname}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="配置状态">
+                          <Tag
+                            color={
+                              selectedVM.config_status ? "success" : "warning"
+                            }
+                          >
+                            {selectedVM.config_status ? "已配置" : "配置中"}
+                          </Tag>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="错误信息">
+                          {selectedVM.error ? (
+                            <Tag color="error">{selectedVM.error}</Tag>
+                          ) : (
+                            <Tag color="success">正常</Tag>
+                          )}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="CPU核心数">
+                          {selectedVM.cpu_count}核
+                        </Descriptions.Item>
+                        <Descriptions.Item label="内存大小">
+                          {selectedVM.memory_gb}GB
+                        </Descriptions.Item>
+                        <Descriptions.Item label="启动设备">
+                          {selectedVM.boot_order?.join(" → ") || "N/A"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="磁盘数量">
+                          {selectedVM.disk_info?.length || 0}个
+                        </Descriptions.Item>
+                        <Descriptions.Item label="网络接口数量">
+                          {selectedVM.network_info?.length || 0}个
+                        </Descriptions.Item>
+                        <Descriptions.Item label="主MAC地址">
+                          {selectedVM.network_info?.[0]?.mac || "N/A"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="主网桥">
+                          {selectedVM.network_info?.[0]?.bridge || "N/A"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="主磁盘格式">
+                          {selectedVM.disk_info?.[0]?.format || "N/A"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="配置摘要">
+                          {selectedVM.metadata?.digested?.substring(0, 16) ||
+                            "N/A"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="配置更新时间">
+                          {selectedVM.metadata?.updated_at
+                            ? new Date(
+                                parseFloat(selectedVM.metadata.updated_at) *
+                                  1000
+                              ).toLocaleString()
+                            : "N/A"}
+                        </Descriptions.Item>
+                      </Descriptions>
+
+                      {/* 磁盘配置详情 */}
+                      {selectedVM.disk_info &&
+                        selectedVM.disk_info.length > 0 && (
+                          <Card
+                            title="磁盘配置"
+                            size="small"
+                            style={{ marginTop: 16 }}
+                          >
+                            <Table
+                              size="small"
+                              dataSource={selectedVM.disk_info}
+                              pagination={false}
+                              columns={[
+                                {
+                                  title: "设备名",
+                                  dataIndex: "name",
+                                  key: "name",
+                                },
+                                {
+                                  title: "总线类型",
+                                  dataIndex: "bus_type",
+                                  key: "bus_type",
+                                },
+                                {
+                                  title: "格式",
+                                  dataIndex: "format",
+                                  key: "format",
+                                  render: (format: string) => (
+                                    <Tag color="blue">{format}</Tag>
+                                  ),
+                                },
+                                {
+                                  title: "路径",
+                                  dataIndex: "path",
+                                  key: "path",
+                                  ellipsis: true,
+                                },
+                              ]}
+                            />
+                          </Card>
                         )}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="创建时间">
-                        {selectedVM.created_at || "N/A"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="更新时间">
-                        {selectedVM.updated_at || "N/A"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="标签" span={2}>
-                        N/A
-                      </Descriptions.Item>
-                      <Descriptions.Item label="描述" span={2}>
-                        N/A
-                      </Descriptions.Item>
-                    </Descriptions>
+
+                      {/* 网络配置详情 */}
+                      {selectedVM.network_info &&
+                        selectedVM.network_info.length > 0 && (
+                          <Card
+                            title="网络配置"
+                            size="small"
+                            style={{ marginTop: 16 }}
+                          >
+                            <Table
+                              size="small"
+                              dataSource={selectedVM.network_info}
+                              pagination={false}
+                              columns={[
+                                {
+                                  title: "网卡类型",
+                                  dataIndex: "name",
+                                  key: "name",
+                                },
+                                {
+                                  title: "MAC地址",
+                                  dataIndex: "mac",
+                                  key: "mac",
+                                  render: (mac: string) => (
+                                    <code style={{ fontSize: "12px" }}>
+                                      {mac}
+                                    </code>
+                                  ),
+                                },
+                                {
+                                  title: "网桥",
+                                  dataIndex: "bridge",
+                                  key: "bridge",
+                                  render: (bridge: string) => (
+                                    <Tag color="green">{bridge}</Tag>
+                                  ),
+                                },
+                              ]}
+                            />
+                          </Card>
+                        )}
+
+                      {/* 其他配置信息 - 使用接口字段 */}
+                      <Card
+                        title="其他配置"
+                        size="small"
+                        style={{ marginTop: 16 }}
+                      >
+                        <Descriptions column={3} size="small">
+                          <Descriptions.Item label="光驱数量">
+                            {selectedVM.config?.cdrom?.length || 0}个
+                          </Descriptions.Item>
+                          <Descriptions.Item label="USB设备">
+                            {selectedVM.config?.usb?.length || 0}个
+                          </Descriptions.Item>
+                          <Descriptions.Item label="PCI设备">
+                            {selectedVM.config?.pci?.length || 0}个
+                          </Descriptions.Item>
+                        </Descriptions>
+                      </Card>
+                    </div>
                   ),
                 },
                 {
@@ -2677,7 +3092,11 @@ const VirtualMachineManagement: React.FC = () => {
                   label: "硬件配置",
                   children: (
                     <div>
-                      <Descriptions column={1} bordered style={{ marginBottom: 16 }}>
+                      <Descriptions
+                        column={1}
+                        bordered
+                        style={{ marginBottom: 16 }}
+                      >
                         <Descriptions.Item label="处理器">
                           {selectedVM.cpu_count} 核心
                         </Descriptions.Item>
@@ -2690,75 +3109,83 @@ const VirtualMachineManagement: React.FC = () => {
                       </Descriptions>
 
                       {/* 磁盘信息 */}
-                      {selectedVM.disk_info && selectedVM.disk_info.length > 0 && (
-                        <Card title="磁盘配置" size="small" style={{ marginBottom: 16 }}>
-                          <Table
+                      {selectedVM.disk_info &&
+                        selectedVM.disk_info.length > 0 && (
+                          <Card
+                            title="磁盘配置"
                             size="small"
-                            dataSource={selectedVM.disk_info}
-                            pagination={false}
-                            columns={[
-                              {
-                                title: "设备名",
-                                dataIndex: "name",
-                                key: "name",
-                              },
-                              {
-                                title: "总线类型",
-                                dataIndex: "bus_type",
-                                key: "bus_type",
-                              },
-                              {
-                                title: "格式",
-                                dataIndex: "format",
-                                key: "format",
-                                render: (format: string) => (
-                                  <Tag color="blue">{format}</Tag>
-                                ),
-                              },
-                              {
-                                title: "路径",
-                                dataIndex: "path",
-                                key: "path",
-                                ellipsis: true,
-                              },
-                            ]}
-                          />
-                        </Card>
-                      )}
+                            style={{ marginBottom: 16 }}
+                          >
+                            <Table
+                              size="small"
+                              dataSource={selectedVM.disk_info}
+                              pagination={false}
+                              columns={[
+                                {
+                                  title: "设备名",
+                                  dataIndex: "name",
+                                  key: "name",
+                                },
+                                {
+                                  title: "总线类型",
+                                  dataIndex: "bus_type",
+                                  key: "bus_type",
+                                },
+                                {
+                                  title: "格式",
+                                  dataIndex: "format",
+                                  key: "format",
+                                  render: (format: string) => (
+                                    <Tag color="blue">{format}</Tag>
+                                  ),
+                                },
+                                {
+                                  title: "路径",
+                                  dataIndex: "path",
+                                  key: "path",
+                                  ellipsis: true,
+                                },
+                              ]}
+                            />
+                          </Card>
+                        )}
 
                       {/* 网络配置 */}
-                      {selectedVM.network_info && selectedVM.network_info.length > 0 && (
-                        <Card title="网络配置" size="small">
-                          <Table
-                            size="small"
-                            dataSource={selectedVM.network_info}
-                            pagination={false}
-                            columns={[
-                              {
-                                title: "网卡类型",
-                                dataIndex: "name",
-                                key: "name",
-                              },
-                              {
-                                title: "MAC地址",
-                                dataIndex: "mac",
-                                key: "mac",
-                                render: (mac: string) => (
-                                  <code style={{ fontSize: "12px" }}>{mac}</code>
-                                ),
-                              },
-                              {
-                                title: "网桥",
-                                dataIndex: "bridge",
-                                key: "bridge",
-                                render: (bridge: string) => (
-                                  <Tag color="green">{bridge}</Tag>
-                                ),
-                              },
-                            ]}
-                          />
-                        </Card>
-                      )}
+                      {selectedVM.network_info &&
+                        selectedVM.network_info.length > 0 && (
+                          <Card title="网络配置" size="small">
+                            <Table
+                              size="small"
+                              dataSource={selectedVM.network_info}
+                              pagination={false}
+                              columns={[
+                                {
+                                  title: "网卡类型",
+                                  dataIndex: "name",
+                                  key: "name",
+                                },
+                                {
+                                  title: "MAC地址",
+                                  dataIndex: "mac",
+                                  key: "mac",
+                                  render: (mac: string) => (
+                                    <code style={{ fontSize: "12px" }}>
+                                      {mac}
+                                    </code>
+                                  ),
+                                },
+                                {
+                                  title: "网桥",
+                                  dataIndex: "bridge",
+                                  key: "bridge",
+                                  render: (bridge: string) => (
+                                    <Tag color="green">{bridge}</Tag>
+                                  ),
+                                },
+                              ]}
+                            />
+                          </Card>
+                        )}
                     </div>
                   ),
                 },

@@ -75,8 +75,6 @@ const AppLayout: React.FC = () => {
     // 确保Token自动刷新在主应用中运行
     // 这是为了修复页面刷新后Token自动刷新停止的问题
     if (loginService.isAuthenticated()) {
-      console.log("🔧 AppLayout: 确保Token自动刷新正在运行");
-
       // 检查当前自动刷新状态
       const status = loginService.getAutoRefreshStatus();
       console.log("📊 当前Token自动刷新状态:", status);
@@ -221,12 +219,9 @@ const AppLayout: React.FC = () => {
 
   // 监听侧边栏刷新事件
   useEffect(() => {
-    const handleSidebarRefresh = (event: CustomEvent) => {
-      console.log("收到侧边栏刷新事件:", event.detail);
-
+    const handleSidebarRefresh = () => {
       // 只有在显示集群侧边栏时才刷新
       if (shouldShowSidebar && selectedActivityItem === "/cluster") {
-        console.log("正在刷新集群侧边栏数据...");
         loadSidebarData(selectedActivityItem);
       }
     };
@@ -244,9 +239,7 @@ const AppLayout: React.FC = () => {
     };
   }, [shouldShowSidebar, selectedActivityItem, loadSidebarData]);
 
-  // 初始加载时设置侧边栏宽度
   useEffect(() => {
-    // 确保侧边栏宽度与localStorage同步（仅在组件挂载时）
     const savedWidth = localStorage.getItem("sidebarWidth");
     if (savedWidth && sidebarRef.current) {
       const width = parseInt(savedWidth);
@@ -255,7 +248,6 @@ const AppLayout: React.FC = () => {
       sidebarRef.current.style.width = `${width}px`;
     }
 
-    // 监听存储变化（来自其他标签页的变化）
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "sidebarWidth" && e.newValue) {
         const width = parseInt(e.newValue);
@@ -271,24 +263,20 @@ const AppLayout: React.FC = () => {
     return () => {
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, []); // 空依赖数组，仅在挂载时执行
+  }, []);
 
-  // 处理根路径重定向
   useEffect(() => {
     if (location.pathname === "/") {
       navigate("/dashboard");
     }
   }, [location.pathname, navigate]);
 
-  // 处理菜单点击事件
   const handleMenuClick = (path: string) => {
     setSelectedActivityItem(path);
     navigate(path);
   };
 
-  // 处理退出登录
   const handleLogout = () => {
-    // 使用内联模态框代替静态方法，这样可以正确获取上下文
     setLogoutModalVisible(true);
   };
 

@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 13:47:21
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-03 18:06:09
+ * @LastEditTime: 2025-07-03 20:16:27
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -69,45 +69,11 @@ import { useTheme } from "../../hooks/useTheme";
 import { useSidebarSelection } from "../../hooks";
 
 import type { VirtualMachine as SidebarVM } from "../../services/mockData";
-import { mockVMManagementData } from "../../services/mockData";
 import { CreateVMModal } from "./components";
 import { vmService, type VMInfo, type CreateVMRequest } from "@/services/vm";
 
 // 使用统一的虚拟机数据类型 - 使用包含完整配置信息的 VMInfo
 type VirtualMachine = VMInfo;
-
-// 定义接口返回的原始数据类型
-interface APIVirtualMachine {
-  vm_name: string;
-  hostname: string;
-  config_status: boolean;
-  config: {
-    cpu_num: number;
-    memory_gb: number;
-    boot: string[];
-    disk: Array<{
-      name: string;
-      bus_type: string;
-      path: string;
-      format: string;
-    }>;
-    cdrom: Array<unknown>;
-    net: Array<{
-      name: string;
-      mac: string;
-      bridge: string;
-    }>;
-    usb: Array<unknown>;
-    pci: Array<unknown>;
-    metadata: {
-      digested: string;
-      digesting: string;
-      updated_at: string;
-    };
-  };
-  error: string | null;
-  status?: string;
-}
 
 // 虚拟机状态分析结果接口
 interface VMStatusAnalysis {
@@ -311,8 +277,6 @@ const VirtualMachineManagement: React.FC = () => {
         };
       }
 
-      console.log("请求参数:", requestParams);
-
       // 使用重试机制调用API
       const response = await withRetry(
         () => vmService.getVMList(requestParams),
@@ -323,33 +287,10 @@ const VirtualMachineManagement: React.FC = () => {
       if (response.success) {
         // 安全地获取数据，处理可能的空值情况
         const responseData = response.data || { vms: [] };
-        console.log("responseData", responseData);
 
-        // 直接保存接口返回的完整数据，只做字段名映射
-        const vms: VirtualMachine[] = (
-          responseData.vms as unknown as APIVirtualMachine[]
-        ).map((vm) => ({
-          // 映射字段名，确保与接口返回的字段名一致
-          name: vm.vm_name,
-          hostname: vm.hostname,
-          uuid: vm.vm_name + "-" + vm.hostname,
-          status: vm.status || "N/A", 
-          cpu_count: vm.config?.cpu_num || 0,
-          memory_gb: vm.config?.memory_gb || 0,
-          // 保留接口返回的完整配置信息
-          config_status: vm.config_status,
-          config: vm.config,
-          error: vm.error,
-
-          // 为了兼容性，也映射一些老字段名
-          boot_order: vm.config?.boot,
-          disk_info: vm.config?.disk,
-          network_info: vm.config?.net,
-          metadata: vm.config?.metadata,
-        }));
-
+        // 直接使用服务层返回的适配后数据，无需重新处理
+        const vms: VirtualMachine[] = responseData.vms || [];
         setVmList(vms);
-        console.log("处理后的完整虚拟机数据:", vms);
         // 优化的用户提示逻辑
         if (vms.length === 0) {
           // 根据选择状态提供更精确的提示
@@ -394,9 +335,6 @@ const VirtualMachineManagement: React.FC = () => {
               `成功加载 ${vms.length} 台虚拟机，健康度: ${statusAnalysis.healthyPercentage}%`
             );
           }
-
-          // 显示加载成功的详细信息（仅在控制台）
-          console.log("虚拟机状态统计:", statusAnalysis);
         }
       } else {
         // API调用失败的优化处理
@@ -500,7 +438,7 @@ const VirtualMachineManagement: React.FC = () => {
     return vmList.filter((vm) => {
       const matchSearch =
         searchText === "" ||
-        vm.name.toLowerCase().includes(searchText.toLowerCase()) ||
+        vm.vm_name.toLowerCase().includes(searchText.toLowerCase()) ||
         vm.uuid.toLowerCase().includes(searchText.toLowerCase()) ||
         vm.hostname.toLowerCase().includes(searchText.toLowerCase());
 
@@ -509,20 +447,15 @@ const VirtualMachineManagement: React.FC = () => {
   }, [vmList, searchText]);
 
   // 刷新数据函数
-  const handleRefresh = useCallback(() => {
-    setLoading(true);
-    setTimeout(() => {
-      // 模拟数据变化
-      const updatedData = mockVMManagementData.map((vm) => ({
-        ...vm,
-        cpuUsage: `${Math.floor(Math.random() * 100)}%`,
-        memoryUsage: `${Math.floor(Math.random() * 100)}%`,
-      }));
-      setVmList(updatedData);
-      setLoading(false);
+  const handleRefresh = useCallback(async () => {
+    try {
+      await loadVmData();
       message.success("数据刷新成功");
-    }, 800);
-  }, [message]); // 添加message依赖
+    } catch (error) {
+      console.error("刷新数据失败:", error);
+      message.error("刷新数据失败");
+    }
+  }, [loadVmData, message]);
 
   // 自动刷新
   useEffect(() => {
@@ -550,7 +483,8 @@ const VirtualMachineManagement: React.FC = () => {
         let response;
 
         // 提取虚拟机名称和主机名，兼容两种数据格式
-        const vmName = vm.name;
+        const vmName =
+          "vm_name" in vm ? vm.vm_name : "name" in vm ? vm.name : "unknown";
         const hostname =
           "hostname" in vm ? vm.hostname : "node" in vm ? vm.node : "unknown";
 
@@ -559,7 +493,7 @@ const VirtualMachineManagement: React.FC = () => {
           case "启动":
             response = await vmService.startVM(vmName, hostname);
             if (response.success) {
-              message.success(response.message || `启动虚拟机 ${vm.name} 成功`);
+              message.success(response.message || `启动虚拟机 ${vmName} 成功`);
               // 根据来源决定刷新方式
               if (fromSidebar) {
                 await loadVmData(); // 重新加载数据而不刷新页面
@@ -567,16 +501,16 @@ const VirtualMachineManagement: React.FC = () => {
                 window.location.reload();
               }
             } else {
-              message.error(response.message || `启动虚拟机 ${vm.name} 失败`);
+              message.error(response.message || `启动虚拟机 ${vmName} 失败`);
             }
             break;
 
           case "stop":
           case "停止":
           case "shutdown":
-            response = await vmService.stopVM(vm.name, hostname);
+            response = await vmService.stopVM(vmName, hostname);
             if (response.success) {
-              message.success(response.message || `停止虚拟机 ${vm.name} 成功`);
+              message.success(response.message || `停止虚拟机 ${vmName} 成功`);
               // 根据来源决定刷新方式
               if (fromSidebar) {
                 await loadVmData(); // 重新加载数据而不刷新页面
@@ -584,15 +518,15 @@ const VirtualMachineManagement: React.FC = () => {
                 window.location.reload();
               }
             } else {
-              message.error(response.message || `停止虚拟机 ${vm.name} 失败`);
+              message.error(response.message || `停止虚拟机 ${vmName} 失败`);
             }
             break;
 
           case "restart":
           case "重启":
-            response = await vmService.restartVM(vm.name, hostname);
+            response = await vmService.restartVM(vmName, hostname);
             if (response.success) {
-              message.success(response.message || `重启虚拟机 ${vm.name} 成功`);
+              message.success(response.message || `重启虚拟机 ${vmName} 成功`);
               // 根据来源决定刷新方式
               if (fromSidebar) {
                 await loadVmData(); // 重新加载数据而不刷新页面
@@ -600,16 +534,16 @@ const VirtualMachineManagement: React.FC = () => {
                 window.location.reload();
               }
             } else {
-              message.error(response.message || `重启虚拟机 ${vm.name} 失败`);
+              message.error(response.message || `重启虚拟机 ${vmName} 失败`);
             }
             break;
 
           case "destroy":
           case "强制停止":
-            response = await vmService.destroyVM(vm.name, hostname);
+            response = await vmService.destroyVM(vmName, hostname);
             if (response.success) {
               message.success(
-                response.message || `强制停止虚拟机 ${vm.name} 成功`
+                response.message || `强制停止虚拟机 ${vmName} 成功`
               );
               // 根据来源决定刷新方式
               if (fromSidebar) {
@@ -619,7 +553,7 @@ const VirtualMachineManagement: React.FC = () => {
               }
             } else {
               message.error(
-                response.message || `强制停止虚拟机 ${vm.name} 失败`
+                response.message || `强制停止虚拟机 ${vmName} 失败`
               );
             }
             break;
@@ -628,25 +562,25 @@ const VirtualMachineManagement: React.FC = () => {
             // 删除前确认
             modal.confirm({
               title: "确认删除",
-              content: `确定要删除虚拟机 "${vm.name}" 吗？此操作不可逆。`,
+              content: `确定要删除虚拟机 "${vmName}" 吗？此操作不可逆。`,
               okText: "确认删除",
               okType: "danger",
               cancelText: "取消",
               onOk: async () => {
                 const deleteResponse = await vmService.deleteVM(
-                  vm.name,
+                  vmName,
                   hostname,
                   true
                 );
                 if (deleteResponse.success) {
                   message.success(
-                    deleteResponse.message || `删除虚拟机 ${vm.name} 成功`
+                    deleteResponse.message || `删除虚拟机 ${vmName} 成功`
                   );
                   // 重新加载虚拟机列表
                   await loadVmData();
                 } else {
                   message.error(
-                    deleteResponse.message || `删除虚拟机 ${vm.name} 失败`
+                    deleteResponse.message || `删除虚拟机 ${vmName} 失败`
                   );
                 }
               },
@@ -656,9 +590,9 @@ const VirtualMachineManagement: React.FC = () => {
           case "pause":
           case "suspend":
           case "挂起":
-            response = await vmService.pauseVM(vm.name, hostname);
+            response = await vmService.pauseVM(vmName, hostname);
             if (response.success) {
-              message.success(response.message || `挂起虚拟机 ${vm.name} 成功`);
+              message.success(response.message || `挂起虚拟机 ${vmName} 成功`);
               // 根据来源决定刷新方式
               if (fromSidebar) {
                 await loadVmData(); // 重新加载数据而不刷新页面
@@ -666,15 +600,15 @@ const VirtualMachineManagement: React.FC = () => {
                 window.location.reload();
               }
             } else {
-              message.error(response.message || `挂起虚拟机 ${vm.name} 失败`);
+              message.error(response.message || `挂起虚拟机 ${vmName} 失败`);
             }
             break;
 
           case "resume":
           case "恢复":
-            response = await vmService.resumeVM(vm.name, hostname);
+            response = await vmService.resumeVM(vmName, hostname);
             if (response.success) {
-              message.success(response.message || `恢复虚拟机 ${vm.name} 成功`);
+              message.success(response.message || `恢复虚拟机 ${vmName} 成功`);
               // 根据来源决定刷新方式
               if (fromSidebar) {
                 await loadVmData(); // 重新加载数据而不刷新页面
@@ -682,20 +616,20 @@ const VirtualMachineManagement: React.FC = () => {
                 window.location.reload();
               }
             } else {
-              message.error(response.message || `恢复虚拟机 ${vm.name} 失败`);
+              message.error(response.message || `恢复虚拟机 ${vmName} 失败`);
             }
             break;
 
           case "clone":
-            message.info(`克隆功能开发中，虚拟机: ${vm.name}`);
+            message.info(`克隆功能开发中，虚拟机: ${vmName}`);
             break;
 
           case "template":
-            message.info(`模板转换功能开发中，虚拟机: ${vm.name}`);
+            message.info(`模板转换功能开发中，虚拟机: ${vmName}`);
             break;
 
           default:
-            message.info(`${action} ${vm.name} 操作功能开发中`);
+            message.info(`${action} ${vmName} 操作功能开发中`);
             break;
         }
       } catch (error) {
@@ -790,7 +724,7 @@ const VirtualMachineManagement: React.FC = () => {
       fixed: "left",
       render: (_, record) => (
         <div style={{ fontWeight: "bold", fontSize: "14px" }}>
-          {record.name}
+          {record.vm_name}
         </div>
       ),
     },
@@ -1367,12 +1301,14 @@ const VirtualMachineManagement: React.FC = () => {
 
     if (sidebarSelectedHost) {
       // 选中物理机时，从该物理机的虚拟机列表中查找对应的虚拟机
-      selectedVMData = vmList.find((vm) => vm.name === sidebarSelectedVM.name);
-      console.log("物理机模式 - 查找结果:", selectedVMData?.name);
+      selectedVMData = vmList.find(
+        (vm) => vm.vm_name === sidebarSelectedVM.name
+      );
+      console.log("物理机模式 - 查找结果:", selectedVMData?.vm_name);
     } else {
       // 选中虚拟机时，接口直接返回对应的虚拟机数据，直接使用第一个元素
       selectedVMData = vmList.length > 0 ? vmList[0] : undefined;
-      console.log("虚拟机模式 - 直接使用第一个:", selectedVMData?.name);
+      console.log("虚拟机模式 - 直接使用第一个:", selectedVMData?.vm_name);
     }
 
     const vmDetailTabs = [
@@ -1384,7 +1320,7 @@ const VirtualMachineManagement: React.FC = () => {
             {/* 基本配置信息 */}
             <Descriptions column={2} bordered style={{ marginBottom: 16 }}>
               <Descriptions.Item label="虚拟机名称">
-                {selectedVMData.name}
+                {selectedVMData.vm_name}
               </Descriptions.Item>
               <Descriptions.Item label="物理主机">
                 {selectedVMData.hostname}
@@ -2489,7 +2425,7 @@ const VirtualMachineManagement: React.FC = () => {
             }}
           >
             <DesktopOutlined />
-            虚拟机详情 - {sidebarSelectedVM.name} ({sidebarSelectedVM.vmid})
+            虚拟机详情 - {sidebarSelectedVM.name}
             <Tag
               color={
                 sidebarSelectedVM.status === "running" ? "success" : "error"
@@ -2869,7 +2805,7 @@ const VirtualMachineManagement: React.FC = () => {
 
         {/* 虚拟机详情模态框 */}
         <Modal
-          title={`虚拟机详情 - ${selectedVM?.name}`}
+          title={`虚拟机详情 - ${selectedVM?.vm_name}`}
           open={detailModal}
           onCancel={() => setDetailModal(false)}
           footer={null}
@@ -2886,7 +2822,7 @@ const VirtualMachineManagement: React.FC = () => {
                     <div>
                       <Descriptions column={2} bordered>
                         <Descriptions.Item label="虚拟机名称">
-                          {selectedVM.name}
+                          {selectedVM.vm_name}
                         </Descriptions.Item>
                         <Descriptions.Item label="物理主机">
                           {selectedVM.hostname}

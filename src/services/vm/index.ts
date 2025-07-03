@@ -58,7 +58,7 @@ const adaptVMApiInfoToVMInfo = (apiInfo: VMApiInfo): VMInfo => {
   const memory_gb = config.memory_gb || 0;
 
   return {
-    name: apiInfo.vm_name,
+    vm_name: apiInfo.vm_name,
     hostname: apiInfo.hostname,
     uuid,
     status,
@@ -518,7 +518,7 @@ class VMService {
   async getVMDetail(vmUuid: string): Promise<StandardResponse<VMInfo>> {
     if (USE_MOCK_DATA) {
       const mockVM: VMInfo = {
-        name: "mock-vm",
+        vm_name: "mock-vm",
         hostname: "mock-vm-hostname",
         uuid: vmUuid,
         status: "running",

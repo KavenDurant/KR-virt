@@ -1307,6 +1307,31 @@ const ClusterManagement: React.FC = () => {
 
   // 如果从侧边栏选中了物理主机，显示主机详情
   if (sidebarSelectedHost) {
+    // 安全获取虚拟机数量 - 处理数据结构不匹配的问题
+    const getHostVMsCount = (): number => {
+      // 类型断言为更通用的对象类型来处理不同的数据结构
+      const hostData = sidebarSelectedHost as unknown as Record<string, unknown>;
+      
+      // 如果有 vms 字段，返回其长度
+      if (hostData.vms && Array.isArray(hostData.vms)) {
+        return hostData.vms.length;
+      }
+
+      // 如果有 data 字段且包含 vms，使用 data.vms
+      if (
+        hostData.data &&
+        typeof hostData.data === "object" &&
+        hostData.data !== null &&
+        "vms" in hostData.data &&
+        Array.isArray((hostData.data as Record<string, unknown>).vms)
+      ) {
+        return ((hostData.data as Record<string, unknown>).vms as unknown[]).length;
+      }
+
+      // 默认返回0
+      return 0;
+    };
+
     // 计算CPU和内存使用百分比
     const cpuUsagePercent = nodeDetailData
       ? Math.round((nodeDetailData.cpu_used / nodeDetailData.cpu_total) * 100)
@@ -1316,7 +1341,7 @@ const ClusterManagement: React.FC = () => {
       : 0;
     const totalVmsCount = nodeDetailData
       ? nodeDetailData.vms_num
-      : sidebarSelectedHost.vms.length;
+      : getHostVMsCount();
 
     const hostDetailTabs = [
       {

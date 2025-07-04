@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 13:47:21
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-03 20:16:27
+ * @LastEditTime: 2025-07-04 15:20:57
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -259,8 +259,12 @@ const VirtualMachineManagement: React.FC = () => {
 
       if (sidebarSelectedVM) {
         // 如果选中了虚拟机，传递虚拟机名和对应的物理机名
+        // 修复：兼容不同的数据结构中的主机名字段
+        const vmData = sidebarSelectedVM as unknown as Record<string, unknown>;
+        const hostname =
+          (vmData.hostname as string) || (vmData.node as string) || "unknown";
         requestParams = {
-          hostnames: [sidebarSelectedVM.node],
+          hostnames: [hostname],
           vm_names: [sidebarSelectedVM.name],
         };
       } else if (sidebarSelectedHost) {
@@ -986,6 +990,36 @@ const VirtualMachineManagement: React.FC = () => {
 
   // 如果从侧边栏选中了物理机，显示物理机详情
   if (sidebarSelectedHost) {
+    // 安全获取虚拟机列表 - 处理数据结构不匹配的问题
+    const getHostVMs = (): unknown[] => {
+      // 使用 unknown 作为中间类型来避免类型错误
+      const hostData = sidebarSelectedHost as unknown as Record<
+        string,
+        unknown
+      >;
+
+      // 如果有 vms 字段，直接使用
+      if (hostData.vms && Array.isArray(hostData.vms)) {
+        return hostData.vms as unknown[];
+      }
+
+      // 如果有 data 字段且包含 vms，使用 data.vms
+      if (
+        hostData.data &&
+        typeof hostData.data === "object" &&
+        hostData.data !== null &&
+        "vms" in hostData.data &&
+        Array.isArray((hostData.data as Record<string, unknown>).vms)
+      ) {
+        return (hostData.data as Record<string, unknown>).vms as unknown[];
+      }
+
+      // 默认返回空数组
+      return [];
+    };
+
+    const hostVMs = getHostVMs();
+
     const hostDetailTabs = [
       {
         key: "basic",
@@ -999,11 +1033,11 @@ const VirtualMachineManagement: React.FC = () => {
                     <Col span={12}>
                       <Statistic
                         title="CPU 使用率"
-                        value={sidebarSelectedHost.cpu}
+                        value={sidebarSelectedHost.cpu || 0}
                         suffix="%"
                         valueStyle={{
                           color:
-                            sidebarSelectedHost.cpu > 80
+                            (sidebarSelectedHost.cpu || 0) > 80
                               ? "#ff4d4f"
                               : "#3f8600",
                         }}
@@ -1012,11 +1046,11 @@ const VirtualMachineManagement: React.FC = () => {
                     <Col span={12}>
                       <Statistic
                         title="内存使用率"
-                        value={sidebarSelectedHost.memory}
+                        value={sidebarSelectedHost.memory || 0}
                         suffix="%"
                         valueStyle={{
                           color:
-                            sidebarSelectedHost.memory > 80
+                            (sidebarSelectedHost.memory || 0) > 80
                               ? "#ff4d4f"
                               : "#3f8600",
                         }}
@@ -1028,7 +1062,7 @@ const VirtualMachineManagement: React.FC = () => {
                       <Col span={24}>
                         <Statistic
                           title="虚拟机数量"
-                          value={sidebarSelectedHost.vms.length}
+                          value={hostVMs.length}
                           suffix="台"
                         />
                       </Col>
@@ -1151,7 +1185,7 @@ const VirtualMachineManagement: React.FC = () => {
                 <Card>
                   <Statistic
                     title="虚拟机数量"
-                    value={sidebarSelectedHost.vms.length}
+                    value={hostVMs.length}
                     prefix={<DesktopOutlined />}
                     suffix="台"
                   />
@@ -1169,7 +1203,7 @@ const VirtualMachineManagement: React.FC = () => {
             <Card title="该主机上的虚拟机" size="small">
               <Table
                 size="small"
-                dataSource={sidebarSelectedHost.vms}
+                dataSource={hostVMs as SidebarVM[]}
                 columns={[
                   {
                     title: "虚拟机名称",

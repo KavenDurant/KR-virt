@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 13:47:21
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-04 15:20:57
+ * @LastEditTime: 2025-07-04 17:18:03
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -69,7 +69,11 @@ import { useTheme } from "../../hooks/useTheme";
 import { useSidebarSelection } from "../../hooks";
 
 import type { VirtualMachine as SidebarVM } from "../../services/mockData";
-import { CreateVMModal } from "./components";
+import {
+  CreateVMModal,
+  NetworkManagement,
+  CDRomManagement,
+} from "./components";
 import { vmService, type VMInfo, type CreateVMRequest } from "@/services/vm";
 
 // 使用统一的虚拟机数据类型 - 使用包含完整配置信息的 VMInfo
@@ -1850,66 +1854,37 @@ const VirtualMachineManagement: React.FC = () => {
                 {
                   key: "network",
                   label: "网卡",
-                  children: (
-                    <Card
-                      title="网络适配器"
-                      extra={
-                        <Button type="primary" size="small">
-                          添加网卡
-                        </Button>
+                                    children: sidebarSelectedVM ? (
+                    <NetworkManagement
+                      vmName={sidebarSelectedVM.name}
+                      hostname={
+                        (sidebarSelectedVM as unknown as { hostname?: string })
+                          .hostname || "unknown"
                       }
-                    >
-                      <Table
-                        size="small"
-                        dataSource={[
-                          {
-                            id: 1,
-                            name: "net0",
-                            model: "virtio",
-                            bridge: "vmbr0",
-                            mac: "02:00:00:00:00:01",
-                            enabled: true,
-                          },
-                          {
-                            id: 2,
-                            name: "net1",
-                            model: "e1000",
-                            bridge: "vmbr1",
-                            mac: "02:00:00:00:00:02",
-                            enabled: false,
-                          },
-                        ]}
-                        columns={[
-                          { title: "设备名", dataIndex: "name", key: "name" },
-                          { title: "型号", dataIndex: "model", key: "model" },
-                          { title: "网桥", dataIndex: "bridge", key: "bridge" },
-                          { title: "MAC地址", dataIndex: "mac", key: "mac" },
-                          {
-                            title: "状态",
-                            dataIndex: "enabled",
-                            key: "enabled",
-                            render: (enabled: boolean) => (
-                              <Tag color={enabled ? "success" : "default"}>
-                                {enabled ? "启用" : "禁用"}
-                              </Tag>
-                            ),
-                          },
-                          {
-                            title: "操作",
-                            key: "action",
-                            render: () => (
-                              <Space>
-                                <Button size="small">编辑</Button>
-                                <Button size="small" danger>
-                                  删除
-                                </Button>
-                              </Space>
-                            ),
-                          },
-                        ]}
-                        pagination={false}
-                      />
-                    </Card>
+                      networkDevices={
+                        selectedVMData?.config?.net?.map((netDevice, index) => ({
+                          id: `net${index}`,
+                          name: netDevice.name || `net${index}`,
+                          model: netDevice.driver || "virtio",
+                          bridge: netDevice.bridge || netDevice.name,
+                          mac: netDevice.mac,
+                          enabled: true,
+                          type: (netDevice.net_type as 'bridge' | 'nat' | 'vlan') || 'bridge',
+                        })) || []
+                      }
+                      onNetworkChange={() => {
+                        // 刷新虚拟机详情数据
+                        loadVmData();
+                      }}
+                      message={message}
+                    />
+                  ) : (
+                    <Alert
+                      message="请选择虚拟机"
+                      description="请从侧边栏选择一个虚拟机以管理其网络设备"
+                      type="info"
+                      showIcon
+                    />
                   ),
                 },
                 {
@@ -1996,54 +1971,38 @@ const VirtualMachineManagement: React.FC = () => {
                 {
                   key: "cdrom",
                   label: "虚拟光驱",
-                  children: (
-                    <Card
-                      title="光驱设备"
-                      extra={
-                        <Button type="primary" size="small">
-                          挂载ISO
-                        </Button>
+                  children: sidebarSelectedVM ? (
+                    <CDRomManagement
+                      vmName={sidebarSelectedVM.name}
+                      hostname={
+                        (sidebarSelectedVM as unknown as { hostname?: string })
+                          .hostname || "unknown"
                       }
-                    >
-                      <Table
-                        size="small"
-                        dataSource={[
-                          {
-                            id: 1,
-                            name: "ide2",
-                            file: "CentOS-8.iso",
-                            size: "8.5 GB",
-                            mounted: true,
-                          },
-                        ]}
-                        columns={[
-                          { title: "设备名", dataIndex: "name", key: "name" },
-                          { title: "ISO文件", dataIndex: "file", key: "file" },
-                          { title: "大小", dataIndex: "size", key: "size" },
-                          {
-                            title: "挂载状态",
-                            dataIndex: "mounted",
-                            key: "mounted",
-                            render: (mounted: boolean) => (
-                              <Tag color={mounted ? "success" : "default"}>
-                                {mounted ? "已挂载" : "未挂载"}
-                              </Tag>
-                            ),
-                          },
-                          {
-                            title: "操作",
-                            key: "action",
-                            render: () => (
-                              <Space>
-                                <Button size="small">卸载</Button>
-                                <Button size="small">更换</Button>
-                              </Space>
-                            ),
-                          },
-                        ]}
-                        pagination={false}
-                      />
-                    </Card>
+                      cdromDevices={
+                        selectedVMData?.config?.cdrom && selectedVMData.config.cdrom.length > 0
+                          ? selectedVMData.config.cdrom.map((cdromDevice, index: number) => ({
+                              id: cdromDevice.name || `cdrom${index}`,
+                              name: cdromDevice.name || `光驱 ${index + 1}`,
+                              iso_path: cdromDevice.path || null,
+                              mounted: !!cdromDevice.path,
+                              bus_type: cdromDevice.bus_type || "ide",
+                              format: cdromDevice.format,
+                            }))
+                          : [] // 如果没有光驱数据，显示空数组
+                      }
+                      onCDRomChange={() => {
+                        // 刷新虚拟机详情数据
+                        loadVmData();
+                      }}
+                      message={message}
+                    />
+                  ) : (
+                    <Alert
+                      message="请选择虚拟机"
+                      description="请从侧边栏选择一个虚拟机以管理其光驱设备"
+                      type="info"
+                      showIcon
+                    />
                   ),
                 },
               ]}

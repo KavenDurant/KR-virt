@@ -11,6 +11,12 @@ import type {
   DeleteVMRequest,
   VMOperationResponse,
   VMTreeResponse,
+  VMNetworkMountRequest,
+  VMNATMountRequest,
+  VMVLANMountRequest,
+  VMNetworkUnmountRequest,
+  VMCDRomMountRequest,
+  VMCDRomUnmountRequest,
 } from "./types";
 
 // 配置区域
@@ -158,11 +164,26 @@ class VMService {
                 format: "qcow2",
               },
             ],
-            cdrom: [],
+            cdrom: [
+              {
+                name: "hdc",
+                bus_type: "sata", 
+                path: "/var/lib/libvirt/my_iso/Ubuntu-20.04.iso",
+                format: "raw",
+              },
+              {
+                name: "hdd",
+                bus_type: "sata",
+                path: "",
+                format: "raw",
+              },
+            ],
             net: [
               {
-                name: "virtio",
+                name: "virbr0",
                 mac: "52:54:00:dd:24:8f",
+                driver: "virtio",
+                net_type: "bridge",
                 bridge: "virbr0",
               },
             ],
@@ -195,8 +216,10 @@ class VMService {
             cdrom: [],
             net: [
               {
-                name: "virtio",
+                name: "virbr0",
                 mac: "52:54:00:dd:24:90",
+                driver: "virtio",
+                net_type: "bridge",
                 bridge: "virbr0",
               },
             ],
@@ -613,6 +636,138 @@ class VMService {
         defaultErrorMessage: "获取虚拟机树形结构失败",
       }
     );
+  }
+
+  /**
+   * 添加普通桥接网卡
+   * @param data 网卡挂载请求参数
+   * @returns 操作结果
+   */
+  async mountNetwork(
+    data: VMNetworkMountRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/mount/network", data, {
+        useMock: true,
+        mockData: { message: "添加网络任务已发送成功" },
+        defaultSuccessMessage: "添加网络任务已发送成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/mount/network", data, {
+      defaultSuccessMessage: "添加网络任务已发送成功",
+      defaultErrorMessage: "添加网络任务发送失败",
+    });
+  }
+
+  /**
+   * 添加NAT网络
+   * @param data NAT网络挂载请求参数
+   * @returns 操作结果
+   */
+  async mountNAT(
+    data: VMNATMountRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/mount/nat", data, {
+        useMock: true,
+        mockData: { message: "添加NAT网络任务已发送成功" },
+        defaultSuccessMessage: "添加NAT网络任务已发送成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/mount/nat", data, {
+      defaultSuccessMessage: "添加NAT网络任务已发送成功",
+      defaultErrorMessage: "添加NAT网络任务发送失败",
+    });
+  }
+
+  /**
+   * 添加VLAN网卡
+   * @param data VLAN网卡挂载请求参数
+   * @returns 操作结果
+   */
+  async mountVLAN(
+    data: VMVLANMountRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/mount/vlan", data, {
+        useMock: true,
+        mockData: { message: "添加VLAN网络任务已发送成功" },
+        defaultSuccessMessage: "添加VLAN网络任务已发送成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/mount/vlan", data, {
+      defaultSuccessMessage: "添加VLAN网络任务已发送成功",
+      defaultErrorMessage: "添加VLAN网络任务发送失败",
+    });
+  }
+
+  /**
+   * 移除网卡
+   * @param data 网卡卸载请求参数
+   * @returns 操作结果
+   */
+  async unmountNetwork(
+    data: VMNetworkUnmountRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/unmount/network", data, {
+        useMock: true,
+        mockData: { message: "移除网络任务已发送成功" },
+        defaultSuccessMessage: "移除网络任务已发送成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/unmount/network", data, {
+      defaultSuccessMessage: "移除网络任务已发送成功",
+      defaultErrorMessage: "移除网络任务发送失败",
+    });
+  }
+
+  /**
+   * 挂载虚拟光驱（加载ISO）
+   * @param data 光驱挂载请求参数
+   * @returns 操作结果
+   */
+  async mountCDRom(
+    data: VMCDRomMountRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/mount/cdrom", data, {
+        useMock: true,
+        mockData: { message: "虚拟光驱挂载任务已发送成功" },
+        defaultSuccessMessage: "虚拟光驱挂载任务已发送成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/mount/cdrom", data, {
+      defaultSuccessMessage: "虚拟光驱挂载任务已发送成功",
+      defaultErrorMessage: "虚拟光驱挂载任务发送失败",
+    });
+  }
+
+  /**
+   * 卸载虚拟光驱（移除ISO）
+   * @param data 光驱卸载请求参数
+   * @returns 操作结果
+   */
+  async unmountCDRom(
+    data: VMCDRomUnmountRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/unmount/cdrom", data, {
+        useMock: true,
+        mockData: { message: "虚拟光驱卸载任务已发送成功" },
+        defaultSuccessMessage: "虚拟光驱卸载任务已发送成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/unmount/cdrom", data, {
+      defaultSuccessMessage: "虚拟光驱卸载任务已发送成功",
+      defaultErrorMessage: "虚拟光驱卸载任务发送失败",
+    });
   }
 }
 

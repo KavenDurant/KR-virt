@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 14:04:19
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-03 18:16:26
+ * @LastEditTime: 2025-07-04 17:13:25
  * @FilePath: /KR-virt/src/services/vm/types.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -42,7 +42,17 @@ export interface VMDiskConfig {
 export interface VMNetConfig {
   name: string;
   mac: string;
-  bridge: string;
+  driver: string;
+  net_type: string;
+  bridge?: string; // 桥接网络的网桥名，可选
+}
+
+// 虚拟机光驱配置（API返回格式）
+export interface VMCDRomConfig {
+  name: string; // 设备名，如 'hdc', 'hdd'
+  bus_type: string; // 总线类型，如 'sata', 'ide'
+  path: string; // ISO文件路径
+  format: string; // 格式，如 'raw'
 }
 
 // 虚拟机元数据
@@ -58,7 +68,7 @@ export interface VMDetailConfig {
   memory_gb: number;
   boot: string[];
   disk: VMDiskConfig[];
-  cdrom: unknown[];
+  cdrom: VMCDRomConfig[];
   net: VMNetConfig[];
   usb: unknown[];
   pci: unknown[];
@@ -181,4 +191,80 @@ export interface VMTreeWithClusterResponse {
   cluster_name: string;
   cluster_uuid: string;
   nodes: SidebarHostNode[];
+}
+
+// 虚拟机网络管理相关接口
+export interface VMNetworkMountRequest {
+  hostname: string;
+  vm_name: string;
+  net_name: string;
+  model: string;
+  mac_addr?: string | null;
+}
+
+export interface VMNATMountRequest {
+  hostname: string;
+  vm_name: string;
+  net_name: string;
+  bridge_name?: string | null;
+  ip_addr: string;
+  netmask: string;
+  dhcp_start: string;
+  dhcp_end: string;
+}
+
+export interface VMVLANMountRequest {
+  hostname: string;
+  vm_name: string;
+  net_name: string;
+  forward: 'isolated' | 'bridge';
+  vlan_id?: number | null;
+  // 注意：后端暂不支持 ip_addr 参数
+  // ip_addr?: string | null;
+  netmask?: string | null;
+  dhcp_start?: string | null;
+  dhcp_end?: string | null;
+}
+
+export interface VMNetworkUnmountRequest {
+  hostname: string;
+  vm_name: string;
+  net_name?: string | null;
+  mac?: string | null;
+}
+
+export interface NetworkDeviceInfo {
+  id: string;
+  name: string;
+  model: string;
+  bridge: string;
+  mac: string;
+  enabled: boolean;
+  type: 'bridge' | 'nat' | 'vlan';
+  vlan_id?: number;
+  ip_addr?: string;
+  netmask?: string;
+}
+
+// 虚拟光驱管理相关接口
+export interface VMCDRomMountRequest {
+  hostname: string;
+  vm_name: string;
+  iso_path: string;
+}
+
+export interface VMCDRomUnmountRequest {
+  hostname: string;
+  vm_name: string;
+  target_dev?: string | null; // 要移除的目标光驱设备名（如 'hdc'），不指定时默认移除所有挂载的ISO
+  iso_path?: string | null; // 指定要卸载的ISO路径（可选）
+}
+
+export interface CDRomDeviceInfo {
+  id: string;
+  name: string; // 设备名，如 'hdc', 'hdd'
+  iso_path: string | null; // 当前挂载的ISO路径
+  mounted: boolean; // 是否已挂载ISO
+  bus_type: string; // 总线类型，如 'ide', 'sata'
+  format?: string; // 格式，如 'raw'
 }

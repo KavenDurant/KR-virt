@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   Table,
@@ -31,6 +31,7 @@ import {
 import { useTheme } from "@/hooks/useTheme";
 import storageService from "@/services/storage";
 import { formatStorageSize } from "@/utils/format";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import type { StorageInfo, AddStorageRequest } from "@/services/storage/types";
 
 const { Search } = Input;
@@ -45,15 +46,13 @@ const StorageManagement: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingStorage, setEditingStorage] = useState<StorageInfo | null>(null);
+  const [editingStorage, setEditingStorage] = useState<StorageInfo | null>(
+    null
+  );
   const [form] = Form.useForm();
 
   // 加载存储数据
-  useEffect(() => {
-    loadStorageData();
-  }, []);
-
-  const loadStorageData = async () => {
+  const loadStorageData = useCallback(async () => {
     setLoading(true);
     try {
       const response = await storageService.getStorageList();
@@ -69,7 +68,11 @@ const StorageManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [message]);
+
+  useEffect(() => {
+    loadStorageData();
+  }, [loadStorageData]);
 
   // 获取状态标签和图标
   const getStatusTag = (status: string) => {
@@ -146,7 +149,8 @@ const StorageManagement: React.FC = () => {
         <div>
           <div style={{ marginBottom: 4 }}>
             <span style={{ fontSize: "12px", color: "#666" }}>
-              {formatStorageSize(record.used)} / {formatStorageSize(record.total)}
+              {formatStorageSize(record.used)} /{" "}
+              {formatStorageSize(record.total)}
             </span>
           </div>
           <Progress
@@ -263,268 +267,283 @@ const StorageManagement: React.FC = () => {
       : 0;
 
   return (
-    <Spin spinning={loading} tip="加载存储数据中...">
-      <div
-        style={{
-          minHeight: loading ? "400px" : "auto",
-          background: themeConfig.token.colorBgLayout,
-        }}
-      >
-        <Card
-          title={
-            <Space>
-              <HddOutlined />
-              <span>存储管理</span>
-            </Space>
-          }
-          extra={
-            <Space>
-              <Button
-                icon={<PlusOutlined />}
-                type="primary"
-                onClick={() => {
-                  setEditingStorage(null);
-                  form.resetFields();
-                  setModalVisible(true);
-                }}
-              >
-                添加存储
-              </Button>
-              <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
-                刷新
-              </Button>
-            </Space>
-          }
+    <ErrorBoundary
+      title="存储管理页面出现错误"
+      description="存储管理功能遇到了未预期的错误。可能是数据加载异常或界面渲染错误，请尝试刷新页面。"
+      enableErrorReporting={true}
+      onError={(error, errorInfo) => {
+        console.error("存储管理页面错误:", error, errorInfo);
+      }}
+    >
+      <Spin spinning={loading} tip="加载存储数据中...">
+        <div
+          style={{
+            minHeight: loading ? "400px" : "auto",
+            background: themeConfig.token.colorBgLayout,
+          }}
         >
-          {/* 统计信息 */}
-          <Row gutter={16} style={{ marginBottom: 24 }}>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="存储总数"
-                  value={statistics.total}
-                  prefix={<DatabaseOutlined />}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="健康存储"
-                  value={statistics.healthy}
-                  valueStyle={{ color: "#3f8600" }}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="告警存储"
-                  value={statistics.warning}
-                  valueStyle={{ color: "#cf1322" }}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="总使用率"
-                  value={overallUsagePercent}
-                  suffix="%"
-                  valueStyle={{ color: storageService.getUsageColor(overallUsagePercent) }}
-                />
-              </Card>
-            </Col>
-          </Row>
-
-          {/* 容量警告 */}
-          {storages.some((s) => s.usagePercent >= 80) && (
-            <Alert
-              message="存储容量警告"
-              description="部分存储池使用率超过80%，建议及时清理或扩容"
-              type="warning"
-              showIcon
-              style={{ marginBottom: 16 }}
-            />
-          )}
-
-          {/* 筛选区域 */}
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={8}>
-              <Search
-                placeholder="搜索存储名称、设备路径、挂载目录..."
-                allowClear
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-            </Col>
-            <Col span={4}>
-              <Select
-                placeholder="文件系统类型"
-                style={{ width: "100%" }}
-                value={typeFilter}
-                onChange={setTypeFilter}
-              >
-                <Option value="all">全部类型</Option>
-                <Option value="smb">SMB/CIFS</Option>
-              </Select>
-            </Col>
-            <Col span={4}>
-              <Select
-                placeholder="状态"
-                style={{ width: "100%" }}
-                value={statusFilter}
-                onChange={setStatusFilter}
-              >
-                <Option value="all">全部状态</Option>
-                <Option value="fake">模拟</Option>
-                <Option value="healthy">健康</Option>
-                <Option value="warning">警告</Option>
-                <Option value="error">错误</Option>
-                <Option value="offline">离线</Option>
-              </Select>
-            </Col>
-          </Row>
-
-          {/* 存储表格 */}
-          <Table
-            columns={columns}
-            dataSource={storages.filter((storage) => {
-              // 搜索过滤
-              const searchMatch =
-                storage.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                storage.device
-                  .toLowerCase()
-                  .includes(searchText.toLowerCase()) ||
-                storage.directory
-                  .toLowerCase()
-                  .includes(searchText.toLowerCase());
-
-              // 类型过滤
-              const typeMatch =
-                typeFilter === "all" || storage.fstype === typeFilter;
-
-              // 状态过滤
-              const statusMatch =
-                statusFilter === "all" || storage.status === statusFilter;
-
-              return searchMatch && typeMatch && statusMatch;
-            })}
-            rowKey="id"
-            loading={loading}
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total) => `共 ${total} 条记录`,
-            }}
-            scroll={{ x: 1500 }}
-          />
-        </Card>
-
-        {/* 存储编辑模态框 */}
-        <Modal
-          title={editingStorage ? "编辑存储" : "添加存储"}
-          open={modalVisible}
-          onCancel={() => setModalVisible(false)}
-          footer={null}
-          width={600}
-        >
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={async (values) => {
-              try {
-                if (editingStorage) {
-                  // 编辑功能暂时不支持，因为后端只提供了添加和删除接口
-                  message.warning("编辑功能暂未支持");
-                } else {
-                  // 添加存储
-                  const addRequest: AddStorageRequest = {
-                    name: values.name,
-                    fstype: values.fstype,
-                    device: values.device,
-                    directory: values.directory,
-                    set_options: values.set_options || "",
-                  };
-
-                  const response = await storageService.addStorage(addRequest);
-                  if (response.success) {
-                    message.success(response.message || "存储添加成功");
-                    setModalVisible(false);
-                    form.resetFields();
-                    loadStorageData(); // 重新加载数据
-                  } else {
-                    message.error(response.message || "存储添加失败");
-                  }
-                }
-              } catch (error) {
-                console.error("操作失败:", error);
-                message.error("操作失败");
-              }
-            }}
-          >
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="name"
-                  label="存储名称"
-                  rules={[{ required: true, message: "请输入存储名称" }]}
-                >
-                  <Input placeholder="请输入存储名称" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="fstype"
-                  label="文件系统类型"
-                  rules={[{ required: true, message: "请选择文件系统类型" }]}
-                >
-                  <Select placeholder="请选择文件系统类型">
-                    <Option value="smb">SMB/CIFS</Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-            </Row>
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="device"
-                  label="设备路径"
-                  rules={[{ required: true, message: "请输入设备路径" }]}
-                >
-                  <Input placeholder="例如：//192.168.1.112/krvirt2" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="directory"
-                  label="挂载目录"
-                  rules={[{ required: true, message: "请输入挂载目录" }]}
-                >
-                  <Input placeholder="例如：/mnt/krvirt2" />
-                </Form.Item>
-              </Col>
-            </Row>
-            <Form.Item
-              name="set_options"
-              label="挂载选项"
-              tooltip="可选，设置存储的挂载选项"
-            >
-              <Input placeholder="例如：username=user,password=pass,iocharset=utf8" />
-            </Form.Item>
-            <Form.Item>
+          <Card
+            title={
               <Space>
-                <Button type="primary" htmlType="submit">
-                  {editingStorage ? "更新" : "添加"}
-                </Button>
-                <Button onClick={() => setModalVisible(false)}>取消</Button>
+                <HddOutlined />
+                <span>存储管理</span>
               </Space>
-            </Form.Item>
-          </Form>
-        </Modal>
-      </div>
-    </Spin>
+            }
+            extra={
+              <Space>
+                <Button
+                  icon={<PlusOutlined />}
+                  type="primary"
+                  onClick={() => {
+                    setEditingStorage(null);
+                    form.resetFields();
+                    setModalVisible(true);
+                  }}
+                >
+                  添加存储
+                </Button>
+                <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
+                  刷新
+                </Button>
+              </Space>
+            }
+          >
+            {/* 统计信息 */}
+            <Row gutter={16} style={{ marginBottom: 24 }}>
+              <Col span={6}>
+                <Card>
+                  <Statistic
+                    title="存储总数"
+                    value={statistics.total}
+                    prefix={<DatabaseOutlined />}
+                  />
+                </Card>
+              </Col>
+              <Col span={6}>
+                <Card>
+                  <Statistic
+                    title="健康存储"
+                    value={statistics.healthy}
+                    valueStyle={{ color: "#3f8600" }}
+                  />
+                </Card>
+              </Col>
+              <Col span={6}>
+                <Card>
+                  <Statistic
+                    title="告警存储"
+                    value={statistics.warning}
+                    valueStyle={{ color: "#cf1322" }}
+                  />
+                </Card>
+              </Col>
+              <Col span={6}>
+                <Card>
+                  <Statistic
+                    title="总使用率"
+                    value={overallUsagePercent}
+                    suffix="%"
+                    valueStyle={{
+                      color: storageService.getUsageColor(overallUsagePercent),
+                    }}
+                  />
+                </Card>
+              </Col>
+            </Row>
+
+            {/* 容量警告 */}
+            {storages.some((s) => s.usagePercent >= 80) && (
+              <Alert
+                message="存储容量警告"
+                description="部分存储池使用率超过80%，建议及时清理或扩容"
+                type="warning"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+            )}
+
+            {/* 筛选区域 */}
+            <Row gutter={16} style={{ marginBottom: 16 }}>
+              <Col span={8}>
+                <Search
+                  placeholder="搜索存储名称、设备路径、挂载目录..."
+                  allowClear
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                />
+              </Col>
+              <Col span={4}>
+                <Select
+                  placeholder="文件系统类型"
+                  style={{ width: "100%" }}
+                  value={typeFilter}
+                  onChange={setTypeFilter}
+                >
+                  <Option value="all">全部类型</Option>
+                  <Option value="smb">SMB/CIFS</Option>
+                </Select>
+              </Col>
+              <Col span={4}>
+                <Select
+                  placeholder="状态"
+                  style={{ width: "100%" }}
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                >
+                  <Option value="all">全部状态</Option>
+                  <Option value="fake">模拟</Option>
+                  <Option value="healthy">健康</Option>
+                  <Option value="warning">警告</Option>
+                  <Option value="error">错误</Option>
+                  <Option value="offline">离线</Option>
+                </Select>
+              </Col>
+            </Row>
+
+            {/* 存储表格 */}
+            <Table
+              columns={columns}
+              dataSource={storages.filter((storage) => {
+                // 搜索过滤
+                const searchMatch =
+                  storage.name
+                    .toLowerCase()
+                    .includes(searchText.toLowerCase()) ||
+                  storage.device
+                    .toLowerCase()
+                    .includes(searchText.toLowerCase()) ||
+                  storage.directory
+                    .toLowerCase()
+                    .includes(searchText.toLowerCase());
+
+                // 类型过滤
+                const typeMatch =
+                  typeFilter === "all" || storage.fstype === typeFilter;
+
+                // 状态过滤
+                const statusMatch =
+                  statusFilter === "all" || storage.status === statusFilter;
+
+                return searchMatch && typeMatch && statusMatch;
+              })}
+              rowKey="id"
+              loading={loading}
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total) => `共 ${total} 条记录`,
+              }}
+              scroll={{ x: 1500 }}
+            />
+          </Card>
+
+          {/* 存储编辑模态框 */}
+          <Modal
+            title={editingStorage ? "编辑存储" : "添加存储"}
+            open={modalVisible}
+            onCancel={() => setModalVisible(false)}
+            footer={null}
+            width={600}
+          >
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={async (values) => {
+                try {
+                  if (editingStorage) {
+                    // 编辑功能暂时不支持，因为后端只提供了添加和删除接口
+                    message.warning("编辑功能暂未支持");
+                  } else {
+                    // 添加存储
+                    const addRequest: AddStorageRequest = {
+                      name: values.name,
+                      fstype: values.fstype,
+                      device: values.device,
+                      directory: values.directory,
+                      set_options: values.set_options || "",
+                    };
+
+                    const response = await storageService.addStorage(
+                      addRequest
+                    );
+                    if (response.success) {
+                      message.success(response.message || "存储添加成功");
+                      setModalVisible(false);
+                      form.resetFields();
+                      loadStorageData(); // 重新加载数据
+                    } else {
+                      message.error(response.message || "存储添加失败");
+                    }
+                  }
+                } catch (error) {
+                  console.error("操作失败:", error);
+                  message.error("操作失败");
+                }
+              }}
+            >
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    name="name"
+                    label="存储名称"
+                    rules={[{ required: true, message: "请输入存储名称" }]}
+                  >
+                    <Input placeholder="请输入存储名称" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    name="fstype"
+                    label="文件系统类型"
+                    rules={[{ required: true, message: "请选择文件系统类型" }]}
+                  >
+                    <Select placeholder="请选择文件系统类型">
+                      <Option value="smb">SMB/CIFS</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    name="device"
+                    label="设备路径"
+                    rules={[{ required: true, message: "请输入设备路径" }]}
+                  >
+                    <Input placeholder="例如：//192.168.1.112/krvirt2" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    name="directory"
+                    label="挂载目录"
+                    rules={[{ required: true, message: "请输入挂载目录" }]}
+                  >
+                    <Input placeholder="例如：/mnt/krvirt2" />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Form.Item
+                name="set_options"
+                label="挂载选项"
+                tooltip="可选，设置存储的挂载选项"
+              >
+                <Input placeholder="例如：username=user,password=pass,iocharset=utf8" />
+              </Form.Item>
+              <Form.Item>
+                <Space>
+                  <Button type="primary" htmlType="submit">
+                    {editingStorage ? "更新" : "添加"}
+                  </Button>
+                  <Button onClick={() => setModalVisible(false)}>取消</Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </Modal>
+        </div>
+      </Spin>
+    </ErrorBoundary>
   );
 };
 

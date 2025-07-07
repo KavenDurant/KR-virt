@@ -77,7 +77,7 @@ export interface LoginPolicy {
 }
 
 // 登录策略更新请求
-export interface LoginPolicyUpdateRequest extends LoginPolicy {}
+export type LoginPolicyUpdateRequest = LoginPolicy;
 
 // 登录策略响应
-export interface LoginPolicyResponse extends LoginPolicy {}
+export type LoginPolicyResponse = LoginPolicy;

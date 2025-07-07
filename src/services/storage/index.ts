@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-07 09:42:32
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-07 14:05:20
+ * @LastEditTime: 2025-07-07 16:24:32
  * @FilePath: /KR-virt/src/services/storage/index.ts
  * @Description: 存储管理模块服务实现
  */
@@ -97,33 +97,33 @@ class StorageService {
         {
           id: 1,
           name: "ljx_test",
-          fstype: "smb",
+          fstype: "cifs",
           device: "//192.168.1.112/krvirt2",
           directory: "/mnt/krvirt2",
           options: "username=krvirt,password=-p0-p0-p0",
-          status: "fake",
+          status: "normal",
           total: 10.24,
           used: 5.12,
         },
         {
           id: 2,
           name: "backup_storage",
-          fstype: "smb",
-          device: "//192.168.1.110/backup",
+          fstype: "nfs",
+          device: "192.168.1.110:/backup",
           directory: "/mnt/backup",
-          options: "username=admin,password=secret123",
-          status: "healthy",
+          options: "rw,sync",
+          status: "normal",
           total: 20.48,
           used: 8.96,
         },
         {
           id: 3,
           name: "shared_storage",
-          fstype: "smb",
-          device: "//192.168.1.111/shared",
+          fstype: "iscsi",
+          device: "iqn.2023-01.com.example:storage.shared",
           directory: "/mnt/shared",
-          options: "username=shared,password=pass456",
-          status: "warning",
+          options: "defaults",
+          status: "abnormal",
           total: 15.36,
           used: 12.8,
         },
@@ -193,7 +193,7 @@ class StorageService {
         mockData: {
           id: storageId,
           name: `storage_${storageId}`,
-          fstype: "smb",
+          fstype: "cifs",
           device: "//192.168.1.112/krvirt2",
           directory: "/mnt/krvirt2",
           set_options: "username=krvirt,password=-p0-p0-p0",

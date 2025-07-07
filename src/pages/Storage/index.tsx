@@ -77,15 +77,12 @@ const StorageManagement: React.FC = () => {
   // 获取状态标签和图标
   const getStatusTag = (status: string) => {
     const statusMap = {
-      fake: { color: "default", text: "模拟", icon: <WarningOutlined /> },
-      healthy: {
+      normal: {
         color: "success",
-        text: "健康",
+        text: "正常",
         icon: <CheckCircleOutlined />,
       },
-      warning: { color: "warning", text: "警告", icon: <WarningOutlined /> },
-      error: { color: "error", text: "错误", icon: <WarningOutlined /> },
-      offline: { color: "default", text: "离线", icon: <WarningOutlined /> },
+      abnormal: { color: "error", text: "异常", icon: <WarningOutlined /> },
     };
     const config = statusMap[status as keyof typeof statusMap] || {
       color: "default",
@@ -102,13 +99,9 @@ const StorageManagement: React.FC = () => {
   // 获取存储类型标签
   const getTypeTag = (fstype: string) => {
     const typeMap = {
-      smb: { color: "blue", text: "SMB/CIFS" },
-      ext4: { color: "blue", text: "EXT4" },
-      xfs: { color: "green", text: "XFS" },
+      cifs: { color: "blue", text: "CIFS" },
       nfs: { color: "green", text: "NFS" },
       iscsi: { color: "orange", text: "iSCSI" },
-      ceph: { color: "purple", text: "Ceph" },
-      btrfs: { color: "cyan", text: "Btrfs" },
     };
     const config = typeMap[fstype as keyof typeof typeMap] || {
       color: "default",
@@ -116,6 +109,8 @@ const StorageManagement: React.FC = () => {
     };
     return <Tag color={config.color}>{config.text}</Tag>;
   };
+
+
 
   // 表格列定义
   const columns = [
@@ -156,8 +151,13 @@ const StorageManagement: React.FC = () => {
           <Progress
             percent={record.usagePercent}
             strokeColor={storageService.getUsageColor(record.usagePercent)}
+            trailColor="#f0f0f0"
             size="small"
+            showInfo={true}
             format={(percent) => `${percent}%`}
+            style={{
+              marginBottom: 0,
+            }}
           />
         </div>
       ),
@@ -255,8 +255,8 @@ const StorageManagement: React.FC = () => {
   // 统计数据
   const statistics = {
     total: storages.length,
-    healthy: storages.filter((s) => s.status === "healthy").length,
-    warning: storages.filter((s) => s.status === "warning").length,
+    normal: storages.filter((s) => s.status === "normal").length,
+    abnormal: storages.filter((s) => s.status === "abnormal").length,
     totalCapacity: storages.reduce((sum, s) => sum + s.total, 0),
     usedCapacity: storages.reduce((sum, s) => sum + s.used, 0),
   };
@@ -322,8 +322,8 @@ const StorageManagement: React.FC = () => {
               <Col span={6}>
                 <Card>
                   <Statistic
-                    title="健康存储"
-                    value={statistics.healthy}
+                    title="正常存储"
+                    value={statistics.normal}
                     valueStyle={{ color: "#3f8600" }}
                   />
                 </Card>
@@ -331,8 +331,8 @@ const StorageManagement: React.FC = () => {
               <Col span={6}>
                 <Card>
                   <Statistic
-                    title="告警存储"
-                    value={statistics.warning}
+                    title="异常存储"
+                    value={statistics.abnormal}
                     valueStyle={{ color: "#cf1322" }}
                   />
                 </Card>
@@ -380,7 +380,9 @@ const StorageManagement: React.FC = () => {
                   onChange={setTypeFilter}
                 >
                   <Option value="all">全部类型</Option>
-                  <Option value="smb">SMB/CIFS</Option>
+                  <Option value="cifs">SMB/CIFS</Option>
+                  <Option value="nfs">NFS</Option>
+                  <Option value="iscsi">iSCSI</Option>
                 </Select>
               </Col>
               <Col span={4}>
@@ -391,11 +393,8 @@ const StorageManagement: React.FC = () => {
                   onChange={setStatusFilter}
                 >
                   <Option value="all">全部状态</Option>
-                  <Option value="fake">模拟</Option>
-                  <Option value="healthy">健康</Option>
-                  <Option value="warning">警告</Option>
-                  <Option value="error">错误</Option>
-                  <Option value="offline">离线</Option>
+                  <Option value="normal">正常</Option>
+                  <Option value="abnormal">异常</Option>
                 </Select>
               </Col>
             </Row>
@@ -444,7 +443,7 @@ const StorageManagement: React.FC = () => {
             open={modalVisible}
             onCancel={() => setModalVisible(false)}
             footer={null}
-            width={600}
+            width={800}
           >
             <Form
               form={form}
@@ -499,7 +498,9 @@ const StorageManagement: React.FC = () => {
                     rules={[{ required: true, message: "请选择文件系统类型" }]}
                   >
                     <Select placeholder="请选择文件系统类型">
-                      <Option value="smb">SMB/CIFS</Option>
+                      <Option value="cifs">SMB/CIFS</Option>
+                      <Option value="nfs">NFS</Option>
+                      <Option value="iscsi">iSCSI</Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -527,7 +528,7 @@ const StorageManagement: React.FC = () => {
               <Form.Item
                 name="set_options"
                 label="挂载选项"
-                tooltip="可选，设置存储的挂载选项"
+                rules={[{ required: false, message: "请输入挂载选项" }]}
               >
                 <Input placeholder="例如：username=user,password=pass,iocharset=utf8" />
               </Form.Item>

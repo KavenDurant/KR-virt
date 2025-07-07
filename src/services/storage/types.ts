@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-07 09:41:57
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-07 10:56:23
+ * @LastEditTime: 2025-07-07 17:45:04
  * @FilePath: /KR-virt/src/services/storage/types.ts
  * @Description: 存储管理模块类型定义
  */
@@ -29,7 +29,7 @@ export interface StorageApiInfo {
   device: string;
   directory: string;
   options: string;
-  status: "fake" | "healthy" | "warning" | "error" | "offline";
+  status: "normal" | "abnormal";
   total: number; // 总容量（GB）
   used: number; // 已使用容量（GB）
 }
@@ -42,7 +42,7 @@ export interface StorageInfo {
   device: string;
   directory: string;
   options: string;
-  status: "fake" | "healthy" | "warning" | "error" | "offline";
+  status: "normal" | "abnormal";
   total: number; // 总容量（GB）
   used: number; // 已使用容量（GB）
   // 计算字段
@@ -93,11 +93,8 @@ export interface APIResponse<T = unknown> {
 
 // 存储状态常量
 export const STORAGE_STATUS = {
-  FAKE: "fake",
-  HEALTHY: "healthy",
-  WARNING: "warning",
-  ERROR: "error",
-  OFFLINE: "offline",
+  NORMAL: "normal",
+  ABNORMAL: "abnormal",
 } as const;
 
 export type StorageStatusType =
@@ -105,22 +102,15 @@ export type StorageStatusType =
 
 // 存储状态映射
 export const STORAGE_STATUS_MAP = {
-  fake: "模拟",
-  healthy: "健康",
-  warning: "警告",
-  error: "错误",
-  offline: "离线",
+  normal: "正常",
+  abnormal: "异常",
 } as const;
 
 // 文件系统类型常量
 export const STORAGE_FS_TYPE = {
-  SMB: "smb",
-  EXT4: "ext4",
-  XFS: "xfs",
+  CIFS: "cifs",
   NFS: "nfs",
   ISCSI: "iscsi",
-  CEPH: "ceph",
-  BTRFS: "btrfs",
 } as const;
 
 export type StorageFsType =
@@ -128,14 +118,12 @@ export type StorageFsType =
 
 // 文件系统类型映射
 export const STORAGE_FS_TYPE_MAP = {
-  smb: "SMB/CIFS",
-  ext4: "EXT4",
-  xfs: "XFS",
+  cifs: "CIFS",
   nfs: "NFS",
   iscsi: "iSCSI",
-  ceph: "Ceph",
-  btrfs: "Btrfs",
 } as const;
+
+
 
 // API错误响应
 export interface StorageErrorResponse {

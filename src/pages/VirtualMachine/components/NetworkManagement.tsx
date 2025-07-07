@@ -1,6 +1,6 @@
 /**
  * 虚拟机网络管理组件
- * 
+ *
  * 功能：
  * - 添加普通桥接网卡
  * - 添加NAT网络
@@ -8,7 +8,7 @@
  * - 移除网卡
  */
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Card,
   Button,
@@ -27,8 +27,8 @@ import {
   Row,
   Col,
   Tooltip,
-} from 'antd';
-import type { MessageInstance } from 'antd/es/message/interface';
+} from "antd";
+import type { MessageInstance } from "antd/es/message/interface";
 import {
   DeleteOutlined,
   WifiOutlined,
@@ -36,15 +36,15 @@ import {
   LinkOutlined,
   InfoCircleOutlined,
   WarningOutlined,
-} from '@ant-design/icons';
-import { vmService } from '@/services/vm';
+} from "@ant-design/icons";
+import { vmService } from "@/services/vm";
 import type {
   VMNetworkMountRequest,
   VMNATMountRequest,
   VMVLANMountRequest,
   VMNetworkUnmountRequest,
   NetworkDeviceInfo,
-} from '@/services/vm/types';
+} from "@/services/vm/types";
 
 interface NetworkManagementProps {
   vmName: string;
@@ -84,21 +84,23 @@ const AddBridgeNetworkModal: React.FC<AddNetworkModalProps> = ({
         hostname,
         vm_name: vmName,
         net_name: values.net_name,
-        model: values.model || 'virtio',
+        model: values.model || "virtio",
         mac_addr: values.mac_addr || null,
       };
 
       const response = await vmService.mountNetwork(request);
       if (response.success) {
-        message.success(response.message || '网卡添加任务已发送成功');
+        message.success(response.message || "网卡添加任务已发送成功");
         form.resetFields();
         onOk();
       } else {
-        message.error(response.message || '网卡添加任务发送失败');
+        message.error(response.message || "网卡添加任务发送失败");
       }
     } catch (error) {
-      console.error('添加网卡失败:', error);
-      message.error('网卡添加任务发送失败');
+      console.error("添加网卡失败:", error);
+      message.error(
+        (error as { message?: string }).message || "网卡添加任务发送失败"
+      );
     } finally {
       setLoading(false);
     }
@@ -125,21 +127,17 @@ const AddBridgeNetworkModal: React.FC<AddNetworkModalProps> = ({
         showIcon
         style={{ marginBottom: 16 }}
       />
-      
+
       <Form form={form} layout="vertical">
         <Form.Item
           name="net_name"
           label="网桥名称"
-          rules={[{ required: true, message: '请输入网桥名称' }]}
+          rules={[{ required: true, message: "请输入网桥名称" }]}
         >
           <Input placeholder="例如: vmbr0" />
         </Form.Item>
 
-        <Form.Item
-          name="model"
-          label="网卡型号"
-          initialValue="virtio"
-        >
+        <Form.Item name="model" label="网卡型号" initialValue="virtio">
           <Select>
             <Select.Option value="virtio">virtio (推荐)</Select.Option>
             <Select.Option value="e1000">e1000</Select.Option>
@@ -147,11 +145,7 @@ const AddBridgeNetworkModal: React.FC<AddNetworkModalProps> = ({
           </Select>
         </Form.Item>
 
-        <Form.Item
-          name="mac_addr"
-          label="MAC地址"
-          extra="留空则自动生成"
-        >
+        <Form.Item name="mac_addr" label="MAC地址" extra="留空则自动生成">
           <Input placeholder="例如: 52:54:00:12:34:56" />
         </Form.Item>
       </Form>
@@ -189,15 +183,17 @@ const AddNATNetworkModal: React.FC<AddNetworkModalProps> = ({
 
       const response = await vmService.mountNAT(request);
       if (response.success) {
-        message.success(response.message || 'NAT网络添加任务已发送成功');
+        message.success(response.message || "NAT网络添加任务已发送成功");
         form.resetFields();
         onOk();
       } else {
-        message.error(response.message || 'NAT网络添加任务发送失败');
+        message.error(response.message || "NAT网络添加任务发送失败");
       }
     } catch (error) {
-      console.error('添加NAT网络失败:', error);
-      message.error('NAT网络添加任务发送失败');
+      console.error("添加NAT网络失败:", error);
+      message.error(
+        (error as { message?: string }).message || "NAT网络添加任务发送失败"
+      );
     } finally {
       setLoading(false);
     }
@@ -224,14 +220,14 @@ const AddNATNetworkModal: React.FC<AddNetworkModalProps> = ({
         showIcon
         style={{ marginBottom: 16 }}
       />
-      
+
       <Form form={form} layout="vertical">
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               name="net_name"
               label="网络名称"
-              rules={[{ required: true, message: '请输入网络名称' }]}
+              rules={[{ required: true, message: "请输入网络名称" }]}
             >
               <Input placeholder="例如: nat1" />
             </Form.Item>
@@ -248,7 +244,7 @@ const AddNATNetworkModal: React.FC<AddNetworkModalProps> = ({
             <Form.Item
               name="ip_addr"
               label="网关IP地址"
-              rules={[{ required: true, message: '请输入网关IP地址' }]}
+              rules={[{ required: true, message: "请输入网关IP地址" }]}
               initialValue="192.168.100.1"
             >
               <Input placeholder="192.168.100.1" />
@@ -258,7 +254,7 @@ const AddNATNetworkModal: React.FC<AddNetworkModalProps> = ({
             <Form.Item
               name="netmask"
               label="子网掩码"
-              rules={[{ required: true, message: '请输入子网掩码' }]}
+              rules={[{ required: true, message: "请输入子网掩码" }]}
               initialValue="255.255.255.0"
             >
               <Input placeholder="255.255.255.0" />
@@ -273,7 +269,7 @@ const AddNATNetworkModal: React.FC<AddNetworkModalProps> = ({
             <Form.Item
               name="dhcp_start"
               label="DHCP起始IP"
-              rules={[{ required: true, message: '请输入DHCP起始IP' }]}
+              rules={[{ required: true, message: "请输入DHCP起始IP" }]}
               initialValue="192.168.100.100"
             >
               <Input placeholder="192.168.100.100" />
@@ -283,7 +279,7 @@ const AddNATNetworkModal: React.FC<AddNetworkModalProps> = ({
             <Form.Item
               name="dhcp_end"
               label="DHCP结束IP"
-              rules={[{ required: true, message: '请输入DHCP结束IP' }]}
+              rules={[{ required: true, message: "请输入DHCP结束IP" }]}
               initialValue="192.168.100.200"
             >
               <Input placeholder="192.168.100.200" />
@@ -306,7 +302,7 @@ const AddVLANNetworkModal: React.FC<AddNetworkModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [vlanMode, setVlanMode] = useState<'isolated' | 'bridge'>('isolated');
+  const [vlanMode, setVlanMode] = useState<"isolated" | "bridge">("isolated");
 
   const handleSubmit = async () => {
     try {
@@ -318,25 +314,25 @@ const AddVLANNetworkModal: React.FC<AddNetworkModalProps> = ({
         vm_name: vmName,
         net_name: values.net_name,
         forward: vlanMode,
-        vlan_id: vlanMode === 'bridge' ? values.vlan_id : null,
+        vlan_id: vlanMode === "bridge" ? values.vlan_id : null,
         // 暂时移除 ip_addr 参数，因为后端不支持
         // ip_addr: vlanMode === 'isolated' ? values.ip_addr : null,
-        netmask: vlanMode === 'isolated' ? values.netmask : null,
-        dhcp_start: vlanMode === 'isolated' ? values.dhcp_start : null,
-        dhcp_end: vlanMode === 'isolated' ? values.dhcp_end : null,
+        netmask: vlanMode === "isolated" ? values.netmask : null,
+        dhcp_start: vlanMode === "isolated" ? values.dhcp_start : null,
+        dhcp_end: vlanMode === "isolated" ? values.dhcp_end : null,
       };
 
       const response = await vmService.mountVLAN(request);
       if (response.success) {
-        message.success(response.message || 'VLAN网络添加任务已发送成功');
+        message.success(response.message || "VLAN网络添加任务已发送成功");
         form.resetFields();
         onOk();
       } else {
-        message.error(response.message || 'VLAN网络添加任务发送失败');
+        message.error(response.message || "VLAN网络添加任务发送失败");
       }
     } catch (error) {
-      console.error('添加VLAN网络失败:', error);
-      message.error('VLAN网络添加任务发送失败');
+      console.error("添加VLAN网络失败:", error);
+      message.error("VLAN网络添加任务发送失败");
     } finally {
       setLoading(false);
     }
@@ -363,12 +359,12 @@ const AddVLANNetworkModal: React.FC<AddNetworkModalProps> = ({
         showIcon
         style={{ marginBottom: 16 }}
       />
-      
+
       <Form form={form} layout="vertical">
         <Form.Item
           name="net_name"
           label="VLAN网络名称"
-          rules={[{ required: true, message: '请输入VLAN网络名称' }]}
+          rules={[{ required: true, message: "请输入VLAN网络名称" }]}
         >
           <Input placeholder="例如: vlan1" />
         </Form.Item>
@@ -397,29 +393,29 @@ const AddVLANNetworkModal: React.FC<AddNetworkModalProps> = ({
           </Radio.Group>
         </Form.Item>
 
-        {vlanMode === 'bridge' && (
+        {vlanMode === "bridge" && (
           <Form.Item
             name="vlan_id"
             label="VLAN ID"
-            rules={[{ required: true, message: '请输入VLAN ID' }]}
+            rules={[{ required: true, message: "请输入VLAN ID" }]}
           >
             <InputNumber
               min={1}
               max={4094}
               placeholder="1-4094"
-              style={{ width: '100%' }}
+              style={{ width: "100%" }}
             />
           </Form.Item>
         )}
 
-        {vlanMode === 'isolated' && (
+        {vlanMode === "isolated" && (
           <>
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
                   name="ip_addr"
                   label="网关IP地址"
-                  rules={[{ required: true, message: '请输入网关IP地址' }]}
+                  rules={[{ required: true, message: "请输入网关IP地址" }]}
                   initialValue="192.168.101.1"
                 >
                   <Input placeholder="192.168.101.1" />
@@ -429,7 +425,7 @@ const AddVLANNetworkModal: React.FC<AddNetworkModalProps> = ({
                 <Form.Item
                   name="netmask"
                   label="子网掩码"
-                  rules={[{ required: true, message: '请输入子网掩码' }]}
+                  rules={[{ required: true, message: "请输入子网掩码" }]}
                   initialValue="255.255.255.0"
                 >
                   <Input placeholder="255.255.255.0" />
@@ -444,7 +440,7 @@ const AddVLANNetworkModal: React.FC<AddNetworkModalProps> = ({
                 <Form.Item
                   name="dhcp_start"
                   label="DHCP起始IP"
-                  rules={[{ required: true, message: '请输入DHCP起始IP' }]}
+                  rules={[{ required: true, message: "请输入DHCP起始IP" }]}
                   initialValue="192.168.101.100"
                 >
                   <Input placeholder="192.168.101.100" />
@@ -454,7 +450,7 @@ const AddVLANNetworkModal: React.FC<AddNetworkModalProps> = ({
                 <Form.Item
                   name="dhcp_end"
                   label="DHCP结束IP"
-                  rules={[{ required: true, message: '请输入DHCP结束IP' }]}
+                  rules={[{ required: true, message: "请输入DHCP结束IP" }]}
                   initialValue="192.168.101.200"
                 >
                   <Input placeholder="192.168.101.200" />
@@ -492,76 +488,77 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
 
       const response = await vmService.unmountNetwork(request);
       if (response.success) {
-        message.success(response.message || '网卡移除任务已发送成功');
+        message.success(response.message || "网卡移除任务已发送成功");
         onNetworkChange();
       } else {
-        message.error(response.message || '网卡移除任务发送失败');
+        message.error(response.message || "网卡移除任务发送失败");
       }
     } catch (error) {
-      console.error('移除网卡失败:', error);
-      message.error('网卡移除任务发送失败');
+      console.error("移除网卡失败:", error);
+      message.error("网卡移除任务发送失败");
     }
   };
 
   const columns = [
     {
-      title: '设备名',
-      dataIndex: 'name',
-      key: 'name',
+      title: "设备名",
+      dataIndex: "name",
+      key: "name",
     },
     {
-      title: '类型',
-      dataIndex: 'type',
-      key: 'type',
+      title: "类型",
+      dataIndex: "type",
+      key: "type",
       render: (type: string) => {
         const typeConfig = {
-          bridge: { color: 'blue', text: '桥接' },
-          nat: { color: 'green', text: 'NAT' },
-          vlan: { color: 'orange', text: 'VLAN' },
+          bridge: { color: "blue", text: "桥接" },
+          nat: { color: "green", text: "NAT" },
+          vlan: { color: "orange", text: "VLAN" },
         };
-        const config = typeConfig[type as keyof typeof typeConfig] || { color: 'default', text: type };
+        const config = typeConfig[type as keyof typeof typeConfig] || {
+          color: "default",
+          text: type,
+        };
         return <Tag color={config.color}>{config.text}</Tag>;
       },
     },
     {
-      title: '型号',
-      dataIndex: 'model',
-      key: 'model',
+      title: "型号",
+      dataIndex: "model",
+      key: "model",
     },
     {
-      title: '网桥',
-      dataIndex: 'bridge',
-      key: 'bridge',
+      title: "网桥",
+      dataIndex: "bridge",
+      key: "bridge",
       render: (bridge: string) => <Tag color="green">{bridge}</Tag>,
     },
     {
-      title: 'MAC地址',
-      dataIndex: 'mac',
-      key: 'mac',
-      render: (mac: string) => (
-        <code style={{ fontSize: '12px' }}>{mac}</code>
-      ),
+      title: "MAC地址",
+      dataIndex: "mac",
+      key: "mac",
+      render: (mac: string) => <code style={{ fontSize: "12px" }}>{mac}</code>,
     },
     {
-      title: 'VLAN ID',
-      dataIndex: 'vlan_id',
-      key: 'vlan_id',
-      render: (vlanId?: number) => 
-        vlanId ? <Tag color="purple">{vlanId}</Tag> : '-',
+      title: "VLAN ID",
+      dataIndex: "vlan_id",
+      key: "vlan_id",
+      render: (vlanId?: number) =>
+        vlanId ? <Tag color="purple">{vlanId}</Tag> : "-",
     },
     {
-      title: '状态',
-      dataIndex: 'enabled',
-      key: 'enabled',
+      title: "状态",
+      dataIndex: "enabled",
+      key: "enabled",
       render: (enabled: boolean) => (
-        <Tag color={enabled ? 'success' : 'default'}>
-          {enabled ? '启用' : '禁用'}
+        <Tag color={enabled ? "success" : "default"}>
+          {enabled ? "启用" : "禁用"}
         </Tag>
       ),
     },
     {
-      title: '操作',
-      key: 'action',
+      title: "操作",
+      key: "action",
       render: (_: unknown, record: NetworkDeviceInfo) => (
         <Popconfirm
           title="确定要移除这个网卡吗？"
@@ -569,7 +566,7 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
           onConfirm={() => handleRemoveNetwork(record)}
           okText="确定"
           cancelText="取消"
-          icon={<WarningOutlined style={{ color: 'red' }} />}
+          icon={<WarningOutlined style={{ color: "red" }} />}
         >
           <Button size="small" danger icon={<DeleteOutlined />}>
             移除
@@ -660,4 +657,4 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
   );
 };
 
-export default NetworkManagement; 
+export default NetworkManagement;

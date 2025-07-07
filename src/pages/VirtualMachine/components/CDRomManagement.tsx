@@ -88,7 +88,9 @@ const MountCDRomModal: React.FC<MountCDRomModalProps> = ({
       }
     } catch (error) {
       console.error("挂载ISO失败:", error);
-      message.error("ISO挂载任务发送失败");
+      message.error(
+        (error as { message?: string }).message || "ISO挂载任务发送失败"
+      );
     } finally {
       setLoading(false);
     }
@@ -128,8 +130,6 @@ const MountCDRomModal: React.FC<MountCDRomModalProps> = ({
             prefix={<FileImageOutlined />}
           />
         </Form.Item>
-
-
       </Form>
 
       <Alert
@@ -172,7 +172,9 @@ const CDRomManagement: React.FC<CDRomManagementProps> = ({
       }
     } catch (error) {
       console.error("卸载ISO失败:", error);
-      message.error("ISO卸载任务发送失败");
+      message.error(
+        (error as { message?: string }).message || "ISO卸载任务发送失败"
+      );
     }
   };
 
@@ -223,9 +225,12 @@ const CDRomManagement: React.FC<CDRomManagementProps> = ({
       title: "格式",
       dataIndex: "format",
       key: "format",
-      render: (format?: string) => (
-        format ? <Tag color="cyan">{format.toUpperCase()}</Tag> : <Text type="secondary">-</Text>
-      ),
+      render: (format?: string) =>
+        format ? (
+          <Tag color="cyan">{format.toUpperCase()}</Tag>
+        ) : (
+          <Text type="secondary">-</Text>
+        ),
     },
     {
       title: "操作",
@@ -250,9 +255,9 @@ const CDRomManagement: React.FC<CDRomManagementProps> = ({
               cancelText="取消"
               icon={<WarningOutlined style={{ color: "red" }} />}
             >
-                             <Button size="small" danger icon={<ExportOutlined />}>
-                 卸载ISO
-               </Button>
+              <Button size="small" danger icon={<ExportOutlined />}>
+                卸载ISO
+              </Button>
             </Popconfirm>
           )}
         </Space>

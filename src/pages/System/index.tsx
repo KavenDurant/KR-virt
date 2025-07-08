@@ -9,6 +9,7 @@ import {
   FileTextOutlined,
   ClockCircleOutlined,
   InfoCircleOutlined,
+  HddOutlined,
 } from "@ant-design/icons";
 
 import { useTheme } from "../../hooks/useTheme";
@@ -29,6 +30,8 @@ import {
   LogManagement,
   AboutSystem,
 } from "./components";
+// 使用动态导入来避免verbatimModuleSyntax问题
+const StoragePolicy = React.lazy(() => import("./components/StoragePolicy"));
 
 // Layout组件已移除，不再需要Content
 
@@ -232,6 +235,11 @@ const SystemSettings: React.FC = () => {
         case "timeSync":
           if (!loadedTabs.has("timeSync")) {
             setLoadedTabs((prev) => new Set(prev).add("timeSync"));
+          }
+          break;
+        case "storagePolicy":
+          if (!loadedTabs.has("storagePolicy")) {
+            setLoadedTabs((prev) => new Set(prev).add("storagePolicy"));
           }
           break;
         default:
@@ -523,6 +531,33 @@ const SystemSettings: React.FC = () => {
         );
       case "timeSync":
         return <TimeSyncComponent />;
+      case "storagePolicy":
+        return (
+          <React.Suspense
+            fallback={
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  flexDirection: "column",
+                  gap: "16px",
+                  padding: "50px",
+                  minHeight: "200px",
+                }}
+              >
+                <Spin size="large" />
+                <div
+                  style={{ color: themeConfig.token.colorTextBase, opacity: 0.65 }}
+                >
+                  加载存储策略组件中...
+                </div>
+              </div>
+            }
+          >
+            <StoragePolicy />
+          </React.Suspense>
+        );
       case "about":
         return (
           <AboutSystem
@@ -689,6 +724,20 @@ const SystemSettings: React.FC = () => {
                   children: (
                     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
                       {renderTabContent("timeSync")}
+                    </div>
+                  ),
+                },
+                {
+                  key: "storagePolicy",
+                  label: (
+                    <Space>
+                      <HddOutlined />
+                      <span>存储策略</span>
+                    </Space>
+                  ),
+                  children: (
+                    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                      {renderTabContent("storagePolicy")}
                     </div>
                   ),
                 },

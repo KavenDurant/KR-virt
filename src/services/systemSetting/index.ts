@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-06-18 18:51:32
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-06-19 16:22:33
+ * @LastEditTime: 2025-07-08 18:21:56
  * @FilePath: /KR-virt/src/services/systemSetting/index.ts
  * @Description: 系统设置服务 - 参考cluster集群服务的统一架构
  */
@@ -18,6 +18,9 @@ import type {
   LicenseUploadResponse,
   LoginPolicyUpdateRequest,
   LoginPolicyResponse,
+  StoragePolicyResponse,
+  StoragePolicyUpdateRequest,
+  StoragePolicySetResponse,
 } from "./types";
 
 // 配置区域
@@ -285,6 +288,64 @@ class SystemSettingService {
     return api.put<void>("/system_setting/login_policy", policy, {
       defaultSuccessMessage: "登录策略更新成功",
       defaultErrorMessage: "登录策略更新失败，请稍后重试",
+    });
+  }
+
+  // ===== 存储策略管理相关方法 =====
+
+  /**
+   * 获取存储策略配置
+   */
+  async getStoragePolicy(): Promise<StandardResponse<StoragePolicyResponse>> {
+    if (USE_MOCK_DATA) {
+      const mockData: StoragePolicyResponse = {
+        system_storage_id: 1,
+        storage_threshold: 80,
+        system_storage_threshold: 90,
+      };
+
+      return mockApi.get(
+        "/system_setting/storage_policy",
+        {},
+        {
+          useMock: true,
+          mockData,
+          defaultSuccessMessage: "获取存储策略成功",
+        },
+      );
+    }
+
+    return api.get<StoragePolicyResponse>(
+      "/system_setting/storage_policy",
+      {},
+      {
+        defaultSuccessMessage: "获取存储策略成功",
+        defaultErrorMessage: "获取存储策略失败，请稍后重试",
+      },
+    );
+  }
+
+  /**
+   * 设置存储策略配置
+   */
+  async setStoragePolicy(
+    policy: StoragePolicyUpdateRequest,
+  ): Promise<StandardResponse<StoragePolicySetResponse>> {
+    if (USE_MOCK_DATA) {
+      const mockData: StoragePolicySetResponse = {
+        message: "存储策略设置成功",
+      };
+
+      return mockApi.put("/system_setting/storage_policy", policy, {
+        useMock: true,
+        mockData,
+        defaultSuccessMessage: "存储策略设置成功",
+      });
+    }
+
+    return api.put<StoragePolicySetResponse>("/system_setting/storage_policy", policy, {
+      defaultSuccessMessage: "存储策略设置成功",
+      defaultErrorMessage: "存储策略设置失败，请稍后重试",
     });
   }
 

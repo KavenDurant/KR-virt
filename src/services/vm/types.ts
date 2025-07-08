@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 14:04:19
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-04 17:13:25
+ * @LastEditTime: 2025-07-08 11:08:22
  * @FilePath: /KR-virt/src/services/vm/types.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -219,8 +219,7 @@ export interface VMVLANMountRequest {
   net_name: string;
   forward: 'isolated' | 'bridge';
   vlan_id?: number | null;
-  // 注意：后端暂不支持 ip_addr 参数
-  // ip_addr?: string | null;
+  ip_addr?: string | null;
   netmask?: string | null;
   dhcp_start?: string | null;
   dhcp_end?: string | null;

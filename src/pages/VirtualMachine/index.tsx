@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 13:47:21
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-04 17:18:03
+ * @LastEditTime: 2025-07-08 14:51:57
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -700,16 +700,13 @@ const VirtualMachineManagement: React.FC = () => {
       ...values,
       iso_file_path: values.iso_file_path?.trim() ? values.iso_file_path : null,
     };
-    console.log("创建虚拟机参数:", payload);
     setLoading(true);
 
     try {
-      // 调用创建虚拟机API
       const response = await vmService.createVM(payload);
 
       if (response.success) {
         message.success(response.message || "虚拟机创建成功");
-        // 创建成功后，重新加载虚拟机列表
         await loadVmData();
         setCreateVMModal(false);
       } else {
@@ -1204,21 +1201,29 @@ const VirtualMachineManagement: React.FC = () => {
         label: "虚拟机列表",
         children: (
           <div>
-            <Card title="该主机上的虚拟机" size="small">
+            <Card 
+              title="该主机上的虚拟机" 
+              size="default"
+              extra={
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setCreateVMModal(true)}
+                >
+                  创建虚拟机
+                </Button>
+              }
+            >
               <Table
                 size="small"
-                dataSource={hostVMs as SidebarVM[]}
+                dataSource={vmList}
                 columns={[
                   {
                     title: "虚拟机名称",
-                    dataIndex: "name",
-                    key: "name",
-                    render: (name: string, record: SidebarVM) => (
+                    key: "vm_name",
+                    render: (_, record: VirtualMachine) => (
                       <div>
-                        <div style={{ fontWeight: "bold" }}>{name}</div>
-                        <div style={{ fontSize: "12px", color: "#666" }}>
-                          ID: {record.vmid}
-                        </div>
+                        <div style={{ fontWeight: "bold" }}>{record.vm_name}</div>
                       </div>
                     ),
                   },
@@ -1226,47 +1231,113 @@ const VirtualMachineManagement: React.FC = () => {
                     title: "状态",
                     dataIndex: "status",
                     key: "status",
-                    render: (status: string) => (
-                      <Tag
-                        color={
-                          status === "running"
-                            ? "success"
-                            : status === "stopped"
-                            ? "default"
-                            : "error"
+                    render: (status: string) => {
+                      const getStatusConfig = (status: string) => {
+                        switch (status) {
+                          case "running":
+                            return { color: "success", text: "运行中" };
+                          case "stopped":
+                          case "shutoff":
+                            return { color: "default", text: "已停止" };
+                          case "paused":
+                          case "suspended":
+                            return { color: "warning", text: "已挂起" };
+                          case "configuring":
+                            return { color: "processing", text: "配置中" };
+                          case "error":
+                            return { color: "error", text: "错误" };
+                          default:
+                            return { color: "default", text: "未知" };
                         }
-                      >
-                        {status === "running"
-                          ? "运行中"
-                          : status === "stopped"
-                          ? "已停止"
-                          : status === "paused"
-                          ? "已挂起"
-                          : status === "shutoff"
-                          ? "已关闭"
-                          : status}
-                      </Tag>
-                    ),
+                      };
+
+                      const config = getStatusConfig(status);
+                      return (
+                        <Tag color={config.color}>
+                          {config.text}
+                        </Tag>
+                      );
+                    },
                   },
                   {
                     title: "配置",
                     key: "config",
-                    render: (_, record: SidebarVM) => (
-                      <div style={{ fontSize: "12px" }}>
-                        <div>CPU: {record.cpu}核</div>
-                        <div>内存: {record.memory}GB</div>
-                        <div>磁盘: {record.diskSize}GB</div>
-                      </div>
+                    render: (_, record: VirtualMachine) => {
+                      // 从config对象中获取配置信息，如果没有则从根级字段获取
+                      const cpuCount = record.config?.cpu_num || record.cpu_count || 0;
+                      const memoryGB = record.config?.memory_gb || record.memory_gb || 0;
+                      const diskCount = record.config?.disk?.length || record.disk_info?.length || 0;
+                      return (
+                        <div style={{ fontSize: "12px",display: "flex",alignItems: "center", gap: "10px"}}>
+                          <div>CPU: {cpuCount}核</div>
+                          <div>内存: {memoryGB}GB</div>
+                          <div>磁盘: {diskCount}个</div>
+                        </div>
+                      );
+                    },
+                  },
+                  {
+                    title: "配置状态",
+                    key: "config_status",
+                    render: (_, record: VirtualMachine) => (
+                      <Tag color={record.config_status ? "success" : "warning"}>
+                        {record.config_status ? "已配置" : "配置中"}
+                      </Tag>
                     ),
                   },
                   {
-                    title: "运行时间",
-                    dataIndex: "uptime",
-                    key: "uptime",
-                    render: (uptime: string) => uptime || "未运行",
+                    title: "操作",
+                    key: "actions",
+                    render: (_, record: VirtualMachine) => (
+                      <Space size="small">
+                        <Tooltip title="查看详情">
+                          <Button
+                            size="small"
+                            icon={<EyeOutlined />}
+                            onClick={() => showVMDetail(record)}
+                          />
+                        </Tooltip>
+                        <Tooltip title="启动">
+                          <Button
+                            type="primary"
+                            size="small"
+                            icon={<PlayCircleOutlined />}
+                            onClick={() => handleVMAction("start", record)}
+                          />
+                        </Tooltip>
+                        <Tooltip title="停止">
+                          <Button
+                            danger
+                            size="small"
+                            icon={<PoweroffOutlined />}
+                            onClick={() => handleVMAction("stop", record)}
+                          />
+                        </Tooltip>
+                      </Space>
+                    ),
                   },
                 ]}
-                pagination={false}
+                pagination={{
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                }}
+                locale={{
+                  emptyText: (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description="该物理主机上暂无虚拟机"
+                    >
+                      <Button
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={() => setCreateVMModal(true)}
+                      >
+                        创建虚拟机
+                      </Button>
+                    </Empty>
+                  ),
+                }}
               />
             </Card>
           </div>
@@ -1288,6 +1359,8 @@ const VirtualMachineManagement: React.FC = () => {
 
     return (
       <div>
+        {/* Modal contextHolder 必须在这里渲染，否则 modal.confirm 不会工作 */}
+        {contextHolder}
         <Card
           title={
             <Space>
@@ -1322,6 +1395,15 @@ const VirtualMachineManagement: React.FC = () => {
         >
           <Tabs items={hostDetailTabs} />
         </Card>
+        
+        {/* 创建虚拟机模态框 - 确保在物理主机详情页面也能使用 */}
+        <CreateVMModal
+          visible={createVMModal}
+          onCancel={() => setCreateVMModal(false)}
+          onFinish={handleCreateVM}
+          loading={loading}
+          defaultHostname={sidebarSelectedHost ? String((sidebarSelectedHost as unknown as Record<string, unknown>).name || '') : undefined} // 传递选中的物理主机名
+        />
       </div>
     );
   }
@@ -1419,13 +1501,13 @@ const VirtualMachineManagement: React.FC = () => {
               <Descriptions.Item label="磁盘数量">
                 {selectedVMData.config?.disk?.length ||
                   selectedVMData.disk_info?.length ||
-                  0}
+                  "N/A"}
                 个
               </Descriptions.Item>
               <Descriptions.Item label="网络接口数量">
                 {selectedVMData.config?.net?.length ||
                   selectedVMData.network_info?.length ||
-                  0}
+                  "N/A"}
                 个
               </Descriptions.Item>
               <Descriptions.Item label="主MAC地址">
@@ -3129,6 +3211,7 @@ const VirtualMachineManagement: React.FC = () => {
           onCancel={() => setCreateVMModal(false)}
           onFinish={handleCreateVM}
           loading={loading}
+          defaultHostname={sidebarSelectedHost ? String((sidebarSelectedHost as Record<string, unknown>).name || '') : undefined} // 传递选中的物理主机名
         />
       </div>
     </Spin>

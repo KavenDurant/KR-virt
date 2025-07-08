@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Modal,
   Form,
@@ -32,6 +32,7 @@ interface CreateVMModalProps {
   onCancel: () => void;
   onFinish: (values: CreateVMFormValues) => void;
   loading?: boolean;
+  defaultHostname?: string; // 添加可选的默认物理主机名
 }
 
 const CreateVMModal: React.FC<CreateVMModalProps> = ({
@@ -39,6 +40,7 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
   onCancel,
   onFinish,
   loading = false,
+  defaultHostname,
 }) => {
   const [form] = Form.useForm<CreateVMFormValues>();
 
@@ -55,6 +57,15 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
     form.resetFields();
     onCancel();
   };
+
+  // 监听visible和defaultHostname的变化，更新表单的hostname字段
+  useEffect(() => {
+    if (visible && defaultHostname) {
+      form.setFieldsValue({
+        hostname: defaultHostname,
+      });
+    }
+  }, [visible, defaultHostname, form]);
 
   return (
     <Modal
@@ -79,6 +90,7 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
           cpu_num: 2,
           disk_size_gb: 50,
           disk_dir: "/var/lib/libvirt/images",
+          hostname: defaultHostname, // 预填物理主机名
         }}
       >
         <Card title="基本配置" size="small" style={{ marginBottom: 16 }}>

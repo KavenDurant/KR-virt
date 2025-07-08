@@ -315,8 +315,7 @@ const AddVLANNetworkModal: React.FC<AddNetworkModalProps> = ({
         net_name: values.net_name,
         forward: vlanMode,
         vlan_id: vlanMode === "bridge" ? values.vlan_id : null,
-        // 暂时移除 ip_addr 参数，因为后端不支持
-        // ip_addr: vlanMode === 'isolated' ? values.ip_addr : null,
+        ip_addr: vlanMode === 'isolated' ? values.ip_addr : null,
         netmask: vlanMode === "isolated" ? values.netmask : null,
         dhcp_start: vlanMode === "isolated" ? values.dhcp_start : null,
         dhcp_end: vlanMode === "isolated" ? values.dhcp_end : null,
@@ -583,21 +582,21 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
         <Space>
           <Button
             type="primary"
-            size="small"
+            size="default"
             icon={<WifiOutlined />}
             onClick={() => setBridgeModalVisible(true)}
           >
             添加桥接网卡
           </Button>
           <Button
-            size="small"
+            size="default"
             icon={<GlobalOutlined />}
             onClick={() => setNatModalVisible(true)}
           >
             添加NAT网络
           </Button>
           <Button
-            size="small"
+            size="default"
             icon={<LinkOutlined />}
             onClick={() => setVlanModalVisible(true)}
           >

@@ -81,3 +81,23 @@ export type LoginPolicyUpdateRequest = LoginPolicy;
 
 // 登录策略响应
 export type LoginPolicyResponse = LoginPolicy;
+
+// ===== 存储策略相关类型 =====
+
+// 存储策略配置
+export interface StoragePolicy {
+  system_storage_id: number; // 系统存储ID
+  storage_threshold: number; // 存储阈值（百分比，0-100）
+  system_storage_threshold: number; // 系统存储阈值（百分比，0-100）
+}
+
+// 存储策略响应
+export type StoragePolicyResponse = StoragePolicy;
+
+// 存储策略更新请求
+export type StoragePolicyUpdateRequest = StoragePolicy;
+
+// 存储策略设置响应（包含消息）
+export interface StoragePolicySetResponse {
+  message?: string; // 后端返回的消息
+}

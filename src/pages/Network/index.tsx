@@ -16,14 +16,13 @@ import {
   Statistic,
   Row,
   Col,
-  Progress,
   Divider,
   Typography,
   Descriptions,
   InputNumber,
-  Switch,
   Drawer,
   Spin,
+  App,
 } from "antd";
 import {
   PlusOutlined,
@@ -40,6 +39,7 @@ import {
   RocketOutlined,
   ShareAltOutlined,
 } from "@ant-design/icons";
+// import NetworkConfigManagement from "./components/NetworkConfig"; // 暂时注释未使用的导入
 import ReactFlow, {
   addEdge,
   Background,
@@ -51,116 +51,29 @@ import ReactFlow, {
 } from "reactflow";
 import type { Node, Edge, Connection } from "reactflow";
 import "reactflow/dist/style.css";
+// 导入网络服务
+import {
+  getNetworkConfig,
+  getNodeNetworks,
+  createNetwork as createNetworkAPI,
+  deleteNetwork as deleteNetworkAPI,
+} from "@/services/network";
+import type {
+  Network,
+  IPDetail,
+  Route,
+  SecurityRule,
+  CreateNetworkRequest,
+  NodeNetwork,
+} from "@/services/network/types";
+// 导入集群服务
+import { clusterInitService } from "@/services/cluster";
+import type { ClusterTreeNode } from "@/services/cluster/types";
 
 const { Content } = Layout;
-const { TabPane } = Tabs;
 const { Text } = Typography;
 
-// 模拟网络数据
-const mockNetworks = [
-  {
-    id: "1",
-    name: "生产网络-VLAN100",
-    type: "VLAN",
-    vlanId: 100,
-    cidr: "10.10.100.0/24",
-    gateway: "10.10.100.1",
-    dns: ["8.8.8.8", "114.114.114.114"],
-    dhcp: true,
-    status: "active",
-    description: "生产环境主要业务网络",
-    usedIps: 168,
-    totalIps: 254,
-    cluster: "生产环境集群",
-    clusterId: "1",
-    tags: ["生产", "业务"],
-  },
-  {
-    id: "2",
-    name: "管理网络-VLAN200",
-    type: "VLAN",
-    vlanId: 200,
-    cidr: "10.10.200.0/24",
-    gateway: "10.10.200.1",
-    dns: ["8.8.8.8", "114.114.114.114"],
-    dhcp: false,
-    status: "active",
-    description: "管理网络",
-    usedIps: 38,
-    totalIps: 254,
-    cluster: "生产环境集群",
-    clusterId: "1",
-    tags: ["管理"],
-  },
-  {
-    id: "3",
-    name: "存储网络-VLAN300",
-    type: "VLAN",
-    vlanId: 300,
-    cidr: "10.10.30.0/24",
-    gateway: "10.10.30.1",
-    dns: ["8.8.8.8", "114.114.114.114"],
-    dhcp: false,
-    status: "active",
-    description: "存储网络",
-    usedIps: 15,
-    totalIps: 254,
-    cluster: "生产环境集群",
-    clusterId: "1",
-    tags: ["存储", "iSCSI"],
-  },
-  {
-    id: "4",
-    name: "测试网络-VLAN400",
-    type: "VLAN",
-    vlanId: 400,
-    cidr: "10.20.100.0/24",
-    gateway: "10.20.100.1",
-    dns: ["8.8.8.8", "114.114.114.114"],
-    dhcp: true,
-    status: "active",
-    description: "测试环境网络",
-    usedIps: 56,
-    totalIps: 254,
-    cluster: "测试环境集群",
-    clusterId: "2",
-    tags: ["测试", "开发"],
-  },
-  {
-    id: "5",
-    name: "DMZ网络-VLAN500",
-    type: "VLAN",
-    vlanId: 500,
-    cidr: "192.168.10.0/24",
-    gateway: "192.168.10.1",
-    dns: ["8.8.8.8", "114.114.114.114"],
-    dhcp: true,
-    status: "active",
-    description: "DMZ区域网络",
-    usedIps: 28,
-    totalIps: 254,
-    cluster: "DMZ集群",
-    clusterId: "3",
-    tags: ["DMZ", "安全"],
-  },
-  {
-    id: "6",
-    name: "公网NAT池",
-    type: "Public",
-    vlanId: null,
-    cidr: "203.0.113.0/28",
-    gateway: "203.0.113.1",
-    dns: ["8.8.8.8", "114.114.114.114"],
-    dhcp: false,
-    status: "active",
-    description: "公网IP地址池",
-    usedIps: 12,
-    totalIps: 14,
-    cluster: null,
-    clusterId: null,
-    tags: ["公网", "NAT"],
-  },
-];
+// 现有页面保持原有功能
 
 // 模拟IP详情数据
 const mockIpDetails = [
@@ -251,57 +164,7 @@ const mockSecurityRules: SecurityRule[] = [
   },
 ];
 
-// 定义网络接口类型
-interface Network {
-  id: string;
-  name: string;
-  type: string;
-  vlanId: number | null;
-  cidr: string;
-  gateway: string;
-  dns: string[];
-  dhcp: boolean;
-  status: string;
-  description: string;
-  usedIps: number;
-  totalIps: number;
-  cluster: string | null;
-  clusterId: string | null;
-  tags: string[];
-}
-
-// 定义IP详情接口类型
-interface IPDetail {
-  ip: string;
-  networkId: string;
-  status: string;
-  macAddress: string | null;
-  hostname: string | null;
-  vmId: string | null;
-  description: string;
-}
-
-// 定义路由接口类型
-interface Route {
-  id: string;
-  destination: string;
-  nextHop: string;
-  interface: string;
-  metric: number;
-  type: string;
-}
-
-// 定义安全组规则类型
-interface SecurityRule {
-  id: string;
-  name: string;
-  direction: string;
-  protocol: string;
-  portRange: string;
-  source: string;
-  action: string;
-  priority: number;
-}
+// 类型定义已移动到 @/services/network/types
 
 // 获取状态标签
 const getStatusTag = (status: string) => {
@@ -340,16 +203,124 @@ const getStatusTag = (status: string) => {
 };
 
 const NetworkManagement: React.FC = () => {
+  const { message } = App.useApp();
   const [activeTab, setActiveTab] = useState("overview");
 
-  const [networkList, setNetworkList] = useState<Network[]>(mockNetworks);
+  const [networkList, setNetworkList] = useState<Network[]>([]);
+  const [nodeNetworks, setNodeNetworks] = useState<NodeNetwork[]>([]);
+  const [clusterNodes, setClusterNodes] = useState<ClusterTreeNode[]>([]);
   const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
+  const [selectedNode, setSelectedNode] = useState<string>("");
   const [networkModalVisible, setNetworkModalVisible] = useState(false);
   const [networkForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false); // 新增modal loading状态
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [ipDetailsVisible, setIpDetailsVisible] = useState(false);
   const [selectedNetworkIps, setSelectedNetworkIps] = useState<IPDetail[]>([]);
+  const [currentHostname] = useState("node215"); // 当前主机名，可以从全局状态获取
+
+  // 适配网络数据格式
+  const adaptNetworkDataForUI = (config: Network): Network => ({
+    net_name: config.net_name,
+    hostname: config.hostname,
+    mac: config.mac,
+    driver: config.driver,
+    net_type: config.net_type,
+    bridge: config.bridge,
+    vlan_id: config.vlan_id,
+    ip_addr: config.ip_addr,
+    netmask: config.netmask,
+    dhcp_start: config.dhcp_start,
+    dhcp_end: config.dhcp_end,
+  });
+
+  // 加载集群节点列表
+  const loadClusterNodes = useCallback(async () => {
+    try {
+      const response = await clusterInitService.getClusterTree();
+      if (response.success && Array.isArray(response.data?.nodes)) {
+        setClusterNodes(response.data.nodes);
+        // 如果没有选中节点，默认选择第一个节点
+        if (!selectedNode && response.data.nodes.length > 0) {
+          setSelectedNode(response.data.nodes[0].name);
+        }
+      } else {
+        setClusterNodes([]);
+      }
+    } catch (error) {
+      console.error("获取集群节点列表失败:", error);
+      setClusterNodes([]);
+    }
+  }, [selectedNode]);
+
+  // 加载节点网络列表
+  const loadNodeNetworks = useCallback(async (hostname?: string) => {
+    if (!hostname) {
+      setNodeNetworks([]);
+      return;
+    }
+
+    try {
+      const response = await getNodeNetworks(hostname);
+      if (response.success && Array.isArray(response.data?.networks)) {
+        setNodeNetworks(response.data.networks);
+      } else {
+        setNodeNetworks([]);
+      }
+    } catch (error) {
+      console.error("获取节点网络列表失败:", error);
+      setNodeNetworks([]);
+    }
+  }, []);
+
+  // 处理节点选择变化
+  const handleNodeChange = useCallback(
+    async (nodeName: string) => {
+      setSelectedNode(nodeName);
+      setNodeNetworks([]); // 清空当前网络列表
+      await loadNodeNetworks(nodeName);
+    },
+    [loadNodeNetworks]
+  );
+
+  // 加载网络配置列表
+  const loadNetworkConfig = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await getNetworkConfig();
+      if (response.success && Array.isArray(response.data?.networks)) {
+        const adaptedNetworks = response.data.networks.map(
+          adaptNetworkDataForUI
+        );
+        setNetworkList(adaptedNetworks);
+      } else {
+        setNetworkList([]);
+        message.error(response.message || "获取网络配置失败");
+      }
+    } catch (error) {
+      console.error("获取网络配置失败:", error);
+      setNetworkList([]);
+      message.error("获取网络配置失败");
+    } finally {
+      setLoading(false);
+    }
+  }, [message]);
+
+  // 初始化加载数据
+  useEffect(() => {
+    const initializeData = async () => {
+      await Promise.all([loadNetworkConfig(), loadClusterNodes()]);
+    };
+    initializeData();
+  }, [loadNetworkConfig, loadClusterNodes]);
+
+  // 当选中节点变化时，加载对应的网络列表
+  useEffect(() => {
+    if (selectedNode) {
+      loadNodeNetworks(selectedNode);
+    }
+  }, [selectedNode, loadNodeNetworks]);
 
   // 定义拓扑图节点数据
   const initialNodes: Node[] = [
@@ -699,44 +670,73 @@ const NetworkManagement: React.FC = () => {
     [setEdges]
   );
 
-  // 加载网络数据
-  useEffect(() => {
-    // 模拟API请求延迟
-    setLoading(true);
-    setTimeout(() => {
-      setNetworkList(mockNetworks);
-      setLoading(false);
-    }, 500);
-  }, []);
-
   // 处理创建/编辑网络
-  const handleNetworkModalOk = () => {
-    networkForm.validateFields().then((values: Partial<Network>) => {
-      setNetworkModalVisible(false);
+  const handleNetworkModalOk = async () => {
+    try {
+      setModalLoading(true); // 开始loading
+      const values = await networkForm.validateFields();
 
       // 如果是编辑现有网络
       if (selectedNetwork) {
+        // 编辑网络逻辑（这里应该调用API，当前是模拟）
         const updatedNetworks = networkList.map((network) =>
-          network.id === selectedNetwork.id
+          network.net_name === selectedNetwork.net_name &&
+          network.hostname === selectedNetwork.hostname
             ? ({ ...network, ...values } as Network)
             : network
         );
         setNetworkList(updatedNetworks);
+        message.success("网络编辑成功");
+        // 编辑成功后关闭对话框
+        setNetworkModalVisible(false);
+        networkForm.resetFields();
+        setSelectedNetwork(null);
       } else {
         // 如果是新建网络
-        const newNetwork: Network = {
-          ...(values as Network),
-          id: String(networkList.length + 1),
-          status: "active",
-          usedIps: 0,
-          totalIps: calculateTotalIPs(values.cidr || ""),
+        const createParams: CreateNetworkRequest = {
+          hostname: values.hostname || selectedNode || currentHostname,
+          net_name: values.name,
+          forward: values.forward,
+          ip_addr: values.ip_addr,
+          netmask: values.netmask,
+          dhcp_start: values.dhcp_start,
+          dhcp_end: values.dhcp_end,
         };
-        setNetworkList([...networkList, newNetwork]);
-      }
 
-      networkForm.resetFields();
-      setSelectedNetwork(null);
-    });
+        // 根据网络类型添加对应参数
+        if (values.forward === "isolated") {
+          createParams.vlan_id = values.vlan_id || null;
+        } else if (values.forward === "nat") {
+          // 处理bridge_name，如果是数组则取第一个值，否则直接使用
+          const bridgeName = Array.isArray(values.bridge_name)
+            ? values.bridge_name[0]
+            : values.bridge_name;
+          createParams.bridge_name = bridgeName || null;
+        }
+
+        const response = await createNetworkAPI(createParams);
+
+        if (response.success) {
+          message.success(response.data?.message || "网络创建成功");
+          // 重新加载网络列表
+          await loadNetworkConfig();
+          // 成功后关闭对话框
+          setNetworkModalVisible(false);
+          networkForm.resetFields();
+          setSelectedNetwork(null);
+        } else {
+          message.error(response.message || "网络创建失败");
+          // 失败时不关闭对话框，loading会在finally中清理
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("网络操作失败:", error);
+      message.error("网络操作失败");
+      // 异常时不关闭对话框，loading会在finally中清理
+    } finally {
+      setModalLoading(false); // 结束loading
+    }
   };
 
   // 处理取消创建/编辑网络
@@ -744,30 +744,52 @@ const NetworkManagement: React.FC = () => {
     setNetworkModalVisible(false);
     networkForm.resetFields();
     setSelectedNetwork(null);
+    setModalLoading(false); // 关闭弹窗时清理loading状态
   };
 
   // 编辑网络
   const editNetwork = (record: Network) => {
     setSelectedNetwork(record);
+    setSelectedNode(record.hostname);
+    setModalLoading(false); // 确保loading状态清理
     networkForm.setFieldsValue({
-      name: record.name,
-      type: record.type,
-      vlanId: record.vlanId,
-      cidr: record.cidr,
-      gateway: record.gateway,
-      dns: record.dns,
-      dhcp: record.dhcp,
-      description: record.description,
-      cluster: record.cluster,
-      clusterId: record.clusterId,
-      tags: record.tags,
+      hostname: record.hostname,
+      name: record.net_name,
+      forward: record.net_type === "isolated" ? "isolated" : "nat",
+      vlan_id: record.vlan_id,
+      bridge_name: record.bridge,
+      ip_addr: record.ip_addr,
+      netmask: record.netmask,
+      dhcp_start: record.dhcp_start,
+      dhcp_end: record.dhcp_end,
     });
+    // 加载对应节点的网络信息
+    loadNodeNetworks(record.hostname);
     setNetworkModalVisible(true);
   };
 
   // 删除网络
-  const deleteNetwork = (id: string) => {
-    setNetworkList(networkList.filter((network) => network.id !== id));
+  const deleteNetwork = async (netName: string, hostname: string) => {
+    try {
+      setLoading(true);
+      const response = await deleteNetworkAPI({
+        net_name: netName,
+        hostname: hostname,
+      });
+
+      if (response.success) {
+        message.success(response.data?.message || "删除网络成功");
+        // 重新加载网络列表
+        await loadNetworkConfig();
+      } else {
+        message.error(response?.message || "删除网络失败");
+      }
+    } catch (error) {
+      console.error("删除网络失败:", error);
+      message.error("删除网络失败");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 查看网络详情
@@ -780,126 +802,121 @@ const NetworkManagement: React.FC = () => {
   const viewIPDetails = (record: Network) => {
     setSelectedNetwork(record);
     setSelectedNetworkIps(
-      mockIpDetails.filter((ip) => ip.networkId === record.id)
+      mockIpDetails.filter(
+        (ip) => ip.networkId === `${record.net_name}-${record.hostname}`
+      )
     );
     setIpDetailsVisible(true);
-  };
-
-  // 计算子网中总IP数量
-  const calculateTotalIPs = (cidr: string) => {
-    if (!cidr) return 0;
-    const parts = cidr.split("/");
-    if (parts.length !== 2) return 0;
-
-    const prefix = parseInt(parts[1], 10);
-    if (isNaN(prefix)) return 0;
-
-    // 计算主机位数，减2是去掉网络地址和广播地址
-    return Math.pow(2, 32 - prefix) - 2;
-  };
-
-  // IP使用率计算
-  const calculateIPUsagePercent = (used: number, total: number) => {
-    if (total === 0) return 0;
-    return Math.round((used / total) * 100);
   };
 
   // 网络表格列定义
   const networkColumns = [
     {
       title: "网络名称",
-      dataIndex: "name",
-      key: "name",
+      dataIndex: "net_name",
+      key: "net_name",
       render: (text: string, record: Network) => (
-        <a onClick={() => viewNetworkDetails(record)}>{text}</a>
+        <a onClick={() => viewNetworkDetails(record)}>{text || "N/A"}</a>
       ),
+    },
+    {
+      title: "主机名",
+      dataIndex: "hostname",
+      key: "hostname",
+      render: (text: string) => text || "N/A",
     },
     {
       title: "类型",
-      dataIndex: "type",
-      key: "type",
+      dataIndex: "net_type",
+      key: "net_type",
+      render: (type: string) => (
+        <Tag
+          color={
+            type === "nat" ? "blue" : type === "isolated" ? "orange" : "default"
+          }
+        >
+          {type?.toUpperCase() || "N/A"}
+        </Tag>
+      ),
+    },
+    {
+      title: "MAC地址",
+      dataIndex: "mac",
+      key: "mac",
+      render: (mac: string) => mac || "N/A",
+    },
+    {
+      title: "驱动",
+      dataIndex: "driver",
+      key: "driver",
+      render: (driver: string) => driver?.toUpperCase() || "N/A",
+    },
+    {
+      title: "网桥",
+      dataIndex: "bridge",
+      key: "bridge",
+      render: (bridge: string) => bridge || "N/A",
     },
     {
       title: "VLAN ID",
-      dataIndex: "vlanId",
-      key: "vlanId",
-      render: (vlanId: number | null) => (vlanId ? vlanId : "-"),
+      dataIndex: "vlan_id",
+      key: "vlan_id",
+      render: (vlanId: number | null) => vlanId ?? "N/A",
     },
     {
-      title: "CIDR",
-      dataIndex: "cidr",
-      key: "cidr",
+      title: "IP地址",
+      dataIndex: "ip_addr",
+      key: "ip_addr",
+      render: (ip: string) => ip || "N/A",
     },
     {
-      title: "网关",
-      dataIndex: "gateway",
-      key: "gateway",
+      title: "子网掩码",
+      dataIndex: "netmask",
+      key: "netmask",
+      render: (mask: string) => mask || "N/A",
     },
     {
-      title: "DHCP",
-      dataIndex: "dhcp",
-      key: "dhcp",
-      render: (dhcp: boolean) =>
-        dhcp ? <Tag color="green">开启</Tag> : <Tag color="default">关闭</Tag>,
+      title: "DHCP起始",
+      dataIndex: "dhcp_start",
+      key: "dhcp_start",
+      render: (start: string) => start || "N/A",
     },
     {
-      title: "状态",
-      dataIndex: "status",
-      key: "status",
-      render: (status: string) => getStatusTag(status),
-    },
-    {
-      title: "IP使用率",
-      key: "ipUsage",
-      render: (_: string, record: Network) => (
-        <Tooltip title={`${record.usedIps}/${record.totalIps}`}>
-          <Progress
-            percent={calculateIPUsagePercent(record.usedIps, record.totalIps)}
-            size="small"
-            strokeColor={
-              calculateIPUsagePercent(record.usedIps, record.totalIps) > 80
-                ? "#ff4d4f"
-                : calculateIPUsagePercent(record.usedIps, record.totalIps) > 60
-                ? "#faad14"
-                : "#52c41a"
-            }
-          />
-        </Tooltip>
-      ),
+      title: "DHCP结束",
+      dataIndex: "dhcp_end",
+      key: "dhcp_end",
+      render: (end: string) => end || "N/A",
     },
     {
       title: "操作",
       key: "action",
       render: (_: string, record: Network) => (
-        <Space size="middle">
+        <Space size="small">
           <Tooltip title="查看详情">
             <Button
               type="link"
+              size="small"
               onClick={() => viewNetworkDetails(record)}
               icon={<GlobalOutlined />}
-            />
-          </Tooltip>
-          <Tooltip title="IP分配">
-            <Button
-              type="link"
-              onClick={() => viewIPDetails(record)}
-              icon={<ApiOutlined />}
             />
           </Tooltip>
           <Tooltip title="编辑">
             <Button
               type="link"
+              size="small"
               onClick={() => editNetwork(record)}
               icon={<EditOutlined />}
             />
           </Tooltip>
           <Popconfirm
             title="确定要删除这个网络吗?"
-            onConfirm={() => deleteNetwork(record.id)}
+            onConfirm={async () =>
+              await deleteNetwork(record.net_name, record.hostname)
+            }
             okText="确定"
             cancelText="取消"
           >
-            <Button type="link" danger icon={<DeleteOutlined />} />
+            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
       ),
@@ -1079,15 +1096,23 @@ const NetworkManagement: React.FC = () => {
                   <Button
                     type="primary"
                     icon={<PlusOutlined />}
-                    onClick={() => setNetworkModalVisible(true)}
+                    onClick={() => {
+                      setModalLoading(false); // 确保loading状态清理
+                      setNetworkModalVisible(true);
+                    }}
                   >
                     新建网络
                   </Button>
                   <Button
                     icon={<SyncOutlined />}
-                    onClick={() => {
-                      setLoading(true);
-                      setTimeout(() => setLoading(false), 500);
+                    onClick={async () => {
+                      await Promise.all([
+                        loadNetworkConfig(),
+                        loadClusterNodes(),
+                        selectedNode
+                          ? loadNodeNetworks(selectedNode)
+                          : Promise.resolve(),
+                      ]);
                     }}
                   >
                     刷新
@@ -1095,374 +1120,523 @@ const NetworkManagement: React.FC = () => {
                 </Space>
               }
             >
-              <Tabs activeKey={activeTab} onChange={setActiveTab}>
-                <TabPane tab="网络概览" key="overview">
-                  <div className="network-overview">
-                    <Row gutter={[16, 16]}>
-                      <Col xs={24} sm={12} md={8} lg={6}>
-                        <Card>
-                          <Statistic
-                            title="网络总数"
-                            value={networkList.length}
-                            prefix={<GlobalOutlined />}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={12} md={8} lg={6}>
-                        <Card>
-                          <Statistic
-                            title="VLAN网络"
-                            value={
-                              networkList.filter(
-                                (network) => network.type === "VLAN"
-                              ).length
-                            }
-                            prefix={<ApartmentOutlined />}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={12} md={8} lg={6}>
-                        <Card>
-                          <Statistic
-                            title="公网IP"
-                            value={networkList
-                              .filter((network) => network.type === "Public")
-                              .reduce((acc, curr) => acc + curr.totalIps, 0)}
-                            prefix={<CloudOutlined />}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={12} md={8} lg={6}>
-                        <Card>
-                          <Statistic
-                            title="IP分配率"
-                            value={Math.round(
-                              (networkList.reduce(
-                                (acc, curr) => acc + curr.usedIps,
-                                0
-                              ) /
-                                networkList.reduce(
-                                  (acc, curr) => acc + curr.totalIps,
-                                  0
-                                )) *
-                                100
-                            )}
-                            suffix="%"
-                            prefix={<ApiOutlined />}
-                          />
-                        </Card>
-                      </Col>
-                    </Row>
-
-                    <Divider orientation="left">网络使用情况</Divider>
-
-                    <Row gutter={[16, 16]}>
-                      {networkList.map((network) => (
-                        <Col xs={24} sm={12} lg={8} key={network.id}>
-                          <Card
-                            title={
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <span>{network.name}</span>
-                                {getStatusTag(network.status)}
-                              </div>
-                            }
-                            extra={
-                              <a onClick={() => viewNetworkDetails(network)}>
-                                详情
-                              </a>
-                            }
-                            style={{ height: "100%" }}
-                          >
-                            <Row gutter={[16, 8]}>
-                              <Col span={12}>
-                                <Text type="secondary">类型</Text>
-                                <div>{network.type}</div>
-                              </Col>
-                              <Col span={12}>
-                                {network.vlanId !== null && (
-                                  <>
-                                    <Text type="secondary">VLAN ID</Text>
-                                    <div>{network.vlanId}</div>
-                                  </>
-                                )}
-                              </Col>
-                              <Col span={24}>
-                                <Text type="secondary">CIDR</Text>
-                                <div>{network.cidr}</div>
-                              </Col>
-                              <Col span={12}>
-                                <Text type="secondary">网关</Text>
-                                <div>{network.gateway}</div>
-                              </Col>
-                              <Col span={12}>
-                                <Text type="secondary">DHCP</Text>
-                                <div>{network.dhcp ? "已开启" : "已关闭"}</div>
-                              </Col>
-                            </Row>
-
-                            <Divider style={{ margin: "12px 0" }} />
-
-                            <div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  marginBottom: "8px",
-                                }}
-                              >
-                                <Text>IP使用率</Text>
-                                <Text>
-                                  {network.usedIps}/{network.totalIps}
-                                </Text>
-                              </div>
-                              <Progress
-                                percent={calculateIPUsagePercent(
-                                  network.usedIps,
-                                  network.totalIps
-                                )}
-                                size="small"
-                                strokeColor={
-                                  calculateIPUsagePercent(
-                                    network.usedIps,
-                                    network.totalIps
-                                  ) > 80
-                                    ? "#ff4d4f"
-                                    : calculateIPUsagePercent(
-                                        network.usedIps,
-                                        network.totalIps
-                                      ) > 60
-                                    ? "#faad14"
-                                    : "#52c41a"
-                                }
+              <Tabs
+                activeKey={activeTab}
+                onChange={setActiveTab}
+                items={[
+                  {
+                    key: "overview",
+                    label: "网络概览",
+                    children: (
+                      <div className="network-overview">
+                        <Row gutter={[16, 16]}>
+                          <Col xs={24} sm={12} md={8} lg={6}>
+                            <Card>
+                              <Statistic
+                                title="网络总数"
+                                value={networkList.length}
+                                prefix={<GlobalOutlined />}
                               />
-                            </div>
+                            </Card>
+                          </Col>
+                          <Col xs={24} sm={12} md={8} lg={6}>
+                            <Card>
+                              <Statistic
+                                title="VLAN网络"
+                                value={
+                                  networkList.filter(
+                                    (network) => network.vlan_id !== null
+                                  ).length
+                                }
+                                prefix={<ApartmentOutlined />}
+                              />
+                            </Card>
+                          </Col>
+                          <Col xs={24} sm={12} md={8} lg={6}>
+                            <Card>
+                              <Statistic
+                                title="公网IP"
+                                value={
+                                  networkList.filter(
+                                    (network) => network.net_type === "public"
+                                  ).length
+                                }
+                                prefix={<CloudOutlined />}
+                              />
+                            </Card>
+                          </Col>
+                          <Col xs={24} sm={12} md={8} lg={6}>
+                            <Card>
+                              <Statistic
+                                title="IP分配率"
+                                value={
+                                  networkList.length > 0
+                                    ? Math.round(
+                                        (networkList.filter(
+                                          (network) =>
+                                            network.net_type === "nat"
+                                        ).length /
+                                          networkList.length) *
+                                          100
+                                      )
+                                    : 0
+                                }
+                                suffix="%"
+                                prefix={<ApiOutlined />}
+                              />
+                            </Card>
+                          </Col>
+                        </Row>
 
-                            <div style={{ marginTop: "16px" }}>
-                              {network.tags.map((tag: string) => (
-                                <Tag key={tag}>{tag}</Tag>
-                              ))}
-                            </div>
-                          </Card>
-                        </Col>
-                      ))}
-                    </Row>
-                  </div>
-                </TabPane>
+                        <Divider orientation="left">网络使用情况</Divider>
 
-                <TabPane tab="网络列表" key="list">
-                  <Table
-                    columns={networkColumns}
-                    dataSource={networkList}
-                    rowKey="id"
-                    loading={loading}
-                    pagination={{ pageSize: 10 }}
-                  />
-                </TabPane>
+                        <Row gutter={[16, 16]}>
+                          {(networkList || []).map((network) => (
+                            <Col
+                              xs={24}
+                              sm={12}
+                              lg={8}
+                              key={network.net_name + "-" + network.hostname}
+                            >
+                              <Card
+                                title={
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "8px",
+                                    }}
+                                  >
+                                    <ApartmentOutlined
+                                      style={{
+                                        fontSize: "14px",
+                                        color:
+                                          network.net_type === "nat"
+                                            ? "#1890ff"
+                                            : "#fa8c16",
+                                      }}
+                                    />
+                                    <span
+                                      style={{
+                                        fontSize: "14px",
+                                        fontWeight: "500",
+                                      }}
+                                    >
+                                      {network.net_name || "N/A"}
+                                    </span>
+                                    <Tag
+                                      color={
+                                        network.net_type === "nat"
+                                          ? "blue"
+                                          : "orange"
+                                      }
+                                      style={{
+                                        fontSize: "10px",
+                                        padding: "0 4px",
+                                        lineHeight: "16px",
+                                      }}
+                                    >
+                                      {network.net_type?.toUpperCase() || "N/A"}
+                                    </Tag>
+                                  </div>
+                                }
+                                extra={
+                                  <Button
+                                    type="link"
+                                    size="small"
+                                    onClick={() => viewNetworkDetails(network)}
+                                    style={{ padding: "0 4px" }}
+                                  >
+                                    详情
+                                  </Button>
+                                }
+                                style={{
+                                  height: "100%",
+                                  borderTop: `3px solid ${
+                                    network.net_type === "nat"
+                                      ? "#1890ff"
+                                      : "#fa8c16"
+                                  }`,
+                                  transition: "all 0.3s ease",
+                                }}
+                                bodyStyle={{ padding: "12px" }}
+                                hoverable
+                              >
+                                <Row gutter={[8, 8]}>
+                                  <Col span={24}>
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        marginBottom: "8px",
+                                        fontSize: "12px",
+                                        color: "#666",
+                                      }}
+                                    >
+                                      <span>
+                                        节点: {network.hostname || "N/A"}
+                                      </span>
+                                      <span>
+                                        驱动:{" "}
+                                        {network.driver?.toUpperCase() || "N/A"}
+                                      </span>
+                                    </div>
+                                  </Col>
 
-                <TabPane tab="路由表" key="routes">
-                  <Card
-                    title="路由表"
-                    extra={
-                      <Button
-                        type="primary"
-                        size="small"
-                        icon={<PlusOutlined />}
+                                  <Col span={12}>
+                                    <div
+                                      style={{
+                                        textAlign: "center",
+                                        padding: "8px 0",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          fontSize: "11px",
+                                          color: "#999",
+                                          marginBottom: "2px",
+                                        }}
+                                      >
+                                        网关IP
+                                      </div>
+                                      <div
+                                        style={{
+                                          fontSize: "13px",
+                                          fontFamily: "monospace",
+                                          color: "#333",
+                                        }}
+                                      >
+                                        {network.ip_addr || "N/A"}
+                                      </div>
+                                    </div>
+                                  </Col>
+
+                                  <Col span={12}>
+                                    <div
+                                      style={{
+                                        textAlign: "center",
+                                        padding: "8px 0",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          fontSize: "11px",
+                                          color: "#999",
+                                          marginBottom: "2px",
+                                        }}
+                                      >
+                                        子网掩码
+                                      </div>
+                                      <div
+                                        style={{
+                                          fontSize: "13px",
+                                          fontFamily: "monospace",
+                                          color: "#333",
+                                        }}
+                                      >
+                                        {network.netmask || "N/A"}
+                                      </div>
+                                    </div>
+                                  </Col>
+
+                                  <Col span={24}>
+                                    <div
+                                      style={{
+                                        background: "#f8f9fa",
+                                        padding: "6px 8px",
+                                        borderRadius: "4px",
+                                        margin: "4px 0",
+                                        fontSize: "11px",
+                                        color: "#666",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          justifyContent: "space-between",
+                                        }}
+                                      >
+                                        <span>
+                                          DHCP: {network.dhcp_start || "N/A"}
+                                        </span>
+                                        <span>
+                                          至 {network.dhcp_end || "N/A"}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </Col>
+
+                                  <Col span={24}>
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        marginTop: "8px",
+                                        fontSize: "11px",
+                                        color: "#999",
+                                      }}
+                                    >
+                                      <div>
+                                        {network.bridge && (
+                                          <span>网桥: {network.bridge}</span>
+                                        )}
+                                        {network.vlan_id !== null && (
+                                          <span
+                                            style={{
+                                              marginLeft: network.bridge
+                                                ? "8px"
+                                                : "0",
+                                            }}
+                                          >
+                                            VLAN: {network.vlan_id}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div
+                                        style={{
+                                          fontSize: "10px",
+                                          fontFamily: "monospace",
+                                        }}
+                                      >
+                                        {network.mac?.slice(-8) || "N/A"}
+                                      </div>
+                                    </div>
+                                  </Col>
+                                </Row>
+                              </Card>
+                            </Col>
+                          ))}
+                        </Row>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: "list",
+                    label: "网络列表",
+                    children: (
+                      <Table
+                        columns={networkColumns}
+                        dataSource={networkList}
+                        rowKey={(record) =>
+                          `${record.net_name}-${record.hostname}`
+                        }
+                        loading={loading}
+                        pagination={{ pageSize: 10 }}
+                        scroll={{ x: 1400 }}
+                      />
+                    ),
+                  },
+                  {
+                    key: "routes",
+                    label: "路由表",
+                    children: (
+                      <Card
+                        title="路由表"
+                        extra={
+                          <Button
+                            type="primary"
+                            size="small"
+                            icon={<PlusOutlined />}
+                          >
+                            添加路由
+                          </Button>
+                        }
                       >
-                        添加路由
-                      </Button>
-                    }
-                  >
-                    <Table
-                      columns={routeColumns}
-                      dataSource={mockRoutes}
-                      rowKey="id"
-                      pagination={false}
-                    />
-                  </Card>
-                </TabPane>
-
-                <TabPane tab="安全组规则" key="security">
-                  <Card
-                    title="安全组规则"
-                    extra={
-                      <Button
-                        type="primary"
-                        size="small"
-                        icon={<PlusOutlined />}
-                      >
-                        添加规则
-                      </Button>
-                    }
-                  >
-                    <Table
-                      columns={securityRuleColumns}
-                      dataSource={mockSecurityRules}
-                      rowKey="id"
-                      pagination={false}
-                    />
-                  </Card>
-                </TabPane>
-
-                <TabPane tab="网络拓扑" key="topology">
-                  <Card style={{ height: "600px" }}>
-                    <div style={{ height: "500px", width: "100%" }}>
-                      <ReactFlow
-                        nodes={nodes}
-                        edges={edges}
-                        onNodesChange={onNodesChange}
-                        onEdgesChange={onEdgesChange}
-                        onConnect={onConnect}
-                        connectionMode={ConnectionMode.Loose}
-                        fitView
-                        attributionPosition="top-right"
-                      >
-                        <Controls />
-                        <MiniMap
-                          nodeStrokeColor="#333"
-                          nodeColor="#fff"
-                          nodeBorderRadius={2}
-                          maskColor="rgba(0, 0, 0, 0.1)"
+                        <Table
+                          columns={routeColumns}
+                          dataSource={mockRoutes}
+                          rowKey="id"
+                          pagination={false}
                         />
-                        <Background gap={12} size={1} />
-                      </ReactFlow>
-                    </div>
-                    <div
-                      style={{
-                        marginTop: "16px",
-                        display: "flex",
-                        gap: "16px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
+                      </Card>
+                    ),
+                  },
+                  {
+                    key: "security",
+                    label: "安全组规则",
+                    children: (
+                      <Card
+                        title="安全组规则"
+                        extra={
+                          <Button
+                            type="primary"
+                            size="small"
+                            icon={<PlusOutlined />}
+                          >
+                            添加规则
+                          </Button>
+                        }
                       >
+                        <Table
+                          columns={securityRuleColumns}
+                          dataSource={mockSecurityRules}
+                          rowKey="id"
+                          pagination={false}
+                        />
+                      </Card>
+                    ),
+                  },
+                  {
+                    key: "topology",
+                    label: "网络拓扑",
+                    children: (
+                      <Card style={{ height: "600px" }}>
+                        <div style={{ height: "500px", width: "100%" }}>
+                          <ReactFlow
+                            nodes={nodes}
+                            edges={edges}
+                            onNodesChange={onNodesChange}
+                            onEdgesChange={onEdgesChange}
+                            onConnect={onConnect}
+                            connectionMode={ConnectionMode.Loose}
+                            fitView
+                            attributionPosition="top-right"
+                          >
+                            <Controls />
+                            <MiniMap
+                              nodeStrokeColor="#333"
+                              nodeColor="#fff"
+                              nodeBorderRadius={2}
+                              maskColor="rgba(0, 0, 0, 0.1)"
+                            />
+                            <Background gap={12} size={1} />
+                          </ReactFlow>
+                        </div>
                         <div
                           style={{
-                            width: "16px",
-                            height: "16px",
-                            background: "#1890ff",
-                            borderRadius: "2px",
+                            marginTop: "16px",
+                            display: "flex",
+                            gap: "16px",
+                            flexWrap: "wrap",
                           }}
-                        ></div>
-                        <span>路由器/交换机</span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "16px",
-                            height: "16px",
-                            background: "#722ed1",
-                            borderRadius: "2px",
-                          }}
-                        ></div>
-                        <span>NAT网络</span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "16px",
-                            height: "16px",
-                            background: "#1890ff",
-                            borderRadius: "2px",
-                          }}
-                        ></div>
-                        <span>桥接网络</span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "16px",
-                            height: "16px",
-                            background: "#fa8c16",
-                            borderRadius: "2px",
-                          }}
-                        ></div>
-                        <span>隔离网络</span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "16px",
-                            height: "16px",
-                            background: "#13c2c2",
-                            borderRadius: "2px",
-                          }}
-                        ></div>
-                        <span>直连网络</span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "16px",
-                            height: "16px",
-                            background: "#52c41a",
-                            borderRadius: "2px",
-                          }}
-                        ></div>
-                        <span>在线虚拟机</span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "16px",
-                            height: "16px",
-                            background: "#ff7875",
-                            borderRadius: "2px",
-                          }}
-                        ></div>
-                        <span>离线虚拟机</span>
-                      </div>
-                    </div>
-                  </Card>
-                </TabPane>
-              </Tabs>
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "16px",
+                                height: "16px",
+                                background: "#1890ff",
+                                borderRadius: "2px",
+                              }}
+                            ></div>
+                            <span>路由器/交换机</span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "16px",
+                                height: "16px",
+                                background: "#722ed1",
+                                borderRadius: "2px",
+                              }}
+                            ></div>
+                            <span>NAT网络</span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "16px",
+                                height: "16px",
+                                background: "#1890ff",
+                                borderRadius: "2px",
+                              }}
+                            ></div>
+                            <span>桥接网络</span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "16px",
+                                height: "16px",
+                                background: "#fa8c16",
+                                borderRadius: "2px",
+                              }}
+                            ></div>
+                            <span>隔离网络</span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "16px",
+                                height: "16px",
+                                background: "#13c2c2",
+                                borderRadius: "2px",
+                              }}
+                            ></div>
+                            <span>直连网络</span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "16px",
+                                height: "16px",
+                                background: "#52c41a",
+                                borderRadius: "2px",
+                              }}
+                            ></div>
+                            <span>在线虚拟机</span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "16px",
+                                height: "16px",
+                                background: "#ff7875",
+                                borderRadius: "2px",
+                              }}
+                            ></div>
+                            <span>离线虚拟机</span>
+                          </div>
+                        </div>
+                      </Card>
+                    ),
+                  },
+                ]}
+              />
             </Card>
 
             {/* 创建/编辑网络的模态框 */}
@@ -1471,10 +1645,46 @@ const NetworkManagement: React.FC = () => {
               open={networkModalVisible}
               onOk={handleNetworkModalOk}
               onCancel={handleNetworkModalCancel}
+              okButtonProps={{ loading: modalLoading }}
+              cancelButtonProps={{ disabled: modalLoading }}
               width={700}
               destroyOnHidden
             >
               <Form form={networkForm} layout="vertical">
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="hostname"
+                      label="目标节点"
+                      rules={[{ required: true, message: "请选择目标节点" }]}
+                    >
+                      <Select
+                        placeholder="请选择目标节点"
+                        onChange={handleNodeChange}
+                        value={selectedNode}
+                      >
+                        {clusterNodes.map((node) => (
+                          <Select.Option key={node.name} value={node.name}>
+                            {node.name} ({node.ip}) - {node.status}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="forward"
+                      label="网络类型"
+                      rules={[{ required: true, message: "请选择网络类型" }]}
+                    >
+                      <Select placeholder="请选择网络类型">
+                        <Select.Option value="isolated">ISOLATED</Select.Option>
+                        <Select.Option value="nat">NAT</Select.Option>
+                      </Select>
+                    </Form.Item>
+                  </Col>
+                </Row>
+
                 <Row gutter={16}>
                   <Col span={12}>
                     <Form.Item
@@ -1486,76 +1696,107 @@ const NetworkManagement: React.FC = () => {
                     </Form.Item>
                   </Col>
                   <Col span={12}>
-                    <Form.Item
-                      name="type"
-                      label="网络类型"
-                      rules={[{ required: true, message: "请选择网络类型" }]}
-                    >
-                      <Select placeholder="请选择网络类型">
-                        <Select.Option value="VLAN">VLAN</Select.Option>
-                        <Select.Option value="Public">公网</Select.Option>
-                        <Select.Option value="Private">私有网络</Select.Option>
-                      </Select>
-                    </Form.Item>
+                    <div style={{ paddingTop: "30px", color: "#666" }}>
+                      <Text type="secondary">
+                        选择节点后可查看可用的网桥资源
+                      </Text>
+                    </div>
                   </Col>
                 </Row>
+
+                <Form.Item
+                  noStyle
+                  shouldUpdate={(prevValues, currentValues) =>
+                    prevValues.forward !== currentValues.forward
+                  }
+                >
+                  {({ getFieldValue }) => {
+                    const forwardType = getFieldValue("forward");
+
+                    return (
+                      <>
+                        {forwardType === "isolated" && (
+                          <Row gutter={16}>
+                            <Col span={12}>
+                              <Form.Item
+                                name="vlan_id"
+                                label="VLAN ID"
+                                help="隔离网络默认为空，系统自动分配"
+                              >
+                                <InputNumber
+                                  style={{ width: "100%" }}
+                                  placeholder="留空自动分配"
+                                  min={1}
+                                  max={4094}
+                                />
+                              </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                              <div
+                                style={{ paddingTop: "30px", color: "#666" }}
+                              >
+                                <Text type="secondary">
+                                  隔离网络将创建独立的虚拟网络
+                                </Text>
+                              </div>
+                            </Col>
+                          </Row>
+                        )}
+
+                        {forwardType === "nat" && (
+                          <Row gutter={16}>
+                            <Col span={12}>
+                              <Form.Item
+                                name="bridge_name"
+                                label="网桥名称"
+                                help="可选择现有网桥或手动输入新的网桥名称"
+                              >
+                                <Select
+                                  mode="tags"
+                                  allowClear
+                                  showSearch
+                                  placeholder="选择现有网桥或输入新的网桥名称"
+                                  maxTagCount={1}
+                                  options={nodeNetworks
+                                    .filter((net) => net.type === "bridge")
+                                    .map((net) => ({
+                                      label: `${net.device} (${net.connection})`,
+                                      value: net.device,
+                                    }))}
+                                  filterOption={(input, option) =>
+                                    (option?.label ?? "")
+                                      .toLowerCase()
+                                      .includes(input.toLowerCase()) ||
+                                    (option?.value ?? "")
+                                      .toLowerCase()
+                                      .includes(input.toLowerCase())
+                                  }
+                                />
+                              </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                              <div
+                                style={{ paddingTop: "30px", color: "#666" }}
+                              >
+                                <Text type="secondary">
+                                  NAT网络将提供网络地址转换功能
+                                </Text>
+                              </div>
+                            </Col>
+                          </Row>
+                        )}
+                      </>
+                    );
+                  }}
+                </Form.Item>
 
                 <Row gutter={16}>
                   <Col span={12}>
                     <Form.Item
-                      name="vlanId"
-                      label="VLAN ID"
+                      name="ip_addr"
+                      label="网关IP地址"
                       rules={[
-                        {
-                          required: false,
-                          type: "number",
-                          min: 1,
-                          max: 4094,
-                          message: "VLAN ID必须在1-4094之间",
-                        },
-                      ]}
-                    >
-                      <InputNumber
-                        style={{ width: "100%" }}
-                        placeholder="请输入VLAN ID (1-4094)"
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item name="clusterId" label="所属集群">
-                      <Select placeholder="请选择所属集群">
-                        <Select.Option value="1">生产环境集群</Select.Option>
-                        <Select.Option value="2">测试环境集群</Select.Option>
-                        <Select.Option value="3">DMZ集群</Select.Option>
-                        <Select.Option value="4">备份集群</Select.Option>
-                      </Select>
-                    </Form.Item>
-                  </Col>
-                </Row>
-
-                <Row gutter={16}>
-                  <Col span={12}>
-                    <Form.Item
-                      name="cidr"
-                      label="CIDR"
-                      rules={[
-                        { required: true, message: "请输入CIDR" },
-                        {
-                          pattern:
-                            /^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))$/,
-                          message: "CIDR格式不正确",
-                        },
-                      ]}
-                    >
-                      <Input placeholder="例如: 192.168.1.0/24" />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item
-                      name="gateway"
-                      label="网关"
-                      rules={[
-                        { required: true, message: "请输入网关地址" },
+                        { required: true, message: "请输入网关IP地址" },
                         {
                           pattern: /^([0-9]{1,3}\.){3}[0-9]{1,3}$/,
                           message: "IP地址格式不正确",
@@ -1565,37 +1806,64 @@ const NetworkManagement: React.FC = () => {
                       <Input placeholder="例如: 192.168.1.1" />
                     </Form.Item>
                   </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="netmask"
+                      label="子网掩码"
+                      rules={[
+                        { required: true, message: "请输入子网掩码" },
+                        {
+                          pattern: /^([0-9]{1,3}\.){3}[0-9]{1,3}$/,
+                          message: "子网掩码格式不正确",
+                        },
+                      ]}
+                    >
+                      <Input placeholder="例如: 255.255.255.0" />
+                    </Form.Item>
+                  </Col>
                 </Row>
 
                 <Row gutter={16}>
                   <Col span={12}>
-                    <Form.Item name="dns" label="DNS服务器">
-                      <Select mode="tags" placeholder="请输入DNS服务器IP地址" />
+                    <Form.Item
+                      name="dhcp_start"
+                      label="DHCP起始地址"
+                      rules={[
+                        { required: true, message: "请输入DHCP起始地址" },
+                        {
+                          pattern: /^([0-9]{1,3}\.){3}[0-9]{1,3}$/,
+                          message: "IP地址格式不正确",
+                        },
+                      ]}
+                    >
+                      <Input placeholder="例如: 192.168.1.100" />
                     </Form.Item>
                   </Col>
                   <Col span={12}>
-                    <Form.Item name="dhcp" label="DHCP" valuePropName="checked">
-                      <Switch />
+                    <Form.Item
+                      name="dhcp_end"
+                      label="DHCP结束地址"
+                      rules={[
+                        { required: true, message: "请输入DHCP结束地址" },
+                        {
+                          pattern: /^([0-9]{1,3}\.){3}[0-9]{1,3}$/,
+                          message: "IP地址格式不正确",
+                        },
+                      ]}
+                    >
+                      <Input placeholder="例如: 192.168.1.200" />
                     </Form.Item>
                   </Col>
                 </Row>
-
-                <Form.Item name="description" label="描述">
-                  <Input.TextArea rows={3} placeholder="请输入网络描述" />
-                </Form.Item>
-
-                <Form.Item name="tags" label="标签">
-                  <Select mode="tags" placeholder="请输入标签" />
-                </Form.Item>
               </Form>
             </Modal>
 
             {/* 网络详情模态框 */}
             <Modal
-              title={`网络详情: ${selectedNetwork?.name}`}
+              title={`网络详情: ${selectedNetwork?.net_name}`}
               open={detailModalVisible}
               onCancel={() => setDetailModalVisible(false)}
-              width={800}
+              width={1000}
               footer={null}
             >
               {selectedNetwork && (
@@ -1606,75 +1874,48 @@ const NetworkManagement: React.FC = () => {
                     column={{ xxl: 3, xl: 3, lg: 2, md: 2, sm: 1, xs: 1 }}
                   >
                     <Descriptions.Item label="网络名称">
-                      {selectedNetwork.name}
+                      {selectedNetwork.net_name}
                     </Descriptions.Item>
                     <Descriptions.Item label="网络类型">
-                      {selectedNetwork.type}
+                      {selectedNetwork.net_type?.toUpperCase()}
                     </Descriptions.Item>
-                    <Descriptions.Item label="状态">
-                      {getStatusTag(selectedNetwork.status)}
+                    <Descriptions.Item label="主机名">
+                      {selectedNetwork.hostname}
                     </Descriptions.Item>
 
-                    {selectedNetwork.vlanId && (
+                    {selectedNetwork.vlan_id !== null && (
                       <Descriptions.Item label="VLAN ID">
-                        {selectedNetwork.vlanId}
+                        {selectedNetwork.vlan_id}
                       </Descriptions.Item>
                     )}
 
-                    <Descriptions.Item label="CIDR">
-                      {selectedNetwork.cidr}
+                    <Descriptions.Item label="IP地址">
+                      {selectedNetwork.ip_addr}
                     </Descriptions.Item>
-                    <Descriptions.Item label="网关">
-                      {selectedNetwork.gateway}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label="DHCP">
-                      {selectedNetwork.dhcp ? (
-                        <Tag color="green">开启</Tag>
-                      ) : (
-                        <Tag color="default">关闭</Tag>
-                      )}
+                    <Descriptions.Item label="子网掩码">
+                      {selectedNetwork.netmask}
                     </Descriptions.Item>
 
-                    <Descriptions.Item label="DNS服务器">
-                      {selectedNetwork.dns.join(", ")}
+                    <Descriptions.Item label="网桥">
+                      {selectedNetwork.bridge}
                     </Descriptions.Item>
 
-                    <Descriptions.Item
-                      label="IP使用情况"
-                      span={selectedNetwork.vlanId ? 1 : 2}
-                    >
-                      <div>
-                        <div style={{ marginBottom: "8px" }}>
-                          {selectedNetwork.usedIps}/{selectedNetwork.totalIps}(
-                          {calculateIPUsagePercent(
-                            selectedNetwork.usedIps,
-                            selectedNetwork.totalIps
-                          )}
-                          %)
-                        </div>
-                        <Progress
-                          percent={calculateIPUsagePercent(
-                            selectedNetwork.usedIps,
-                            selectedNetwork.totalIps
-                          )}
-                          size="small"
-                        />
-                      </div>
+                    <Descriptions.Item label="驱动">
+                      {selectedNetwork.driver?.toUpperCase()}
                     </Descriptions.Item>
 
-                    <Descriptions.Item label="所属集群">
-                      {selectedNetwork.cluster || "-"}
+                    <Descriptions.Item label="DHCP起始">
+                      {selectedNetwork.dhcp_start}
                     </Descriptions.Item>
 
-                    <Descriptions.Item label="描述" span={3}>
-                      {selectedNetwork.description}
+                    <Descriptions.Item label="DHCP结束">
+                      {selectedNetwork.dhcp_end}
                     </Descriptions.Item>
 
-                    <Descriptions.Item label="标签" span={3}>
-                      {selectedNetwork.tags.map((tag: string) => (
-                        <Tag key={tag}>{tag}</Tag>
-                      ))}
+                    <Descriptions.Item label="MAC地址" span={2}>
+                      <span style={{ fontFamily: "monospace" }}>
+                        {selectedNetwork.mac}
+                      </span>
                     </Descriptions.Item>
                   </Descriptions>
 
@@ -1701,7 +1942,7 @@ const NetworkManagement: React.FC = () => {
 
             {/* IP详情抽屉 */}
             <Drawer
-              title={`${selectedNetwork?.name} - IP地址分配`}
+              title={`${selectedNetwork?.net_name} - IP地址分配`}
               placement="right"
               width={800}
               onClose={() => setIpDetailsVisible(false)}
@@ -1718,19 +1959,17 @@ const NetworkManagement: React.FC = () => {
                     bordered
                     column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
                   >
-                    <Descriptions.Item label="CIDR">
-                      {selectedNetwork.cidr}
+                    <Descriptions.Item label="网络名称">
+                      {selectedNetwork.net_name}
                     </Descriptions.Item>
-                    <Descriptions.Item label="网关">
-                      {selectedNetwork.gateway}
+                    <Descriptions.Item label="IP地址">
+                      {selectedNetwork.ip_addr}
                     </Descriptions.Item>
-                    <Descriptions.Item label="IP使用率">
-                      {selectedNetwork.usedIps}/{selectedNetwork.totalIps}(
-                      {calculateIPUsagePercent(
-                        selectedNetwork.usedIps,
-                        selectedNetwork.totalIps
-                      )}
-                      %)
+                    <Descriptions.Item label="子网掩码">
+                      {selectedNetwork.netmask}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="DHCP范围">
+                      {selectedNetwork.dhcp_start} - {selectedNetwork.dhcp_end}
                     </Descriptions.Item>
                   </Descriptions>
 

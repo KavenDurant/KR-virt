@@ -42,6 +42,7 @@ export default defineConfig(({ mode }) => {
       port: parseInt(env.VITE_PORT) || 3000,
       open: true,
       host: "0.0.0.0",
+      historyApiFallback: true,
       proxy: {
         // 配置代理
         "/api": {

@@ -1012,7 +1012,7 @@ const ClusterManagement: React.FC = () => {
         // 延迟跳转，让用户看到成功消息
         setTimeout(() => {
           // 跳转到bootstrap页面，该页面会自动调用status接口检查集群状态
-          window.location.hash = "#/bootstrap";
+          window.location.href = "/bootstrap";
           // 强制刷新页面，确保重新检查集群状态
           window.location.reload();
         }, 1500);

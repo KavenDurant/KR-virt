@@ -1,10 +1,18 @@
+/*
+ * @Author: KavenDurant luojiaxin888@gmail.com
+ * @Date: 2025-07-02 19:13:46
+ * @LastEditors: KavenDurant luojiaxin888@gmail.com
+ * @LastEditTime: 2025-07-09 11:57:05
+ * @FilePath: /KR-virt/tests/helpers/renderWithProviders.tsx
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 /**
  * 带Provider的渲染工具
  * 提供包含Redux、Router、Theme等Provider的测试渲染环境
  */
 
 import React from "react";
-import { render, RenderOptions } from "@testing-library/react";
+import { render, type RenderOptions } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 import { ConfigProvider, App } from "antd";
@@ -22,7 +30,6 @@ interface ExtendedRenderOptions extends Omit<RenderOptions, "wrapper"> {
 const createWrapper = (options: ExtendedRenderOptions = {}) => {
   const {
     store: customStore,
-    theme = "light",
   } = options;
 
   return ({ children }: { children: React.ReactNode }) => (
@@ -45,11 +52,10 @@ export const renderWithProviders = (
 ) => {
   const {
     store: customStore,
-    theme,
     ...renderOptions
   } = options;
 
-  const Wrapper = createWrapper({ store: customStore, theme });
+  const Wrapper = createWrapper({ store: customStore });
 
   return {
     store: customStore || store,
@@ -90,7 +96,6 @@ export const renderWithRedux = (
 export const renderWithRouter = (
   ui: React.ReactElement,
   {
-    initialEntries = ["/"],
     ...options
   }: { initialEntries?: string[] } & RenderOptions = {},
 ) => {

@@ -16,18 +16,18 @@ const createLocalStorageMock = () => {
 
   return {
     getItem: (key: string) => store[key] || null,
-    setItem: (_key: string, _value: string) => {
-      // 保存值到store
+    setItem: (key: string, value: string) => {
+      store[key] = value;
     },
-    removeItem: (_key: string) => {
-      // 从store移除key
+    removeItem: (key: string) => {
+      delete store[key];
     },
     clear: () => {
       store = {};
     },
-    key: (_index: number) => {
-      // 返回指定索引的key
-      return null;
+    key: (index: number) => {
+      const keys = Object.keys(store);
+      return keys[index] || null;
     },
     get length() {
       return Object.keys(store).length;
@@ -40,22 +40,22 @@ const createSessionStorageMock = () => {
 
   return {
     getItem: (key: string) => store[key] || null,
-    setItem: (_key: string, _value: string) => {
-      // 保存值到store
+    setItem: (key: string, value: string) => {
+      store[key] = value;
     },
-    removeItem: (_key: string) => {
-      // 从store移除key
+    removeItem: (key: string) => {
+      delete store[key];
     },
     clear: () => {
       store = {};
     },
-    key: (_index: number) => {
-      // 返回指定索引的key
-      return null;
+    key: (index: number) => {
+      const keys = Object.keys(store);
+      return keys[index] || null;
     },
     get length() {
       return Object.keys(store).length;
-  },
+    },
   };
 };
 

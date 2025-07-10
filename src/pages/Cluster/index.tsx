@@ -51,6 +51,8 @@ import {
   PlusOutlined,
   SettingOutlined,
   AppstoreOutlined,
+  UsbOutlined,
+  GlobalOutlined,
 } from "@ant-design/icons";
 import {
   formatResourceUsage,
@@ -67,6 +69,7 @@ import {
   useTimeZone,
 } from "../../hooks";
 import { clusterInitService } from "@/services/cluster";
+import networkService from "@/services/network";
 import { loginService } from "@/services/login";
 import type { ClusterNodesResponse } from "@/services/cluster";
 import type { ClusterSummaryResponse } from "@/services/cluster";
@@ -328,6 +331,20 @@ const ClusterManagement: React.FC = () => {
   >(null);
   const [nodeDisksLoading, setNodeDisksLoading] = useState(false);
   const [nodeDisksError, setNodeDisksError] = useState<string | null>(null);
+
+  // 硬件信息相关状态 - USB设备
+  const [nodeUsbData, setNodeUsbData] = useState<
+    import("@/services/cluster").NodeUsbResponse | null
+  >(null);
+  const [nodeUsbLoading, setNodeUsbLoading] = useState(false);
+  const [nodeUsbError, setNodeUsbError] = useState<string | null>(null);
+
+  // 硬件信息相关状态 - 网络设备
+  const [nodeNetworkData, setNodeNetworkData] = useState<
+    import("@/services/network").NodeNetworkListResponse | null
+  >(null);
+  const [nodeNetworkLoading, setNodeNetworkLoading] = useState(false);
+  const [nodeNetworkError, setNodeNetworkError] = useState<string | null>(null);
 
   // 节点操作相关状态
   const [nodeOperationLoading, setNodeOperationLoading] = useState<
@@ -645,6 +662,82 @@ const ClusterManagement: React.FC = () => {
     [withApiLock, fetchNodeDisksDataBase]
   );
 
+  // 获取节点USB设备信息基础函数
+  const fetchNodeUsbDataBase = useCallback(
+    async (hostname: string) => {
+      const timestamp = new Date().toLocaleTimeString();
+      setNodeUsbLoading(true);
+      setNodeUsbError(null);
+      try {
+        const result = await clusterInitService.getNodeUsbDevices(hostname);
+        if (result.success && result.data) {
+          setNodeUsbData(result.data);
+        } else {
+          console.error(
+            `❌ [${timestamp}][API Error] 获取节点USB设备数据失败:`,
+            result.message
+          );
+          setNodeUsbError(result.message);
+          message.error(result.message);
+        }
+      } catch (error) {
+        console.error(
+          `❌ [${timestamp}][API Exception] 获取节点USB设备数据异常:`,
+          error
+        );
+        const errorMessage = "获取节点USB设备数据失败，请稍后重试";
+        setNodeUsbError(errorMessage);
+        message.error(errorMessage);
+      } finally {
+        setNodeUsbLoading(false);
+      }
+    },
+    [message]
+  );
+
+  const fetchNodeUsbData = useMemo(
+    () => withApiLock("fetchNodeUsbData", fetchNodeUsbDataBase),
+    [withApiLock, fetchNodeUsbDataBase]
+  );
+
+  // 获取节点网络设备信息基础函数
+  const fetchNodeNetworkDataBase = useCallback(
+    async (hostname: string) => {
+      const timestamp = new Date().toLocaleTimeString();
+      setNodeNetworkLoading(true);
+      setNodeNetworkError(null);
+      try {
+        const result = await networkService.getNodeNetworks(hostname);
+        if (result.success && result.data) {
+          setNodeNetworkData(result.data);
+        } else {
+          console.error(
+            `❌ [${timestamp}][API Error] 获取节点网络设备数据失败:`,
+            result.message
+          );
+          setNodeNetworkError(result.message);
+          message.error(result.message);
+        }
+      } catch (error) {
+        console.error(
+          `❌ [${timestamp}][API Exception] 获取节点网络设备数据异常:`,
+          error
+        );
+        const errorMessage = "获取节点网络设备数据失败，请稍后重试";
+        setNodeNetworkError(errorMessage);
+        message.error(errorMessage);
+      } finally {
+        setNodeNetworkLoading(false);
+      }
+    },
+    [message]
+  );
+
+  const fetchNodeNetworkData = useMemo(
+    () => withApiLock("fetchNodeNetworkData", fetchNodeNetworkDataBase),
+    [withApiLock, fetchNodeNetworkDataBase]
+  );
+
   // ===== 节点操作相关函数 =====
 
   // 节点操作处理函数
@@ -865,10 +958,6 @@ const ClusterManagement: React.FC = () => {
         `🔍 [Node Detail] 开始获取主机 ${sidebarSelectedHost.name} 的详细信息`
       );
 
-      // 重置主机详情标签页到默认状态（基本信息）
-      // 这确保了每次选择主机时都从默认标签页开始，提供一致的用户体验
-      setHostDetailActiveTab("basic");
-
       // 清空之前的所有数据，准备按需加载
       setNodeDetailData(null);
       setNodeDetailError(null);
@@ -876,14 +965,47 @@ const ClusterManagement: React.FC = () => {
       setNodePCIError(null);
       setNodeDisksData(null);
       setNodeDisksError(null);
+      setNodeUsbData(null);
+      setNodeUsbError(null);
+      setNodeNetworkData(null);
+      setNodeNetworkError(null);
 
-      // 默认加载基本信息（因为默认显示basic Tab）
+      // 根据当前活跃的Tab加载对应的数据
       console.log(
-        `📊 [Default Loading] 默认加载基本信息: ${sidebarSelectedHost.name}`
+        `📊 [Smart Loading] 根据当前Tab (${hostDetailActiveTab}) 加载对应数据: ${sidebarSelectedHost.name}`
       );
-      fetchNodeDetailData(sidebarSelectedHost.name);
+
+      switch (hostDetailActiveTab) {
+        case "basic":
+          fetchNodeDetailData(sidebarSelectedHost.name);
+          break;
+        case "performance":
+          // 性能监控数据由图表组件自己管理
+          fetchNodeDetailData(sidebarSelectedHost.name); // 性能页面也需要基本信息
+          break;
+        case "hardware":
+          // 硬件信息页面需要加载所有硬件数据
+          fetchNodeDetailData(sidebarSelectedHost.name); // 也需要基本信息
+          fetchNodePCIData(sidebarSelectedHost.name);
+          fetchNodeDisksData(sidebarSelectedHost.name);
+          fetchNodeUsbData(sidebarSelectedHost.name);
+          fetchNodeNetworkData(sidebarSelectedHost.name);
+          break;
+        default:
+          // 默认加载基本信息
+          fetchNodeDetailData(sidebarSelectedHost.name);
+          break;
+      }
     }
-  }, [sidebarSelectedHost, fetchNodeDetailData]);
+  }, [
+    sidebarSelectedHost,
+    hostDetailActiveTab,
+    fetchNodeDetailData,
+    fetchNodePCIData,
+    fetchNodeDisksData,
+    fetchNodeUsbData,
+    fetchNodeNetworkData,
+  ]);
 
   // 防重复调用的标记和上一次激活的Tab追踪
   const loadingRef = useRef<Set<string>>(new Set());
@@ -1310,8 +1432,11 @@ const ClusterManagement: React.FC = () => {
     // 安全获取虚拟机数量 - 处理数据结构不匹配的问题
     const getHostVMsCount = (): number => {
       // 类型断言为更通用的对象类型来处理不同的数据结构
-      const hostData = sidebarSelectedHost as unknown as Record<string, unknown>;
-      
+      const hostData = sidebarSelectedHost as unknown as Record<
+        string,
+        unknown
+      >;
+
       // 如果有 vms 字段，返回其长度
       if (hostData.vms && Array.isArray(hostData.vms)) {
         return hostData.vms.length;
@@ -1325,7 +1450,8 @@ const ClusterManagement: React.FC = () => {
         "vms" in hostData.data &&
         Array.isArray((hostData.data as Record<string, unknown>).vms)
       ) {
-        return ((hostData.data as Record<string, unknown>).vms as unknown[]).length;
+        return ((hostData.data as Record<string, unknown>).vms as unknown[])
+          .length;
       }
 
       // 默认返回0
@@ -2260,6 +2386,37 @@ const ClusterManagement: React.FC = () => {
         label: "硬件信息",
         children: (
           <div>
+            {/* 硬件信息页面统一操作栏 */}
+            <Card
+              size="small"
+              style={{ marginBottom: 16 }}
+              title="硬件信息管理"
+            >
+              <Space>
+                <Button
+                  icon={<SyncOutlined />}
+                  type="primary"
+                  loading={nodePCILoading || nodeDisksLoading || nodeUsbLoading || nodeNetworkLoading}
+                  onClick={() => {
+                    if (sidebarSelectedHost) {
+                      console.log(
+                        `🔄 [Hardware] 刷新所有硬件信息: ${sidebarSelectedHost.name}`
+                      );
+                      fetchNodePCIData(sidebarSelectedHost.name);
+                      fetchNodeDisksData(sidebarSelectedHost.name);
+                      fetchNodeUsbData(sidebarSelectedHost.name);
+                      fetchNodeNetworkData(sidebarSelectedHost.name);
+                    }
+                  }}
+                >
+                  刷新所有硬件信息
+                </Button>
+                <span style={{ color: "#666", fontSize: "12px" }}>
+                  包含PCI设备、磁盘设备、USB设备和网络设备信息
+                </span>
+              </Space>
+            </Card>
+
             <Row gutter={[16, 16]}>
               {/* PCI设备信息 */}
               <Col span={24}>
@@ -2406,6 +2563,352 @@ const ClusterManagement: React.FC = () => {
                   )}
                 </Card>
               </Col>
+
+              {/* USB设备信息 */}
+              <Col span={24}>
+                <Card
+                  title={
+                    <Space>
+                      <UsbOutlined />
+                      <span>USB设备列表</span>
+                    </Space>
+                  }
+                  extra={
+                    <Button
+                      icon={<SyncOutlined />}
+                      loading={nodeUsbLoading}
+                      onClick={() => {
+                        if (sidebarSelectedHost) {
+                          fetchNodeUsbData(sidebarSelectedHost.name);
+                        }
+                      }}
+                    >
+                      刷新
+                    </Button>
+                  }
+                  size="small"
+                >
+                  {nodeUsbLoading ? (
+                    <div style={{ textAlign: "center", padding: "20px" }}>
+                      <SyncOutlined spin style={{ fontSize: "18px" }} />
+                      <div style={{ marginTop: "8px" }}>
+                        加载USB设备信息中...
+                      </div>
+                    </div>
+                  ) : nodeUsbError ? (
+                    <Alert
+                      message="获取USB设备信息失败"
+                      description={nodeUsbError}
+                      type="error"
+                      showIcon
+                    />
+                  ) : nodeUsbData && nodeUsbData.devices.length > 0 ? (
+                    <Table
+                      dataSource={nodeUsbData.devices}
+                      rowKey={(record, index) =>
+                        `${record.bus_id}-${record.device_num || index}`
+                      }
+                      pagination={{ pageSize: 10, showSizeChanger: true }}
+                      size="small"
+                      columns={[
+                        {
+                          title: "总线ID",
+                          dataIndex: "bus_id",
+                          key: "bus_id",
+                          width: "12%",
+                          render: (busId: string) => (
+                            <Tag color="blue">{busId}</Tag>
+                          ),
+                        },
+                        {
+                          title: "设备编号",
+                          dataIndex: "device_num",
+                          key: "device_num",
+                          width: "10%",
+                          render: (deviceNum: string) => (
+                            <Tag color="purple">{deviceNum}</Tag>
+                          ),
+                        },
+                        {
+                          title: "厂商ID",
+                          dataIndex: "vendor_id",
+                          key: "vendor_id",
+                          width: "12%",
+                          render: (vendorId: string) => (
+                            <code style={{ fontSize: "12px" }}>{vendorId}</code>
+                          ),
+                        },
+                        {
+                          title: "产品ID",
+                          dataIndex: "product_id",
+                          key: "product_id",
+                          width: "12%",
+                          render: (productId: string) => (
+                            <code style={{ fontSize: "12px" }}>
+                              {productId}
+                            </code>
+                          ),
+                        },
+                        {
+                          title: "厂商名称",
+                          dataIndex: "vendor_name",
+                          key: "vendor_name",
+                          width: "20%",
+                          ellipsis: true,
+                        },
+                        {
+                          title: "产品名称",
+                          dataIndex: "product_name",
+                          key: "product_name",
+                          width: "25%",
+                          ellipsis: true,
+                        },
+                        {
+                          title: "设备名称",
+                          dataIndex: "device_name",
+                          key: "device_name",
+                          width: "19%",
+                          ellipsis: true,
+                          render: (deviceName: string) => (
+                            <Tag color="green">{deviceName}</Tag>
+                          ),
+                        },
+                      ]}
+                    />
+                  ) : (
+                    <Empty description="暂无USB设备信息" />
+                  )}
+                </Card>
+              </Col>
+
+              {/* 网络设备信息 */}
+              <Col span={24}>
+                <Card
+                  title={
+                    <Space>
+                      <GlobalOutlined />
+                      <span>网络设备列表</span>
+                    </Space>
+                  }
+                  extra={
+                    <Button
+                      icon={<SyncOutlined />}
+                      loading={nodeNetworkLoading}
+                      onClick={() => {
+                        if (sidebarSelectedHost) {
+                          fetchNodeNetworkData(sidebarSelectedHost.name);
+                        }
+                      }}
+                    >
+                      刷新
+                    </Button>
+                  }
+                  size="small"
+                >
+                  {nodeNetworkLoading ? (
+                    <div style={{ textAlign: "center", padding: "20px" }}>
+                      <SyncOutlined spin style={{ fontSize: "18px" }} />
+                      <div style={{ marginTop: "8px" }}>
+                        加载网络设备信息中...
+                      </div>
+                    </div>
+                  ) : nodeNetworkError ? (
+                    <Alert
+                      message="获取网络设备信息失败"
+                      description={nodeNetworkError}
+                      type="error"
+                      showIcon
+                    />
+                  ) : nodeNetworkData && nodeNetworkData.networks.length > 0 ? (
+                    <Table
+                      dataSource={nodeNetworkData.networks}
+                      rowKey={(record, index) => `${record.device}-${index}`}
+                      pagination={{ pageSize: 10, showSizeChanger: true }}
+                      size="small"
+                      scroll={{ x: 1200 }}
+                      columns={[
+                        {
+                          title: "设备名称",
+                          dataIndex: "device",
+                          key: "device",
+                          width: "12%",
+                          render: (device: string, record: import("@/services/network").NodeNetwork) => (
+                            <Space direction="vertical" size={0}>
+                              <Tag color={record.is_physical ? "green" : "blue"}>
+                                {device}
+                              </Tag>
+                              <span style={{ fontSize: "11px", color: "#666" }}>
+                                {record.is_physical ? "物理网卡" : "虚拟网卡"}
+                              </span>
+                            </Space>
+                          ),
+                        },
+                        {
+                          title: "类型",
+                          dataIndex: "type",
+                          key: "type",
+                          width: "10%",
+                          render: (type: string) => (
+                            <Tag color="purple">{type}</Tag>
+                          ),
+                        },
+                        {
+                          title: "MAC地址",
+                          dataIndex: "mac",
+                          key: "mac",
+                          width: "15%",
+                          render: (mac: string) => (
+                            <code style={{ fontSize: "11px" }}>{mac}</code>
+                          ),
+                        },
+                        {
+                          title: "状态",
+                          dataIndex: "state",
+                          key: "state",
+                          width: "12%",
+                          render: (state: string) => {
+                            const isConnected = state.includes("连接");
+                            return (
+                              <Tag color={isConnected ? "success" : "default"}>
+                                {state}
+                              </Tag>
+                            );
+                          },
+                        },
+                        {
+                          title: "IPv4地址",
+                          dataIndex: "ip4_addresses",
+                          key: "ip4_addresses",
+                          width: "15%",
+                          render: (addresses: Array<{ index: number; value: string }>) => (
+                            <div>
+                              {addresses && addresses.length > 0 ? (
+                                addresses.map((addr, idx) => (
+                                  <div key={idx} style={{ fontSize: "11px" }}>
+                                    {addr.value}
+                                  </div>
+                                ))
+                              ) : (
+                                <span style={{ color: "#999" }}>--</span>
+                              )}
+                            </div>
+                          ),
+                        },
+                        {
+                          title: "IPv4网关",
+                          dataIndex: "ip4_gateway",
+                          key: "ip4_gateway",
+                          width: "12%",
+                          render: (gateway: string) => (
+                            <span style={{ fontSize: "11px" }}>
+                              {gateway === "--" ? (
+                                <span style={{ color: "#999" }}>--</span>
+                              ) : (
+                                gateway
+                              )}
+                            </span>
+                          ),
+                        },
+                        {
+                          title: "MTU",
+                          dataIndex: "mtu",
+                          key: "mtu",
+                          width: "8%",
+                          render: (mtu: number) => (
+                            <Tag color="cyan">{mtu}</Tag>
+                          ),
+                        },
+                        {
+                          title: "连接",
+                          dataIndex: "connection",
+                          key: "connection",
+                          width: "12%",
+                          ellipsis: true,
+                          render: (connection: string) => (
+                            <span style={{ fontSize: "11px" }}>{connection}</span>
+                          ),
+                        },
+                      ]}
+                      expandable={{
+                        expandedRowRender: (record) => (
+                          <div style={{ margin: 0, padding: "8px 0" }}>
+                            <Row gutter={16}>
+                              <Col span={12}>
+                                <Descriptions
+                                  title="IPv4 详细信息"
+                                  bordered
+                                  size="small"
+                                  column={1}
+                                >
+                                  <Descriptions.Item label="DNS服务器">
+                                    {record.ip4_dns && record.ip4_dns.length > 0 ? (
+                                      record.ip4_dns.map((dns: { index: number; value: string }, idx: number) => (
+                                        <div key={idx} style={{ fontSize: "11px" }}>
+                                          {dns.value}
+                                        </div>
+                                      ))
+                                    ) : (
+                                      "--"
+                                    )}
+                                  </Descriptions.Item>
+                                  <Descriptions.Item label="路由信息">
+                                    {record.ip4_routes && record.ip4_routes.length > 0 ? (
+                                      record.ip4_routes.map((route: { dst: string; nh: string; mt: number }, idx: number) => (
+                                        <div key={idx} style={{ fontSize: "10px", marginBottom: "2px" }}>
+                                          目标: {route.dst} → 网关: {route.nh} (优先级: {route.mt})
+                                        </div>
+                                      ))
+                                    ) : (
+                                      "--"
+                                    )}
+                                  </Descriptions.Item>
+                                </Descriptions>
+                              </Col>
+                              <Col span={12}>
+                                <Descriptions
+                                  title="IPv6 详细信息"
+                                  bordered
+                                  size="small"
+                                  column={1}
+                                >
+                                  <Descriptions.Item label="IPv6地址">
+                                    {record.ip6_addresses && record.ip6_addresses.length > 0 ? (
+                                      record.ip6_addresses.map((addr: { index: number; value: string }, idx: number) => (
+                                        <div key={idx} style={{ fontSize: "11px" }}>
+                                          {addr.value}
+                                        </div>
+                                      ))
+                                    ) : (
+                                      "--"
+                                    )}
+                                  </Descriptions.Item>
+                                  <Descriptions.Item label="IPv6网关">
+                                    {record.ip6_gateway === "--" ? "--" : record.ip6_gateway}
+                                  </Descriptions.Item>
+                                  <Descriptions.Item label="IPv6 DNS">
+                                    {record.ip6_dns && record.ip6_dns.length > 0 ? (
+                                      record.ip6_dns.map((dns: { index: number; value: string }, idx: number) => (
+                                        <div key={idx} style={{ fontSize: "11px" }}>
+                                          {dns.value}
+                                        </div>
+                                      ))
+                                    ) : (
+                                      "--"
+                                    )}
+                                  </Descriptions.Item>
+                                </Descriptions>
+                              </Col>
+                            </Row>
+                          </div>
+                        ),
+                        rowExpandable: () => true,
+                      }}
+                    />
+                  ) : (
+                    <Empty description="暂无网络设备信息" />
+                  )}
+                </Card>
+              </Col>
             </Row>
           </div>
         ),
@@ -2518,40 +3021,91 @@ const ClusterManagement: React.FC = () => {
               if (sidebarSelectedHost) {
                 switch (key) {
                   case "basic":
-                    // 切换到基本信息Tab时，每次都重新加载基本信息（真正的按需加载）
-                    if (!nodeDetailLoading) {
+                    // 切换到基本信息Tab时，如果数据不存在或正在加载则加载
+                    if (!nodeDetailData && !nodeDetailLoading) {
+                      console.log(`📊 [Basic Loading] 加载基本信息`);
                       fetchNodeDetailData(sidebarSelectedHost.name);
-                    } else {
+                    } else if (nodeDetailLoading) {
                       console.log(
                         `⏳ [Loading] 基本信息正在加载中，跳过重复请求`
+                      );
+                    } else {
+                      console.log(
+                        `✅ [Cache Hit] 基本信息已存在，无需重新加载`
                       );
                     }
                     break;
 
                   case "hardware":
-                    // 每次都重新加载PCI设备数据
-                    if (!nodePCILoading) {
-                      console.log(`📡 [PCI Loading] 重新加载PCI设备信息`);
+                    // 确保基本信息存在（硬件页面也需要显示基本统计）
+                    if (!nodeDetailData && !nodeDetailLoading) {
+                      fetchNodeDetailData(sidebarSelectedHost.name);
+                    }
+
+                    // 智能加载PCI设备数据
+                    if (!nodePCIData && !nodePCILoading) {
+                      console.log(`📡 [PCI Loading] 加载PCI设备信息`);
                       fetchNodePCIData(sidebarSelectedHost.name);
-                    } else {
+                    } else if (nodePCILoading) {
                       console.log(
                         `⏳ [PCI Loading] PCI设备信息正在加载中，跳过重复请求`
                       );
-                    }
-
-                    // 每次都重新加载磁盘设备数据
-                    if (!nodeDisksLoading) {
-                      fetchNodeDisksData(sidebarSelectedHost.name);
                     } else {
                       console.log(
+                        `✅ [Cache Hit] PCI设备信息已存在，无需重新加载`
+                      );
+                    }
+
+                    // 智能加载磁盘设备数据
+                    if (!nodeDisksData && !nodeDisksLoading) {
+                      console.log(`💾 [Disks Loading] 加载磁盘设备信息`);
+                      fetchNodeDisksData(sidebarSelectedHost.name);
+                    } else if (nodeDisksLoading) {
+                      console.log(
                         `⏳ [Disks Loading] 磁盘设备信息正在加载中，跳过重复请求`
+                      );
+                    } else {
+                      console.log(
+                        `✅ [Cache Hit] 磁盘设备信息已存在，无需重新加载`
+                      );
+                    }
+
+                    // 智能加载USB设备数据
+                    if (!nodeUsbData && !nodeUsbLoading) {
+                      console.log(`🔌 [USB Loading] 加载USB设备信息`);
+                      fetchNodeUsbData(sidebarSelectedHost.name);
+                    } else if (nodeUsbLoading) {
+                      console.log(
+                        `⏳ [USB Loading] USB设备信息正在加载中，跳过重复请求`
+                      );
+                    } else {
+                      console.log(
+                        `✅ [Cache Hit] USB设备信息已存在，无需重新加载`
+                      );
+                    }
+
+                    // 智能加载网络设备数据
+                    if (!nodeNetworkData && !nodeNetworkLoading) {
+                      console.log(`🌐 [Network Loading] 加载网络设备信息`);
+                      fetchNodeNetworkData(sidebarSelectedHost.name);
+                    } else if (nodeNetworkLoading) {
+                      console.log(
+                        `⏳ [Network Loading] 网络设备信息正在加载中，跳过重复请求`
+                      );
+                    } else {
+                      console.log(
+                        `✅ [Cache Hit] 网络设备信息已存在，无需重新加载`
                       );
                     }
                     break;
 
                   case "performance":
-                    // 性能监控Tab的数据由图表组件自己管理，无需在这里加载
-
+                    // 确保基本信息存在（性能页面需要显示基本统计）
+                    if (!nodeDetailData && !nodeDetailLoading) {
+                      console.log(`📊 [Performance] 加载基本信息用于性能页面`);
+                      fetchNodeDetailData(sidebarSelectedHost.name);
+                    }
+                    // 性能监控Tab的图表数据由图表组件自己管理，无需在这里加载
                     break;
 
                   default:

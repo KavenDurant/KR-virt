@@ -32,6 +32,7 @@ import type {
   VMigrationResponse,
   NodePCIResponse,
   NodeDisksResponse,
+  NodeUsbResponse,
 } from "./types";
 
 // 配置区域
@@ -697,6 +698,35 @@ class ClusterInitService {
   }
 
   /**
+   * 获取物理机USB设备列表
+   */
+  async getNodeUsbDevices(
+    hostname: string
+  ): Promise<StandardResponse<NodeUsbResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post(
+        "/node/usbs",
+        { hostname },
+        {
+          useMock: true,
+          mockData: this.getMockNodeUsbDevices(hostname),
+          defaultSuccessMessage: "获取USB设备列表成功",
+        }
+      );
+    }
+
+    return api.post<NodeUsbResponse>(
+      "/node/usbs",
+      { hostname },
+      {
+        skipAuth: false,
+        defaultSuccessMessage: "获取USB设备列表成功",
+        defaultErrorMessage: "获取USB设备列表失败，请检查网络连接",
+      }
+    );
+  }
+
+  /**
    * 迁移虚拟机 (暂时只返回占位实现)
    */
   async migrateVM(
@@ -1189,6 +1219,60 @@ class ClusterInitService {
       ],
     };
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private getMockNodeUsbDevices(_hostname: string): NodeUsbResponse {
+    return {
+      devices: [
+        {
+          device_name: "USB Storage Device",
+          vendor_id: "0951",
+          product_id: "1666",
+          vendor_name: "Kingston Technology",
+          product_name: "DataTraveler 100 G3",
+          bus_id: "001",
+          device_num: "002",
+        },
+        {
+          device_name: "USB HID Device",
+          vendor_id: "046d",
+          product_id: "c52b",
+          vendor_name: "Logitech, Inc.",
+          product_name: "Unifying Receiver",
+          bus_id: "001",
+          device_num: "003",
+        },
+        {
+          device_name: "USB Hub",
+          vendor_id: "1d6b",
+          product_id: "0002",
+          vendor_name: "Linux Foundation",
+          product_name: "2.0 root hub",
+          bus_id: "001",
+          device_num: "001",
+        },
+        {
+          device_name: "USB Audio Device",
+          vendor_id: "0d8c",
+          product_id: "000c",
+          vendor_name: "C-Media Electronics Inc.",
+          product_name: "Audio Adapter",
+          bus_id: "002",
+          device_num: "004",
+        },
+        {
+          device_name: "USB Camera",
+          vendor_id: "046d",
+          product_id: "085b",
+          vendor_name: "Logitech, Inc.",
+          product_name: "C925e Webcam",
+          bus_id: "002",
+          device_num: "005",
+        },
+      ],
+    };
+  }
+
 }
 
 // 创建并导出集群初始化服务实例

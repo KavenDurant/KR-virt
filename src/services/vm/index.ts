@@ -17,6 +17,12 @@ import type {
   VMNetworkUnmountRequest,
   VMCDRomMountRequest,
   VMCDRomUnmountRequest,
+  VMUSBMountRequest,
+  VMUSBUnmountRequest,
+  VMUSBPlugRequest,
+  VMUSBUnplugRequest,
+  VMDiskMountRequest,
+  VMDiskUnmountRequest,
 } from "./types";
 
 // 配置区域
@@ -35,27 +41,27 @@ const adaptVMApiInfoToVMInfo = (apiInfo: VMApiInfo): VMInfo => {
   const uuid = `${apiInfo.vm_name}-${apiInfo.hostname}`;
 
   // 优化的状态推断逻辑
-  let status = "unknown";
+  let status = apiInfo.status || "unknown"; // 优先使用API返回的实际状态
 
   // 1. 首先检查是否有错误
   if (apiInfo.error !== null && apiInfo.error.trim() !== "") {
     status = "error";
   }
-  // 2. 检查配置状态
+  // 2. 检查配置状态 - 但不覆盖已有的运行状态
   else if (!apiInfo.config_status) {
-    status = "configuring";
+    status = apiInfo.status || "configuring"; // 如果有实际状态则保持，否则设为配置中
   }
-  // 3. 检查配置完整性
+  // 3. 检查配置完整性 - 但不覆盖已有的运行状态
   else if (
     !apiInfo.config ||
     !apiInfo.config.cpu_num ||
     !apiInfo.config.memory_gb
   ) {
-    status = "configuring";
+    status = apiInfo.status || "configuring"; // 如果有实际状态则保持，否则设为配置中
   }
-  // 4. 配置正常，默认为停止状态（需要后续通过其他接口获取实际运行状态）
+  // 4. 配置正常，使用API返回的实际状态
   else {
-    status = "stopped";
+    status = apiInfo.status || "stopped"; // 如果API没有状态信息则默认为停止
   }
 
   // 安全地获取配置信息，提供默认值
@@ -151,6 +157,7 @@ class VMService {
         {
           vm_name: "web-server-01",
           hostname: "node215",
+          status: "running",
           config_status: true,
           config: {
             cpu_num: 4,
@@ -200,6 +207,7 @@ class VMService {
         {
           vm_name: "database-server-01",
           hostname: "node216",
+          status: "stopped",
           config_status: true,
           config: {
             cpu_num: 8,
@@ -767,6 +775,138 @@ class VMService {
     return api.post<VMOperationResponse>("/vm/unmount/cdrom", data, {
       defaultSuccessMessage: "虚拟光驱卸载任务已发送成功",
       defaultErrorMessage: "虚拟光驱卸载任务发送失败",
+    });
+  }
+
+  /**
+   * 挂载USB设备
+   * @param data USB设备挂载请求参数
+   * @returns 操作结果
+   */
+  async mountUSB(
+    data: VMUSBMountRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/mount/usb", data, {
+        useMock: true,
+        mockData: { message: "USB设备挂载任务已发送成功" },
+        defaultSuccessMessage: "USB设备挂载任务已发送成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/mount/usb", data, {
+      defaultSuccessMessage: "USB设备挂载任务已发送成功",
+      defaultErrorMessage: "USB设备挂载任务发送失败",
+    });
+  }
+
+  /**
+   * 卸载USB设备
+   * @param data USB设备卸载请求参数
+   * @returns 操作结果
+   */
+  async unmountUSB(
+    data: VMUSBUnmountRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/unmount/usb", data, {
+        useMock: true,
+        mockData: { message: "USB设备卸载任务已发送成功" },
+        defaultSuccessMessage: "USB设备卸载任务已发送成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/unmount/usb", data, {
+      defaultSuccessMessage: "USB设备卸载任务已发送成功",
+      defaultErrorMessage: "USB设备卸载任务发送失败",
+    });
+  }
+
+  /**
+   * 插拔USB设备
+   * @param data USB设备插拔请求参数
+   * @returns 操作结果
+   */
+  async plugUSB(
+    data: VMUSBPlugRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/plug/usb", data, {
+        useMock: true,
+        mockData: { message: "USB设备插拔成功" },
+        defaultSuccessMessage: "USB设备插拔成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/plug/usb", data, {
+      defaultSuccessMessage: "USB设备插拔成功",
+      defaultErrorMessage: "USB设备插拔失败",
+    });
+  }
+
+  /**
+   * 拔出USB设备
+   * @param data USB设备拔出请求参数
+   * @returns 操作结果
+   */
+  async unplugUSB(
+    data: VMUSBUnplugRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/unplug/usb", data, {
+        useMock: true,
+        mockData: { message: "USB设备拔出成功" },
+        defaultSuccessMessage: "USB设备拔出成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/unplug/usb", data, {
+      defaultSuccessMessage: "USB设备拔出成功",
+      defaultErrorMessage: "USB设备拔出失败",
+    });
+  }
+
+  /**
+   * 挂载磁盘
+   * @param data 磁盘挂载请求参数
+   * @returns 操作结果
+   */
+  async mountDisk(
+    data: VMDiskMountRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/mount/disk", data, {
+        useMock: true,
+        mockData: { message: "磁盘挂载任务已发送成功" },
+        defaultSuccessMessage: "磁盘挂载任务已发送成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/mount/disk", data, {
+      defaultSuccessMessage: "磁盘挂载任务已发送成功",
+      defaultErrorMessage: "磁盘挂载任务发送失败",
+    });
+  }
+
+  /**
+   * 卸载磁盘
+   * @param data 磁盘卸载请求参数
+   * @returns 操作结果
+   */
+  async unmountDisk(
+    data: VMDiskUnmountRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/unmount/disk", data, {
+        useMock: true,
+        mockData: { message: "磁盘卸载任务已发送成功" },
+        defaultSuccessMessage: "磁盘卸载任务已发送成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/unmount/disk", data, {
+      defaultSuccessMessage: "磁盘卸载任务已发送成功",
+      defaultErrorMessage: "磁盘卸载任务发送失败",
     });
   }
 }

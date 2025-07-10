@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 14:04:19
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-08 11:08:22
+ * @LastEditTime: 2025-07-10 18:13:15
  * @FilePath: /KR-virt/src/services/vm/types.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -79,6 +79,7 @@ export interface VMDetailConfig {
 export interface VMApiInfo {
   vm_name: string;
   hostname: string;
+  status: string; // 虚拟机实际运行状态：running, shutoff, paused等
   config_status: boolean;
   config: VMDetailConfig;
   error: string | null;
@@ -198,7 +199,6 @@ export interface VMNetworkMountRequest {
   hostname: string;
   vm_name: string;
   net_name: string;
-  model: string;
   mac_addr?: string | null;
 }
 
@@ -217,7 +217,7 @@ export interface VMVLANMountRequest {
   hostname: string;
   vm_name: string;
   net_name: string;
-  forward: 'isolated' | 'bridge';
+  forward: "isolated" | "bridge";
   vlan_id?: number | null;
   ip_addr?: string | null;
   netmask?: string | null;
@@ -239,13 +239,13 @@ export interface NetworkDeviceInfo {
   bridge: string;
   mac: string;
   enabled: boolean;
-  type: 'bridge' | 'nat' | 'vlan';
+  type: "bridge" | "nat" | "vlan";
   vlan_id?: number;
   ip_addr?: string;
   netmask?: string;
 }
 
-// 虚拟光驱管理相关接口
+// 虚拟机光驱管理相关接口
 export interface VMCDRomMountRequest {
   hostname: string;
   vm_name: string;
@@ -266,4 +266,92 @@ export interface CDRomDeviceInfo {
   mounted: boolean; // 是否已挂载ISO
   bus_type: string; // 总线类型，如 'ide', 'sata'
   format?: string; // 格式，如 'raw'
+}
+
+// ============ 新增：USB设备管理相关接口 ============
+
+// USB设备挂载请求
+export interface VMUSBMountRequest {
+  hostname: string;
+  vm_name: string;
+  vendor_id: string;
+  product_id: string;
+  bus: string;
+  device: string;
+}
+
+// USB设备卸载请求
+export interface VMUSBUnmountRequest {
+  hostname: string;
+  vm_name: string;
+  vendor_id: string;
+  product_id: string;
+  bus: string;
+  device: string;
+}
+
+// USB设备热插拔请求
+export interface VMUSBPlugRequest {
+  hostname: string;
+  vm_name: string;
+  vendor_id: string;
+  product_id: string;
+  bus: string;
+  device: string;
+}
+
+// USB设备热拔出请求
+export interface VMUSBUnplugRequest {
+  hostname: string;
+  vm_name: string;
+  vendor_id: string;
+  product_id: string;
+  bus: string;
+  device: string;
+}
+
+// USB设备信息
+export interface VMUSBDeviceInfo {
+  id: string;
+  vendor_id: string;
+  product_id: string;
+  vendor_name: string;
+  product_name: string;
+  bus: string;
+  device: string;
+  mounted: boolean; // 是否已挂载到虚拟机
+  connected: boolean; // 是否在物理主机上连接
+}
+
+// ============ 新增：磁盘设备管理相关接口 ============
+
+// 磁盘挂载请求
+export interface VMDiskMountRequest {
+  hostname: string;
+  vm_name: string;
+  disk_dir: string;
+  disk_name: string;
+  disk_size_gb: number;
+  bus: string; // 默认 'virtio'
+}
+
+// 磁盘卸载请求
+export interface VMDiskUnmountRequest {
+  hostname: string;
+  vm_name: string;
+  disk_path: string;
+  dev: string; // 设备名，如 'vdb', 'vdc'
+  delete_disk: boolean; // 是否删除磁盘文件
+}
+
+// 磁盘设备信息
+export interface VMDiskDeviceInfo {
+  id: string;
+  name: string; // 设备名，如 'vda', 'vdb'
+  path: string; // 磁盘文件路径
+  size_gb: number; // 磁盘大小（GB）
+  bus_type: string; // 总线类型，如 'virtio', 'ide', 'scsi'
+  format: string; // 磁盘格式，如 'qcow2', 'raw'
+  mounted: boolean; // 是否已挂载
+  readonly: boolean; // 是否只读
 }

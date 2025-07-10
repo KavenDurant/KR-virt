@@ -1,8 +1,8 @@
 /*
  * @Author: KavenDurant luojiaxin888@gmail.com
- * @Date: 2025-07-01 13:47:21
+ * @Date: 2025-07-10 16:09:04
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-08 14:51:57
+ * @LastEditTime: 2025-07-10 18:00:09
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -73,6 +73,8 @@ import {
   CreateVMModal,
   NetworkManagement,
   CDRomManagement,
+  USBManagement,
+  DiskManagement,
 } from "./components";
 import { vmService, type VMInfo, type CreateVMRequest } from "@/services/vm";
 
@@ -1988,66 +1990,69 @@ const VirtualMachineManagement: React.FC = () => {
                 {
                   key: "usb",
                   label: "USB",
-                  children: (
-                    <Card
-                      title="USB设备"
-                      extra={
-                        <Button type="primary" size="small">
-                          添加USB
-                        </Button>
+                  children: sidebarSelectedVM ? (
+                    <USBManagement
+                      vmName={sidebarSelectedVM.name}
+                      hostname={
+                        (sidebarSelectedVM as unknown as { hostname?: string })
+                          .hostname || "unknown"
                       }
-                    >
-                      <Table
-                        size="small"
-                        dataSource={[
-                          {
-                            id: 1,
-                            name: "usb0",
-                            device: "USB键盘",
-                            vendor: "046d",
-                            product: "c534",
-                            connected: true,
-                          },
-                        ]}
-                        columns={[
-                          { title: "设备名", dataIndex: "name", key: "name" },
-                          { title: "设备", dataIndex: "device", key: "device" },
-                          {
-                            title: "Vendor ID",
-                            dataIndex: "vendor",
-                            key: "vendor",
-                          },
-                          {
-                            title: "Product ID",
-                            dataIndex: "product",
-                            key: "product",
-                          },
-                          {
-                            title: "连接状态",
-                            dataIndex: "connected",
-                            key: "connected",
-                            render: (connected: boolean) => (
-                              <Tag color={connected ? "success" : "default"}>
-                                {connected ? "已连接" : "未连接"}
-                              </Tag>
-                            ),
-                          },
-                          {
-                            title: "操作",
-                            key: "action",
-                            render: () => (
-                              <Space>
-                                <Button size="small">编辑</Button>
-                                <Button size="small" danger>
-                                  删除
-                                </Button>
-                              </Space>
-                            ),
-                          },
-                        ]}
-                        pagination={false}
-                      />
-                    </Card>
+                      vmStatus={selectedVMData?.status || sidebarSelectedVM.status || "shutoff"}
+                      usbDevices={
+                        selectedVMData?.config?.usb?.map((usbDevice) => {
+                          // 类型断言，转换为实际API返回的数据结构
+                          const device = usbDevice as Record<string, unknown>;
+                          return {
+                            device_id: (device.device_id as string) || "1",
+                            vendor_id: (device.vendor_id as string) || "0000",
+                            product_id: (device.product_id as string) || "0000",
+                            bus_id: (device.bus_id as string) || "1",
+                          };
+                        }) || []
+                      }
+                      onUSBChange={() => {
+                        // 刷新虚拟机详情数据
+                        loadVmData();
+                      }}
+                      message={message}
+                      loading={loading}
+                      error={null}
+                    />
+                  ) : (
+                    <Alert
+                      message="请选择虚拟机"
+                      description="请从侧边栏选择一个虚拟机以管理其USB设备"
+                      type="info"
+                      showIcon
+                    />
+                  ),
+                },
+                {
+                  key: "disk",
+                  label: "磁盘管理",
+                  children: sidebarSelectedVM ? (
+                    <DiskManagement
+                      vmName={sidebarSelectedVM.name}
+                      hostname={
+                        (sidebarSelectedVM as unknown as { hostname?: string })
+                          .hostname || "unknown"
+                      }
+                      diskDevices={
+                        selectedVMData?.config?.disk || selectedVMData?.disk_info || []
+                      }
+                      onDiskChange={() => {
+                        // 刷新虚拟机详情数据
+                        loadVmData();
+                      }}
+                      message={message}
+                    />
+                  ) : (
+                    <Alert
+                      message="请选择虚拟机"
+                      description="请从侧边栏选择一个虚拟机以管理其磁盘设备"
+                      type="info"
+                      showIcon
+                    />
                   ),
                 },
                 {

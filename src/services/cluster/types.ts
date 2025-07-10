@@ -371,3 +371,21 @@ export interface NodeDiskDeviceActual {
   available_size_gb: number; // 可用容量（GB）
   percentage_value: number; // 使用百分比
 }
+// 物理机usb设备列表
+export interface NodeUsbResponse {
+  devices: NodeUsbDevice[];
+}
+
+export interface NodeUsbDevice {
+  device_name: string; // 设备名称
+  vendor_id: string; // 厂商ID
+  product_id: string; // 产品ID
+  vendor_name: string; // 厂商名称
+  product_name: string; // 产品名称
+  bus_id: string; // 总线ID
+  device_num: string; // 设备编号
+}
+
+export interface NodeUsbRequest {
+  hostname: string;
+}

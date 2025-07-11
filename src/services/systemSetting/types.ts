@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-06-18 18:51:18
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-06-18 18:53:42
+ * @LastEditTime: 2025-07-11 10:37:39
  * @FilePath: /KR-virt/src/services/systemSetting/types.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -94,8 +94,16 @@ export interface StoragePolicy {
 // 存储策略响应
 export type StoragePolicyResponse = StoragePolicy;
 
-// 存储策略更新请求
-export type StoragePolicyUpdateRequest = StoragePolicy;
+// 存储阈值更新请求
+export interface StorageThresholdUpdateRequest {
+  storage_threshold: number; // 存储阈值（百分比，0-100）
+  system_storage_threshold: number; // 系统存储阈值（百分比，0-100）
+}
+
+// 系统存储更新请求
+export interface SystemStorageUpdateRequest {
+  system_storage_id: number; // 系统存储ID
+}
 
 // 存储策略设置响应（包含消息）
 export interface StoragePolicySetResponse {

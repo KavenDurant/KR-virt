@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-01-22 10:00:00
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-08 18:30:45
+ * @LastEditTime: 2025-07-11 11:08:30
  * @FilePath: /KR-virt/src/pages/System/components/StoragePolicy.tsx
  * @Description: 存储策略配置组件
  */
@@ -25,6 +25,7 @@ import {
   App,
   Select,
   Tag,
+  Divider,
 } from "antd";
 import {
   DatabaseOutlined,
@@ -33,12 +34,17 @@ import {
   CheckCircleOutlined,
   HddOutlined,
   CloudServerOutlined,
+  ExclamationCircleFilled,
 } from "@ant-design/icons";
 import { useTheme } from "../../../hooks/useTheme";
 import { systemSettingService } from "../../../services/systemSetting";
-import type { StoragePolicy } from "../../../services/systemSetting/types";
+import type {
+  StoragePolicy,
+  StorageThresholdUpdateRequest,
+} from "../../../services/systemSetting/types";
 import storageService from "../../../services/storage";
 import type { StorageInfo } from "../../../services/storage/types";
+import { formatStorageSize } from "../../../utils/format";
 
 const { Text } = Typography;
 
@@ -59,7 +65,7 @@ const mockStorageInfo = {
 
 const StoragePolicy: React.FC<StoragePolicyProps> = () => {
   const { themeConfig } = useTheme();
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const [form] = Form.useForm();
 
   // 状态管理
@@ -96,7 +102,12 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
       const response = await systemSettingService.getStoragePolicy();
       if (response.success && response.data) {
         setStoragePolicy(response.data);
-        form.setFieldsValue(response.data);
+        // 使用 setFieldsValue 更新表单值
+        form.setFieldsValue({
+          system_storage_id: response.data.system_storage_id,
+          storage_threshold: response.data.storage_threshold,
+          system_storage_threshold: response.data.system_storage_threshold,
+        });
       } else {
         message.error(response.message || "获取存储策略失败");
       }
@@ -108,31 +119,156 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
     }
   }, [form, message]);
 
-  // 保存存储策略配置
-  const handleSave = async (values: StoragePolicy) => {
+  // 保存存储阈值配置
+  const handleSaveThresholds = async (
+    values: StorageThresholdUpdateRequest
+  ) => {
     setSaving(true);
     try {
-      const response = await systemSettingService.setStoragePolicy(values);
+      const response = await systemSettingService.setStorageThreshold({
+        storage_threshold: values.storage_threshold,
+        system_storage_threshold: values.system_storage_threshold,
+      });
       if (response.success) {
-        message.success(response.data?.message || "存储策略保存成功");
-        setStoragePolicy(values);
+        message.success(response.data?.message || "存储阈值设置成功");
+        // 更新本地存储策略状态
+        if (storagePolicy) {
+          setStoragePolicy({
+            ...storagePolicy,
+            storage_threshold: values.storage_threshold,
+            system_storage_threshold: values.system_storage_threshold,
+          });
+        }
       } else {
-        message.error(response.data?.message || response.message || "存储策略保存失败");
+        message.error(
+          response.data?.message || response.message || "存储阈值设置失败"
+        );
       }
     } catch (error) {
-      console.error("保存存储策略失败:", error);
-      message.error("保存存储策略失败，请稍后重试");
+      console.error("保存存储阈值失败:", error);
+      message.error("保存存储阈值失败，请稍后重试");
     } finally {
       setSaving(false);
     }
   };
 
+  // 保存系统存储设置
+  const handleSystemStorageChange = async (systemStorageId: number) => {
+    // 检查所选存储设备状态
+    const selectedStorage = storageList.find(
+      (storage) => storage.id === systemStorageId
+    );
+    const currentStorage = storageList.find(
+      (storage) => storage.id === storagePolicy?.system_storage_id
+    );
+
+    if (!selectedStorage) {
+      message.error("所选存储设备不存在");
+      return;
+    }
+
+    // 验证存储设备状态
+    if (selectedStorage.status !== "normal") {
+      message.error("所选存储设备状态异常，无法设置为系统存储");
+      return;
+    }
+
+    if (currentStorage && currentStorage.status !== "normal") {
+      message.error("当前系统存储设备状态异常，无法进行迁移");
+      return;
+    }
+
+    // 使用App的modal方法代替Modal.confirm以支持动态主题
+    modal.confirm({
+      title: "确认更改系统存储设备",
+      icon: <ExclamationCircleFilled />,
+      width: 610,
+      content: (
+        <div>
+          <p>
+            您即将将系统存储从 <b>{currentStorage?.name || "当前存储"}</b>{" "}
+            迁移至 <b>{selectedStorage.name}</b>。
+          </p>
+          <Alert
+            message="迁移风险提示"
+            description={
+              <ul style={{ paddingLeft: "20px", marginBottom: 0 }}>
+                <li>系统文件较大，迁移过程可能需要较长时间，请耐心等待。</li>
+                <li>迁移期间请勿执行其他操作，以免导致数据异常或丢失。</li>
+                <li>
+                  迁移过程中请保持页面打开，不要关闭浏览器或切换到其他页面。
+                </li>
+                <li>
+                  如迁移失败，请联系技术支持进行处理，切勿重复尝试迁移操作。
+                </li>
+              </ul>
+            }
+            type="warning"
+            showIcon
+          />
+        </div>
+      ),
+      okText: "确认迁移",
+      cancelText: "取消",
+      onOk: async () => {
+        setSaving(true);
+        try {
+          const response = await systemSettingService.setSystemStorage({
+            system_storage_id: systemStorageId,
+          });
+          if (response.success) {
+            message.success(response.data?.message || "系统存储设置成功");
+            // 更新本地存储策略状态
+            if (storagePolicy) {
+              setStoragePolicy({
+                ...storagePolicy,
+                system_storage_id: systemStorageId,
+              });
+            }
+          } else {
+            message.error(
+              response.data?.message || response.message || "系统存储设置失败"
+            );
+            // 重置表单中的系统存储ID
+            form.setFieldsValue({
+              system_storage_id: storagePolicy?.system_storage_id,
+            });
+          }
+        } catch (error) {
+          console.error("设置系统存储失败:", error);
+          message.error("设置系统存储失败，请稍后重试");
+          // 重置表单中的系统存储ID
+          form.setFieldsValue({
+            system_storage_id: storagePolicy?.system_storage_id,
+          });
+        } finally {
+          setSaving(false);
+        }
+      },
+      onCancel: () => {
+        // 重置表单中的系统存储ID
+        form.setFieldsValue({
+          system_storage_id: storagePolicy?.system_storage_id,
+        });
+      },
+    });
+  };
+
   // 重置表单
   const handleReset = () => {
     if (storagePolicy) {
-      form.setFieldsValue(storagePolicy);
+      form.setFieldsValue({
+        system_storage_id: storagePolicy.system_storage_id,
+        storage_threshold: storagePolicy.storage_threshold,
+        system_storage_threshold: storagePolicy.system_storage_threshold,
+      });
     } else {
-      form.resetFields();
+      // 如果没有存储策略数据，设置默认值
+      form.setFieldsValue({
+        system_storage_id: 1,
+        storage_threshold: 80,
+        system_storage_threshold: 90,
+      });
     }
   };
 
@@ -141,6 +277,18 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
     loadStoragePolicy();
     loadStorageList();
   }, [loadStoragePolicy, loadStorageList]);
+
+  // 设置默认表单值
+  useEffect(() => {
+    // 如果没有存储策略数据，设置默认值
+    if (!storagePolicy) {
+      form.setFieldsValue({
+        system_storage_id: 1,
+        storage_threshold: 80,
+        system_storage_threshold: 90,
+      });
+    }
+  }, [form, storagePolicy]);
 
   // 计算存储使用率和阈值状态
   const storageUsagePercent = Math.round(
@@ -217,16 +365,7 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
       <Row gutter={[24, 24]}>
         {/* 左侧：配置表单 */}
         <Col span={14}>
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleSave}
-            initialValues={{
-              system_storage_id: 1,
-              storage_threshold: 80,
-              system_storage_threshold: 90,
-            }}
-          >
+          <Form form={form} layout="vertical">
             <Card
               title={
                 <Space>
@@ -264,23 +403,48 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
                       loading={storageLoading}
                       showSearch
                       optionFilterProp="children"
-                      notFoundContent={storageLoading ? "加载中..." : "暂无存储设备"}
+                      notFoundContent={
+                        storageLoading ? "加载中..." : "暂无存储设备"
+                      }
+                      onChange={handleSystemStorageChange}
                     >
                       {storageList.map((storage) => (
-                        <Select.Option key={storage.id} value={storage.id}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <Select.Option
+                          key={storage.id}
+                          value={storage.id}
+                          disabled={storage.status !== "normal"}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
                             <div>
                               <Space>
                                 <CloudServerOutlined />
-                                <span style={{ fontWeight: 500 }}>{storage.name}</span>
-                                <Tag color="blue">{storage.fstype.toUpperCase()}</Tag>
-                                <Tag color={storage.status === "normal" ? "success" : "error"}>
-                                  {storage.status === "normal" ? "正常" : "异常"}
+                                <span style={{ fontWeight: 500 }}>
+                                  {storage.name}
+                                </span>
+                                <Tag color="blue">
+                                  {storage.fstype.toUpperCase()}
+                                </Tag>
+                                <Tag
+                                  color={
+                                    storage.status === "normal"
+                                      ? "success"
+                                      : "error"
+                                  }
+                                >
+                                  {storage.status === "normal"
+                                    ? "正常"
+                                    : "异常"}
                                 </Tag>
                               </Space>
                             </div>
                             <div style={{ fontSize: "12px", color: "#666" }}>
-                              {(storage.total).toFixed(1)}GB
+                              {formatStorageSize(storage.total)}
                             </div>
                           </div>
                         </Select.Option>
@@ -289,79 +453,105 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
                   </Form.Item>
                 </Col>
               </Row>
+              <Divider
+                dashed={true}
+                style={{ margin: "16px 0", backgroundColor: "#91caff" }}
+              />
+              {/* 使用div替代嵌套的form标签 */}
+              <div>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="storage_threshold"
+                      label={
+                        <Space>
+                          <span>存储使用阈值 (%)</span>
+                          <Tooltip title="当整体存储使用率达到此阈值时发出警告，建议设置为 70-85%">
+                            <InfoCircleOutlined />
+                          </Tooltip>
+                        </Space>
+                      }
+                      rules={[
+                        { required: true, message: "请输入存储使用阈值" },
+                        {
+                          type: "number",
+                          min: 0,
+                          max: 100,
+                          message: "阈值范围为 0-100%",
+                        },
+                      ]}
+                    >
+                      <InputNumber
+                        style={{ width: "100%" }}
+                        min={0}
+                        max={100}
+                        suffix="%"
+                        placeholder="请输入存储使用阈值"
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="system_storage_threshold"
+                      label={
+                        <Space>
+                          <span>系统存储阈值 (%)</span>
+                          <Tooltip title="当系统存储使用率达到此阈值时发出警告，建议设置为 85-95%">
+                            <InfoCircleOutlined />
+                          </Tooltip>
+                        </Space>
+                      }
+                      rules={[
+                        { required: true, message: "请输入系统存储阈值" },
+                        {
+                          type: "number",
+                          min: 0,
+                          max: 100,
+                          message: "阈值范围为 0-100%",
+                        },
+                      ]}
+                    >
+                      <InputNumber
+                        style={{ width: "100%" }}
+                        min={0}
+                        max={100}
+                        suffix="%"
+                        placeholder="请输入系统存储阈值"
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
 
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="storage_threshold"
-                    label={
-                      <Space>
-                        <span>存储使用阈值 (%)</span>
-                        <Tooltip title="当整体存储使用率达到此阈值时发出警告，建议设置为 70-85%">
-                          <InfoCircleOutlined />
-                        </Tooltip>
-                      </Space>
-                    }
-                    rules={[
-                      { required: true, message: "请输入存储使用阈值" },
-                      {
-                        type: "number",
-                        min: 1,
-                        max: 99,
-                        message: "阈值范围为 1-99%",
-                      },
-                    ]}
-                  >
-                    <InputNumber
-                      style={{ width: "100%" }}
-                      min={1}
-                      max={99}
-                      suffix="%"
-                      placeholder="请输入存储使用阈值"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    name="system_storage_threshold"
-                    label={
-                      <Space>
-                        <span>系统存储阈值 (%)</span>
-                        <Tooltip title="当系统存储使用率达到此阈值时发出警告，建议设置为 85-95%">
-                          <InfoCircleOutlined />
-                        </Tooltip>
-                      </Space>
-                    }
-                    rules={[
-                      { required: true, message: "请输入系统存储阈值" },
-                      {
-                        type: "number",
-                        min: 1,
-                        max: 99,
-                        message: "阈值范围为 1-99%",
-                      },
-                    ]}
-                  >
-                    <InputNumber
-                      style={{ width: "100%" }}
-                      min={1}
-                      max={99}
-                      suffix="%"
-                      placeholder="请输入系统存储阈值"
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item>
-                <Space>
-                  <Button type="primary" htmlType="submit" loading={saving}>
-                    保存配置
-                  </Button>
-                  <Button onClick={handleReset}>重置</Button>
-                  <Button onClick={loadStoragePolicy}>刷新</Button>
-                </Space>
-              </Form.Item>
+                <Form.Item>
+                  <Space>
+                    <Button
+                      type="primary"
+                      onClick={() => {
+                        form
+                          .validateFields([
+                            "storage_threshold",
+                            "system_storage_threshold",
+                          ])
+                          .then((values) => {
+                            handleSaveThresholds({
+                              storage_threshold: values.storage_threshold,
+                              system_storage_threshold:
+                                values.system_storage_threshold,
+                            });
+                          })
+                          .catch((errorInfo) => {
+                            console.log("验证失败:", errorInfo);
+                          });
+                      }}
+                      loading={saving}
+                    >
+                      保存阈值配置
+                    </Button>
+                    <Button onClick={handleReset}>重置</Button>
+                    <Button onClick={loadStoragePolicy}>刷新</Button>
+                  </Space>
+                </Form.Item>
+              </div>
             </Card>
 
             {/* 建议配置 */}
@@ -428,19 +618,16 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
               <Col span={12}>
                 <Statistic
                   title="总存储容量"
-                  value={mockStorageInfo.total / 1024}
-                  precision={1}
-                  suffix="TB"
+                  value={formatStorageSize(mockStorageInfo.total)}
                   prefix={<DatabaseOutlined />}
+                  valueStyle={{ fontSize: "16px" }}
                 />
               </Col>
               <Col span={12}>
                 <Statistic
                   title="可用空间"
-                  value={mockStorageInfo.available / 1024}
-                  precision={1}
-                  suffix="TB"
-                  valueStyle={{ color: "#52c41a" }}
+                  value={formatStorageSize(mockStorageInfo.available)}
+                  valueStyle={{ color: "#52c41a", fontSize: "16px" }}
                 />
               </Col>
             </Row>
@@ -562,19 +749,15 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
               <Col span={12}>
                 <Statistic
                   title="系统数据"
-                  value={mockStorageInfo.systemUsed / 1024}
-                  precision={1}
-                  suffix="TB"
-                  valueStyle={{ color: "#1890ff" }}
+                  value={formatStorageSize(mockStorageInfo.systemUsed)}
+                  valueStyle={{ color: "#1890ff", fontSize: "16px" }}
                 />
               </Col>
               <Col span={12}>
                 <Statistic
                   title="用户数据"
-                  value={mockStorageInfo.userUsed / 1024}
-                  precision={1}
-                  suffix="TB"
-                  valueStyle={{ color: "#52c41a" }}
+                  value={formatStorageSize(mockStorageInfo.userUsed)}
+                  valueStyle={{ color: "#52c41a", fontSize: "16px" }}
                 />
               </Col>
             </Row>

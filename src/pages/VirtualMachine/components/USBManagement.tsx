@@ -80,8 +80,10 @@ const USBManagement: React.FC<USBManagementProps> = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
 
-  // 判断虚拟机是否正在运行
-  const isVMRunning = vmStatus === "running";
+  // 判断虚拟机状态
+  const isVMRunning = vmStatus === "运行中" || vmStatus === "running";
+  const isVMShutoff = vmStatus === "已关闭" || vmStatus === "shutoff";
+  const isSpecialState = !isVMRunning && !isVMShutoff;
 
   // 转换API数据为显示数据
   const convertToDisplayData = (
@@ -266,68 +268,122 @@ const USBManagement: React.FC<USBManagementProps> = ({
       key: "actions",
       render: (_: unknown, record: DisplayUSBDevice) => (
         <Space direction="vertical" size={4}>
-          {/* 热卸载按钮 - 虚拟机运行时可用，停止时禁用 */}
-          <Popconfirm
-            title="确认热卸载USB设备"
-            description={
-              <div>
-                <p>虚拟机正在运行，将执行热卸载操作。</p>
-                <p style={{ color: "#fa8c16", fontSize: "12px" }}>
-                  <WarningOutlined style={{ marginRight: "4px" }} />
-                  热卸载可能会影响虚拟机中正在使用此设备的应用程序
-                </p>
-              </div>
-            }
-            onConfirm={() => handleHotUnmountUSB(record)}
-            okText="确认热卸载"
-            cancelText="取消"
-            okButtonProps={{ danger: true }}
-            disabled={!isVMRunning}
-          >
-            <Button
-              size="small"
-              danger
-              icon={<ThunderboltOutlined />}
-              loading={operationLoading}
-              disabled={!isVMRunning}
-              title={
-                !isVMRunning ? "虚拟机未运行，无法热卸载" : "热卸载USB设备"
+          {/* 根据虚拟机状态显示不同的卸载按钮 */}
+          {/* 运行状态：只显示热卸载按钮 */}
+          {isVMRunning && (
+            <Popconfirm
+              title="确认热卸载USB设备"
+              description={
+                <div>
+                  <p>虚拟机正在运行，将执行热卸载操作。</p>
+                  <p style={{ color: "#fa8c16", fontSize: "12px" }}>
+                    <WarningOutlined style={{ marginRight: "4px" }} />
+                    热卸载可能会影响虚拟机中正在使用此设备的应用程序
+                  </p>
+                </div>
               }
+              onConfirm={() => handleHotUnmountUSB(record)}
+              okText="确认热卸载"
+              cancelText="取消"
+              okButtonProps={{ danger: true }}
             >
-              热卸载
-            </Button>
-          </Popconfirm>
+              <Button
+                size="small"
+                danger
+                icon={<ThunderboltOutlined />}
+                loading={operationLoading}
+                title="热卸载USB设备"
+              >
+                热卸载
+              </Button>
+            </Popconfirm>
+          )}
 
-          {/* 冷卸载按钮 - 虚拟机停止时可用，运行时禁用 */}
-          <Popconfirm
-            title="确认冷卸载USB设备"
-            description={
-              <div>
-                <p>虚拟机已停止，将执行冷卸载操作。</p>
-                <p style={{ color: "#52c41a", fontSize: "12px" }}>
-                  <SafetyOutlined style={{ marginRight: "4px" }} />
-                  冷卸载是安全操作，不会影响虚拟机运行
-                </p>
-              </div>
-            }
-            onConfirm={() => handleColdUnmountUSB(record)}
-            okText="确认冷卸载"
-            cancelText="取消"
-            disabled={isVMRunning}
-          >
-            <Button
-              size="small"
-              danger
-              icon={<DisconnectOutlined />}
-              loading={operationLoading}
-              disabled={isVMRunning}
-              title={
-                isVMRunning ? "虚拟机正在运行，无法冷卸载" : "冷卸载USB设备"
+          {/* 关机状态：只显示冷卸载按钮 */}
+          {isVMShutoff && (
+            <Popconfirm
+              title="确认冷卸载USB设备"
+              description={
+                <div>
+                  <p>虚拟机已停止，将执行冷卸载操作。</p>
+                  <p style={{ color: "#52c41a", fontSize: "12px" }}>
+                    <SafetyOutlined style={{ marginRight: "4px" }} />
+                    冷卸载是安全操作，不会影响虚拟机运行
+                  </p>
+                </div>
               }
+              onConfirm={() => handleColdUnmountUSB(record)}
+              okText="确认冷卸载"
+              cancelText="取消"
             >
-              冷卸载
-            </Button>
-          </Popconfirm>
+              <Button
+                size="small"
+                danger
+                icon={<DisconnectOutlined />}
+                loading={operationLoading}
+                title="冷卸载USB设备"
+              >
+                冷卸载
+              </Button>
+            </Popconfirm>
+          )}
+
+          {/* 特殊状态：显示两个按钮 */}
+          {isSpecialState && (
+            <>
+              <Popconfirm
+                title="确认热卸载USB设备"
+                description={
+                  <div>
+                    <p>确定要执行热卸载操作吗？</p>
+                    <p style={{ color: "#fa8c16", fontSize: "12px" }}>
+                      <WarningOutlined style={{ marginRight: "4px" }} />
+                      热卸载可能会影响虚拟机中正在使用此设备的应用程序
+                    </p>
+                  </div>
+                }
+                onConfirm={() => handleHotUnmountUSB(record)}
+                okText="确认热卸载"
+                cancelText="取消"
+                okButtonProps={{ danger: true }}
+              >
+                <Button
+                  size="small"
+                  danger
+                  icon={<ThunderboltOutlined />}
+                  loading={operationLoading}
+                  title="热卸载USB设备"
+                >
+                  热卸载
+                </Button>
+              </Popconfirm>
+              <Popconfirm
+                title="确认冷卸载USB设备"
+                description={
+                  <div>
+                    <p>确定要执行冷卸载操作吗？</p>
+                    <p style={{ color: "#52c41a", fontSize: "12px" }}>
+                      <SafetyOutlined style={{ marginRight: "4px" }} />
+                      冷卸载是安全操作，不会影响虚拟机运行
+                    </p>
+                  </div>
+                }
+                onConfirm={() => handleColdUnmountUSB(record)}
+                okText="确认冷卸载"
+                cancelText="取消"
+              >
+                <Button
+                  size="small"
+                  danger
+                  icon={<DisconnectOutlined />}
+                  loading={operationLoading}
+                  title="冷卸载USB设备"
+                >
+                  冷卸载
+                </Button>
+              </Popconfirm>
+            </>
+          )}
         </Space>
       ),
     },
@@ -394,18 +450,6 @@ const USBManagement: React.FC<USBManagementProps> = ({
           <Space>
             <UsbOutlined style={{ fontSize: "16px", color: "#1890ff" }} />
             <span>USB设备管理</span>
-            <Tag color="blue" icon={<UsbOutlined />}>
-              {displayUSBDevices.length} 个设备
-            </Tag>
-            {isVMRunning ? (
-              <Tag color="success" icon={<CheckCircleOutlined />}>
-                虚拟机运行中
-              </Tag>
-            ) : (
-              <Tag color="default" icon={<ExclamationCircleOutlined />}>
-                虚拟机已停止
-              </Tag>
-            )}
           </Space>
         }
         extra={
@@ -454,34 +498,36 @@ const USBManagement: React.FC<USBManagementProps> = ({
           layout="horizontal"
           onFinish={handleFormSubmit}
           initialValues={{
-            mountType: "cold",
+            mountType: isSpecialState ? "hot" : "cold",
           }}
           labelCol={{ span: 4 }}
           wrapperCol={{ span: 20 }}
         >
-          {/* TODO 后期通过系统设置里的全局接口配置显示或隐藏 */}
-          {/* <Alert
-            message="USB设备加载方式说明"
-            description={
-              <div>
-                <p>
-                  <ThunderboltOutlined
-                    style={{ color: "#fa8c16", marginRight: "4px" }}
-                  />
-                  热加载：虚拟机运行时动态添加USB设备，可能会影响正在运行的应用程序
-                </p>
-                <p>
-                  <SafetyOutlined
-                    style={{ color: "#52c41a", marginRight: "4px" }}
-                  />
-                  冷加载：虚拟机关机状态下添加USB设备，更安全但需要虚拟机处于关机状态
-                </p>
-              </div>
-            }
-            type="info"
-            showIcon
-            style={{ marginBottom: "24px" }}
-          /> */}
+          {/* 状态说明提示 */}
+          {isSpecialState && (
+            <Alert
+              message="USB设备加载方式说明"
+              description={
+                <div>
+                  <p>
+                    <ThunderboltOutlined
+                      style={{ color: "#fa8c16", marginRight: "4px" }}
+                    />
+                    热加载：虚拟机特殊状态下动态添加USB设备，可能会影响虚拟机
+                  </p>
+                  <p>
+                    <SafetyOutlined
+                      style={{ color: "#52c41a", marginRight: "4px" }}
+                    />
+                    冷加载：虚拟机关机状态下添加USB设备，更安全但需要虚拟机处于关机状态
+                  </p>
+                </div>
+              }
+              type="info"
+              showIcon
+              style={{ marginBottom: "24px" }}
+            />
+          )}
 
           <Form.Item
             name="mountType"
@@ -490,12 +536,14 @@ const USBManagement: React.FC<USBManagementProps> = ({
           >
             <Radio.Group>
               <Space>
-                {/* <Radio value="hot">
-                  <Space>
-                    <ThunderboltOutlined style={{ color: "#fa8c16" }} />
-                    热加载
-                  </Space>
-                </Radio> */}
+                {isSpecialState && (
+                  <Radio value="hot">
+                    <Space>
+                      <ThunderboltOutlined style={{ color: "#fa8c16" }} />
+                      热加载
+                    </Space>
+                  </Radio>
+                )}
                 <Radio value="cold">
                   <Space>
                     <SafetyOutlined style={{ color: "#52c41a" }} />

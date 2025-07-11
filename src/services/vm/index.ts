@@ -28,6 +28,20 @@ import type {
 // 配置区域
 const USE_MOCK_DATA = EnvConfig.ENABLE_MOCK;
 
+// 虚拟机状态映射
+const VM_STATUS_MAP = {
+  no_state: "无状态",
+  running: "运行中",
+  blocked: "阻塞",
+  paused: "暂停",
+  shutdown: "正在关闭",
+  shutoff: "已关闭",
+  crashed: "崩溃",
+  pm_suspended: "挂起",
+} as const;
+
+type VMStatusKey = keyof typeof VM_STATUS_MAP;
+
 /**
  * 数据适配函数：将API返回的VMApiInfo转换为UI需要的VMInfo格式
  *
@@ -41,27 +55,24 @@ const adaptVMApiInfoToVMInfo = (apiInfo: VMApiInfo): VMInfo => {
   const uuid = `${apiInfo.vm_name}-${apiInfo.hostname}`;
 
   // 优化的状态推断逻辑
-  let status = apiInfo.status || "unknown"; // 优先使用API返回的实际状态
+  let status = "unknown"; // 默认状态为未知
 
   // 1. 首先检查是否有错误
   if (apiInfo.error !== null && apiInfo.error.trim() !== "") {
     status = "error";
   }
-  // 2. 检查配置状态 - 但不覆盖已有的运行状态
+  // 2. 检查配置状态
   else if (!apiInfo.config_status) {
-    status = apiInfo.status || "configuring"; // 如果有实际状态则保持，否则设为配置中
+    status = "configuring";
   }
-  // 3. 检查配置完整性 - 但不覆盖已有的运行状态
-  else if (
-    !apiInfo.config ||
-    !apiInfo.config.cpu_num ||
-    !apiInfo.config.memory_gb
-  ) {
-    status = apiInfo.status || "configuring"; // 如果有实际状态则保持，否则设为配置中
+  // 3. 检查配置完整性
+  else if (!apiInfo.config || !apiInfo.config.cpu_num || !apiInfo.config.memory_gb) {
+    status = "configuring";
   }
-  // 4. 配置正常，使用API返回的实际状态
-  else {
-    status = apiInfo.status || "stopped"; // 如果API没有状态信息则默认为停止
+  // 4. 使用API返回的状态并进行映射
+  else if (apiInfo.status) {
+    const apiStatus = apiInfo.status as VMStatusKey;
+    status = apiStatus in VM_STATUS_MAP ? VM_STATUS_MAP[apiStatus] : "未知状态";
   }
 
   // 安全地获取配置信息，提供默认值

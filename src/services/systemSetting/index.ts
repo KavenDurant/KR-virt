@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-06-18 18:51:32
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-11 10:39:36
+ * @LastEditTime: 2025-07-11 13:39:26
  * @FilePath: /KR-virt/src/services/systemSetting/index.ts
  * @Description: 系统设置服务 - 参考cluster集群服务的统一架构
  */
@@ -22,6 +22,7 @@ import type {
   StorageThresholdUpdateRequest,
   SystemStorageUpdateRequest,
   StoragePolicySetResponse,
+  SystemStorageStatus,
 } from "./types";
 
 // 配置区域
@@ -397,7 +398,6 @@ class SystemSettingService {
   async setStoragePolicy(
     policy: StorageThresholdUpdateRequest & SystemStorageUpdateRequest
   ): Promise<StandardResponse<StoragePolicySetResponse>> {
-
     // 拆分为两个请求
     const thresholdResult = await this.setStorageThreshold({
       storage_threshold: policy.storage_threshold,
@@ -411,6 +411,40 @@ class SystemSettingService {
     return this.setSystemStorage({
       system_storage_id: policy.system_storage_id,
     });
+  }
+
+  /**
+   * 获取系统存储状态
+   */
+  async getSystemStorageStatus(): Promise<
+    StandardResponse<SystemStorageStatus>
+  > {
+    if (USE_MOCK_DATA) {
+      const mockData: SystemStorageStatus = {
+        status: "normal",
+        total: 1024, // 1TB
+        used: 512, // 512GB
+      };
+
+      return mockApi.get(
+        "/system_setting/system_storage",
+        {},
+        {
+          useMock: true,
+          mockData,
+          defaultSuccessMessage: "获取系统存储状态成功",
+        }
+      );
+    }
+
+    return api.get<SystemStorageStatus>(
+      "/system_setting/system_storage",
+      {},
+      {
+        defaultSuccessMessage: "获取系统存储状态成功",
+        defaultErrorMessage: "获取系统存储状态失败，请稍后重试",
+      }
+    );
   }
 
   /**

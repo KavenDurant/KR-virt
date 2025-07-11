@@ -16,6 +16,7 @@ import type {
   NetworkOperationResponse,
   NodeNetwork,
   NodeNetworkListResponse,
+  NetworkTopologyResponse,
 } from "./types";
 import { NETWORK_TYPE_MAP, DRIVER_TYPE_MAP, FORWARD_MODE_MAP } from "./types";
 
@@ -313,6 +314,75 @@ class NetworkService {
     const macRegex = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
     return macRegex.test(mac);
   }
+
+  /**
+   * 获取网络拓扑图数据
+   * @returns 网络拓扑图数据
+   */
+  async getNetworkTopology(): Promise<StandardResponse<NetworkTopologyResponse>> {
+    if (USE_MOCK_DATA) {
+      // 使用模拟数据
+      const mockTopologyData: NetworkTopologyResponse = {
+        nodes: [
+          {
+            id: "host_node216",
+            type: "host",
+            data: {
+              name: "node216",
+              interfaces: ["iface_node216_br0", "iface_node216_virbr0"]
+            },
+            position: { x: 0, y: 0 }
+          },
+          {
+            id: "iface_node216_br0",
+            type: "interface",
+            data: {
+              host: "node216",
+              device: "br0",
+              mac: "BC:24:11:91:8D:B3",
+              ip4_addresses: ["192.168.1.216/24"],
+              ip4_gateway: "192.168.1.110",
+              is_physical: false
+            },
+            position: { x: 0, y: 100 }
+          }
+        ],
+        edges: [
+          {
+            id: "edge_host_node216_to_iface_node216_br0",
+            source_id: "host_node216",
+            target_id: "iface_node216_br0",
+            type: "host-interface"
+          }
+        ]
+      };
+
+      return mockApi.get(
+        "/network/topology",
+        {},
+        {
+          useMock: true,
+          mockData: mockTopologyData,
+          defaultSuccessMessage: "网络拓扑图数据获取成功",
+        }
+      );
+    }
+
+    try {
+      const response = await api.get<NetworkTopologyResponse>(
+        "/network/topology",
+        {},
+        {
+          defaultSuccessMessage: "网络拓扑图数据获取成功",
+          defaultErrorMessage: "网络拓扑图数据获取失败",
+        }
+      );
+      return response;
+    } catch (error) {
+      console.error("💥 获取网络拓扑图数据失败:", error);
+      throw error;
+    }
+  }
 }
 
 // 创建服务实例
@@ -343,6 +413,8 @@ export const validateIP = (ip: string) => networkService.validateIP(ip);
 
 export const validateMAC = (mac: string) => networkService.validateMAC(mac);
 
+export const getNetworkTopology = () => networkService.getNetworkTopology();
+
 // 导出类型
 export type {
   NetworkConfig,
@@ -352,6 +424,11 @@ export type {
   NetworkOperationResponse,
   NodeNetwork,
   NodeNetworkListResponse,
+  NetworkTopologyResponse,
+  TopologyNode,
+  TopologyEdge,
+  TopologyNodeType,
+  TopologyEdgeType,
 } from "./types";
 
 // 导出常量

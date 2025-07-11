@@ -36,27 +36,16 @@ import {
   EditOutlined,
   DeleteOutlined,
   CloudOutlined,
-  RocketOutlined,
-  ShareAltOutlined,
 } from "@ant-design/icons";
-// import NetworkConfigManagement from "./components/NetworkConfig"; // 暂时注释未使用的导入
-import ReactFlow, {
-  addEdge,
-  Background,
-  useNodesState,
-  useEdgesState,
-  ConnectionMode,
-  Controls,
-  MiniMap,
-} from "reactflow";
-import type { Node, Edge, Connection } from "reactflow";
-import "reactflow/dist/style.css";
+// 导入网络拓扑图组件
+import { NetworkTopology } from "./components";
 // 导入网络服务
 import {
   getNetworkConfig,
   getNodeNetworks,
   createNetwork as createNetworkAPI,
   deleteNetwork as deleteNetworkAPI,
+  getNetworkTopology,
 } from "@/services/network";
 import type {
   Network,
@@ -65,6 +54,7 @@ import type {
   SecurityRule,
   CreateNetworkRequest,
   NodeNetwork,
+  NetworkTopologyResponse,
 } from "@/services/network/types";
 // 导入集群服务
 import { clusterInitService } from "@/services/cluster";
@@ -220,6 +210,11 @@ const NetworkManagement: React.FC = () => {
   const [selectedNetworkIps, setSelectedNetworkIps] = useState<IPDetail[]>([]);
   const [currentHostname] = useState("node215"); // 当前主机名，可以从全局状态获取
 
+  // 网络拓扑相关状态
+  const [topologyData, setTopologyData] =
+    useState<NetworkTopologyResponse | null>(null);
+  const [topologyLoading, setTopologyLoading] = useState(false);
+
   // 适配网络数据格式
   const adaptNetworkDataForUI = (config: Network): Network => ({
     net_name: config.net_name,
@@ -307,13 +302,37 @@ const NetworkManagement: React.FC = () => {
     }
   }, [message]);
 
+  // 加载网络拓扑数据
+  const loadNetworkTopology = useCallback(async () => {
+    try {
+      setTopologyLoading(true);
+      const response = await getNetworkTopology();
+
+      if (response.success && response.data) {
+        setTopologyData(response.data);
+      } else {
+        console.log("API响应失败:", response.message);
+        setTopologyData(null);
+      }
+    } catch (error) {
+      console.error("API调用异常:", error);
+      setTopologyData(null);
+    } finally {
+      setTopologyLoading(false);
+    }
+  }, []);
+
   // 初始化加载数据
   useEffect(() => {
     const initializeData = async () => {
-      await Promise.all([loadNetworkConfig(), loadClusterNodes()]);
+      await Promise.all([
+        loadNetworkConfig(),
+        loadClusterNodes(),
+        loadNetworkTopology(),
+      ]);
     };
     initializeData();
-  }, [loadNetworkConfig, loadClusterNodes]);
+  }, [loadNetworkConfig, loadClusterNodes, loadNetworkTopology]);
 
   // 当选中节点变化时，加载对应的网络列表
   useEffect(() => {
@@ -322,353 +341,17 @@ const NetworkManagement: React.FC = () => {
     }
   }, [selectedNode, loadNodeNetworks]);
 
-  // 定义拓扑图节点数据
-  const initialNodes: Node[] = [
-    {
-      id: "router",
-      type: "default",
-      position: { x: 536, y: 124 },
-      data: {
-        label: (
-          <div style={{ textAlign: "center" }}>
-            <CloudOutlined style={{ fontSize: "24px", color: "#1890ff" }} />
-            <div>主路由器</div>
-            <div style={{ fontSize: "12px", color: "#666" }}>
-              IP: 192.168.1.1
-            </div>
-          </div>
-        ),
-      },
-      style: {
-        background: "#fff",
-        border: "2px solid #1890ff",
-        borderRadius: "8px",
-        padding: "10px",
-        width: 120,
-        height: 80,
-      },
-    },
-    {
-      id: "switch-core",
-      type: "default",
-      position: { x: 408, y: 378 },
-      data: {
-        label: (
-          <div style={{ textAlign: "center" }}>
-            <ShareAltOutlined style={{ fontSize: "20px", color: "#52c41a" }} />
-            <div>核心交换机</div>
-            <div style={{ fontSize: "12px", color: "#666" }}>连接所有网络</div>
-          </div>
-        ),
-      },
-      style: {
-        background: "#fff",
-        border: "2px solid #52c41a",
-        borderRadius: "8px",
-        padding: "8px",
-        width: 100,
-        height: 70,
-      },
-    },
-    {
-      id: "switch-prod",
-      type: "default",
-      position: { x: 536, y: 378 },
-      data: {
-        label: (
-          <div style={{ textAlign: "center" }}>
-            <ShareAltOutlined style={{ fontSize: "20px", color: "#52c41a" }} />
-            <div>生产交换机</div>
-            <div style={{ fontSize: "12px", color: "#666" }}>连接生产网络</div>
-          </div>
-        ),
-      },
-      style: {
-        background: "#fff",
-        border: "2px solid #52c41a",
-        borderRadius: "8px",
-        padding: "8px",
-        width: 100,
-        height: 70,
-      },
-    },
-    {
-      id: "network-nat",
-      type: "default",
-      position: { x: 177, y: 280 },
-      data: {
-        label: (
-          <div style={{ textAlign: "center" }}>
-            <ApartmentOutlined style={{ fontSize: "16px", color: "#722ed1" }} />
-            <div>默认网络</div>
-            <div style={{ fontSize: "10px", color: "#666" }}>
-              NAT | 192.168.122.0/24
-            </div>
-          </div>
-        ),
-      },
-      style: {
-        background: "#fff",
-        border: "1px solid #722ed1",
-        borderRadius: "6px",
-        padding: "6px",
-        width: 120,
-        height: 60,
-      },
-    },
-    {
-      id: "network-prod",
-      type: "default",
-      position: { x: 496, y: 280 },
-      data: {
-        label: (
-          <div style={{ textAlign: "center" }}>
-            <ApartmentOutlined style={{ fontSize: "16px", color: "#1890ff" }} />
-            <div>生产网络</div>
-            <div style={{ fontSize: "10px", color: "#666" }}>
-              BRIDGE | 10.0.0.0/24
-            </div>
-          </div>
-        ),
-      },
-      style: {
-        background: "#fff",
-        border: "1px solid #1890ff",
-        borderRadius: "6px",
-        padding: "6px",
-        width: 120,
-        height: 60,
-      },
-    },
-    {
-      id: "network-isolated",
-      type: "default",
-      position: { x: 810, y: 280 },
-      data: {
-        label: (
-          <div style={{ textAlign: "center" }}>
-            <ApartmentOutlined style={{ fontSize: "16px", color: "#fa8c16" }} />
-            <div>隔离网络</div>
-            <div style={{ fontSize: "10px", color: "#666" }}>
-              ISOLATED | 192.168.200.0/24
-            </div>
-          </div>
-        ),
-      },
-      style: {
-        background: "#fff",
-        border: "1px solid #fa8c16",
-        borderRadius: "6px",
-        padding: "6px",
-        width: 120,
-        height: 60,
-      },
-    },
-    {
-      id: "network-direct",
-      type: "default",
-      position: { x: 1135, y: 280 },
-      data: {
-        label: (
-          <div style={{ textAlign: "center" }}>
-            <ApartmentOutlined style={{ fontSize: "16px", color: "#13c2c2" }} />
-            <div>直连网络</div>
-            <div style={{ fontSize: "10px", color: "#666" }}>
-              DIRECT | 无子网
-            </div>
-          </div>
-        ),
-      },
-      style: {
-        background: "#fff",
-        border: "1px solid #13c2c2",
-        borderRadius: "6px",
-        padding: "6px",
-        width: 120,
-        height: 60,
-      },
-    },
-    {
-      id: "vm-web-01",
-      type: "default",
-      position: { x: 202, y: 507 },
-      data: {
-        label: (
-          <div style={{ textAlign: "center" }}>
-            <RocketOutlined style={{ fontSize: "16px", color: "#1890ff" }} />
-            <div>Web服务器-01</div>
-            <div style={{ fontSize: "10px", color: "#666" }}>
-              IP: 192.168.122.101 | 在线
-            </div>
-          </div>
-        ),
-      },
-      style: {
-        background: "#f6ffed",
-        border: "1px solid #b7eb8f",
-        borderRadius: "6px",
-        padding: "6px",
-        width: 140,
-        height: 60,
-      },
-    },
-    {
-      id: "vm-db-02",
-      type: "default",
-      position: { x: 438, y: 507 },
-      data: {
-        label: (
-          <div style={{ textAlign: "center" }}>
-            <RocketOutlined style={{ fontSize: "16px", color: "#1890ff" }} />
-            <div>数据库服务器-02</div>
-            <div style={{ fontSize: "10px", color: "#666" }}>
-              IP: 10.0.0.10 | 在线
-            </div>
-          </div>
-        ),
-      },
-      style: {
-        background: "#f6ffed",
-        border: "1px solid #b7eb8f",
-        borderRadius: "6px",
-        padding: "6px",
-        width: 140,
-        height: 60,
-      },
-    },
-    {
-      id: "vm-db-03",
-      type: "default",
-      position: { x: 848, y: 507 },
-      data: {
-        label: (
-          <div style={{ textAlign: "center" }}>
-            <RocketOutlined style={{ fontSize: "16px", color: "#1890ff" }} />
-            <div>数据库服务器-03</div>
-            <div style={{ fontSize: "10px", color: "#666" }}>
-              IP: 192.168.200.10 | 在线
-            </div>
-          </div>
-        ),
-      },
-      style: {
-        background: "#f6ffed",
-        border: "1px solid #b7eb8f",
-        borderRadius: "6px",
-        padding: "6px",
-        width: 140,
-        height: 60,
-      },
-    },
-    {
-      id: "vm-test-04",
-      type: "default",
-      position: { x: 1158, y: 507 },
-      data: {
-        label: (
-          <div style={{ textAlign: "center" }}>
-            <RocketOutlined style={{ fontSize: "16px", color: "#1890ff" }} />
-            <div>测试服务器-04</div>
-            <div style={{ fontSize: "10px", color: "#666" }}>
-              IP: 192.168.122.102 | 离线
-            </div>
-          </div>
-        ),
-      },
-      style: {
-        background: "#fff2e8",
-        border: "1px solid #ffbb96",
-        borderRadius: "6px",
-        padding: "6px",
-        width: 140,
-        height: 60,
-      },
-    },
-  ];
+  // 拓扑图节点点击处理
+  const handleTopologyNodeClick = useCallback((node: unknown) => {
+    console.log("点击了节点:", node);
+    // 可以在这里添加节点点击的处理逻辑
+  }, []);
 
-  // 定义拓扑图边数据
-  const initialEdges: Edge[] = [
-    {
-      id: "router-core",
-      source: "router",
-      target: "switch-core",
-      type: "default",
-      style: { stroke: "#1890ff", strokeWidth: 2 },
-      animated: true,
-    },
-    {
-      id: "router-prod",
-      source: "router",
-      target: "switch-prod",
-      type: "default",
-      style: { stroke: "#1890ff", strokeWidth: 2 },
-      animated: true,
-    },
-    {
-      id: "core-nat",
-      source: "switch-core",
-      target: "network-nat",
-      type: "default",
-      style: { stroke: "#722ed1", strokeWidth: 2, strokeDasharray: "5,5" },
-    },
-    {
-      id: "prod-bridge",
-      source: "switch-prod",
-      target: "network-prod",
-      type: "default",
-      style: { stroke: "#1890ff", strokeWidth: 2, strokeDasharray: "5,5" },
-    },
-    {
-      id: "core-isolated",
-      source: "switch-core",
-      target: "network-isolated",
-      type: "default",
-      style: { stroke: "#fa8c16", strokeWidth: 2, strokeDasharray: "5,5" },
-    },
-    {
-      id: "core-direct",
-      source: "switch-core",
-      target: "network-direct",
-      type: "default",
-      style: { stroke: "#13c2c2", strokeWidth: 2, strokeDasharray: "5,5" },
-    },
-    {
-      id: "nat-web01",
-      source: "network-nat",
-      target: "vm-web-01",
-      type: "default",
-      style: { stroke: "#52c41a", strokeWidth: 1 },
-    },
-    {
-      id: "prod-db02",
-      source: "network-prod",
-      target: "vm-db-02",
-      type: "default",
-      style: { stroke: "#52c41a", strokeWidth: 1 },
-    },
-    {
-      id: "isolated-db03",
-      source: "network-isolated",
-      target: "vm-db-03",
-      type: "default",
-      style: { stroke: "#52c41a", strokeWidth: 1 },
-    },
-    {
-      id: "direct-test04",
-      source: "network-direct",
-      target: "vm-test-04",
-      type: "default",
-      style: { stroke: "#ff7875", strokeWidth: 1 },
-    },
-  ];
-
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-
-  const onConnect = useCallback(
-    (params: Edge | Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  );
+  // 拓扑图边点击处理
+  const handleTopologyEdgeClick = useCallback((edge: unknown) => {
+    console.log("点击了边:", edge);
+    // 可以在这里添加边点击的处理逻辑
+  }, []);
 
   // 处理创建/编辑网络
   const handleNetworkModalOk = async () => {
@@ -1482,157 +1165,42 @@ const NetworkManagement: React.FC = () => {
                     key: "topology",
                     label: "网络拓扑",
                     children: (
-                      <Card style={{ height: "600px" }}>
-                        <div style={{ height: "500px", width: "100%" }}>
-                          <ReactFlow
-                            nodes={nodes}
-                            edges={edges}
-                            onNodesChange={onNodesChange}
-                            onEdgesChange={onEdgesChange}
-                            onConnect={onConnect}
-                            connectionMode={ConnectionMode.Loose}
-                            fitView
-                            attributionPosition="top-right"
-                          >
-                            <Controls />
-                            <MiniMap
-                              nodeStrokeColor="#333"
-                              nodeColor="#fff"
-                              nodeBorderRadius={2}
-                              maskColor="rgba(0, 0, 0, 0.1)"
-                            />
-                            <Background gap={12} size={1} />
-                          </ReactFlow>
-                        </div>
+                      <div>
                         <div
                           style={{
-                            marginTop: "16px",
+                            marginBottom: 16,
                             display: "flex",
-                            gap: "16px",
-                            flexWrap: "wrap",
+                            gap: 8,
+                            alignItems: "center",
                           }}
                         >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                            }}
+                          <Button
+                            icon={<SyncOutlined />}
+                            onClick={loadNetworkTopology}
+                            loading={topologyLoading}
+                            type="primary"
                           >
-                            <div
-                              style={{
-                                width: "16px",
-                                height: "16px",
-                                background: "#1890ff",
-                                borderRadius: "2px",
-                              }}
-                            ></div>
-                            <span>路由器/交换机</span>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "16px",
-                                height: "16px",
-                                background: "#722ed1",
-                                borderRadius: "2px",
-                              }}
-                            ></div>
-                            <span>NAT网络</span>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "16px",
-                                height: "16px",
-                                background: "#1890ff",
-                                borderRadius: "2px",
-                              }}
-                            ></div>
-                            <span>桥接网络</span>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "16px",
-                                height: "16px",
-                                background: "#fa8c16",
-                                borderRadius: "2px",
-                              }}
-                            ></div>
-                            <span>隔离网络</span>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "16px",
-                                height: "16px",
-                                background: "#13c2c2",
-                                borderRadius: "2px",
-                              }}
-                            ></div>
-                            <span>直连网络</span>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "16px",
-                                height: "16px",
-                                background: "#52c41a",
-                                borderRadius: "2px",
-                              }}
-                            ></div>
-                            <span>在线虚拟机</span>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "16px",
-                                height: "16px",
-                                background: "#ff7875",
-                                borderRadius: "2px",
-                              }}
-                            ></div>
-                            <span>离线虚拟机</span>
-                          </div>
+                            刷新拓扑图
+                          </Button>
+                          <span style={{ color: "#666", fontSize: "12px" }}>
+                            状态:{" "}
+                            {topologyLoading
+                              ? "加载中..."
+                              : topologyData
+                              ? `已加载 ${
+                                  topologyData.nodes?.length || 0
+                                } 个节点`
+                              : "无数据"}
+                          </span>
                         </div>
-                      </Card>
+                        <NetworkTopology
+                          apiData={topologyData}
+                          loading={topologyLoading}
+                          onNodeClick={handleTopologyNodeClick}
+                          onEdgeClick={handleTopologyEdgeClick}
+                          height={600}
+                        />
+                      </div>
                     ),
                   },
                 ]}

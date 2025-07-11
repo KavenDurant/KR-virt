@@ -207,3 +207,80 @@ export interface NetworkErrorResponse {
     type: string;
   }>;
 }
+
+// ======================== 网络拓扑图相关类型定义 ========================
+
+// 节点位置
+export interface NodePosition {
+  x: number;
+  y: number;
+}
+
+// 主机节点数据
+export interface HostNodeData {
+  name: string;
+  interfaces: string[];
+}
+
+// 接口节点数据
+export interface InterfaceNodeData {
+  host: string;
+  device: string;
+  mac: string;
+  ip4_addresses: string[];
+  ip4_gateway: string;
+  is_physical: boolean;
+}
+
+// 虚拟机节点数据
+export interface VMNodeData {
+  host: string;
+  vm_name: string;
+  interfaces: string[];
+}
+
+// 虚拟机接口节点数据
+export interface VMInterfaceNodeData {
+  vm_name: string;
+  net_name: string;
+  mac: string;
+  net_type: string;
+  driver: string;
+  ip_addr: string;
+  vlan_id: number | null;
+  bridge: string;
+}
+
+// 拓扑图节点类型
+export type TopologyNodeType = "host" | "interface" | "vm" | "vm-interface";
+
+// 拓扑图节点
+export interface TopologyNode {
+  id: string;
+  type: TopologyNodeType;
+  data: HostNodeData | InterfaceNodeData | VMNodeData | VMInterfaceNodeData;
+  position: NodePosition;
+}
+
+// 拓扑图边类型
+export type TopologyEdgeType = 
+  | "interface-bond"    // 接口绑定
+  | "host-interface"    // 主机-接口
+  | "host-vm"          // 主机-虚拟机
+  | "vm-interface"     // 虚拟机-接口
+  | "vm-bridge"        // 虚拟机接口-桥接
+  | "vm-link";         // 虚拟机间连接
+
+// 拓扑图边
+export interface TopologyEdge {
+  id: string;
+  source_id: string;
+  target_id: string;
+  type: TopologyEdgeType;
+}
+
+// 网络拓扑响应
+export interface NetworkTopologyResponse {
+  nodes: TopologyNode[];
+  edges: TopologyEdge[];
+}

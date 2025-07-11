@@ -91,6 +91,13 @@ export interface StoragePolicy {
   system_storage_threshold: number; // 系统存储阈值（百分比，0-100）
 }
 
+// 系统存储状态
+export interface SystemStorageStatus {
+  status: "normal" | "abnormal" | "not_specified"; // 系统存储状态
+  total: number; // 总容量（GB）
+  used: number; // 已用容量（GB）
+}
+
 // 存储策略响应
 export type StoragePolicyResponse = StoragePolicy;
 

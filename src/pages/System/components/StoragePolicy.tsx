@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-01-22 10:00:00
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-11 11:08:30
+ * @LastEditTime: 2025-07-11 13:39:06
  * @FilePath: /KR-virt/src/pages/System/components/StoragePolicy.tsx
  * @Description: 存储策略配置组件
  */
@@ -26,6 +26,7 @@ import {
   Select,
   Tag,
   Divider,
+  Empty,
 } from "antd";
 import {
   DatabaseOutlined,
@@ -35,12 +36,15 @@ import {
   HddOutlined,
   CloudServerOutlined,
   ExclamationCircleFilled,
+  ReloadOutlined,
+  QuestionCircleOutlined,
 } from "@ant-design/icons";
 import { useTheme } from "../../../hooks/useTheme";
 import { systemSettingService } from "../../../services/systemSetting";
 import type {
   StoragePolicy,
   StorageThresholdUpdateRequest,
+  SystemStorageStatus,
 } from "../../../services/systemSetting/types";
 import storageService from "../../../services/storage";
 import type { StorageInfo } from "../../../services/storage/types";
@@ -53,6 +57,17 @@ interface StoragePolicyProps {
   // 可以预留一些Props，用于未来扩展
   className?: string;
 }
+
+// 系统存储状态对应的显示信息
+const systemStorageStatusMap = {
+  normal: { text: "正常", color: "success", icon: <CheckCircleOutlined /> },
+  abnormal: { text: "异常", color: "error", icon: <WarningOutlined /> },
+  not_specified: {
+    text: "未配置",
+    color: "default",
+    icon: <QuestionCircleOutlined />,
+  },
+};
 
 // 模拟存储使用情况数据
 const mockStorageInfo = {
@@ -76,6 +91,27 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
   );
   const [storageList, setStorageList] = useState<StorageInfo[]>([]);
   const [storageLoading, setStorageLoading] = useState(false);
+  const [systemStorageStatus, setSystemStorageStatus] =
+    useState<SystemStorageStatus | null>(null);
+  const [systemStorageLoading, setSystemStorageLoading] = useState(false);
+
+  // 加载系统存储状态
+  const loadSystemStorageStatus = useCallback(async () => {
+    setSystemStorageLoading(true);
+    try {
+      const response = await systemSettingService.getSystemStorageStatus();
+      if (response.success && response.data) {
+        setSystemStorageStatus(response.data);
+      } else {
+        message.error(response.message || "获取系统存储状态失败");
+      }
+    } catch (error) {
+      console.error("获取系统存储状态失败:", error);
+      message.error("获取系统存储状态失败，请稍后重试");
+    } finally {
+      setSystemStorageLoading(false);
+    }
+  }, [message]);
 
   // 加载存储设备列表
   const loadStorageList = useCallback(async () => {
@@ -225,6 +261,8 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
                 system_storage_id: systemStorageId,
               });
             }
+            // 更新系统存储状态
+            loadSystemStorageStatus();
           } else {
             message.error(
               response.data?.message || response.message || "系统存储设置失败"
@@ -272,11 +310,17 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
     }
   };
 
-  // 组件挂载时加载数据
-  useEffect(() => {
+  // 刷新所有数据
+  const refreshAllData = useCallback(() => {
     loadStoragePolicy();
     loadStorageList();
-  }, [loadStoragePolicy, loadStorageList]);
+    loadSystemStorageStatus();
+  }, [loadStoragePolicy, loadStorageList, loadSystemStorageStatus]);
+
+  // 组件挂载时加载数据
+  useEffect(() => {
+    refreshAllData();
+  }, [refreshAllData]);
 
   // 设置默认表单值
   useEffect(() => {
@@ -290,45 +334,23 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
     }
   }, [form, storagePolicy]);
 
-  // 计算存储使用率和阈值状态
-  const storageUsagePercent = Math.round(
-    (mockStorageInfo.used / mockStorageInfo.total) * 100
-  );
-  const systemUsagePercent = Math.round(
-    (mockStorageInfo.systemUsed / mockStorageInfo.total) * 100
-  );
+  // 计算系统存储使用率
+  const systemStorageUsagePercent = systemStorageStatus
+    ? Math.round((systemStorageStatus.used / systemStorageStatus.total) * 100)
+    : 0;
 
-  // 获取阈值警告状态
-  const getThresholdStatus = (currentUsage: number, threshold: number) => {
-    if (currentUsage >= threshold) {
-      return {
-        type: "danger" as const,
-        icon: <WarningOutlined />,
-        text: "已超过阈值",
-      };
-    } else if (currentUsage >= threshold * 0.9) {
-      return {
-        type: "warning" as const,
-        icon: <WarningOutlined />,
-        text: "接近阈值",
-      };
+  // 获取系统存储状态的显示信息
+  const getSystemStorageStatusDisplay = () => {
+    if (!systemStorageStatus) {
+      return systemStorageStatusMap.not_specified;
     }
-    return {
-      type: "success" as const,
-      icon: <CheckCircleOutlined />,
-      text: "正常",
-    };
+    return (
+      systemStorageStatusMap[systemStorageStatus.status] ||
+      systemStorageStatusMap.not_specified
+    );
   };
 
-  const storageStatus = storagePolicy
-    ? getThresholdStatus(storageUsagePercent, storagePolicy.storage_threshold)
-    : null;
-  const systemStorageStatus = storagePolicy
-    ? getThresholdStatus(
-        systemUsagePercent,
-        storagePolicy.system_storage_threshold
-      )
-    : null;
+  const statusDisplay = getSystemStorageStatusDisplay();
 
   if (loading) {
     return (
@@ -374,6 +396,15 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
                 </Space>
               }
               style={{ marginBottom: 24 }}
+              extra={
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={refreshAllData}
+                  loading={loading || storageLoading || systemStorageLoading}
+                >
+                  刷新
+                </Button>
+              }
             >
               <Alert
                 message="存储策略说明"
@@ -609,141 +640,137 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
             title={
               <Space>
                 <HddOutlined />
-                <span>TODO-系统存储状态</span>
+                <span>系统存储状态</span>
               </Space>
             }
             style={{ marginBottom: 24 }}
+            loading={systemStorageLoading}
           >
-            <Row gutter={[16, 16]}>
-              <Col span={12}>
-                <Statistic
-                  title="总存储容量"
-                  value={formatStorageSize(mockStorageInfo.total)}
-                  prefix={<DatabaseOutlined />}
-                  valueStyle={{ fontSize: "16px" }}
-                />
-              </Col>
-              <Col span={12}>
-                <Statistic
-                  title="可用空间"
-                  value={formatStorageSize(mockStorageInfo.available)}
-                  valueStyle={{ color: "#52c41a", fontSize: "16px" }}
-                />
-              </Col>
-            </Row>
+            {systemStorageStatus ? (
+              <>
+                <Row gutter={[16, 16]}>
+                  <Col span={12}>
+                    <Statistic
+                      title="系统存储状态"
+                      value={statusDisplay.text}
+                      valueStyle={{
+                        color:
+                          statusDisplay.color === "success"
+                            ? "#52c41a"
+                            : statusDisplay.color === "error"
+                            ? "#ff4d4f"
+                            : "#999999",
+                        fontSize: "16px",
+                      }}
+                      prefix={statusDisplay.icon}
+                    />
+                  </Col>
+                  <Col span={12}>
+                    <Statistic
+                      title="总容量"
+                      value={formatStorageSize(systemStorageStatus.total)}
+                      valueStyle={{ fontSize: "16px" }}
+                      prefix={<DatabaseOutlined />}
+                    />
+                  </Col>
+                </Row>
 
-            <div style={{ marginTop: 24 }}>
-              <div style={{ marginBottom: 16 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: 8,
-                  }}
-                >
-                  <span>整体存储使用率</span>
-                  <Space>
-                    {storageStatus && (
-                      <>
-                        {storageStatus.icon}
-                        <Text type={storageStatus.type}>
-                          {storageStatus.text}
-                        </Text>
-                      </>
-                    )}
-                    <span>{storageUsagePercent}%</span>
-                  </Space>
-                </div>
-                <Progress
-                  percent={storageUsagePercent}
-                  status={
-                    storageUsagePercent >=
-                    (storagePolicy?.storage_threshold || 80)
-                      ? "exception"
-                      : "active"
-                  }
-                  strokeColor={
-                    storageUsagePercent >=
-                    (storagePolicy?.storage_threshold || 80)
-                      ? "#ff4d4f"
-                      : storageUsagePercent >=
-                        (storagePolicy?.storage_threshold || 80) * 0.9
-                      ? "#faad14"
-                      : "#52c41a"
-                  }
-                />
-              </div>
-
-              <div style={{ marginBottom: 16 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: 8,
-                  }}
-                >
-                  <span>系统存储使用率</span>
-                  <Space>
-                    {systemStorageStatus && (
-                      <>
-                        {systemStorageStatus.icon}
-                        <Text type={systemStorageStatus.type}>
-                          {systemStorageStatus.text}
-                        </Text>
-                      </>
-                    )}
-                    <span>{systemUsagePercent}%</span>
-                  </Space>
-                </div>
-                <Progress
-                  percent={systemUsagePercent}
-                  status={
-                    systemUsagePercent >=
-                    (storagePolicy?.system_storage_threshold || 90)
-                      ? "exception"
-                      : "active"
-                  }
-                  strokeColor={
-                    systemUsagePercent >=
-                    (storagePolicy?.system_storage_threshold || 90)
-                      ? "#ff4d4f"
-                      : systemUsagePercent >=
-                        (storagePolicy?.system_storage_threshold || 90) * 0.9
-                      ? "#faad14"
-                      : "#52c41a"
-                  }
-                />
-              </div>
-            </div>
-
-            {/* 阈值线提示 */}
-            {storagePolicy && (
-              <Alert
-                message="阈值状态"
-                description={
-                  <div>
-                    <div>
-                      存储阈值：{storagePolicy.storage_threshold}% (
-                      {storageStatus?.text})
+                <div style={{ marginTop: 24 }}>
+                  <div style={{ marginBottom: 16 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <span>系统存储使用率</span>
                     </div>
-                    <div>
-                      系统阈值：{storagePolicy.system_storage_threshold}% (
-                      {systemStorageStatus?.text})
-                    </div>
+                    <Progress
+                      percent={systemStorageUsagePercent}
+                      status={
+                        systemStorageStatus.status !== "normal"
+                          ? "exception"
+                          : "active"
+                      }
+                      strokeColor={
+                        systemStorageStatus.status !== "normal"
+                          ? "#ff4d4f"
+                          : systemStorageUsagePercent >=
+                            (storagePolicy?.system_storage_threshold || 90)
+                          ? "#ff4d4f"
+                          : systemStorageUsagePercent >=
+                            (storagePolicy?.system_storage_threshold || 90) *
+                              0.9
+                          ? "#faad14"
+                          : "#52c41a"
+                      }
+                    />
                   </div>
-                }
-                type={
-                  storageUsagePercent >= storagePolicy.storage_threshold ||
-                  systemUsagePercent >= storagePolicy.system_storage_threshold
-                    ? "error"
-                    : "info"
-                }
-                showIcon
-                style={{ marginTop: 16 }}
+                </div>
+
+                <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                  <Col span={12}>
+                    <Statistic
+                      title="已用空间"
+                      value={formatStorageSize(systemStorageStatus.used)}
+                      valueStyle={{ color: "#1890ff", fontSize: "16px" }}
+                    />
+                  </Col>
+                  <Col span={12}>
+                    <Statistic
+                      title="可用空间"
+                      value={formatStorageSize(
+                        systemStorageStatus.total - systemStorageStatus.used
+                      )}
+                      valueStyle={{ color: "#52c41a", fontSize: "16px" }}
+                    />
+                  </Col>
+                </Row>
+
+                {storagePolicy && systemStorageStatus.status === "normal" && (
+                  <Alert
+                    message="阈值状态"
+                    description={
+                      <div>
+                        <div>
+                          系统存储阈值：{storagePolicy.system_storage_threshold}
+                          %
+                          {systemStorageUsagePercent >=
+                          storagePolicy.system_storage_threshold ? (
+                            <Text type="danger"> (已超过阈值)</Text>
+                          ) : systemStorageUsagePercent >=
+                            storagePolicy.system_storage_threshold * 0.9 ? (
+                            <Text type="warning"> (接近阈值)</Text>
+                          ) : (
+                            <Text type="success"> (正常)</Text>
+                          )}
+                        </div>
+                      </div>
+                    }
+                    type={
+                      systemStorageUsagePercent >=
+                      storagePolicy.system_storage_threshold
+                        ? "error"
+                        : systemStorageUsagePercent >=
+                          storagePolicy.system_storage_threshold * 0.9
+                        ? "warning"
+                        : "info"
+                    }
+                    showIcon
+                    style={{ marginTop: 16 }}
+                  />
+                )}
+              </>
+            ) : (
+              <Empty
+                description="暂无系统存储数据"
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
               />
             )}
           </Card>
 
+          {/* 模拟数据卡片 - 可以根据需要保留或移除 */}
           <Card title="存储分布" size="small">
             <Row gutter={[16, 16]}>
               <Col span={12}>

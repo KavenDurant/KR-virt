@@ -10,7 +10,6 @@ import {
   Input,
   Select,
   InputNumber,
-  message,
   Alert,
   Popconfirm,
   Typography,
@@ -19,6 +18,7 @@ import {
   Progress,
   Tooltip,
   Switch,
+  App,
 } from 'antd';
 import {
   HddOutlined,
@@ -47,7 +47,8 @@ interface DiskManagementProps {
   hostname: string;
   diskDevices?: (VMDiskDeviceInfo | VMDiskConfig)[];
   onDiskChange?: () => void;
-  message: typeof message;
+  message: ReturnType<typeof App.useApp>['message'];
+  loading?: boolean; // 添加loading状态
 }
 
 // 磁盘总线类型选项
@@ -70,6 +71,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
   diskDevices = [],
   onDiskChange,
   message: messageApi,
+  loading: vmDataLoading = false,
 }) => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -227,7 +229,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
     {
       title: '磁盘信息',
       key: 'disk_info',
-      render: (_, record: MockDiskDevice) => (
+      render: (_: unknown, record: MockDiskDevice) => (
         <div>
           <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
             <HddOutlined style={{ marginRight: '6px', color: '#1890ff' }} />
@@ -250,7 +252,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
     {
       title: '容量信息',
       key: 'capacity',
-      render: (_, record: MockDiskDevice) => (
+      render: (_: unknown, record: MockDiskDevice) => (
         <div>
           <div style={{ marginBottom: '8px' }}>
             <Text strong>{formatDiskSize(record.size_gb)}</Text>
@@ -280,7 +282,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
     {
       title: '设备类型',
       key: 'type',
-      render: (_, record: MockDiskDevice) => (
+      render: (_: unknown, record: MockDiskDevice) => (
         <Space direction="vertical" size={4}>
           <Tag color={getDiskTypeColor(record.bus_type)}>
             {record.bus_type.toUpperCase()}
@@ -298,7 +300,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
     {
       title: '操作',
       key: 'actions',
-      render: (_, record: MockDiskDevice) => (
+      render: (_: unknown, record: MockDiskDevice) => (
         <Space direction="vertical" size={4}>
           {record.mounted ? (
             <Popconfirm
@@ -309,7 +311,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
                   <div style={{ marginTop: '8px' }}>
                     <Switch
                       size="small"
-                      onChange={(checked) => {
+                      onChange={() => {
                         // 可以保存用户选择，在确认时使用
                       }}
                     />{' '}
@@ -446,7 +448,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
             rowKey="id"
             size="small"
             pagination={false}
-            loading={loading}
+            loading={vmDataLoading || loading}
           />
         )}
       </Card>
@@ -531,8 +533,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
                   step={1}
                   style={{ width: '100%' }}
                   placeholder="20"
-                  formatter={(value) => `${value} GB`}
-                  parser={(value) => value?.replace(' GB', '') || ''}
+                  addonAfter="GB"
                 />
               </Form.Item>
             </Col>

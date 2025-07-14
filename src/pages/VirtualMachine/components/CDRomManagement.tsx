@@ -21,6 +21,7 @@ import {
   Alert,
   Typography,
   Tooltip,
+  App,
 } from "antd";
 import {
   PlayCircleOutlined,
@@ -34,7 +35,6 @@ import type {
   VMCDRomUnmountRequest,
   CDRomDeviceInfo,
 } from "@/services/vm/types";
-import type { MessageInstance } from "antd/es/message/interface";
 
 const { Text } = Typography;
 
@@ -43,7 +43,8 @@ interface CDRomManagementProps {
   hostname: string;
   cdromDevices: CDRomDeviceInfo[];
   onCDRomChange: () => void;
-  message: MessageInstance;
+  message: ReturnType<typeof App.useApp>['message'];
+  loading?: boolean; // 添加loading状态
 }
 
 interface MountCDRomModalProps {
@@ -52,7 +53,7 @@ interface MountCDRomModalProps {
   onOk: () => void;
   vmName: string;
   hostname: string;
-  message: MessageInstance;
+  message: ReturnType<typeof App.useApp>['message'];
 }
 
 // 挂载ISO模态框
@@ -150,6 +151,7 @@ const CDRomManagement: React.FC<CDRomManagementProps> = ({
   cdromDevices,
   onCDRomChange,
   message,
+  loading: vmDataLoading = false,
 }) => {
   const [mountModalVisible, setMountModalVisible] = useState(false);
 
@@ -290,6 +292,7 @@ const CDRomManagement: React.FC<CDRomManagementProps> = ({
         rowKey="id"
         pagination={false}
         scroll={{ x: 600 }}
+        loading={vmDataLoading}
         locale={{
           emptyText: (
             <div style={{ textAlign: "center", padding: "40px 20px" }}>

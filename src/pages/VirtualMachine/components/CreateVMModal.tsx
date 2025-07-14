@@ -80,6 +80,7 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
       footer={null}
       width={700}
       destroyOnClose
+      centered
     >
       <Form
         form={form}

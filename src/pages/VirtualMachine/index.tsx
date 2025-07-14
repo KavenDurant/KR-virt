@@ -1961,6 +1961,7 @@ const VirtualMachineManagement: React.FC = () => {
                         loadVmData();
                       }}
                       message={message}
+                      loading={loading}
                     />
                   ) : (
                     <Alert
@@ -2045,6 +2046,7 @@ const VirtualMachineManagement: React.FC = () => {
                         loadVmData();
                       }}
                       message={message}
+                      loading={loading}
                     />
                   ) : (
                     <Alert
@@ -2082,6 +2084,7 @@ const VirtualMachineManagement: React.FC = () => {
                         loadVmData();
                       }}
                       message={message}
+                      loading={loading}
                     />
                   ) : (
                     <Alert

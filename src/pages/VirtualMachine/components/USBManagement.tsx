@@ -8,11 +8,11 @@ import {
   Modal,
   Form,
   Input,
-  message,
   Alert,
   Popconfirm,
   Typography,
   Radio,
+  App,
 } from "antd";
 import {
   UsbOutlined,
@@ -23,7 +23,6 @@ import {
   CheckCircleOutlined,
   LoadingOutlined,
   InfoCircleOutlined,
-  ExclamationCircleOutlined,
   CloseCircleOutlined,
   LinkOutlined,
   ApiOutlined,
@@ -61,7 +60,7 @@ interface USBManagementProps {
   vmStatus: string; // 虚拟机状态：running, shutoff, paused等
   usbDevices?: VMConfigUSBDevice[]; // 使用实际API返回的数据结构
   onUSBChange?: () => void;
-  message: typeof message;
+  message: ReturnType<typeof App.useApp>['message'];
   loading?: boolean; // 添加loading状态
   error?: string | null; // 添加错误状态
 }

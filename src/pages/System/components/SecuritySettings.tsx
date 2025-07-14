@@ -389,4 +389,3 @@ const SecuritySettings: React.FC<SecuritySettingsProps> = ({
 };
 
 export default SecuritySettings;
- 

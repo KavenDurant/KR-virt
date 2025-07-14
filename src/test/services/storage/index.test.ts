@@ -91,7 +91,7 @@ describe("Storage Service", () => {
 
       expect(mockRequest.post).toHaveBeenCalledWith(
         "/storage/remove",
-        removeRequest
+        removeRequest,
       );
       expect(result).toEqual(mockResponse);
     });

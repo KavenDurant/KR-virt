@@ -87,7 +87,7 @@ const SafetyConfirmModal: React.FC<SafetyConfirmModalProps> = ({
         disabled: !isValid,
         loading: loading,
       }}
-      destroyOnClose
+      destroyOnHidden
       width={520}
     >
       <Space direction="vertical" style={{ width: "100%" }}>

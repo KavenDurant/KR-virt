@@ -49,11 +49,11 @@ export const Table = ({
           "tr",
           { key: index },
           columns?.map((col: { dataIndex: string }, colIndex: number) =>
-            React.createElement("td", { key: colIndex }, item[col.dataIndex])
-          )
-        )
-      )
-    )
+            React.createElement("td", { key: colIndex }, item[col.dataIndex]),
+          ),
+        ),
+      ),
+    ),
   );
 
 export const Modal = ({

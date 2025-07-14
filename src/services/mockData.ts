@@ -501,7 +501,10 @@ const convertVMTreeToDataCenter = (treeData: VMTreeResponse): DataCenter => {
           id: `host-${hostNode.hostname}`,
           name: hostNode.hostname,
           type: "node" as const,
-          status: hostNode.status === "online" ? ("online" as const) : ("offline" as const),
+          status:
+            hostNode.status === "online"
+              ? ("online" as const)
+              : ("offline" as const),
           cpu: 0, // VM Tree API中没有CPU使用率信息
           memory: 0, // VM Tree API中没有内存使用率信息
           uptime: hostNode.status === "online" ? "在线" : "离线",
@@ -525,7 +528,7 @@ const convertVMTreeToDataCenter = (treeData: VMTreeResponse): DataCenter => {
 
 // 将集群树API响应转换为DataCenter格式
 const convertClusterTreeToDataCenter = (
-  treeData: ClusterTreeResponse
+  treeData: ClusterTreeResponse,
 ): DataCenter => {
   return {
     id: "datacenter-real",
@@ -608,7 +611,7 @@ export const NODE_STATUS_CONFIG = {
 export const getNodeStatusConfig = (status: string) => {
   return (
     NODE_STATUS_CONFIG[status as NodeStatus] || {
-    label: status,
+      label: status,
       color: "#d9d9d9",
       icon: "⚪",
     }
@@ -678,7 +681,7 @@ export const mockVMManagementData: VMManagementData[] = [
   },
   {
     name: "vm-test187",
-    hostname: "DC-node-187", 
+    hostname: "DC-node-187",
     uuid: "dbe6c5bd-fb1d-40b0-8d31-0bb6a3cea047",
     status: "stopped",
     cpu_count: 1,

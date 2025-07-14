@@ -79,7 +79,7 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
       onCancel={handleCancel}
       footer={null}
       width={700}
-      destroyOnClose
+      destroyOnHidden
       centered
     >
       <Form
@@ -139,7 +139,12 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
                 name="cpu_num"
                 rules={[
                   { required: true, message: "请设置CPU核数" },
-                  { type: "number", min: 1, max: 64, message: "CPU核数范围为1-64" },
+                  {
+                    type: "number",
+                    min: 1,
+                    max: 64,
+                    message: "CPU核数范围为1-64",
+                  },
                 ]}
               >
                 <InputNumber
@@ -157,7 +162,12 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
                 name="memory_gb"
                 rules={[
                   { required: true, message: "请设置内存大小" },
-                  { type: "number", min: 1, max: 1024, message: "内存大小范围为1-1024GB" },
+                  {
+                    type: "number",
+                    min: 1,
+                    max: 1024,
+                    message: "内存大小范围为1-1024GB",
+                  },
                 ]}
               >
                 <InputNumber
@@ -180,7 +190,12 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
                 name="disk_size_gb"
                 rules={[
                   { required: true, message: "请设置磁盘大小" },
-                  { type: "number", min: 10, max: 10240, message: "磁盘大小范围为10-10240GB" },
+                  {
+                    type: "number",
+                    min: 10,
+                    max: 10240,
+                    message: "磁盘大小范围为10-10240GB",
+                  },
                 ]}
               >
                 <InputNumber
@@ -240,9 +255,7 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
 
         <Row justify="end">
           <Space>
-            <Button onClick={handleCancel}>
-              取消
-            </Button>
+            <Button onClick={handleCancel}>取消</Button>
             <Button type="primary" htmlType="submit" loading={loading}>
               创建虚拟机
             </Button>

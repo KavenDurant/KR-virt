@@ -1,10 +1,5 @@
 /**
  * 虚拟机光驱管理组件
- *
- * 功能：
- * - 挂载ISO文件到虚拟光驱
- * - 卸载已挂载的ISO文件
- * - 显示当前光驱状态
  */
 
 import React, { useState } from "react";
@@ -43,7 +38,7 @@ interface CDRomManagementProps {
   hostname: string;
   cdromDevices: CDRomDeviceInfo[];
   onCDRomChange: () => void;
-  message: ReturnType<typeof App.useApp>['message'];
+  message: ReturnType<typeof App.useApp>["message"];
   loading?: boolean; // 添加loading状态
 }
 
@@ -53,7 +48,7 @@ interface MountCDRomModalProps {
   onOk: () => void;
   vmName: string;
   hostname: string;
-  message: ReturnType<typeof App.useApp>['message'];
+  message: ReturnType<typeof App.useApp>["message"];
 }
 
 // 挂载ISO模态框
@@ -90,7 +85,7 @@ const MountCDRomModal: React.FC<MountCDRomModalProps> = ({
     } catch (error) {
       console.error("挂载ISO失败:", error);
       message.error(
-        (error as { message?: string }).message || "ISO挂载任务发送失败"
+        (error as { message?: string }).message || "ISO挂载任务发送失败",
       );
     } finally {
       setLoading(false);
@@ -175,7 +170,7 @@ const CDRomManagement: React.FC<CDRomManagementProps> = ({
     } catch (error) {
       console.error("卸载ISO失败:", error);
       message.error(
-        (error as { message?: string }).message || "ISO卸载任务发送失败"
+        (error as { message?: string }).message || "ISO卸载任务发送失败",
       );
     }
   };
@@ -293,6 +288,7 @@ const CDRomManagement: React.FC<CDRomManagementProps> = ({
         pagination={false}
         scroll={{ x: 600 }}
         loading={vmDataLoading}
+        style={{ minWidth: '100%' }}
         locale={{
           emptyText: (
             <div style={{ textAlign: "center", padding: "40px 20px" }}>

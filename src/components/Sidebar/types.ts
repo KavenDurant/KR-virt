@@ -1,19 +1,22 @@
 /**
  * 统一侧边栏类型定义
- * 
+ *
  * 这个文件定义了统一侧边栏组件使用的所有类型，
  * 支持集群管理和虚拟机管理两种模式
  */
 
 import type { TreeDataNode } from "antd";
 import type { ClusterTreeResponse } from "@/services/cluster/types";
-import type { VMTreeResponse, VMTreeWithClusterResponse } from "@/services/vm/types";
+import type {
+  VMTreeResponse,
+  VMTreeWithClusterResponse,
+} from "@/services/vm/types";
 
 // 侧边栏模式
-export type SidebarMode = 'cluster' | 'vm';
+export type SidebarMode = "cluster" | "vm";
 
 // 节点类型
-export type NodeType = 'cluster' | 'host' | 'vm' | 'network' | 'storage';
+export type NodeType = "cluster" | "host" | "vm" | "network" | "storage";
 
 // 统一的节点数据接口
 export interface UnifiedNodeData {
@@ -43,7 +46,11 @@ export interface UnifiedTreeNode extends TreeDataNode {
 }
 
 // 侧边栏数据源类型
-export type SidebarDataSource = ClusterTreeResponse | VMTreeResponse | VMTreeWithClusterResponse | null;
+export type SidebarDataSource =
+  | ClusterTreeResponse
+  | VMTreeResponse
+  | VMTreeWithClusterResponse
+  | null;
 
 // 侧边栏属性接口
 export interface UnifiedSidebarProps {
@@ -89,7 +96,10 @@ export interface StatusConfig {
 }
 
 // 菜单操作回调类型
-export type MenuActionCallback = (action: string, nodeData: UnifiedNodeData) => void;
+export type MenuActionCallback = (
+  action: string,
+  nodeData: UnifiedNodeData,
+) => void;
 
 // 选择事件详情
 export interface SelectionEventDetail {

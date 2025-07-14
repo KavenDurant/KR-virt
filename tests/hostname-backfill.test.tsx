@@ -9,7 +9,6 @@ import { App } from "antd";
 import ClusterConfigPage from "@/pages/ClusterInit/ClusterConfigPage";
 import { clusterInitService } from "@/services/cluster";
 
-
 // Mock clusterInitService
 vi.mock("@/services/cluster", () => ({
   clusterInitService: {
@@ -125,9 +124,9 @@ describe("节点名称回填功能测试", () => {
                 data: { hostname: "test-hostname" },
                 message: "获取主机名成功",
               }),
-            100
-          )
-        )
+            100,
+          ),
+        ),
     );
 
     vi.mocked(clusterInitService.getNodeIpAddresses).mockImplementation(
@@ -140,9 +139,9 @@ describe("节点名称回填功能测试", () => {
                 data: { ip_addresses: ["192.168.1.100"] },
                 message: "获取IP地址成功",
               }),
-            100
-          )
-        )
+            100,
+          ),
+        ),
     );
 
     // 渲染组件
@@ -156,7 +155,7 @@ describe("节点名称回填功能测试", () => {
       () => {
         expect(screen.getByDisplayValue("test-hostname")).toBeInTheDocument();
       },
-      { timeout: 200 }
+      { timeout: 200 },
     );
   });
 
@@ -224,7 +223,7 @@ describe("节点名称回填功能测试", () => {
     // 验证错误信息出现
     await waitFor(() => {
       expect(
-        screen.getByText(/节点名称只能包含字母、数字和连字符/)
+        screen.getByText(/节点名称只能包含字母、数字和连字符/),
       ).toBeInTheDocument();
     });
   });

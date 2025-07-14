@@ -7,9 +7,9 @@ import {
   Tag,
   Modal,
   Form,
-      Input,
-    Select,
-  } from "antd";
+  Input,
+  Select,
+} from "antd";
 import type { FormInstance } from "antd";
 import {
   EditOutlined,
@@ -296,4 +296,3 @@ const UserManagement: React.FC<UserManagementProps> = ({
 };
 
 export default UserManagement;
- 

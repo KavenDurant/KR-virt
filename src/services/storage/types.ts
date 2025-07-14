@@ -123,8 +123,6 @@ export const STORAGE_FS_TYPE_MAP = {
   iscsi: "iSCSI",
 } as const;
 
-
-
 // API错误响应
 export interface StorageErrorResponse {
   detail: Array<{

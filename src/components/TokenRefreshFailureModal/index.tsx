@@ -139,7 +139,7 @@ const TokenRefreshFailureModal: React.FC<TokenRefreshFailureModalProps> = ({
       maskClosable={false}
       width={520}
       centered
-      destroyOnClose
+      destroyOnHidden
       className="token-refresh-failure-modal"
       footer={[
         // 重试按钮（如果支持）

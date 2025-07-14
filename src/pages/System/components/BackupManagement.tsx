@@ -9,7 +9,6 @@ import {
   Form,
   Input,
   Select,
-
   Alert,
   Divider,
 } from "antd";
@@ -174,11 +173,7 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
       render: (_: unknown, record: Backup) => (
         <Space size="middle">
           {record.status === "completed" && (
-            <Button
-              type="link"
-              icon={<DownloadOutlined />}
-              size="small"
-            >
+            <Button type="link" icon={<DownloadOutlined />} size="small">
               下载
             </Button>
           )}
@@ -197,19 +192,25 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
   ];
 
   return (
-    <div style={{ 
-      padding: '8px',
-      backgroundColor: themeConfig.token.colorBgContainer,
-      minHeight: '100%',
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <div
+      style={{
+        padding: "8px",
+        backgroundColor: themeConfig.token.colorBgContainer,
+        minHeight: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <>
         <Card
           title="备份管理"
           extra={
-            <Button type="primary" icon={<PlusOutlined />} onClick={onCreateBackup}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={onCreateBackup}
+            >
               创建备份
             </Button>
           }
@@ -227,19 +228,25 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
             <Space size="large">
               <div>
                 <div>总备份数量</div>
-                <div style={{ fontSize: 20, fontWeight: "bold", color: "#1890ff" }}>
+                <div
+                  style={{ fontSize: 20, fontWeight: "bold", color: "#1890ff" }}
+                >
                   {backups.length}
                 </div>
               </div>
               <div>
                 <div>成功备份</div>
-                <div style={{ fontSize: 20, fontWeight: "bold", color: "#52c41a" }}>
+                <div
+                  style={{ fontSize: 20, fontWeight: "bold", color: "#52c41a" }}
+                >
                   {backups.filter((b) => b.status === "completed").length}
                 </div>
               </div>
               <div>
                 <div>总大小</div>
-                <div style={{ fontSize: 20, fontWeight: "bold", color: "#722ed1" }}>
+                <div
+                  style={{ fontSize: 20, fontWeight: "bold", color: "#722ed1" }}
+                >
                   31.1 GB
                 </div>
               </div>
@@ -296,10 +303,7 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
             </Form.Item>
 
             <Form.Item name="description" label="备份描述">
-              <Input.TextArea
-                rows={3}
-                placeholder="请输入备份描述（可选）"
-              />
+              <Input.TextArea rows={3} placeholder="请输入备份描述（可选）" />
             </Form.Item>
 
             <Alert
@@ -325,4 +329,4 @@ const BackupManagement: React.FC<BackupManagementProps> = ({
   );
 };
 
-export default BackupManagement; 
+export default BackupManagement;

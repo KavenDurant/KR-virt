@@ -87,7 +87,7 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [storagePolicy, setStoragePolicy] = useState<StoragePolicy | null>(
-    null
+    null,
   );
   const [storageList, setStorageList] = useState<StorageInfo[]>([]);
   const [storageLoading, setStorageLoading] = useState(false);
@@ -157,7 +157,7 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
 
   // 保存存储阈值配置
   const handleSaveThresholds = async (
-    values: StorageThresholdUpdateRequest
+    values: StorageThresholdUpdateRequest,
   ) => {
     setSaving(true);
     try {
@@ -177,7 +177,7 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
         }
       } else {
         message.error(
-          response.data?.message || response.message || "存储阈值设置失败"
+          response.data?.message || response.message || "存储阈值设置失败",
         );
       }
     } catch (error) {
@@ -192,10 +192,10 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
   const handleSystemStorageChange = async (systemStorageId: number) => {
     // 检查所选存储设备状态
     const selectedStorage = storageList.find(
-      (storage) => storage.id === systemStorageId
+      (storage) => storage.id === systemStorageId,
     );
     const currentStorage = storageList.find(
-      (storage) => storage.id === storagePolicy?.system_storage_id
+      (storage) => storage.id === storagePolicy?.system_storage_id,
     );
 
     if (!selectedStorage) {
@@ -265,7 +265,7 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
             loadSystemStorageStatus();
           } else {
             message.error(
-              response.data?.message || response.message || "系统存储设置失败"
+              response.data?.message || response.message || "系统存储设置失败",
             );
             // 重置表单中的系统存储ID
             form.setFieldsValue({
@@ -658,8 +658,8 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
                           statusDisplay.color === "success"
                             ? "#52c41a"
                             : statusDisplay.color === "error"
-                            ? "#ff4d4f"
-                            : "#999999",
+                              ? "#ff4d4f"
+                              : "#999999",
                         fontSize: "16px",
                       }}
                       prefix={statusDisplay.icon}
@@ -697,13 +697,14 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
                         systemStorageStatus.status !== "normal"
                           ? "#ff4d4f"
                           : systemStorageUsagePercent >=
-                            (storagePolicy?.system_storage_threshold || 90)
-                          ? "#ff4d4f"
-                          : systemStorageUsagePercent >=
-                            (storagePolicy?.system_storage_threshold || 90) *
-                              0.9
-                          ? "#faad14"
-                          : "#52c41a"
+                              (storagePolicy?.system_storage_threshold || 90)
+                            ? "#ff4d4f"
+                            : systemStorageUsagePercent >=
+                                (storagePolicy?.system_storage_threshold ||
+                                  90) *
+                                  0.9
+                              ? "#faad14"
+                              : "#52c41a"
                       }
                     />
                   </div>
@@ -721,7 +722,7 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
                     <Statistic
                       title="可用空间"
                       value={formatStorageSize(
-                        systemStorageStatus.total - systemStorageStatus.used
+                        systemStorageStatus.total - systemStorageStatus.used,
                       )}
                       valueStyle={{ color: "#52c41a", fontSize: "16px" }}
                     />
@@ -753,9 +754,9 @@ const StoragePolicy: React.FC<StoragePolicyProps> = () => {
                       storagePolicy.system_storage_threshold
                         ? "error"
                         : systemStorageUsagePercent >=
-                          storagePolicy.system_storage_threshold * 0.9
-                        ? "warning"
-                        : "info"
+                            storagePolicy.system_storage_threshold * 0.9
+                          ? "warning"
+                          : "info"
                     }
                     showIcon
                     style={{ marginTop: 16 }}

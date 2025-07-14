@@ -76,7 +76,7 @@ describe("NetworkService", () => {
 
     it("应该处理空主机名参数", async () => {
       const result = await networkService.getNodeNetworks();
-      
+
       expect(result).toHaveProperty("success");
       if (result.success && result.data) {
         expect(result.data).toHaveProperty("hostname");
@@ -156,7 +156,7 @@ describe("NetworkService", () => {
 
       if (result.success && result.data) {
         const networks = result.data.networks;
-        const deviceNames = networks.map(n => n.device);
+        const deviceNames = networks.map((n) => n.device);
 
         // 验证包含预期的设备
         expect(deviceNames).toContain("vmbr0");
@@ -170,19 +170,21 @@ describe("NetworkService", () => {
 
       if (result.success && result.data) {
         const networks = result.data.networks;
-        
+
         // 应该包含bridge类型的设备
-        const bridgeDevices = networks.filter(n => n.type === "bridge");
+        const bridgeDevices = networks.filter((n) => n.type === "bridge");
         expect(bridgeDevices.length).toBeGreaterThan(0);
 
         // 验证设备具有有效的配置
-        networks.forEach(network => {
+        networks.forEach((network) => {
           expect(network.mtu).toBeGreaterThan(0);
-          expect(network.mac).toMatch(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/);
-          
+          expect(network.mac).toMatch(
+            /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/,
+          );
+
           // IPv4地址格式验证
           if (network.ip4_addresses && network.ip4_addresses.length > 0) {
-            network.ip4_addresses.forEach(addr => {
+            network.ip4_addresses.forEach((addr) => {
               expect(addr).toHaveProperty("index");
               expect(addr).toHaveProperty("value");
               expect(typeof addr.index).toBe("number");

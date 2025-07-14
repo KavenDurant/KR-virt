@@ -73,7 +73,7 @@ export class ErrorClassifier {
    */
   static classifyErrorSeverity(
     error: Error,
-    errorInfo?: ErrorInfo
+    errorInfo?: ErrorInfo,
   ): ErrorSeverity {
     const errorType = this.classifyError(error);
     const message = error.message.toLowerCase();
@@ -234,12 +234,12 @@ export class GlobalErrorHandler {
               `Resource load failed: ${
                 (event.target as HTMLElement | null)?.getAttribute?.("src") ||
                 "unknown"
-              }`
-            )
+              }`,
+            ),
           );
         }
       },
-      true
+      true,
     );
   }
 
@@ -280,7 +280,7 @@ export class GlobalErrorHandler {
    * 获取最近的错误记录
    */
   getRecentErrors(
-    count: number = 10
+    count: number = 10,
   ): Array<{ error: Error; timestamp: Date }> {
     return this.errorQueue.slice(-count);
   }
@@ -304,14 +304,17 @@ export class GlobalErrorHandler {
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
     const recentErrors = this.errorQueue.filter(
-      (item) => item.timestamp > oneHourAgo
+      (item) => item.timestamp > oneHourAgo,
     );
 
-    const errorsByType = this.errorQueue.reduce((acc, item) => {
-      const errorType = ErrorClassifier.classifyError(item.error);
-      acc[errorType] = (acc[errorType] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const errorsByType = this.errorQueue.reduce(
+      (acc, item) => {
+        const errorType = ErrorClassifier.classifyError(item.error);
+        acc[errorType] = (acc[errorType] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return {
       totalErrors: this.errorQueue.length,
@@ -334,7 +337,7 @@ export const initializeGlobalErrorHandling = (): GlobalErrorHandler => {
 export const formatErrorForReport = (
   error: Error,
   errorInfo?: ErrorInfo,
-  additionalInfo?: Record<string, unknown>
+  additionalInfo?: Record<string, unknown>,
 ): string => {
   const errorType = ErrorClassifier.classifyError(error);
   const severity = ErrorClassifier.classifyErrorSeverity(error, errorInfo);

@@ -263,13 +263,13 @@ export interface TopologyNode {
 }
 
 // 拓扑图边类型
-export type TopologyEdgeType = 
-  | "interface-bond"    // 接口绑定
-  | "host-interface"    // 主机-接口
-  | "host-vm"          // 主机-虚拟机
-  | "vm-interface"     // 虚拟机-接口
-  | "vm-bridge"        // 虚拟机接口-桥接
-  | "vm-link";         // 虚拟机间连接
+export type TopologyEdgeType =
+  | "interface-bond" // 接口绑定
+  | "host-interface" // 主机-接口
+  | "host-vm" // 主机-虚拟机
+  | "vm-interface" // 虚拟机-接口
+  | "vm-bridge" // 虚拟机接口-桥接
+  | "vm-link"; // 虚拟机间连接
 
 // 拓扑图边
 export interface TopologyEdge {

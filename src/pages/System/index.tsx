@@ -246,7 +246,7 @@ const SystemSettings: React.FC = () => {
           break;
       }
     },
-    [loadedTabs, loadAboutTabData]
+    [loadedTabs, loadAboutTabData],
   );
 
   // 初始化数据加载
@@ -328,7 +328,7 @@ const SystemSettings: React.FC = () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       if (editingUser) {
         setUsers(
-          users.map((u) => (u.id === editingUser.id ? { ...u, ...values } : u))
+          users.map((u) => (u.id === editingUser.id ? { ...u, ...values } : u)),
         );
         message.success("用户更新成功");
       } else {
@@ -446,7 +446,7 @@ const SystemSettings: React.FC = () => {
   // 渲染Tab内容的函数
   const renderTabContent = (tabKey: string) => {
     if (!loadedTabs.has(tabKey)) {
-        return (
+      return (
         <div
           style={{
             display: "flex",
@@ -548,7 +548,10 @@ const SystemSettings: React.FC = () => {
               >
                 <Spin size="large" />
                 <div
-                  style={{ color: themeConfig.token.colorTextBase, opacity: 0.65 }}
+                  style={{
+                    color: themeConfig.token.colorTextBase,
+                    opacity: 0.65,
+                  }}
                 >
                   加载存储策略组件中...
                 </div>
@@ -578,11 +581,11 @@ const SystemSettings: React.FC = () => {
   };
 
   return (
-      <div
-        style={{
+    <div
+      style={{
         minHeight: "100%",
         height: "100%",
-          backgroundColor: themeConfig.token.colorBgContainer,
+        backgroundColor: themeConfig.token.colorBgContainer,
         padding: "24px",
         boxSizing: "border-box",
         display: "flex",
@@ -622,10 +625,10 @@ const SystemSettings: React.FC = () => {
             </h1>
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-              <Tabs
-                activeKey={activeTab}
-                onChange={handleTabChange}
-                type="line"
+            <Tabs
+              activeKey={activeTab}
+              onChange={handleTabChange}
+              type="line"
               style={{ flex: 1, display: "flex", flexDirection: "column" }}
               tabBarStyle={{ flexShrink: 0 }}
               items={[
@@ -638,7 +641,13 @@ const SystemSettings: React.FC = () => {
                     </Space>
                   ),
                   children: (
-                    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
                       {renderTabContent("general")}
                     </div>
                   ),
@@ -652,7 +661,13 @@ const SystemSettings: React.FC = () => {
                     </Space>
                   ),
                   children: (
-                    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
                       {renderTabContent("users")}
                     </div>
                   ),
@@ -666,9 +681,15 @@ const SystemSettings: React.FC = () => {
                     </Space>
                   ),
                   children: (
-                    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
                       {renderTabContent("security")}
-                              </div>
+                    </div>
                   ),
                 },
                 {
@@ -680,9 +701,15 @@ const SystemSettings: React.FC = () => {
                     </Space>
                   ),
                   children: (
-                    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
                       {renderTabContent("backup")}
-                            </div>
+                    </div>
                   ),
                 },
                 {
@@ -694,7 +721,13 @@ const SystemSettings: React.FC = () => {
                     </Space>
                   ),
                   children: (
-                    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
                       {renderTabContent("monitoring")}
                     </div>
                   ),
@@ -708,7 +741,13 @@ const SystemSettings: React.FC = () => {
                     </Space>
                   ),
                   children: (
-                    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
                       {renderTabContent("logs")}
                     </div>
                   ),
@@ -722,7 +761,13 @@ const SystemSettings: React.FC = () => {
                     </Space>
                   ),
                   children: (
-                    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
                       {renderTabContent("timeSync")}
                     </div>
                   ),
@@ -736,7 +781,13 @@ const SystemSettings: React.FC = () => {
                     </Space>
                   ),
                   children: (
-                    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
                       {renderTabContent("storagePolicy")}
                     </div>
                   ),
@@ -750,7 +801,13 @@ const SystemSettings: React.FC = () => {
                     </Space>
                   ),
                   children: (
-                    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
                       {renderTabContent("about")}
                     </div>
                   ),
@@ -760,7 +817,7 @@ const SystemSettings: React.FC = () => {
           </div>
         </>
       )}
-      </div>
+    </div>
   );
 };
 

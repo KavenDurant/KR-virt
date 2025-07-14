@@ -9,8 +9,7 @@
  */
 export class EnvConfig {
   /** 应用标题 */
-  static readonly APP_TITLE =
-    import.meta.env.VITE_APP_TITLE;
+  static readonly APP_TITLE = import.meta.env.VITE_APP_TITLE;
 
   /** 应用版本 */
   static readonly APP_VERSION = import.meta.env.VITE_APP_VERSION || "0.0.0";

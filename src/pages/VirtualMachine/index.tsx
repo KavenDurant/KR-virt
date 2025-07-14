@@ -102,14 +102,14 @@ const analyzeVMStatus = (vms: VirtualMachine[]): VMStatusAnalysis => {
   const total = vms.length;
   const runningCount = vms.filter((vm) => vm.status === "running").length;
   const stoppedCount = vms.filter(
-    (vm) => vm.status === "stopped" || vm.status === "shutoff"
+    (vm) => vm.status === "stopped" || vm.status === "shutoff",
   ).length;
   const errorCount = vms.filter((vm) => vm.status === "error").length;
   const configuringCount = vms.filter(
-    (vm) => vm.status === "configuring"
+    (vm) => vm.status === "configuring",
   ).length;
   const pausedCount = vms.filter(
-    (vm) => vm.status === "paused" || vm.status === "suspended"
+    (vm) => vm.status === "paused" || vm.status === "suspended",
   ).length;
 
   const hasIssues = errorCount > 0 || configuringCount > 0;
@@ -139,7 +139,7 @@ const analyzeVMStatus = (vms: VirtualMachine[]): VMStatusAnalysis => {
 const withRetry = async <T,>(
   operation: () => Promise<T>,
   maxRetries: number = 2,
-  delay: number = 1000
+  delay: number = 1000,
 ): Promise<T> => {
   let lastError: Error;
 
@@ -156,7 +156,7 @@ const withRetry = async <T,>(
 
       // 等待一段时间后重试
       await new Promise((resolve) =>
-        setTimeout(resolve, delay * (attempt + 1))
+        setTimeout(resolve, delay * (attempt + 1)),
       );
       console.warn(`操作失败，正在进行第 ${attempt + 1} 次重试...`, error);
     }
@@ -291,7 +291,7 @@ const VirtualMachineManagement: React.FC = () => {
       const response = await withRetry(
         () => vmService.getVMList(requestParams),
         2, // 最多重试2次
-        1000 // 重试间隔1秒
+        1000, // 重试间隔1秒
       );
 
       if (response.success) {
@@ -342,7 +342,7 @@ const VirtualMachineManagement: React.FC = () => {
           } else if (vms.length > 0) {
             // 成功加载且无问题时的简洁提示（仅在控制台）
             console.log(
-              `成功加载 ${vms.length} 台虚拟机，健康度: ${statusAnalysis.healthyPercentage}%`
+              `成功加载 ${vms.length} 台虚拟机，健康度: ${statusAnalysis.healthyPercentage}%`,
             );
           }
         }
@@ -416,14 +416,14 @@ const VirtualMachineManagement: React.FC = () => {
     const total = vmList.length;
     const running = vmList.filter((vm) => vm.status === "running").length;
     const stopped = vmList.filter(
-      (vm) => vm.status === "stopped" || vm.status === "shutoff"
+      (vm) => vm.status === "stopped" || vm.status === "shutoff",
     ).length;
     const error = vmList.filter((vm) => vm.status === "error").length;
     const configuring = vmList.filter(
-      (vm) => vm.status === "configuring"
+      (vm) => vm.status === "configuring",
     ).length;
     const paused = vmList.filter(
-      (vm) => vm.status === "paused" || vm.status === "suspended"
+      (vm) => vm.status === "paused" || vm.status === "suspended",
     ).length;
 
     // 由于API只返回基础字段，没有使用率信息，这里设置为0
@@ -487,7 +487,7 @@ const VirtualMachineManagement: React.FC = () => {
     async (
       action: string,
       vm: VirtualMachine | SidebarVM,
-      fromSidebar: boolean = false
+      fromSidebar: boolean = false,
     ) => {
       try {
         let response;
@@ -553,7 +553,7 @@ const VirtualMachineManagement: React.FC = () => {
             response = await vmService.destroyVM(vmName, hostname);
             if (response.success) {
               message.success(
-                response.message || `强制停止虚拟机 ${vmName} 成功`
+                response.message || `强制停止虚拟机 ${vmName} 成功`,
               );
               // 根据来源决定刷新方式
               if (fromSidebar) {
@@ -563,7 +563,7 @@ const VirtualMachineManagement: React.FC = () => {
               }
             } else {
               message.error(
-                response.message || `强制停止虚拟机 ${vmName} 失败`
+                response.message || `强制停止虚拟机 ${vmName} 失败`,
               );
             }
             break;
@@ -580,17 +580,17 @@ const VirtualMachineManagement: React.FC = () => {
                 const deleteResponse = await vmService.deleteVM(
                   vmName,
                   hostname,
-                  true
+                  true,
                 );
                 if (deleteResponse.success) {
                   message.success(
-                    deleteResponse.message || `删除虚拟机 ${vmName} 成功`
+                    deleteResponse.message || `删除虚拟机 ${vmName} 成功`,
                   );
                   // 重新加载虚拟机列表
                   await loadVmData();
                 } else {
                   message.error(
-                    deleteResponse.message || `删除虚拟机 ${vmName} 失败`
+                    deleteResponse.message || `删除虚拟机 ${vmName} 失败`,
                   );
                 }
               },
@@ -647,7 +647,7 @@ const VirtualMachineManagement: React.FC = () => {
         message.error(`虚拟机操作失败，请检查网络连接`);
       }
     },
-    [message, modal, loadVmData]
+    [message, modal, loadVmData],
   );
 
   /**
@@ -666,14 +666,14 @@ const VirtualMachineManagement: React.FC = () => {
     // 添加事件监听器
     window.addEventListener(
       "hierarchical-sidebar-vm-action",
-      handleSidebarVMAction as unknown as EventListener
+      handleSidebarVMAction as unknown as EventListener,
     );
 
     // 清理函数
     return () => {
       window.removeEventListener(
         "hierarchical-sidebar-vm-action",
-        handleSidebarVMAction as unknown as EventListener
+        handleSidebarVMAction as unknown as EventListener,
       );
     };
   }, [handleVMAction]);
@@ -685,7 +685,7 @@ const VirtualMachineManagement: React.FC = () => {
       return;
     }
     message.success(
-      `批量${action}操作已执行，影响${selectedRowKeys.length}台虚拟机`
+      `批量${action}操作已执行，影响${selectedRowKeys.length}台虚拟机`,
     );
     setSelectedRowKeys([]);
   };
@@ -1203,8 +1203,8 @@ const VirtualMachineManagement: React.FC = () => {
         label: "虚拟机列表",
         children: (
           <div>
-            <Card 
-              title="该主机上的虚拟机" 
+            <Card
+              title="该主机上的虚拟机"
               size="default"
               extra={
                 <Button
@@ -1225,7 +1225,9 @@ const VirtualMachineManagement: React.FC = () => {
                     key: "vm_name",
                     render: (_, record: VirtualMachine) => (
                       <div>
-                        <div style={{ fontWeight: "bold" }}>{record.vm_name}</div>
+                        <div style={{ fontWeight: "bold" }}>
+                          {record.vm_name}
+                        </div>
                       </div>
                     ),
                   },
@@ -1254,11 +1256,7 @@ const VirtualMachineManagement: React.FC = () => {
                       };
 
                       const config = getStatusConfig(status);
-                      return (
-                        <Tag color={config.color}>
-                          {config.text}
-                        </Tag>
-                      );
+                      return <Tag color={config.color}>{config.text}</Tag>;
                     },
                   },
                   {
@@ -1266,11 +1264,23 @@ const VirtualMachineManagement: React.FC = () => {
                     key: "config",
                     render: (_, record: VirtualMachine) => {
                       // 从config对象中获取配置信息，如果没有则从根级字段获取
-                      const cpuCount = record.config?.cpu_num || record.cpu_count || 0;
-                      const memoryGB = record.config?.memory_gb || record.memory_gb || 0;
-                      const diskCount = record.config?.disk?.length || record.disk_info?.length || 0;
+                      const cpuCount =
+                        record.config?.cpu_num || record.cpu_count || 0;
+                      const memoryGB =
+                        record.config?.memory_gb || record.memory_gb || 0;
+                      const diskCount =
+                        record.config?.disk?.length ||
+                        record.disk_info?.length ||
+                        0;
                       return (
-                        <div style={{ fontSize: "12px",display: "flex",alignItems: "center", gap: "10px"}}>
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                          }}
+                        >
                           <div>CPU: {cpuCount}核</div>
                           <div>内存: {memoryGB}GB</div>
                           <div>磁盘: {diskCount}个</div>
@@ -1397,14 +1407,21 @@ const VirtualMachineManagement: React.FC = () => {
         >
           <Tabs items={hostDetailTabs} />
         </Card>
-        
+
         {/* 创建虚拟机模态框 - 确保在物理主机详情页面也能使用 */}
         <CreateVMModal
           visible={createVMModal}
           onCancel={() => setCreateVMModal(false)}
           onFinish={handleCreateVM}
           loading={loading}
-          defaultHostname={sidebarSelectedHost ? String((sidebarSelectedHost as unknown as Record<string, unknown>).name || '') : undefined} // 传递选中的物理主机名
+          defaultHostname={
+            sidebarSelectedHost
+              ? String(
+                  (sidebarSelectedHost as unknown as Record<string, unknown>)
+                    .name || "",
+                )
+              : undefined
+          } // 传递选中的物理主机名
         />
       </div>
     );
@@ -1424,7 +1441,7 @@ const VirtualMachineManagement: React.FC = () => {
     if (sidebarSelectedHost) {
       // 选中物理机时，从该物理机的虚拟机列表中查找对应的虚拟机
       selectedVMData = vmList.find(
-        (vm) => vm.vm_name === sidebarSelectedVM.name
+        (vm) => vm.vm_name === sidebarSelectedVM.name,
       );
       console.log("物理机模式 - 查找结果:", selectedVMData?.vm_name);
     } else {
@@ -1460,8 +1477,8 @@ const VirtualMachineManagement: React.FC = () => {
                     sidebarSelectedVM.status === "running"
                       ? "success"
                       : sidebarSelectedVM.status === "stopped"
-                      ? "default"
-                      : "error"
+                        ? "default"
+                        : "error"
                   }
                 >
                   {(() => {
@@ -1531,13 +1548,13 @@ const VirtualMachineManagement: React.FC = () => {
                 {selectedVMData.config?.metadata?.updated_at
                   ? new Date(
                       parseFloat(selectedVMData.config.metadata.updated_at) *
-                        1000
+                        1000,
                     ).toLocaleString()
                   : selectedVMData.metadata?.updated_at
-                  ? new Date(
-                      parseFloat(selectedVMData.metadata.updated_at) * 1000
-                    ).toLocaleString()
-                  : "N/A"}
+                    ? new Date(
+                        parseFloat(selectedVMData.metadata.updated_at) * 1000,
+                      ).toLocaleString()
+                    : "N/A"}
               </Descriptions.Item>
             </Descriptions>
 
@@ -1938,7 +1955,7 @@ const VirtualMachineManagement: React.FC = () => {
                 {
                   key: "network",
                   label: "网卡",
-                                    children: sidebarSelectedVM ? (
+                  children: sidebarSelectedVM ? (
                     <NetworkManagement
                       vmName={sidebarSelectedVM.name}
                       hostname={
@@ -1946,15 +1963,21 @@ const VirtualMachineManagement: React.FC = () => {
                           .hostname || "unknown"
                       }
                       networkDevices={
-                        selectedVMData?.config?.net?.map((netDevice, index) => ({
-                          id: `net${index}`,
-                          name: netDevice.name || `net${index}`,
-                          model: netDevice.driver || "virtio",
-                          bridge: netDevice.bridge || netDevice.name,
-                          mac: netDevice.mac,
-                          enabled: true,
-                          type: (netDevice.net_type as 'bridge' | 'nat' | 'vlan') || 'bridge',
-                        })) || []
+                        selectedVMData?.config?.net?.map(
+                          (netDevice, index) => ({
+                            id: `net${index}`,
+                            name: netDevice.name || `net${index}`,
+                            model: netDevice.driver || "virtio",
+                            bridge: netDevice.bridge || netDevice.name,
+                            mac: netDevice.mac,
+                            enabled: true,
+                            type:
+                              (netDevice.net_type as
+                                | "bridge"
+                                | "nat"
+                                | "vlan") || "bridge",
+                          }),
+                        ) || []
                       }
                       onNetworkChange={() => {
                         // 刷新虚拟机详情数据
@@ -1998,7 +2021,11 @@ const VirtualMachineManagement: React.FC = () => {
                         (sidebarSelectedVM as unknown as { hostname?: string })
                           .hostname || "unknown"
                       }
-                      vmStatus={selectedVMData?.status || sidebarSelectedVM.status || "shutoff"}
+                      vmStatus={
+                        selectedVMData?.status ||
+                        sidebarSelectedVM.status ||
+                        "shutoff"
+                      }
                       usbDevices={
                         selectedVMData?.config?.usb?.map((usbDevice) => {
                           // 类型断言，转换为实际API返回的数据结构
@@ -2039,7 +2066,9 @@ const VirtualMachineManagement: React.FC = () => {
                           .hostname || "unknown"
                       }
                       diskDevices={
-                        selectedVMData?.config?.disk || selectedVMData?.disk_info || []
+                        selectedVMData?.config?.disk ||
+                        selectedVMData?.disk_info ||
+                        []
                       }
                       onDiskChange={() => {
                         // 刷新虚拟机详情数据
@@ -2068,15 +2097,18 @@ const VirtualMachineManagement: React.FC = () => {
                           .hostname || "unknown"
                       }
                       cdromDevices={
-                        selectedVMData?.config?.cdrom && selectedVMData.config.cdrom.length > 0
-                          ? selectedVMData.config.cdrom.map((cdromDevice, index: number) => ({
-                              id: cdromDevice.name || `cdrom${index}`,
-                              name: cdromDevice.name || `光驱 ${index + 1}`,
-                              iso_path: cdromDevice.path || null,
-                              mounted: !!cdromDevice.path,
-                              bus_type: cdromDevice.bus_type || "ide",
-                              format: cdromDevice.format,
-                            }))
+                        selectedVMData?.config?.cdrom &&
+                        selectedVMData.config.cdrom.length > 0
+                          ? selectedVMData.config.cdrom.map(
+                              (cdromDevice, index: number) => ({
+                                id: cdromDevice.name || `cdrom${index}`,
+                                name: cdromDevice.name || `光驱 ${index + 1}`,
+                                iso_path: cdromDevice.path || null,
+                                mounted: !!cdromDevice.path,
+                                bus_type: cdromDevice.bus_type || "ide",
+                                format: cdromDevice.format,
+                              }),
+                            )
                           : [] // 如果没有光驱数据，显示空数组
                       }
                       onCDRomChange={() => {
@@ -2264,7 +2296,7 @@ const VirtualMachineManagement: React.FC = () => {
                     key: "name",
                     render: (
                       name: string,
-                      record: Snapshot & { current?: boolean }
+                      record: Snapshot & { current?: boolean },
                     ) => (
                       <div>
                         <strong>{name}</strong>
@@ -2393,8 +2425,8 @@ const VirtualMachineManagement: React.FC = () => {
                         type === "完整备份"
                           ? "blue"
                           : type === "增量备份"
-                          ? "green"
-                          : "orange";
+                            ? "green"
+                            : "orange";
                       return <Tag color={color}>{type}</Tag>;
                     },
                   },
@@ -2413,8 +2445,8 @@ const VirtualMachineManagement: React.FC = () => {
                         status === "完成"
                           ? "success"
                           : status === "进行中"
-                          ? "processing"
-                          : "error";
+                            ? "processing"
+                            : "error";
                       return <Tag color={color}>{status}</Tag>;
                     },
                   },
@@ -2958,7 +2990,7 @@ const VirtualMachineManagement: React.FC = () => {
                           {selectedVM.metadata?.updated_at
                             ? new Date(
                                 parseFloat(selectedVM.metadata.updated_at) *
-                                  1000
+                                  1000,
                               ).toLocaleString()
                             : "N/A"}
                         </Descriptions.Item>
@@ -3219,7 +3251,13 @@ const VirtualMachineManagement: React.FC = () => {
           onCancel={() => setCreateVMModal(false)}
           onFinish={handleCreateVM}
           loading={loading}
-          defaultHostname={sidebarSelectedHost ? String((sidebarSelectedHost as Record<string, unknown>).name || '') : undefined} // 传递选中的物理主机名
+          defaultHostname={
+            sidebarSelectedHost
+              ? String(
+                  (sidebarSelectedHost as Record<string, unknown>).name || "",
+                )
+              : undefined
+          } // 传递选中的物理主机名
         />
       </div>
     </Spin>

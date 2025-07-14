@@ -1,9 +1,9 @@
 import React from "react";
 import type { Node, Edge } from "reactflow";
-import type { 
-  TopologyNode as ApiTopologyNode, 
+import type {
+  TopologyNode as ApiTopologyNode,
   TopologyEdge as ApiTopologyEdge,
-  NetworkTopologyResponse 
+  NetworkTopologyResponse,
 } from "@/services/network/types";
 
 // 设备类型枚举
@@ -153,8 +153,4 @@ export interface NetworkTopologyProps {
 }
 
 // 导出API相关类型
-export type { 
-  ApiTopologyNode, 
-  ApiTopologyEdge, 
-  NetworkTopologyResponse 
-};
+export type { ApiTopologyNode, ApiTopologyEdge, NetworkTopologyResponse };

@@ -16,11 +16,7 @@ import {
   Divider,
   Progress,
 } from "antd";
-import {
-  SunOutlined,
-  MoonOutlined,
-  DesktopOutlined,
-} from "@ant-design/icons";
+import { SunOutlined, MoonOutlined, DesktopOutlined } from "@ant-design/icons";
 import { useTheme } from "../../../hooks/useTheme";
 
 const { TextArea } = Input;
@@ -77,14 +73,16 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
   const { themeConfig } = useTheme();
 
   return (
-    <div style={{ 
-      padding: '8px',
-      backgroundColor: themeConfig.token.colorBgContainer,
-      minHeight: '100%',
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <div
+      style={{
+        padding: "8px",
+        backgroundColor: themeConfig.token.colorBgContainer,
+        minHeight: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Row gutter={[24, 24]}>
         <Col span={16}>
           <Form
@@ -186,15 +184,8 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             <Card title="安全设置" style={{ marginBottom: 24 }}>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item
-                    name="sessionTimeout"
-                    label="会话超时时间（分钟）"
-                  >
-                    <InputNumber
-                      min={5}
-                      max={480}
-                      style={{ width: "100%" }}
-                    />
+                  <Form.Item name="sessionTimeout" label="会话超时时间（分钟）">
+                    <InputNumber min={5} max={480} style={{ width: "100%" }} />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
@@ -229,18 +220,18 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
         </Col>
 
         <Col span={8}>
-          <Card 
+          <Card
             title="系统信息"
-            style={{ 
-              height: '400px',
-              display: 'flex',
-              flexDirection: 'column'
+            style={{
+              height: "400px",
+              display: "flex",
+              flexDirection: "column",
             }}
-            styles={{ 
+            styles={{
               body: {
                 flex: 1,
-                overflow: 'auto'
-              }
+                overflow: "auto",
+              },
             }}
           >
             <Descriptions column={1} size="small">
@@ -291,19 +282,19 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             </Tag>
           </Card>
 
-          <Card 
-            title="硬件信息" 
-            style={{ 
-              marginTop: 24, 
-              height: '240px',
-              display: 'flex',
-              flexDirection: 'column'
+          <Card
+            title="硬件信息"
+            style={{
+              marginTop: 24,
+              height: "240px",
+              display: "flex",
+              flexDirection: "column",
             }}
-            styles={{ 
+            styles={{
               body: {
                 flex: 1,
-                overflow: 'auto'
-              }
+                overflow: "auto",
+              },
             }}
           >
             <Descriptions column={1} size="small">
@@ -327,4 +318,4 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
   );
 };
 
-export default GeneralSettings; 
+export default GeneralSettings;

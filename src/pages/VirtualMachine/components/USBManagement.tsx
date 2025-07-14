@@ -60,7 +60,7 @@ interface USBManagementProps {
   vmStatus: string; // 虚拟机状态：running, shutoff, paused等
   usbDevices?: VMConfigUSBDevice[]; // 使用实际API返回的数据结构
   onUSBChange?: () => void;
-  message: ReturnType<typeof App.useApp>['message'];
+  message: ReturnType<typeof App.useApp>["message"];
   loading?: boolean; // 添加loading状态
   error?: string | null; // 添加错误状态
 }
@@ -86,7 +86,7 @@ const USBManagement: React.FC<USBManagementProps> = ({
 
   // 转换API数据为显示数据
   const convertToDisplayData = (
-    apiDevices: VMConfigUSBDevice[]
+    apiDevices: VMConfigUSBDevice[],
   ): DisplayUSBDevice[] => {
     return apiDevices.map((device, index) => ({
       ...device,
@@ -125,7 +125,7 @@ const USBManagement: React.FC<USBManagementProps> = ({
         setOperationLoading(false);
       }
     },
-    [hostname, vmName, messageApi, onUSBChange]
+    [hostname, vmName, messageApi, onUSBChange],
   );
 
   // 热卸载USB设备（虚拟机运行状态）
@@ -156,14 +156,14 @@ const USBManagement: React.FC<USBManagementProps> = ({
         setOperationLoading(false);
       }
     },
-    [hostname, vmName, messageApi, onUSBChange]
+    [hostname, vmName, messageApi, onUSBChange],
   );
 
   // 处理USB设备挂载
   const handleMountUSB = useCallback(
     async (
       values: Omit<VMUSBMountRequest, "hostname" | "vm_name">,
-      isHotPlug: boolean
+      isHotPlug: boolean,
     ) => {
       setOperationLoading(true);
       try {
@@ -184,7 +184,7 @@ const USBManagement: React.FC<USBManagementProps> = ({
           onUSBChange?.();
         } else {
           messageApi.error(
-            result.message || `USB设备${isHotPlug ? "热加载" : "冷加载"}失败`
+            result.message || `USB设备${isHotPlug ? "热加载" : "冷加载"}失败`,
           );
         }
       } catch (error) {
@@ -194,7 +194,7 @@ const USBManagement: React.FC<USBManagementProps> = ({
         setOperationLoading(false);
       }
     },
-    [hostname, vmName, messageApi, onUSBChange, form]
+    [hostname, vmName, messageApi, onUSBChange, form],
   );
 
   // 处理表单提交
@@ -206,7 +206,7 @@ const USBManagement: React.FC<USBManagementProps> = ({
 
       await handleMountUSB(usbParams, mountType === "hot");
     },
-    [handleMountUSB]
+    [handleMountUSB],
   );
 
   // 获取显示数据
@@ -438,6 +438,8 @@ const USBManagement: React.FC<USBManagementProps> = ({
         size="small"
         pagination={false}
         loading={operationLoading}
+        scroll={{ x: 700 }}
+        style={{ minWidth: '100%' }}
       />
     );
   };
@@ -489,7 +491,7 @@ const USBManagement: React.FC<USBManagementProps> = ({
         }}
         centered
         footer={null}
-        destroyOnClose
+        destroyOnHidden
         width={700}
       >
         <Form

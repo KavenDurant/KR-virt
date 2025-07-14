@@ -1,13 +1,18 @@
 /**
  * 右键菜单组件
- * 
+ *
  * 提供统一的右键菜单功能，根据节点类型和模式显示不同的菜单项
  */
 
 import React, { useMemo } from "react";
 import { Dropdown } from "antd";
 import type { MenuProps } from "antd";
-import type { UnifiedNodeData, SidebarMode, MenuItemConfig, MenuActionCallback } from "../types";
+import type {
+  UnifiedNodeData,
+  SidebarMode,
+  MenuItemConfig,
+  MenuActionCallback,
+} from "../types";
 import { getSidebarConfig } from "../config";
 
 interface ContextMenuProps {
@@ -20,10 +25,7 @@ interface ContextMenuProps {
 /**
  * 检查菜单项是否应该禁用
  */
-const isMenuItemDisabled = (
-  action: string, 
-  node: UnifiedNodeData
-): boolean => {
+const isMenuItemDisabled = (action: string, node: UnifiedNodeData): boolean => {
   const { type, status } = node;
 
   if (type === "vm") {
@@ -49,7 +51,7 @@ const isMenuItemDisabled = (
 
   if (type === "host") {
     const isOnline = status === "online";
-    
+
     switch (action) {
       case "reboot":
       case "shutdown":
@@ -67,8 +69,8 @@ const isMenuItemDisabled = (
  * 获取菜单项的状态提示
  */
 const getMenuItemHint = (
-  action: string, 
-  node: UnifiedNodeData
+  action: string,
+  node: UnifiedNodeData,
 ): string | null => {
   const { type, status } = node;
 
@@ -108,7 +110,7 @@ const getMenuItemHint = (
 const convertToAntdMenuItems = (
   menuConfigs: MenuItemConfig[],
   node: UnifiedNodeData,
-  onAction: MenuActionCallback
+  onAction: MenuActionCallback,
 ): MenuProps["items"] => {
   return menuConfigs.map((config) => {
     if (config.divider) {
@@ -160,7 +162,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   const menuItems = useMemo((): MenuProps["items"] => {
     const config = getSidebarConfig(mode);
     const nodeConfig = config.nodeConfigs[node.type];
-    
+
     if (!nodeConfig?.contextMenu || nodeConfig.contextMenu.length === 0) {
       return [];
     }

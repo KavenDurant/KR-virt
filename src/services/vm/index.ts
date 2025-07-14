@@ -15,6 +15,8 @@ import type {
   VMNATMountRequest,
   VMVLANMountRequest,
   VMNetworkUnmountRequest,
+  VMNetworkPlugRequest,
+  VMNetworkUnplugRequest,
   VMCDRomMountRequest,
   VMCDRomUnmountRequest,
   VMUSBMountRequest,
@@ -742,6 +744,50 @@ class VMService {
     return api.post<VMOperationResponse>("/vm/unmount/network", data, {
       defaultSuccessMessage: "移除网络任务已发送成功",
       defaultErrorMessage: "移除网络任务发送失败",
+    });
+  }
+
+  /**
+   * 虚拟机热加载网卡
+   * @param data 网卡热插拔请求参数
+   * @returns 操作结果
+   */
+  async plugNetwork(
+    data: VMNetworkPlugRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/plug/network", data, {
+        useMock: true,
+        mockData: { message: "网卡热加载成功" },
+        defaultSuccessMessage: "网卡热加载成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/plug/network", data, {
+      defaultSuccessMessage: "网卡热加载成功",
+      defaultErrorMessage: "网卡热加载失败",
+    });
+  }
+
+  /**
+   * 虚拟机热卸载网卡
+   * @param data 网卡热卸载请求参数
+   * @returns 操作结果
+   */
+  async unplugNetwork(
+    data: VMNetworkUnplugRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/unplug/network", data, {
+        useMock: true,
+        mockData: { message: "网卡热卸载成功" },
+        defaultSuccessMessage: "网卡热卸载成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/unplug/network", data, {
+      defaultSuccessMessage: "网卡热卸载成功",
+      defaultErrorMessage: "网卡热卸载失败",
     });
   }
 

@@ -5,7 +5,9 @@
  * - 添加普通桥接网卡
  * - 添加NAT网络
  * - 添加VLAN网卡
- * - 移除网卡
+ * - 网卡热加载（运行时添加网卡）
+ * - 网卡热卸载（运行时移除网卡）
+ * - 网卡冷卸载（停机移除网卡，需重启生效）
  */
 
 import React, { useState } from "react";
@@ -27,15 +29,17 @@ import {
   Row,
   Col,
   Tooltip,
+  App,
 } from "antd";
-import type { MessageInstance } from "antd/es/message/interface";
 import {
-  DeleteOutlined,
   WifiOutlined,
   GlobalOutlined,
   LinkOutlined,
   InfoCircleOutlined,
   WarningOutlined,
+  ThunderboltOutlined,
+  DisconnectOutlined,
+  ToolOutlined,
 } from "@ant-design/icons";
 import { vmService } from "@/services/vm";
 import type {
@@ -43,6 +47,8 @@ import type {
   VMNATMountRequest,
   VMVLANMountRequest,
   VMNetworkUnmountRequest,
+  VMNetworkPlugRequest,
+  VMNetworkUnplugRequest,
   NetworkDeviceInfo,
 } from "@/services/vm/types";
 
@@ -51,7 +57,8 @@ interface NetworkManagementProps {
   hostname: string;
   networkDevices: NetworkDeviceInfo[];
   onNetworkChange: () => void;
-  message: MessageInstance;
+  message: ReturnType<typeof App.useApp>['message'];
+  loading?: boolean; // 添加loading状态
 }
 
 interface AddNetworkModalProps {
@@ -60,7 +67,7 @@ interface AddNetworkModalProps {
   onOk: () => void;
   vmName: string;
   hostname: string;
-  message: MessageInstance;
+  message: ReturnType<typeof App.useApp>['message'];
 }
 
 // 添加普通桥接网卡模态框
@@ -77,32 +84,38 @@ const AddBridgeNetworkModal: React.FC<AddNetworkModalProps> = ({
 
   const handleSubmit = async () => {
     try {
+      // 验证表单字段
       const values = await form.validateFields();
       setLoading(true);
 
-      const request: VMNetworkMountRequest = {
-        hostname,
-        vm_name: vmName,
-        net_name: values.net_name,
-        model: values.model || "virtio",
-        mac_addr: values.mac_addr || null,
-      };
+      try {
+        const request: VMNetworkMountRequest = {
+          hostname,
+          vm_name: vmName,
+          net_name: values.net_name,
+          model: values.model || "virtio",
+          mac_addr: values.mac_addr || null,
+        };
 
-      const response = await vmService.mountNetwork(request);
-      if (response.success) {
-        message.success(response.message || "网卡添加任务已发送成功");
-        form.resetFields();
-        onOk();
-      } else {
-        message.error(response.message || "网卡添加任务发送失败");
+        const response = await vmService.mountNetwork(request);
+        if (response.success) {
+          message.success(response.message || "网卡添加任务已发送成功");
+          form.resetFields();
+          onOk();
+        } else {
+          message.error(response.message || "网卡添加任务发送失败");
+        }
+      } catch (apiError) {
+        console.error("添加网卡API调用失败:", apiError);
+        message.error(
+          (apiError as { message?: string }).message || "网卡添加任务发送失败"
+        );
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("添加网卡失败:", error);
-      message.error(
-        (error as { message?: string }).message || "网卡添加任务发送失败"
-      );
-    } finally {
-      setLoading(false);
+    } catch (validationError) {
+      // 表单校验失败，不显示message，让表单自己显示校验错误
+      console.log("表单校验失败:", validationError);
     }
   };
 
@@ -167,35 +180,41 @@ const AddNATNetworkModal: React.FC<AddNetworkModalProps> = ({
 
   const handleSubmit = async () => {
     try {
+      // 验证表单字段
       const values = await form.validateFields();
       setLoading(true);
 
-      const request: VMNATMountRequest = {
-        hostname,
-        vm_name: vmName,
-        net_name: values.net_name,
-        bridge_name: values.bridge_name || null,
-        ip_addr: values.ip_addr,
-        netmask: values.netmask,
-        dhcp_start: values.dhcp_start,
-        dhcp_end: values.dhcp_end,
-      };
+      try {
+        const request: VMNATMountRequest = {
+          hostname,
+          vm_name: vmName,
+          net_name: values.net_name,
+          bridge_name: values.bridge_name || null,
+          ip_addr: values.ip_addr,
+          netmask: values.netmask,
+          dhcp_start: values.dhcp_start,
+          dhcp_end: values.dhcp_end,
+        };
 
-      const response = await vmService.mountNAT(request);
-      if (response.success) {
-        message.success(response.message || "NAT网络添加任务已发送成功");
-        form.resetFields();
-        onOk();
-      } else {
-        message.error(response.message || "NAT网络添加任务发送失败");
+        const response = await vmService.mountNAT(request);
+        if (response.success) {
+          message.success(response.message || "NAT网络添加任务已发送成功");
+          form.resetFields();
+          onOk();
+        } else {
+          message.error(response.message || "NAT网络添加任务发送失败");
+        }
+      } catch (apiError) {
+        console.error("添加NAT网络API调用失败:", apiError);
+        message.error(
+          (apiError as { message?: string }).message || "NAT网络添加任务发送失败"
+        );
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("添加NAT网络失败:", error);
-      message.error(
-        (error as { message?: string }).message || "NAT网络添加任务发送失败"
-      );
-    } finally {
-      setLoading(false);
+    } catch (validationError) {
+      // 表单校验失败，不显示message，让表单自己显示校验错误
+      console.log("表单校验失败:", validationError);
     }
   };
 
@@ -306,34 +325,42 @@ const AddVLANNetworkModal: React.FC<AddNetworkModalProps> = ({
 
   const handleSubmit = async () => {
     try {
+      // 验证表单字段
       const values = await form.validateFields();
       setLoading(true);
 
-      const request: VMVLANMountRequest = {
-        hostname,
-        vm_name: vmName,
-        net_name: values.net_name,
-        forward: vlanMode,
-        vlan_id: vlanMode === "bridge" ? values.vlan_id : null,
-        ip_addr: vlanMode === 'isolated' ? values.ip_addr : null,
-        netmask: vlanMode === "isolated" ? values.netmask : null,
-        dhcp_start: vlanMode === "isolated" ? values.dhcp_start : null,
-        dhcp_end: vlanMode === "isolated" ? values.dhcp_end : null,
-      };
+      try {
+        const request: VMVLANMountRequest = {
+          hostname,
+          vm_name: vmName,
+          net_name: values.net_name,
+          forward: vlanMode,
+          vlan_id: vlanMode === "bridge" ? values.vlan_id : null,
+          ip_addr: vlanMode === 'isolated' ? values.ip_addr : null,
+          netmask: vlanMode === "isolated" ? values.netmask : null,
+          dhcp_start: vlanMode === "isolated" ? values.dhcp_start : null,
+          dhcp_end: vlanMode === "isolated" ? values.dhcp_end : null,
+        };
 
-      const response = await vmService.mountVLAN(request);
-      if (response.success) {
-        message.success(response.message || "VLAN网络添加任务已发送成功");
-        form.resetFields();
-        onOk();
-      } else {
-        message.error(response.message || "VLAN网络添加任务发送失败");
+        const response = await vmService.mountVLAN(request);
+        if (response.success) {
+          message.success(response.message || "VLAN网络添加任务已发送成功");
+          form.resetFields();
+          onOk();
+        } else {
+          message.error(response.message || "VLAN网络添加任务发送失败");
+        }
+      } catch (apiError) {
+        console.error("添加VLAN网络API调用失败:", apiError);
+        message.error(
+          (apiError as { message?: string }).message || "VLAN网络添加任务发送失败"
+        );
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("添加VLAN网络失败:", error);
-      message.error("VLAN网络添加任务发送失败");
-    } finally {
-      setLoading(false);
+    } catch (validationError) {
+      // 表单校验失败，不显示message，让表单自己显示校验错误
+      console.log("表单校验失败:", validationError);
     }
   };
 
@@ -463,6 +490,102 @@ const AddVLANNetworkModal: React.FC<AddNetworkModalProps> = ({
   );
 };
 
+// 热加载网卡模态框
+const HotPlugNetworkModal: React.FC<AddNetworkModalProps> = ({
+  visible,
+  onCancel,
+  onOk,
+  vmName,
+  hostname,
+  message,
+}) => {
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    try {
+      // 验证表单字段
+      const values = await form.validateFields();
+      setLoading(true);
+
+      try {
+        const request: VMNetworkPlugRequest = {
+          hostname,
+          vm_name: vmName,
+          net_name: values.net_name,
+          model: values.model || "virtio",
+          mac_addr: values.mac_addr || undefined,
+        };
+
+        const response = await vmService.plugNetwork(request);
+        if (response.success) {
+          message.success(response.message || "网卡热加载成功");
+          form.resetFields();
+          onOk();
+        } else {
+          message.error(response.message || "网卡热加载失败");
+        }
+      } catch (apiError) {
+        console.error("热加载网卡API调用失败:", apiError);
+        message.error(
+          (apiError as { message?: string }).message || "网卡热加载失败"
+        );
+      } finally {
+        setLoading(false);
+      }
+    } catch (validationError) {
+      // 表单校验失败，不显示message，让表单自己显示校验错误
+      console.log("表单校验失败:", validationError);
+    }
+  };
+
+  return (
+    <Modal
+      title={
+        <Space>
+          <ThunderboltOutlined />
+          热加载网卡
+        </Space>
+      }
+      open={visible}
+      onCancel={onCancel}
+      onOk={handleSubmit}
+      confirmLoading={loading}
+      width={500}
+    >
+      <Alert
+        message="热加载说明"
+        description="热加载网卡可以在虚拟机运行时动态添加网络接口，无需重启虚拟机。网卡型号默认为virtio高性能虚拟化驱动。"
+        type="info"
+        showIcon
+        style={{ marginBottom: 16 }}
+      />
+
+      <Form form={form} layout="vertical">
+        <Form.Item
+          name="net_name"
+          label="网络名称"
+          rules={[{ required: true, message: "请输入网络名称" }]}
+        >
+          <Input placeholder="例如: default 或 vmbr0" />
+        </Form.Item>
+
+        <Form.Item name="model" label="网卡型号" initialValue="virtio">
+          <Select>
+            <Select.Option value="virtio">virtio (推荐)</Select.Option>
+            <Select.Option value="e1000">e1000</Select.Option>
+            <Select.Option value="rtl8139">rtl8139</Select.Option>
+          </Select>
+        </Form.Item>
+
+        <Form.Item name="mac_addr" label="MAC地址" extra="留空则自动生成">
+          <Input placeholder="例如: 52:54:00:12:34:56" />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
+
 // 主组件
 const NetworkManagement: React.FC<NetworkManagementProps> = ({
   vmName,
@@ -470,12 +593,14 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
   networkDevices,
   onNetworkChange,
   message,
+  loading: vmDataLoading = false,
 }) => {
   const [bridgeModalVisible, setBridgeModalVisible] = useState(false);
   const [natModalVisible, setNatModalVisible] = useState(false);
   const [vlanModalVisible, setVlanModalVisible] = useState(false);
+  const [hotPlugModalVisible, setHotPlugModalVisible] = useState(false);
 
-  // 移除网卡
+  // 移除网卡（冷卸载）
   const handleRemoveNetwork = async (device: NetworkDeviceInfo) => {
     try {
       const request: VMNetworkUnmountRequest = {
@@ -487,14 +612,37 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
 
       const response = await vmService.unmountNetwork(request);
       if (response.success) {
-        message.success(response.message || "网卡移除任务已发送成功");
+        message.success(response.message || "网卡冷卸载任务已发送成功");
         onNetworkChange();
       } else {
-        message.error(response.message || "网卡移除任务发送失败");
+        message.error(response.message || "网卡冷卸载任务发送失败");
       }
     } catch (error) {
-      console.error("移除网卡失败:", error);
-      message.error("网卡移除任务发送失败");
+      console.error("冷卸载网卡失败:", error);
+      message.error("网卡冷卸载任务发送失败");
+    }
+  };
+
+  // 热卸载网卡
+  const handleHotUnplugNetwork = async (device: NetworkDeviceInfo) => {
+    try {
+      const request: VMNetworkUnplugRequest = {
+        hostname,
+        vm_name: vmName,
+        net_name: device.bridge,
+        mac_addr: device.mac,
+      };
+
+      const response = await vmService.unplugNetwork(request);
+      if (response.success) {
+        message.success(response.message || "网卡热卸载成功");
+        onNetworkChange();
+      } else {
+        message.error(response.message || "网卡热卸载失败");
+      }
+    } catch (error) {
+      console.error("热卸载网卡失败:", error);
+      message.error("网卡热卸载失败");
     }
   };
 
@@ -559,18 +707,35 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
       title: "操作",
       key: "action",
       render: (_: unknown, record: NetworkDeviceInfo) => (
-        <Popconfirm
-          title="确定要移除这个网卡吗？"
-          description="移除后虚拟机将失去此网络连接"
-          onConfirm={() => handleRemoveNetwork(record)}
-          okText="确定"
-          cancelText="取消"
-          icon={<WarningOutlined style={{ color: "red" }} />}
-        >
-          <Button size="small" danger icon={<DeleteOutlined />}>
-            移除
-          </Button>
-        </Popconfirm>
+        <Space size="small">
+
+          {/* 热卸载按钮 */}
+          <Tooltip title="热卸载网卡">
+            <Button
+              size="small"
+              icon={<DisconnectOutlined />}
+              onClick={() => handleHotUnplugNetwork(record)}
+            >
+              热卸载
+            </Button>
+          </Tooltip>
+
+          {/* 冷卸载按钮 */}
+          <Popconfirm
+            title="确定要冷卸载这个网卡吗？"
+            description="冷卸载后需要重启虚拟机才能完全移除网卡"
+            onConfirm={() => handleRemoveNetwork(record)}
+            okText="确定"
+            cancelText="取消"
+            icon={<WarningOutlined style={{ color: "red" }} />}
+          >
+            <Tooltip title="冷卸载网卡">
+              <Button size="small" danger icon={<ToolOutlined />}>
+                冷卸载
+              </Button>
+            </Tooltip>
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -602,6 +767,13 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
           >
             添加VLAN网卡
           </Button>
+          <Button
+            size="default"
+            icon={<ThunderboltOutlined />}
+            onClick={() => setHotPlugModalVisible(true)}
+          >
+            热加载网卡
+          </Button>
         </Space>
       }
     >
@@ -612,6 +784,7 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
         rowKey="id"
         pagination={false}
         scroll={{ x: 800 }}
+        loading={vmDataLoading}
       />
 
       {/* 添加桥接网卡模态框 */}
@@ -646,6 +819,19 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
         onCancel={() => setVlanModalVisible(false)}
         onOk={() => {
           setVlanModalVisible(false);
+          onNetworkChange();
+        }}
+        vmName={vmName}
+        hostname={hostname}
+        message={message}
+      />
+
+      {/* 热加载网卡模态框 */}
+      <HotPlugNetworkModal
+        visible={hotPlugModalVisible}
+        onCancel={() => setHotPlugModalVisible(false)}
+        onOk={() => {
+          setHotPlugModalVisible(false);
           onNetworkChange();
         }}
         vmName={vmName}

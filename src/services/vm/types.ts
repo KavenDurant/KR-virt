@@ -199,7 +199,24 @@ export interface VMNetworkMountRequest {
   hostname: string;
   vm_name: string;
   net_name: string;
+  model?: string;
   mac_addr?: string | null;
+}
+
+// 虚拟机网卡热插拔接口
+export interface VMNetworkPlugRequest {
+  hostname: string;
+  vm_name: string;
+  net_name: string;
+  model?: string; // 网卡型号，默认为virtio高性能虚拟化驱动
+  mac_addr?: string;
+}
+
+export interface VMNetworkUnplugRequest {
+  hostname: string;
+  vm_name: string;
+  net_name: string;
+  mac_addr: string;
 }
 
 export interface VMNATMountRequest {

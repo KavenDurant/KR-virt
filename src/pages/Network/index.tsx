@@ -211,9 +211,13 @@ const NetworkManagement: React.FC = () => {
   const [currentHostname] = useState("node215"); // 当前主机名，可以从全局状态获取
 
   // 网络拓扑相关状态
-  const [topologyData, setTopologyData] =
-    useState<NetworkTopologyResponse | null>(null);
+  const [topologyData, setTopologyData] = useState<
+    NetworkTopologyResponse | undefined
+  >(undefined);
   const [topologyLoading, setTopologyLoading] = useState(false);
+
+  // 各个tab的加载状态
+  const [tabsLoaded, setTabsLoaded] = useState<Record<string, boolean>>({});
 
   // 适配网络数据格式
   const adaptNetworkDataForUI = (config: Network): Network => ({
@@ -312,27 +316,23 @@ const NetworkManagement: React.FC = () => {
         setTopologyData(response.data);
       } else {
         console.log("API响应失败:", response.message);
-        setTopologyData(null);
+        setTopologyData(undefined);
       }
     } catch (error) {
       console.error("API调用异常:", error);
-      setTopologyData(null);
+      setTopologyData(undefined);
     } finally {
       setTopologyLoading(false);
     }
   }, []);
 
-  // 初始化加载数据
+  // 初始化只加载集群节点，其他数据按需加载
   useEffect(() => {
     const initializeData = async () => {
-      await Promise.all([
-        loadNetworkConfig(),
-        loadClusterNodes(),
-        loadNetworkTopology(),
-      ]);
+      await loadClusterNodes();
     };
     initializeData();
-  }, [loadNetworkConfig, loadClusterNodes, loadNetworkTopology]);
+  }, [loadClusterNodes]);
 
   // 当选中节点变化时，加载对应的网络列表
   useEffect(() => {
@@ -352,6 +352,58 @@ const NetworkManagement: React.FC = () => {
     console.log("点击了边:", edge);
     // 可以在这里添加边点击的处理逻辑
   }, []);
+
+  // 处理tab切换的按需加载
+  const handleTabChange = useCallback(
+    async (activeKey: string) => {
+      setActiveTab(activeKey);
+
+      try {
+        switch (activeKey) {
+          case "overview":
+          case "list":
+            // 网络概览和列表：只在第一次访问时加载，之后依赖刷新按钮
+            if (!tabsLoaded[activeKey]) {
+              setLoading(true);
+              await loadNetworkConfig();
+              setTabsLoaded((prev) => ({ ...prev, [activeKey]: true }));
+            }
+            break;
+          case "topology":
+            // 网络拓扑：每次切换都重新加载，获取最新数据
+            setTopologyLoading(true);
+            await loadNetworkTopology();
+            setTabsLoaded((prev) => ({ ...prev, [activeKey]: true }));
+            break;
+          case "routes":
+          case "security":
+            // 路由和安全规则：使用模拟数据，标记为已加载
+            setTabsLoaded((prev) => ({ ...prev, [activeKey]: true }));
+            break;
+          default:
+            break;
+        }
+      } catch (error) {
+        console.error(`加载${activeKey}数据失败:`, error);
+      } finally {
+        // 清理loading状态
+        if (activeKey === "overview" || activeKey === "list") {
+          setLoading(false);
+        }
+        if (activeKey === "topology") {
+          setTopologyLoading(false);
+        }
+      }
+    },
+    [tabsLoaded, loadNetworkConfig, loadNetworkTopology]
+  );
+
+  // 当首次进入页面且是overview tab时，触发数据加载
+  useEffect(() => {
+    if (activeTab === "overview" && !tabsLoaded["overview"]) {
+      handleTabChange("overview");
+    }
+  }, [activeTab, tabsLoaded, handleTabChange]);
 
   // 处理创建/编辑网络
   const handleNetworkModalOk = async () => {
@@ -789,13 +841,25 @@ const NetworkManagement: React.FC = () => {
                   <Button
                     icon={<SyncOutlined />}
                     onClick={async () => {
-                      await Promise.all([
-                        loadNetworkConfig(),
-                        loadClusterNodes(),
-                        selectedNode
-                          ? loadNodeNetworks(selectedNode)
-                          : Promise.resolve(),
-                      ]);
+                      // 根据当前激活的tab刷新对应数据
+                      switch (activeTab) {
+                        case "overview":
+                        case "list":
+                          await Promise.all([
+                            loadNetworkConfig(),
+                            selectedNode
+                              ? loadNodeNetworks(selectedNode)
+                              : Promise.resolve(),
+                          ]);
+                          break;
+                        case "topology":
+                          await loadNetworkTopology();
+                          break;
+                        default:
+                          // 通用刷新：集群节点
+                          await loadClusterNodes();
+                          break;
+                      }
                     }}
                   >
                     刷新
@@ -805,311 +869,325 @@ const NetworkManagement: React.FC = () => {
             >
               <Tabs
                 activeKey={activeTab}
-                onChange={setActiveTab}
+                onChange={handleTabChange}
                 items={[
                   {
                     key: "overview",
                     label: "网络概览",
-                    children: (
-                      <div className="network-overview">
-                        <Row gutter={[16, 16]}>
-                          <Col xs={24} sm={12} md={8} lg={6}>
-                            <Card>
-                              <Statistic
-                                title="网络总数"
-                                value={networkList.length}
-                                prefix={<GlobalOutlined />}
-                              />
-                            </Card>
-                          </Col>
-                          <Col xs={24} sm={12} md={8} lg={6}>
-                            <Card>
-                              <Statistic
-                                title="VLAN网络"
-                                value={
-                                  networkList.filter(
-                                    (network) => network.vlan_id !== null
-                                  ).length
-                                }
-                                prefix={<ApartmentOutlined />}
-                              />
-                            </Card>
-                          </Col>
-                          <Col xs={24} sm={12} md={8} lg={6}>
-                            <Card>
-                              <Statistic
-                                title="公网IP"
-                                value={
-                                  networkList.filter(
-                                    (network) => network.net_type === "public"
-                                  ).length
-                                }
-                                prefix={<CloudOutlined />}
-                              />
-                            </Card>
-                          </Col>
-                          <Col xs={24} sm={12} md={8} lg={6}>
-                            <Card>
-                              <Statistic
-                                title="IP分配率"
-                                value={
-                                  networkList.length > 0
-                                    ? Math.round(
-                                        (networkList.filter(
-                                          (network) =>
-                                            network.net_type === "nat"
-                                        ).length /
-                                          networkList.length) *
-                                          100
-                                      )
-                                    : 0
-                                }
-                                suffix="%"
-                                prefix={<ApiOutlined />}
-                              />
-                            </Card>
-                          </Col>
-                        </Row>
+                    children:
+                      !tabsLoaded["overview"] && loading ? (
+                        <div style={{ textAlign: "center", padding: "50px" }}>
+                          <Spin size="large" tip="加载网络概览数据中..." />
+                        </div>
+                      ) : (
+                        <div className="network-overview">
+                          <Row gutter={[16, 16]}>
+                            <Col xs={24} sm={12} md={8} lg={6}>
+                              <Card>
+                                <Statistic
+                                  title="网络总数"
+                                  value={networkList.length}
+                                  prefix={<GlobalOutlined />}
+                                />
+                              </Card>
+                            </Col>
+                            <Col xs={24} sm={12} md={8} lg={6}>
+                              <Card>
+                                <Statistic
+                                  title="VLAN网络"
+                                  value={
+                                    networkList.filter(
+                                      (network) => network.vlan_id !== null
+                                    ).length
+                                  }
+                                  prefix={<ApartmentOutlined />}
+                                />
+                              </Card>
+                            </Col>
+                            <Col xs={24} sm={12} md={8} lg={6}>
+                              <Card>
+                                <Statistic
+                                  title="公网IP"
+                                  value={
+                                    networkList.filter(
+                                      (network) => network.net_type === "public"
+                                    ).length
+                                  }
+                                  prefix={<CloudOutlined />}
+                                />
+                              </Card>
+                            </Col>
+                            <Col xs={24} sm={12} md={8} lg={6}>
+                              <Card>
+                                <Statistic
+                                  title="IP分配率"
+                                  value={
+                                    networkList.length > 0
+                                      ? Math.round(
+                                          (networkList.filter(
+                                            (network) =>
+                                              network.net_type === "nat"
+                                          ).length /
+                                            networkList.length) *
+                                            100
+                                        )
+                                      : 0
+                                  }
+                                  suffix="%"
+                                  prefix={<ApiOutlined />}
+                                />
+                              </Card>
+                            </Col>
+                          </Row>
 
-                        <Divider orientation="left">网络使用情况</Divider>
+                          <Divider orientation="left">网络使用情况</Divider>
 
-                        <Row gutter={[16, 16]}>
-                          {(networkList || []).map((network) => (
-                            <Col
-                              xs={24}
-                              sm={12}
-                              lg={8}
-                              key={network.net_name + "-" + network.hostname}
-                            >
-                              <Card
-                                title={
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: "8px",
-                                    }}
-                                  >
-                                    <ApartmentOutlined
-                                      style={{
-                                        fontSize: "14px",
-                                        color:
-                                          network.net_type === "nat"
-                                            ? "#1890ff"
-                                            : "#fa8c16",
-                                      }}
-                                    />
-                                    <span
-                                      style={{
-                                        fontSize: "14px",
-                                        fontWeight: "500",
-                                      }}
-                                    >
-                                      {network.net_name || "N/A"}
-                                    </span>
-                                    <Tag
-                                      color={
-                                        network.net_type === "nat"
-                                          ? "blue"
-                                          : "orange"
-                                      }
-                                      style={{
-                                        fontSize: "10px",
-                                        padding: "0 4px",
-                                        lineHeight: "16px",
-                                      }}
-                                    >
-                                      {network.net_type?.toUpperCase() || "N/A"}
-                                    </Tag>
-                                  </div>
-                                }
-                                extra={
-                                  <Button
-                                    type="link"
-                                    size="small"
-                                    onClick={() => viewNetworkDetails(network)}
-                                    style={{ padding: "0 4px" }}
-                                  >
-                                    详情
-                                  </Button>
-                                }
-                                style={{
-                                  height: "100%",
-                                  borderTop: `3px solid ${
-                                    network.net_type === "nat"
-                                      ? "#1890ff"
-                                      : "#fa8c16"
-                                  }`,
-                                  transition: "all 0.3s ease",
-                                }}
-                                bodyStyle={{ padding: "12px" }}
-                                hoverable
+                          <Row gutter={[16, 16]}>
+                            {(networkList || []).map((network) => (
+                              <Col
+                                xs={24}
+                                sm={12}
+                                lg={8}
+                                key={network.net_name + "-" + network.hostname}
                               >
-                                <Row gutter={[8, 8]}>
-                                  <Col span={24}>
+                                <Card
+                                  title={
                                     <div
                                       style={{
                                         display: "flex",
-                                        justifyContent: "space-between",
                                         alignItems: "center",
-                                        marginBottom: "8px",
-                                        fontSize: "12px",
-                                        color: "#666",
+                                        gap: "8px",
                                       }}
                                     >
-                                      <span>
-                                        节点: {network.hostname || "N/A"}
+                                      <ApartmentOutlined
+                                        style={{
+                                          fontSize: "14px",
+                                          color:
+                                            network.net_type === "nat"
+                                              ? "#1890ff"
+                                              : "#fa8c16",
+                                        }}
+                                      />
+                                      <span
+                                        style={{
+                                          fontSize: "14px",
+                                          fontWeight: "500",
+                                        }}
+                                      >
+                                        {network.net_name || "N/A"}
                                       </span>
-                                      <span>
-                                        驱动:{" "}
-                                        {network.driver?.toUpperCase() || "N/A"}
-                                      </span>
+                                      <Tag
+                                        color={
+                                          network.net_type === "nat"
+                                            ? "blue"
+                                            : "orange"
+                                        }
+                                        style={{
+                                          fontSize: "10px",
+                                          padding: "0 4px",
+                                          lineHeight: "16px",
+                                        }}
+                                      >
+                                        {network.net_type?.toUpperCase() ||
+                                          "N/A"}
+                                      </Tag>
                                     </div>
-                                  </Col>
-
-                                  <Col span={12}>
-                                    <div
-                                      style={{
-                                        textAlign: "center",
-                                        padding: "8px 0",
-                                      }}
+                                  }
+                                  extra={
+                                    <Button
+                                      type="link"
+                                      size="small"
+                                      onClick={() =>
+                                        viewNetworkDetails(network)
+                                      }
+                                      style={{ padding: "0 4px" }}
                                     >
-                                      <div
-                                        style={{
-                                          fontSize: "11px",
-                                          color: "#999",
-                                          marginBottom: "2px",
-                                        }}
-                                      >
-                                        网关IP
-                                      </div>
-                                      <div
-                                        style={{
-                                          fontSize: "13px",
-                                          fontFamily: "monospace",
-                                          color: "#333",
-                                        }}
-                                      >
-                                        {network.ip_addr || "N/A"}
-                                      </div>
-                                    </div>
-                                  </Col>
-
-                                  <Col span={12}>
-                                    <div
-                                      style={{
-                                        textAlign: "center",
-                                        padding: "8px 0",
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          fontSize: "11px",
-                                          color: "#999",
-                                          marginBottom: "2px",
-                                        }}
-                                      >
-                                        子网掩码
-                                      </div>
-                                      <div
-                                        style={{
-                                          fontSize: "13px",
-                                          fontFamily: "monospace",
-                                          color: "#333",
-                                        }}
-                                      >
-                                        {network.netmask || "N/A"}
-                                      </div>
-                                    </div>
-                                  </Col>
-
-                                  <Col span={24}>
-                                    <div
-                                      style={{
-                                        background: "#f8f9fa",
-                                        padding: "6px 8px",
-                                        borderRadius: "4px",
-                                        margin: "4px 0",
-                                        fontSize: "11px",
-                                        color: "#666",
-                                      }}
-                                    >
+                                      详情
+                                    </Button>
+                                  }
+                                  style={{
+                                    height: "100%",
+                                    borderTop: `3px solid ${
+                                      network.net_type === "nat"
+                                        ? "#1890ff"
+                                        : "#fa8c16"
+                                    }`,
+                                    transition: "all 0.3s ease",
+                                  }}
+                                  bodyStyle={{ padding: "12px" }}
+                                  hoverable
+                                >
+                                  <Row gutter={[8, 8]}>
+                                    <Col span={24}>
                                       <div
                                         style={{
                                           display: "flex",
                                           justifyContent: "space-between",
+                                          alignItems: "center",
+                                          marginBottom: "8px",
+                                          fontSize: "12px",
+                                          color: "#666",
                                         }}
                                       >
                                         <span>
-                                          DHCP: {network.dhcp_start || "N/A"}
+                                          节点: {network.hostname || "N/A"}
                                         </span>
                                         <span>
-                                          至 {network.dhcp_end || "N/A"}
+                                          驱动:{" "}
+                                          {network.driver?.toUpperCase() ||
+                                            "N/A"}
                                         </span>
                                       </div>
-                                    </div>
-                                  </Col>
+                                    </Col>
 
-                                  <Col span={24}>
-                                    <div
-                                      style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                        marginTop: "8px",
-                                        fontSize: "11px",
-                                        color: "#999",
-                                      }}
-                                    >
-                                      <div>
-                                        {network.bridge && (
-                                          <span>网桥: {network.bridge}</span>
-                                        )}
-                                        {network.vlan_id !== null && (
-                                          <span
-                                            style={{
-                                              marginLeft: network.bridge
-                                                ? "8px"
-                                                : "0",
-                                            }}
-                                          >
-                                            VLAN: {network.vlan_id}
-                                          </span>
-                                        )}
-                                      </div>
+                                    <Col span={12}>
                                       <div
                                         style={{
-                                          fontSize: "10px",
-                                          fontFamily: "monospace",
+                                          textAlign: "center",
+                                          padding: "8px 0",
                                         }}
                                       >
-                                        {network.mac?.slice(-8) || "N/A"}
+                                        <div
+                                          style={{
+                                            fontSize: "11px",
+                                            color: "#999",
+                                            marginBottom: "2px",
+                                          }}
+                                        >
+                                          网关IP
+                                        </div>
+                                        <div
+                                          style={{
+                                            fontSize: "13px",
+                                            fontFamily: "monospace",
+                                            color: "#333",
+                                          }}
+                                        >
+                                          {network.ip_addr || "N/A"}
+                                        </div>
                                       </div>
-                                    </div>
-                                  </Col>
-                                </Row>
-                              </Card>
-                            </Col>
-                          ))}
-                        </Row>
-                      </div>
-                    ),
+                                    </Col>
+
+                                    <Col span={12}>
+                                      <div
+                                        style={{
+                                          textAlign: "center",
+                                          padding: "8px 0",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            fontSize: "11px",
+                                            color: "#999",
+                                            marginBottom: "2px",
+                                          }}
+                                        >
+                                          子网掩码
+                                        </div>
+                                        <div
+                                          style={{
+                                            fontSize: "13px",
+                                            fontFamily: "monospace",
+                                            color: "#333",
+                                          }}
+                                        >
+                                          {network.netmask || "N/A"}
+                                        </div>
+                                      </div>
+                                    </Col>
+
+                                    <Col span={24}>
+                                      <div
+                                        style={{
+                                          background: "#f8f9fa",
+                                          padding: "6px 8px",
+                                          borderRadius: "4px",
+                                          margin: "4px 0",
+                                          fontSize: "11px",
+                                          color: "#666",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                          }}
+                                        >
+                                          <span>
+                                            DHCP: {network.dhcp_start || "N/A"}
+                                          </span>
+                                          <span>
+                                            至 {network.dhcp_end || "N/A"}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </Col>
+
+                                    <Col span={24}>
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          justifyContent: "space-between",
+                                          alignItems: "center",
+                                          marginTop: "8px",
+                                          fontSize: "11px",
+                                          color: "#999",
+                                        }}
+                                      >
+                                        <div>
+                                          {network.bridge && (
+                                            <span>网桥: {network.bridge}</span>
+                                          )}
+                                          {network.vlan_id !== null && (
+                                            <span
+                                              style={{
+                                                marginLeft: network.bridge
+                                                  ? "8px"
+                                                  : "0",
+                                              }}
+                                            >
+                                              VLAN: {network.vlan_id}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div
+                                          style={{
+                                            fontSize: "10px",
+                                            fontFamily: "monospace",
+                                          }}
+                                        >
+                                          {network.mac?.slice(-8) || "N/A"}
+                                        </div>
+                                      </div>
+                                    </Col>
+                                  </Row>
+                                </Card>
+                              </Col>
+                            ))}
+                          </Row>
+                        </div>
+                      ),
                   },
                   {
                     key: "list",
                     label: "网络列表",
-                    children: (
-                      <Table
-                        columns={networkColumns}
-                        dataSource={networkList}
-                        rowKey={(record) =>
-                          `${record.net_name}-${record.hostname}`
-                        }
-                        loading={loading}
-                        pagination={{ pageSize: 10 }}
-                        scroll={{ x: 1400 }}
-                      />
-                    ),
+                    children:
+                      !tabsLoaded["list"] && loading ? (
+                        <div style={{ textAlign: "center", padding: "50px" }}>
+                          <Spin size="large" tip="加载网络列表数据中..." />
+                        </div>
+                      ) : (
+                        <Table
+                          columns={networkColumns}
+                          dataSource={networkList}
+                          rowKey={(record) =>
+                            `${record.net_name}-${record.hostname}`
+                          }
+                          loading={loading}
+                          pagination={{ pageSize: 10 }}
+                          scroll={{ x: 1400 }}
+                        />
+                      ),
                   },
                   {
                     key: "routes",
@@ -1164,7 +1242,11 @@ const NetworkManagement: React.FC = () => {
                   {
                     key: "topology",
                     label: "网络拓扑",
-                    children: (
+                    children: topologyLoading ? (
+                      <div style={{ textAlign: "center", padding: "50px" }}>
+                        <Spin size="large" tip="加载网络拓扑数据中..." />
+                      </div>
+                    ) : (
                       <div>
                         <div
                           style={{
@@ -1191,6 +1273,7 @@ const NetworkManagement: React.FC = () => {
                                   topologyData.nodes?.length || 0
                                 } 个节点`
                               : "无数据"}
+                            {" | 每次切换自动刷新"}
                           </span>
                         </div>
                         <NetworkTopology

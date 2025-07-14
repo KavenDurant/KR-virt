@@ -65,7 +65,7 @@ describe("真实数据处理测试", () => {
 
     // 模拟前端显示逻辑
     const capacityDisplay = `${result.used.toFixed(
-      2
+      2,
     )}GB / ${result.total.toFixed(2)}GB`;
     expect(capacityDisplay).toBe("5.12GB / 10.24GB");
 
@@ -73,8 +73,8 @@ describe("真实数据处理测试", () => {
       result.usagePercent >= 90
         ? "#ff4d4f"
         : result.usagePercent >= 75
-        ? "#faad14"
-        : "#52c41a";
+          ? "#faad14"
+          : "#52c41a";
     expect(usageColor).toBe("#52c41a"); // 绿色，因为使用率为50%
   });
 

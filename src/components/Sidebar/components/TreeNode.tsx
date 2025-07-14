@@ -21,7 +21,7 @@ interface TreeNodeProps {
  */
 const getNodeSubtitle = (
   node: UnifiedNodeData,
-  mode: SidebarMode
+  mode: SidebarMode,
 ): string | null => {
   const config = getSidebarConfig(mode);
   const nodeConfig = config.nodeConfigs[node.type];
@@ -36,7 +36,7 @@ const getNodeSubtitle = (
     case "vm":
       return mode === "cluster" ? `@ ${node.hostname}` : null;
     case "network":
-      return (node.data as Record<string, unknown>)?.type as string || null;
+      return ((node.data as Record<string, unknown>)?.type as string) || null;
     case "storage":
       if (node.size && node.used) {
         const usagePercent = Math.round((node.used / node.size) * 100);
@@ -52,7 +52,7 @@ const getNodeSubtitle = (
  * 获取节点状态显示
  */
 const getStatusDisplay = (
-  node: UnifiedNodeData
+  node: UnifiedNodeData,
 ): { color: string; label: string } => {
   const statusConfig = getStatusConfig(node.status);
 

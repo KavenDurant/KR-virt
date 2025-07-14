@@ -33,7 +33,7 @@ const USE_MOCK_DATA = EnvConfig.ENABLE_MOCK;
  * - 添加数据验证和错误处理
  */
 const adaptStorageApiInfoToStorageInfo = (
-  apiInfo: StorageApiInfo
+  apiInfo: StorageApiInfo,
 ): StorageInfo => {
   // 计算可用容量
   const available = Math.max(0, apiInfo.total - apiInfo.used);
@@ -61,7 +61,7 @@ class StorageService {
    * @returns 添加结果
    */
   async addStorage(
-    params: AddStorageRequest
+    params: AddStorageRequest,
   ): Promise<StandardResponse<AddStorageResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/storage/add", params, {
@@ -130,7 +130,7 @@ class StorageService {
       ];
 
       const adaptedStorages = mockStorages.map(
-        adaptStorageApiInfoToStorageInfo
+        adaptStorageApiInfoToStorageInfo,
       );
 
       return mockApi.get(
@@ -142,7 +142,7 @@ class StorageService {
             storage_list: adaptedStorages,
           },
           defaultSuccessMessage: "存储列表获取成功",
-        }
+        },
       );
     }
 
@@ -153,13 +153,13 @@ class StorageService {
         {
           defaultSuccessMessage: "存储列表获取成功",
           defaultErrorMessage: "存储列表获取失败",
-        }
+        },
       );
 
       if (response.success && response.data) {
         // 将API数据转换为UI格式
         const adaptedStorages = response.data.storage_list.map(
-          adaptStorageApiInfoToStorageInfo
+          adaptStorageApiInfoToStorageInfo,
         );
 
         return {
@@ -183,7 +183,7 @@ class StorageService {
    * @returns 移除结果
    */
   async removeStorage(
-    storageId: number
+    storageId: number,
   ): Promise<StandardResponse<RemoveStorageResponse>> {
     const params: RemoveStorageRequest = { storage_id: storageId };
 

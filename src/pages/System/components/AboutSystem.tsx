@@ -22,7 +22,10 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTheme } from "../../../hooks/useTheme";
-import type { LicenseInfo, LoginPolicy } from "../../../services/systemSetting/types";
+import type {
+  LicenseInfo,
+  LoginPolicy,
+} from "../../../services/systemSetting/types";
 
 const { Text } = Typography;
 
@@ -63,31 +66,33 @@ const AboutSystem: React.FC<AboutSystemProps> = ({
   onLoginPolicyUpdate,
 }) => {
   const { themeConfig } = useTheme();
-  
+
   return (
-    <div style={{ 
-      padding: '8px',
-      backgroundColor: themeConfig.token.colorBgContainer,
-      minHeight: '100%',
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <div
+      style={{
+        padding: "8px",
+        backgroundColor: themeConfig.token.colorBgContainer,
+        minHeight: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Row gutter={[24, 24]}>
         {/* 第一行：产品信息和硬件信息 */}
         <Col span={12}>
-          <Card 
-            title="产品信息" 
-            style={{ 
-              height: '320px',
-              display: 'flex',
-              flexDirection: 'column'
+          <Card
+            title="产品信息"
+            style={{
+              height: "320px",
+              display: "flex",
+              flexDirection: "column",
             }}
-            styles={{ 
+            styles={{
               body: {
                 flex: 1,
-                overflow: 'auto'
-              }
+                overflow: "auto",
+              },
             }}
           >
             <Descriptions column={1} size="small">
@@ -114,18 +119,18 @@ const AboutSystem: React.FC<AboutSystemProps> = ({
         </Col>
 
         <Col span={12}>
-          <Card 
+          <Card
             title="硬件信息"
-            style={{ 
-              height: '320px',
-              display: 'flex',
-              flexDirection: 'column'
+            style={{
+              height: "320px",
+              display: "flex",
+              flexDirection: "column",
             }}
-            styles={{ 
+            styles={{
               body: {
                 flex: 1,
-                overflow: 'auto'
-              }
+                overflow: "auto",
+              },
             }}
           >
             <Descriptions column={1} size="small">
@@ -150,18 +155,18 @@ const AboutSystem: React.FC<AboutSystemProps> = ({
           <Card
             title="许可证管理"
             loading={licenseLoading}
-            style={{ 
-              height: '480px',
-              display: 'flex',
-              flexDirection: 'column'
+            style={{
+              height: "480px",
+              display: "flex",
+              flexDirection: "column",
             }}
-            styles={{ 
+            styles={{
               body: {
                 flex: 1,
-                overflow: 'auto',
-                display: 'flex',
-                flexDirection: 'column'
-              }
+                overflow: "auto",
+                display: "flex",
+                flexDirection: "column",
+              },
             }}
             extra={
               <Button
@@ -182,7 +187,9 @@ const AboutSystem: React.FC<AboutSystemProps> = ({
                   </Descriptions.Item>
                   <Descriptions.Item label="到期日期">
                     <Text>
-                      {dayjs(licenseInfo.expiry_date).format("YYYY-MM-DD HH:mm:ss")}
+                      {dayjs(licenseInfo.expiry_date).format(
+                        "YYYY-MM-DD HH:mm:ss",
+                      )}
                     </Text>
                   </Descriptions.Item>
                   <Descriptions.Item label="激活状态">
@@ -207,7 +214,7 @@ const AboutSystem: React.FC<AboutSystemProps> = ({
               )}
             </div>
 
-            <Divider style={{ margin: '16px 0' }} />
+            <Divider style={{ margin: "16px 0" }} />
 
             <Upload
               accept=".lic,.license,.key"
@@ -227,19 +234,19 @@ const AboutSystem: React.FC<AboutSystemProps> = ({
         </Col>
 
         <Col span={12}>
-          <Card 
-            title="登录策略" 
+          <Card
+            title="登录策略"
             loading={loginPolicyLoading}
-            style={{ 
-              height: '480px',
-              display: 'flex',
-              flexDirection: 'column'
+            style={{
+              height: "480px",
+              display: "flex",
+              flexDirection: "column",
             }}
-            styles={{ 
+            styles={{
               body: {
                 flex: 1,
-                overflow: 'auto'
-              }
+                overflow: "auto",
+              },
             }}
           >
             <Form
@@ -247,7 +254,11 @@ const AboutSystem: React.FC<AboutSystemProps> = ({
               layout="vertical"
               onFinish={onLoginPolicyUpdate}
               disabled={loginPolicyLoading}
-              style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+              style={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
             >
               <div style={{ flex: 1 }}>
                 <Form.Item
@@ -301,7 +312,7 @@ const AboutSystem: React.FC<AboutSystemProps> = ({
                 </Form.Item>
               </div>
 
-              <Form.Item style={{ marginBottom: 0, marginTop: 'auto' }}>
+              <Form.Item style={{ marginBottom: 0, marginTop: "auto" }}>
                 <Button
                   type="primary"
                   htmlType="submit"
@@ -319,4 +330,4 @@ const AboutSystem: React.FC<AboutSystemProps> = ({
   );
 };
 
-export default AboutSystem; 
+export default AboutSystem;

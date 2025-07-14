@@ -145,7 +145,7 @@ const LogManagement: React.FC<LogManagementProps> = ({
       dataIndex: "timestamp",
       key: "timestamp",
       width: 180,
-      sorter: (a: LogEntry, b: LogEntry) => 
+      sorter: (a: LogEntry, b: LogEntry) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     },
     {
@@ -160,8 +160,7 @@ const LogManagement: React.FC<LogManagementProps> = ({
         { text: "错误", value: "error" },
         { text: "调试", value: "debug" },
       ],
-      onFilter: (value: unknown, record: LogEntry) => 
-        record.level === value,
+      onFilter: (value: unknown, record: LogEntry) => record.level === value,
     },
     {
       title: "模块",
@@ -176,8 +175,7 @@ const LogManagement: React.FC<LogManagementProps> = ({
         { text: "网络管理", value: "网络管理" },
         { text: "备份服务", value: "备份服务" },
       ],
-      onFilter: (value: unknown, record: LogEntry) => 
-        record.module === value,
+      onFilter: (value: unknown, record: LogEntry) => record.module === value,
     },
     {
       title: "消息",
@@ -271,16 +269,16 @@ const LogManagement: React.FC<LogManagementProps> = ({
             <Space size="large">
               <span>总数: {logs.length}</span>
               <span style={{ color: "#1890ff" }}>
-                信息: {logs.filter(log => log.level === "info").length}
+                信息: {logs.filter((log) => log.level === "info").length}
               </span>
               <span style={{ color: "#faad14" }}>
-                警告: {logs.filter(log => log.level === "warning").length}
+                警告: {logs.filter((log) => log.level === "warning").length}
               </span>
               <span style={{ color: "#ff4d4f" }}>
-                错误: {logs.filter(log => log.level === "error").length}
+                错误: {logs.filter((log) => log.level === "error").length}
               </span>
               <span style={{ color: "#722ed1" }}>
-                调试: {logs.filter(log => log.level === "debug").length}
+                调试: {logs.filter((log) => log.level === "debug").length}
               </span>
             </Space>
           </div>
@@ -299,7 +297,7 @@ const LogManagement: React.FC<LogManagementProps> = ({
           pageSize: 15,
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total, range) => 
+          showTotal: (total, range) =>
             `第 ${range[0]}-${range[1]} 条，共 ${total} 条记录`,
         }}
         scroll={{ y: 400 }}
@@ -309,4 +307,4 @@ const LogManagement: React.FC<LogManagementProps> = ({
   );
 };
 
-export default LogManagement; 
+export default LogManagement;

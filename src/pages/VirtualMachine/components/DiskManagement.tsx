@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback } from "react";
 import {
   Card,
   Table,
@@ -19,7 +19,7 @@ import {
   Tooltip,
   Switch,
   App,
-} from 'antd';
+} from "antd";
 import {
   HddOutlined,
   PlusOutlined,
@@ -30,14 +30,14 @@ import {
   ExclamationCircleOutlined,
   DatabaseOutlined,
   FolderOutlined,
-} from '@ant-design/icons';
-import { vmService } from '@/services/vm';
+} from "@ant-design/icons";
+import { vmService } from "@/services/vm";
 import type {
   VMDiskMountRequest,
   VMDiskUnmountRequest,
   VMDiskDeviceInfo,
   VMDiskConfig,
-} from '@/services/vm/types';
+} from "@/services/vm/types";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -47,16 +47,16 @@ interface DiskManagementProps {
   hostname: string;
   diskDevices?: (VMDiskDeviceInfo | VMDiskConfig)[];
   onDiskChange?: () => void;
-  message: ReturnType<typeof App.useApp>['message'];
+  message: ReturnType<typeof App.useApp>["message"];
   loading?: boolean; // 添加loading状态
 }
 
 // 磁盘总线类型选项
 const BUS_TYPE_OPTIONS = [
-  { value: 'virtio', label: 'VirtIO (推荐)', description: '高性能虚拟化磁盘' },
-  { value: 'ide', label: 'IDE', description: '兼容性好，性能较低' },
-  { value: 'scsi', label: 'SCSI', description: '适合企业级应用' },
-  { value: 'sata', label: 'SATA', description: '模拟物理SATA接口' },
+  { value: "virtio", label: "VirtIO (推荐)", description: "高性能虚拟化磁盘" },
+  { value: "ide", label: "IDE", description: "兼容性好，性能较低" },
+  { value: "scsi", label: "SCSI", description: "适合企业级应用" },
+  { value: "sata", label: "SATA", description: "模拟物理SATA接口" },
 ];
 
 // 模拟磁盘设备数据接口
@@ -79,33 +79,33 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
 
   // 挂载磁盘设备
   const handleMountDisk = useCallback(
-    async (values: Omit<VMDiskMountRequest, 'hostname' | 'vm_name'>) => {
+    async (values: Omit<VMDiskMountRequest, "hostname" | "vm_name">) => {
       setLoading(true);
       try {
         const request: VMDiskMountRequest = {
           hostname,
           vm_name: vmName,
           ...values,
-          bus: values.bus || 'virtio', // 默认使用 virtio
+          bus: values.bus || "virtio", // 默认使用 virtio
         };
 
         const result = await vmService.mountDisk(request);
         if (result.success) {
-          messageApi.success(result.message || '磁盘挂载成功');
+          messageApi.success(result.message || "磁盘挂载成功");
           setModalVisible(false);
           form.resetFields();
           onDiskChange?.();
         } else {
-          messageApi.error(result.message || '磁盘挂载失败');
+          messageApi.error(result.message || "磁盘挂载失败");
         }
       } catch (error) {
-        console.error('磁盘挂载失败:', error);
-        messageApi.error('磁盘挂载失败');
+        console.error("磁盘挂载失败:", error);
+        messageApi.error("磁盘挂载失败");
       } finally {
         setLoading(false);
       }
     },
-    [hostname, vmName, messageApi, onDiskChange, form]
+    [hostname, vmName, messageApi, onDiskChange, form],
   );
 
   // 卸载磁盘设备
@@ -123,27 +123,29 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
 
         const result = await vmService.unmountDisk(request);
         if (result.success) {
-          messageApi.success(result.message || '磁盘卸载成功');
+          messageApi.success(result.message || "磁盘卸载成功");
           onDiskChange?.();
         } else {
-          messageApi.error(result.message || '磁盘卸载失败');
+          messageApi.error(result.message || "磁盘卸载失败");
         }
       } catch (error) {
-        console.error('磁盘卸载失败:', error);
-        messageApi.error('磁盘卸载失败');
+        console.error("磁盘卸载失败:", error);
+        messageApi.error("磁盘卸载失败");
       } finally {
         setLoading(false);
       }
     },
-    [hostname, vmName, messageApi, onDiskChange]
+    [hostname, vmName, messageApi, onDiskChange],
   );
 
   // 处理表单提交
   const handleFormSubmit = useCallback(
     async (values: Record<string, unknown>) => {
-      await handleMountDisk(values as Omit<VMDiskMountRequest, 'hostname' | 'vm_name'>);
+      await handleMountDisk(
+        values as Omit<VMDiskMountRequest, "hostname" | "vm_name">,
+      );
     },
-    [handleMountDisk]
+    [handleMountDisk],
   );
 
   // 格式化磁盘大小显示
@@ -157,16 +159,16 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
   // 获取磁盘类型标签颜色
   const getDiskTypeColor = (busType: string): string => {
     switch (busType.toLowerCase()) {
-      case 'virtio':
-        return 'green';
-      case 'scsi':
-        return 'blue';
-      case 'ide':
-        return 'orange';
-      case 'sata':
-        return 'purple';
+      case "virtio":
+        return "green";
+      case "scsi":
+        return "blue";
+      case "ide":
+        return "orange";
+      case "sata":
+        return "purple";
       default:
-        return 'default';
+        return "default";
     }
   };
 
@@ -174,7 +176,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
   const convertDiskDevices = (): MockDiskDevice[] => {
     return diskDevices.map((device, index) => {
       // 判断是否为 VMDiskConfig 格式
-      if ('bus_type' in device) {
+      if ("bus_type" in device) {
         const diskConfig = device as VMDiskConfig;
         return {
           id: `disk-${index}`,
@@ -197,24 +199,24 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
   // 模拟磁盘设备数据（如果没有真实数据）
   const mockDiskDevices: MockDiskDevice[] = [
     {
-      id: 'disk1',
-      name: 'vda',
-      path: '/var/lib/libvirt/images/vm-system.qcow2',
+      id: "disk1",
+      name: "vda",
+      path: "/var/lib/libvirt/images/vm-system.qcow2",
       size_gb: 50,
-      bus_type: 'virtio',
-      format: 'qcow2',
+      bus_type: "virtio",
+      format: "qcow2",
       mounted: true,
       readonly: false,
       actual_size_gb: 30,
       usage_percent: 60,
     },
     {
-      id: 'disk2',
-      name: 'vdb',
-      path: '/var/lib/libvirt/images/vm-data.qcow2',
+      id: "disk2",
+      name: "vdb",
+      path: "/var/lib/libvirt/images/vm-data.qcow2",
       size_gb: 100,
-      bus_type: 'virtio',
-      format: 'qcow2',
+      bus_type: "virtio",
+      format: "qcow2",
       mounted: true,
       readonly: false,
       actual_size_gb: 75,
@@ -222,56 +224,58 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
     },
   ];
 
-  const displayDiskDevices = diskDevices.length > 0 ? convertDiskDevices() : mockDiskDevices;
+  const displayDiskDevices =
+    diskDevices.length > 0 ? convertDiskDevices() : mockDiskDevices;
 
   // 磁盘设备表格列定义
   const columns = [
     {
-      title: '磁盘信息',
-      key: 'disk_info',
+      title: "磁盘信息",
+      key: "disk_info",
       render: (_: unknown, record: MockDiskDevice) => (
         <div>
-          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-            <HddOutlined style={{ marginRight: '6px', color: '#1890ff' }} />
+          <div style={{ fontWeight: "bold", marginBottom: "4px" }}>
+            <HddOutlined style={{ marginRight: "6px", color: "#1890ff" }} />
             {record.name}
             {record.readonly && (
-              <Tag color="orange" style={{ marginLeft: '8px' }}>
+              <Tag color="orange" style={{ marginLeft: "8px" }}>
                 只读
               </Tag>
             )}
           </div>
-          <div style={{ fontSize: '12px', color: '#666' }}>
+          <div style={{ fontSize: "12px", color: "#666" }}>
             格式: {record.format} | 总线: {record.bus_type}
           </div>
-          <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>
+          <div style={{ fontSize: "11px", color: "#999", marginTop: "2px" }}>
             路径: {record.path}
           </div>
         </div>
       ),
     },
     {
-      title: '容量信息',
-      key: 'capacity',
+      title: "容量信息",
+      key: "capacity",
       render: (_: unknown, record: MockDiskDevice) => (
         <div>
-          <div style={{ marginBottom: '8px' }}>
+          <div style={{ marginBottom: "8px" }}>
             <Text strong>{formatDiskSize(record.size_gb)}</Text>
-            <span style={{ color: '#666', marginLeft: '8px' }}>总容量</span>
+            <span style={{ color: "#666", marginLeft: "8px" }}>总容量</span>
           </div>
           {record.actual_size_gb && record.usage_percent && (
             <div>
-              <div style={{ fontSize: '12px', marginBottom: '4px' }}>
-                已使用: {formatDiskSize(record.actual_size_gb)} ({record.usage_percent}%)
+              <div style={{ fontSize: "12px", marginBottom: "4px" }}>
+                已使用: {formatDiskSize(record.actual_size_gb)} (
+                {record.usage_percent}%)
               </div>
               <Progress
                 percent={record.usage_percent}
                 size="small"
                 strokeColor={
                   record.usage_percent > 80
-                    ? '#ff4d4f'
+                    ? "#ff4d4f"
                     : record.usage_percent > 60
-                    ? '#faad14'
-                    : '#52c41a'
+                      ? "#faad14"
+                      : "#52c41a"
                 }
               />
             </div>
@@ -280,8 +284,8 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
       ),
     },
     {
-      title: '设备类型',
-      key: 'type',
+      title: "设备类型",
+      key: "type",
       render: (_: unknown, record: MockDiskDevice) => (
         <Space direction="vertical" size={4}>
           <Tag color={getDiskTypeColor(record.bus_type)}>
@@ -289,17 +293,23 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
           </Tag>
           <Tag color="blue">{record.format}</Tag>
           <Tag
-            icon={record.mounted ? <CheckCircleOutlined /> : <ExclamationCircleOutlined />}
-            color={record.mounted ? 'success' : 'default'}
+            icon={
+              record.mounted ? (
+                <CheckCircleOutlined />
+              ) : (
+                <ExclamationCircleOutlined />
+              )
+            }
+            color={record.mounted ? "success" : "default"}
           >
-            {record.mounted ? '已挂载' : '未挂载'}
+            {record.mounted ? "已挂载" : "未挂载"}
           </Tag>
         </Space>
       ),
     },
     {
-      title: '操作',
-      key: 'actions',
+      title: "操作",
+      key: "actions",
       render: (_: unknown, record: MockDiskDevice) => (
         <Space direction="vertical" size={4}>
           {record.mounted ? (
@@ -308,14 +318,14 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
               description={
                 <div>
                   <div>卸载后虚拟机将无法访问此磁盘</div>
-                  <div style={{ marginTop: '8px' }}>
+                  <div style={{ marginTop: "8px" }}>
                     <Switch
                       size="small"
                       onChange={() => {
                         // 可以保存用户选择，在确认时使用
                       }}
-                    />{' '}
-                    <span style={{ fontSize: '12px' }}>同时删除磁盘文件</span>
+                    />{" "}
+                    <span style={{ fontSize: "12px" }}>同时删除磁盘文件</span>
                   </div>
                 </div>
               }
@@ -339,14 +349,14 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
               icon={<HddOutlined />}
               onClick={() => {
                 // 重新挂载逻辑
-                messageApi.info('重新挂载功能开发中');
+                messageApi.info("重新挂载功能开发中");
               }}
               loading={loading}
             >
               挂载磁盘
             </Button>
           )}
-          
+
           <Tooltip title="查看磁盘详细信息">
             <Button
               size="small"
@@ -356,39 +366,57 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
                   title: `磁盘详情 - ${record.name}`,
                   width: 600,
                   content: (
-                    <div style={{ marginTop: '16px' }}>
+                    <div style={{ marginTop: "16px" }}>
                       <Row gutter={[16, 8]}>
-                        <Col span={8}><Text strong>设备名:</Text></Col>
+                        <Col span={8}>
+                          <Text strong>设备名:</Text>
+                        </Col>
                         <Col span={16}>{record.name}</Col>
-                        
-                        <Col span={8}><Text strong>文件路径:</Text></Col>
+
+                        <Col span={8}>
+                          <Text strong>文件路径:</Text>
+                        </Col>
                         <Col span={16}>
-                          <Text copyable style={{ fontSize: '12px' }}>
+                          <Text copyable style={{ fontSize: "12px" }}>
                             {record.path}
                           </Text>
                         </Col>
-                        
-                        <Col span={8}><Text strong>总容量:</Text></Col>
-                        <Col span={16}>{formatDiskSize(record.size_gb)}</Col>
-                        
-                        <Col span={8}><Text strong>已使用:</Text></Col>
-                        <Col span={16}>
-                          {record.actual_size_gb ? formatDiskSize(record.actual_size_gb) : 'N/A'}
+
+                        <Col span={8}>
+                          <Text strong>总容量:</Text>
                         </Col>
-                        
-                        <Col span={8}><Text strong>总线类型:</Text></Col>
-                        <Col span={16}>{record.bus_type}</Col>
-                        
-                        <Col span={8}><Text strong>磁盘格式:</Text></Col>
-                        <Col span={16}>{record.format}</Col>
-                        
-                        <Col span={8}><Text strong>只读模式:</Text></Col>
-                        <Col span={16}>{record.readonly ? '是' : '否'}</Col>
-                        
-                        <Col span={8}><Text strong>挂载状态:</Text></Col>
+                        <Col span={16}>{formatDiskSize(record.size_gb)}</Col>
+
+                        <Col span={8}>
+                          <Text strong>已使用:</Text>
+                        </Col>
                         <Col span={16}>
-                          <Tag color={record.mounted ? 'success' : 'default'}>
-                            {record.mounted ? '已挂载' : '未挂载'}
+                          {record.actual_size_gb
+                            ? formatDiskSize(record.actual_size_gb)
+                            : "N/A"}
+                        </Col>
+
+                        <Col span={8}>
+                          <Text strong>总线类型:</Text>
+                        </Col>
+                        <Col span={16}>{record.bus_type}</Col>
+
+                        <Col span={8}>
+                          <Text strong>磁盘格式:</Text>
+                        </Col>
+                        <Col span={16}>{record.format}</Col>
+
+                        <Col span={8}>
+                          <Text strong>只读模式:</Text>
+                        </Col>
+                        <Col span={16}>{record.readonly ? "是" : "否"}</Col>
+
+                        <Col span={8}>
+                          <Text strong>挂载状态:</Text>
+                        </Col>
+                        <Col span={16}>
+                          <Tag color={record.mounted ? "success" : "default"}>
+                            {record.mounted ? "已挂载" : "未挂载"}
                           </Tag>
                         </Col>
                       </Row>
@@ -449,6 +477,8 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
             size="small"
             pagination={false}
             loading={vmDataLoading || loading}
+            scroll={{ x: 800 }}
+            style={{ minWidth: '100%' }}
           />
         )}
       </Card>
@@ -478,7 +508,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
           onFinish={handleFormSubmit}
           autoComplete="off"
           initialValues={{
-            bus: 'virtio',
+            bus: "virtio",
             disk_size_gb: 20,
           }}
         >
@@ -487,9 +517,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
               <Form.Item
                 label="磁盘目录"
                 name="disk_dir"
-                rules={[
-                  { required: true, message: '请输入磁盘存储目录' },
-                ]}
+                rules={[{ required: true, message: "请输入磁盘存储目录" }]}
                 extra="磁盘文件存储的目录路径"
               >
                 <Input
@@ -503,10 +531,10 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
                 label="磁盘文件名"
                 name="disk_name"
                 rules={[
-                  { required: true, message: '请输入磁盘文件名' },
-                  { 
-                    pattern: /^[a-zA-Z0-9_-]+$/, 
-                    message: '文件名只能包含字母、数字、下划线和连字符' 
+                  { required: true, message: "请输入磁盘文件名" },
+                  {
+                    pattern: /^[a-zA-Z0-9_-]+$/,
+                    message: "文件名只能包含字母、数字、下划线和连字符",
                   },
                 ]}
                 extra="不包含扩展名，系统会自动添加.qcow2"
@@ -522,8 +550,13 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
                 label="磁盘大小"
                 name="disk_size_gb"
                 rules={[
-                  { required: true, message: '请输入磁盘大小' },
-                  { type: 'number', min: 1, max: 2048, message: '磁盘大小必须在1-2048GB之间' },
+                  { required: true, message: "请输入磁盘大小" },
+                  {
+                    type: "number",
+                    min: 1,
+                    max: 2048,
+                    message: "磁盘大小必须在1-2048GB之间",
+                  },
                 ]}
                 extra="单位：GB，建议最小20GB"
               >
@@ -531,7 +564,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
                   min={1}
                   max={2048}
                   step={1}
-                  style={{ width: '100%' }}
+                  style={{ width: "100%" }}
                   placeholder="20"
                   addonAfter="GB"
                 />
@@ -541,7 +574,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
               <Form.Item
                 label="总线类型"
                 name="bus"
-                rules={[{ required: true, message: '请选择总线类型' }]}
+                rules={[{ required: true, message: "请选择总线类型" }]}
                 extra="推荐使用VirtIO获得最佳性能"
               >
                 <Select placeholder="选择总线类型">
@@ -549,7 +582,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
                     <Option key={option.value} value={option.value}>
                       <div>
                         <div>{option.label}</div>
-                        <div style={{ fontSize: '12px', color: '#666' }}>
+                        <div style={{ fontSize: "12px", color: "#666" }}>
                           {option.description}
                         </div>
                       </div>
@@ -560,11 +593,9 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
             </Col>
           </Row>
 
-          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+          <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
             <Space>
-              <Button onClick={() => setModalVisible(false)}>
-                取消
-              </Button>
+              <Button onClick={() => setModalVisible(false)}>取消</Button>
               <Button type="primary" htmlType="submit" loading={loading}>
                 创建磁盘
               </Button>
@@ -576,4 +607,4 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
   );
 };
 
-export default DiskManagement; 
+export default DiskManagement;

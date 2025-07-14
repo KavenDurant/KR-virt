@@ -280,7 +280,7 @@ const NetworkManagement: React.FC = () => {
       setNodeNetworks([]); // 清空当前网络列表
       await loadNodeNetworks(nodeName);
     },
-    [loadNodeNetworks]
+    [loadNodeNetworks],
   );
 
   // 加载网络配置列表
@@ -290,7 +290,7 @@ const NetworkManagement: React.FC = () => {
       const response = await getNetworkConfig();
       if (response.success && Array.isArray(response.data?.networks)) {
         const adaptedNetworks = response.data.networks.map(
-          adaptNetworkDataForUI
+          adaptNetworkDataForUI,
         );
         setNetworkList(adaptedNetworks);
       } else {
@@ -395,7 +395,7 @@ const NetworkManagement: React.FC = () => {
         }
       }
     },
-    [tabsLoaded, loadNetworkConfig, loadNetworkTopology]
+    [tabsLoaded, loadNetworkConfig, loadNetworkTopology],
   );
 
   // 当首次进入页面且是overview tab时，触发数据加载
@@ -418,7 +418,7 @@ const NetworkManagement: React.FC = () => {
           network.net_name === selectedNetwork.net_name &&
           network.hostname === selectedNetwork.hostname
             ? ({ ...network, ...values } as Network)
-            : network
+            : network,
         );
         setNetworkList(updatedNetworks);
         message.success("网络编辑成功");
@@ -538,8 +538,8 @@ const NetworkManagement: React.FC = () => {
     setSelectedNetwork(record);
     setSelectedNetworkIps(
       mockIpDetails.filter(
-        (ip) => ip.networkId === `${record.net_name}-${record.hostname}`
-      )
+        (ip) => ip.networkId === `${record.net_name}-${record.hostname}`,
+      ),
     );
     setIpDetailsVisible(true);
   };
@@ -897,7 +897,7 @@ const NetworkManagement: React.FC = () => {
                                   title="VLAN网络"
                                   value={
                                     networkList.filter(
-                                      (network) => network.vlan_id !== null
+                                      (network) => network.vlan_id !== null,
                                     ).length
                                   }
                                   prefix={<ApartmentOutlined />}
@@ -910,7 +910,8 @@ const NetworkManagement: React.FC = () => {
                                   title="公网IP"
                                   value={
                                     networkList.filter(
-                                      (network) => network.net_type === "public"
+                                      (network) =>
+                                        network.net_type === "public",
                                     ).length
                                   }
                                   prefix={<CloudOutlined />}
@@ -926,10 +927,10 @@ const NetworkManagement: React.FC = () => {
                                       ? Math.round(
                                           (networkList.filter(
                                             (network) =>
-                                              network.net_type === "nat"
+                                              network.net_type === "nat",
                                           ).length /
                                             networkList.length) *
-                                            100
+                                            100,
                                         )
                                       : 0
                                   }
@@ -1269,10 +1270,10 @@ const NetworkManagement: React.FC = () => {
                             {topologyLoading
                               ? "加载中..."
                               : topologyData
-                              ? `已加载 ${
-                                  topologyData.nodes?.length || 0
-                                } 个节点`
-                              : "无数据"}
+                                ? `已加载 ${
+                                    topologyData.nodes?.length || 0
+                                  } 个节点`
+                                : "无数据"}
                             {" | 每次切换自动刷新"}
                           </span>
                         </div>

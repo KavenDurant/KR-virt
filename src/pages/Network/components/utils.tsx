@@ -12,8 +12,6 @@ import {
   type DeviceLocation,
   type LayoutConfig,
   type TopologyData,
-  type ApiTopologyNode,
-  type ApiTopologyEdge,
   type NetworkTopologyResponse,
 } from "./types";
 
@@ -169,7 +167,7 @@ export const getDeviceStyle = (type: DeviceType, status: DeviceStatus) => {
  */
 export const getNetworkStyle = (
   type: NetworkType,
-  status: "active" | "inactive" | "error" = "active"
+  status: "active" | "inactive" | "error" = "active",
 ) => {
   const baseColor = NETWORK_COLORS[type] || "#666";
   let borderColor = baseColor;
@@ -199,7 +197,7 @@ export const getNetworkStyle = (
  */
 export const getConnectionStyle = (
   type: ConnectionType,
-  status: "up" | "down" | "degraded" = "up"
+  status: "up" | "down" | "degraded" = "up",
 ) => {
   const baseStyle =
     CONNECTION_STYLES[type] || CONNECTION_STYLES[ConnectionType.LOGICAL];
@@ -223,7 +221,7 @@ export const getConnectionStyle = (
 export const calculateAutoLayout = (
   devices: NetworkDevice[],
   networks: NetworkSegment[],
-  config: LayoutConfig = DEFAULT_LAYOUT_CONFIG
+  config: LayoutConfig = DEFAULT_LAYOUT_CONFIG,
 ): Record<string, DeviceLocation> => {
   const positions: Record<string, DeviceLocation> = {};
 
@@ -233,7 +231,7 @@ export const calculateAutoLayout = (
   devices.forEach((device) => {
     const layer =
       Object.keys(config.layer_configs).find((layerName) =>
-        config.layer_configs[layerName].types.includes(device.type)
+        config.layer_configs[layerName].types.includes(device.type),
       ) || "application";
 
     if (!devicesByLayer[layer]) {
@@ -283,7 +281,7 @@ export const calculateAutoLayout = (
  */
 export const convertDevicesToNodes = (
   devices: NetworkDevice[],
-  positions?: Record<string, DeviceLocation>
+  positions?: Record<string, DeviceLocation>,
 ): TopologyNode[] => {
   return devices.map((device) => {
     const position = positions?.[device.id] ||
@@ -307,7 +305,7 @@ export const convertDevicesToNodes = (
  */
 export const convertNetworksToNodes = (
   networks: NetworkSegment[],
-  positions?: Record<string, DeviceLocation>
+  positions?: Record<string, DeviceLocation>,
 ): TopologyNode[] => {
   return networks.map((network) => {
     const position = positions?.[network.id] ||
@@ -330,7 +328,7 @@ export const convertNetworksToNodes = (
  * 将连接数据转换为拓扑图边
  */
 export const convertConnectionsToEdges = (
-  connections: NetworkConnection[]
+  connections: NetworkConnection[],
 ): TopologyEdge[] => {
   return connections.map((connection) => ({
     id: connection.id,
@@ -373,7 +371,7 @@ export const createDeviceLabel = (device: NetworkDevice): React.ReactNode => {
  * 创建网络段标签组件
  */
 export const createNetworkLabel = (
-  network: NetworkSegment
+  network: NetworkSegment,
 ): React.ReactNode => {
   return (
     <div style={{ textAlign: "center" }}>
@@ -411,7 +409,7 @@ export const getDeviceIcon = (type: DeviceType): string => {
 export const validateTopologyData = (
   devices: NetworkDevice[],
   networks: NetworkSegment[],
-  connections: NetworkConnection[]
+  connections: NetworkConnection[],
 ): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
   const allEntityIds = new Set([
@@ -432,7 +430,7 @@ export const validateTopologyData = (
   // 检查ID重复
   const allIds = [...devices.map((d) => d.id), ...networks.map((n) => n.id)];
   const duplicateIds = allIds.filter(
-    (id, index) => allIds.indexOf(id) !== index
+    (id, index) => allIds.indexOf(id) !== index,
   );
   if (duplicateIds.length > 0) {
     errors.push(`发现重复的ID: ${duplicateIds.join(", ")}`);
@@ -467,7 +465,9 @@ export const mapApiNodeTypeToDeviceType = (apiType: string): DeviceType => {
 /**
  * 将API边类型转换为内部连接类型
  */
-export const mapApiEdgeTypeToConnectionType = (apiType: string): ConnectionType => {
+export const mapApiEdgeTypeToConnectionType = (
+  apiType: string,
+): ConnectionType => {
   switch (apiType) {
     case "interface-bond":
       return ConnectionType.INTERFACE_BOND;
@@ -489,7 +489,9 @@ export const mapApiEdgeTypeToConnectionType = (apiType: string): ConnectionType 
 /**
  * 将API拓扑数据转换为内部拓扑数据格式
  */
-export const convertApiDataToTopologyData = (apiData: NetworkTopologyResponse): TopologyData => {
+export const convertApiDataToTopologyData = (
+  apiData: NetworkTopologyResponse,
+): TopologyData => {
   const devices: NetworkDevice[] = [];
   const networks: NetworkSegment[] = [];
   const connections: NetworkConnection[] = [];
@@ -497,7 +499,7 @@ export const convertApiDataToTopologyData = (apiData: NetworkTopologyResponse): 
   // 转换节点
   apiData.nodes.forEach((apiNode) => {
     const deviceType = mapApiNodeTypeToDeviceType(apiNode.type);
-    
+
     let name = "";
     let ipAddress = "";
     let macAddress = "";
@@ -505,32 +507,42 @@ export const convertApiDataToTopologyData = (apiData: NetworkTopologyResponse): 
 
     // 根据节点类型提取不同的数据
     switch (apiNode.type) {
-      case "host":
-        const hostData = apiNode.data as any;
-        name = hostData.name || apiNode.id;
-        description = `接口: ${hostData.interfaces?.length || 0}个`;
+      case "host": {
+        const hostData = apiNode.data as unknown as Record<string, unknown>;
+        name = (hostData.name as string) || apiNode.id;
+        description = `接口: ${(hostData.interfaces as unknown[])?.length || 0}个`;
         break;
-      case "interface":
-        const interfaceData = apiNode.data as any;
-        name = interfaceData.device || apiNode.id;
-        macAddress = interfaceData.mac || "";
-        ipAddress = Array.isArray(interfaceData.ip4_addresses) 
-          ? interfaceData.ip4_addresses[0] || ""
+      }
+      case "interface": {
+        const interfaceData = apiNode.data as unknown as Record<
+          string,
+          unknown
+        >;
+        name = (interfaceData.device as string) || apiNode.id;
+        macAddress = (interfaceData.mac as string) || "";
+        ipAddress = Array.isArray(interfaceData.ip4_addresses)
+          ? (interfaceData.ip4_addresses[0] as string) || ""
           : "";
         description = `${interfaceData.is_physical ? "物理" : "虚拟"}接口`;
         break;
-      case "vm":
-        const vmData = apiNode.data as any;
-        name = vmData.vm_name || apiNode.id;
-        description = `虚拟机 - ${vmData.host}`;
+      }
+      case "vm": {
+        const vmData = apiNode.data as unknown as Record<string, unknown>;
+        name = (vmData.vm_name as string) || apiNode.id;
+        description = `虚拟机 - ${vmData.host as string}`;
         break;
-      case "vm-interface":
-        const vmInterfaceData = apiNode.data as any;
-        name = vmInterfaceData.net_name || apiNode.id;
-        macAddress = vmInterfaceData.mac || "";
-        ipAddress = vmInterfaceData.ip_addr || "";
-        description = `${vmInterfaceData.vm_name} 接口`;
+      }
+      case "vm-interface": {
+        const vmInterfaceData = apiNode.data as unknown as Record<
+          string,
+          unknown
+        >;
+        name = (vmInterfaceData.net_name as string) || apiNode.id;
+        macAddress = (vmInterfaceData.mac as string) || "";
+        ipAddress = (vmInterfaceData.ip_addr as string) || "";
+        description = `${vmInterfaceData.vm_name as string} 接口`;
         break;
+      }
     }
 
     const device: NetworkDevice = {
@@ -553,7 +565,7 @@ export const convertApiDataToTopologyData = (apiData: NetworkTopologyResponse): 
   // 转换边
   apiData.edges.forEach((apiEdge) => {
     const connectionType = mapApiEdgeTypeToConnectionType(apiEdge.type);
-    
+
     const connection: NetworkConnection = {
       id: apiEdge.id,
       source_id: apiEdge.source_id,
@@ -576,14 +588,16 @@ export const convertApiDataToTopologyData = (apiData: NetworkTopologyResponse): 
 /**
  * 将API数据转换为ReactFlow格式的节点和边
  */
-export const convertApiDataToReactFlowFormat = (apiData: NetworkTopologyResponse): {
+export const convertApiDataToReactFlowFormat = (
+  apiData: NetworkTopologyResponse,
+): {
   nodes: TopologyNode[];
   edges: TopologyEdge[];
 } => {
   const topologyData = convertApiDataToTopologyData(apiData);
-  
+
   const nodes = convertDevicesToNodes(topologyData.devices);
   const edges = convertConnectionsToEdges(topologyData.connections);
 
   return { nodes, edges };
-}; 
+};

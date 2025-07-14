@@ -47,7 +47,7 @@ const StorageManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [modalVisible, setModalVisible] = useState(false);
   const [editingStorage, setEditingStorage] = useState<StorageInfo | null>(
-    null
+    null,
   );
   const [form] = Form.useForm();
 
@@ -109,8 +109,6 @@ const StorageManagement: React.FC = () => {
     };
     return <Tag color={config.color}>{config.text}</Tag>;
   };
-
-
 
   // 表格列定义
   const columns = [
@@ -463,9 +461,8 @@ const StorageManagement: React.FC = () => {
                       set_options: values.set_options || "",
                     };
 
-                    const response = await storageService.addStorage(
-                      addRequest
-                    );
+                    const response =
+                      await storageService.addStorage(addRequest);
                     if (response.success) {
                       message.success(response.message || "存储添加成功");
                       setModalVisible(false);

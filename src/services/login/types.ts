@@ -60,7 +60,6 @@ export interface LoginApiResponse {
   [key: string]: unknown;
 }
 
-
 export interface TokenRefreshResponse {
   access_token: string;
   expires_in?: number;
@@ -100,4 +99,3 @@ export interface FirstTimeLoginState {
   totpSecret?: string;
   currentStep: "totp" | "password" | "complete";
 }
-

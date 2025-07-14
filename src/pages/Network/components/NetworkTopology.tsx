@@ -9,6 +9,7 @@ import ReactFlow, {
   Controls,
   MiniMap,
   type Connection,
+  type NodeChange,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import {
@@ -47,19 +48,19 @@ const NetworkTopology: React.FC<NetworkTopologyProps> = ({
 }) => {
   // 计算节点和边数据
   const { initialNodes, initialEdges, hasValidData } = useMemo(() => {
-    console.log('🎨 NetworkTopology 数据状态:', {
+    console.log("🎨 NetworkTopology 数据状态:", {
       hasApiData: !!apiData,
       hasTraditionalData: !!data,
       loading,
-      apiDataContent: apiData
+      apiDataContent: apiData,
     });
 
     // 只有当API数据存在时才处理，不再使用默认假数据
     if (apiData) {
       try {
-        console.log('✅ 使用API数据:', apiData);
+        console.log("✅ 使用API数据:", apiData);
         const reactFlowData = convertApiDataToReactFlowFormat(apiData);
-        console.log('🔄 转换后的ReactFlow数据:', reactFlowData);
+        console.log("🔄 转换后的ReactFlow数据:", reactFlowData);
         return {
           initialNodes: reactFlowData.nodes,
           initialEdges: reactFlowData.edges,
@@ -81,7 +82,7 @@ const NetworkTopology: React.FC<NetworkTopologyProps> = ({
       const validation = validateTopologyData(
         data.devices,
         data.networks,
-        data.connections
+        data.connections,
       );
 
       if (!validation.valid) {
@@ -94,17 +95,11 @@ const NetworkTopology: React.FC<NetworkTopologyProps> = ({
       }
 
       // 计算自动布局位置
-      const positions = calculateAutoLayout(
-        data.devices,
-        data.networks
-      );
+      const positions = calculateAutoLayout(data.devices, data.networks);
 
       // 转换设备和网络为节点
       const deviceNodes = convertDevicesToNodes(data.devices, positions);
-      const networkNodes = convertNetworksToNodes(
-        data.networks,
-        positions
-      );
+      const networkNodes = convertNetworksToNodes(data.networks, positions);
       const nodes = [...deviceNodes, ...networkNodes];
 
       // 转换连接为边
@@ -123,7 +118,7 @@ const NetworkTopology: React.FC<NetworkTopologyProps> = ({
       initialEdges: [],
       hasValidData: false,
     };
-  }, [data, apiData]);
+  }, [data, apiData, loading]);
 
   // 使用 ReactFlow hooks 管理节点和边状态
   const [nodes, , onInternalNodesChange] = useNodesState(initialNodes);
@@ -131,13 +126,13 @@ const NetworkTopology: React.FC<NetworkTopologyProps> = ({
 
   // 处理节点变化
   const handleNodesChange = useCallback(
-    (changes: unknown[]) => {
+    (changes: NodeChange[]) => {
       onInternalNodesChange(changes);
       if (onNodesChange) {
         onNodesChange(nodes);
       }
     },
-    [onInternalNodesChange, onNodesChange, nodes]
+    [onInternalNodesChange, onNodesChange, nodes],
   );
 
   // 处理连接创建
@@ -151,27 +146,27 @@ const NetworkTopology: React.FC<NetworkTopologyProps> = ({
       };
       setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges]
+    [setEdges],
   );
 
   // 处理节点点击
   const handleNodeClick = useCallback(
-    (event: React.MouseEvent, node: TopologyNode) => {
+    (_event: React.MouseEvent, node: TopologyNode) => {
       if (onNodeClick) {
         onNodeClick(node);
       }
     },
-    [onNodeClick]
+    [onNodeClick],
   );
 
   // 处理边点击
   const handleEdgeClick = useCallback(
-    (event: React.MouseEvent, edge: TopologyEdge) => {
+    (_event: React.MouseEvent, edge: TopologyEdge) => {
       if (onEdgeClick) {
         onEdgeClick(edge);
       }
     },
-    [onEdgeClick]
+    [onEdgeClick],
   );
 
   // 如果正在加载或者没有数据，显示加载状态

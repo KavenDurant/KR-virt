@@ -97,9 +97,10 @@ export type ErrorType = (typeof ERROR_TYPES)[keyof typeof ERROR_TYPES];
  */
 export const ERROR_SEVERITY = {
   LOW: "low",
-  MEDIUM: "medium", 
+  MEDIUM: "medium",
   HIGH: "high",
   CRITICAL: "critical",
 } as const;
 
-export type ErrorSeverity = (typeof ERROR_SEVERITY)[keyof typeof ERROR_SEVERITY]; 
+export type ErrorSeverity =
+  (typeof ERROR_SEVERITY)[keyof typeof ERROR_SEVERITY];

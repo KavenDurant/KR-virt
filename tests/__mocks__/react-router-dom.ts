@@ -19,11 +19,23 @@ export const useParams = vi.fn(() => ({}));
 
 export const useSearchParams = vi.fn(() => [new URLSearchParams(), vi.fn()]);
 
-export const Link = ({ children, to, ...props }: { children?: React.ReactNode; to: string }) =>
-  React.createElement("a", { href: to, ...props }, children);
+export const Link = ({
+  children,
+  to,
+  ...props
+}: {
+  children?: React.ReactNode;
+  to: string;
+}) => React.createElement("a", { href: to, ...props }, children);
 
-export const NavLink = ({ children, to, ...props }: { children?: React.ReactNode; to: string }) =>
-  React.createElement("a", { href: to, ...props }, children);
+export const NavLink = ({
+  children,
+  to,
+  ...props
+}: {
+  children?: React.ReactNode;
+  to: string;
+}) => React.createElement("a", { href: to, ...props }, children);
 
 export const BrowserRouter = ({ children }: { children?: React.ReactNode }) =>
   React.createElement("div", {}, children);

@@ -43,7 +43,7 @@ class SystemSettingService {
           useMock: true,
           mockData: { address: "pool.ntp.org" },
           defaultSuccessMessage: "获取NTP服务器配置成功",
-        }
+        },
       );
     }
 
@@ -53,7 +53,7 @@ class SystemSettingService {
       {
         defaultSuccessMessage: "获取NTP服务器配置成功",
         defaultErrorMessage: "获取NTP服务器配置失败，请稍后重试",
-      }
+      },
     );
   }
 
@@ -122,7 +122,7 @@ class SystemSettingService {
           useMock: true,
           mockData,
           defaultSuccessMessage: "获取时间同步状态成功",
-        }
+        },
       );
     }
 
@@ -132,7 +132,7 @@ class SystemSettingService {
       {
         defaultSuccessMessage: "获取时间同步状态成功",
         defaultErrorMessage: "获取时间同步状态失败，请稍后重试",
-      }
+      },
     );
   }
 
@@ -140,7 +140,7 @@ class SystemSettingService {
    * 强制时间同步
    */
   async executeTimeSync(
-    params: TimeSyncExecuteRequest = {}
+    params: TimeSyncExecuteRequest = {},
   ): Promise<StandardResponse<TimeSyncExecuteResponse>> {
     if (USE_MOCK_DATA) {
       const mockData: TimeSyncExecuteResponse = {
@@ -162,7 +162,7 @@ class SystemSettingService {
       {
         defaultSuccessMessage: "时间同步任务已启动",
         defaultErrorMessage: "启动时间同步失败，请稍后重试",
-      }
+      },
     );
   }
 
@@ -186,7 +186,7 @@ class SystemSettingService {
           useMock: true,
           mockData,
           defaultSuccessMessage: "获取许可证信息成功",
-        }
+        },
       );
     }
 
@@ -196,7 +196,7 @@ class SystemSettingService {
       {
         defaultSuccessMessage: "获取许可证信息成功",
         defaultErrorMessage: "获取许可证信息失败，请稍后重试",
-      }
+      },
     );
   }
 
@@ -204,7 +204,7 @@ class SystemSettingService {
    * 上传许可证文件
    */
   async uploadLicense(
-    file: File
+    file: File,
   ): Promise<StandardResponse<LicenseUploadResponse>> {
     if (USE_MOCK_DATA) {
       const mockData: LicenseUploadResponse = {
@@ -219,7 +219,7 @@ class SystemSettingService {
           useMock: true,
           mockData,
           defaultSuccessMessage: "许可证上传成功",
-        }
+        },
       );
     }
 
@@ -235,7 +235,7 @@ class SystemSettingService {
         },
         defaultSuccessMessage: "许可证上传成功",
         defaultErrorMessage: "许可证上传失败，请检查文件格式",
-      }
+      },
     );
   }
 
@@ -259,7 +259,7 @@ class SystemSettingService {
           useMock: true,
           mockData,
           defaultSuccessMessage: "获取登录策略成功",
-        }
+        },
       );
     }
 
@@ -269,7 +269,7 @@ class SystemSettingService {
       {
         defaultSuccessMessage: "获取登录策略成功",
         defaultErrorMessage: "获取登录策略失败，请稍后重试",
-      }
+      },
     );
   }
 
@@ -277,7 +277,7 @@ class SystemSettingService {
    * 更新登录策略配置
    */
   async updateLoginPolicy(
-    policy: LoginPolicyUpdateRequest
+    policy: LoginPolicyUpdateRequest,
   ): Promise<StandardResponse<void>> {
     if (USE_MOCK_DATA) {
       return mockApi.put("/system_setting/login_policy", policy, {
@@ -313,7 +313,7 @@ class SystemSettingService {
           useMock: true,
           mockData,
           defaultSuccessMessage: "获取存储策略成功",
-        }
+        },
       );
     }
 
@@ -323,7 +323,7 @@ class SystemSettingService {
       {
         defaultSuccessMessage: "获取存储策略成功",
         defaultErrorMessage: "获取存储策略失败，请稍后重试",
-      }
+      },
     );
   }
 
@@ -331,7 +331,7 @@ class SystemSettingService {
    * 设置存储阈值
    */
   async setStorageThreshold(
-    thresholds: StorageThresholdUpdateRequest
+    thresholds: StorageThresholdUpdateRequest,
   ): Promise<StandardResponse<StoragePolicySetResponse>> {
     if (USE_MOCK_DATA) {
       const mockData: StoragePolicySetResponse = {
@@ -345,7 +345,7 @@ class SystemSettingService {
           useMock: true,
           mockData,
           defaultSuccessMessage: "设置存储策略成功",
-        }
+        },
       );
     }
 
@@ -355,7 +355,7 @@ class SystemSettingService {
       {
         defaultSuccessMessage: "设置存储策略成功",
         defaultErrorMessage: "设置存储策略失败，请稍后重试",
-      }
+      },
     );
   }
 
@@ -363,7 +363,7 @@ class SystemSettingService {
    * 设置系统存储
    */
   async setSystemStorage(
-    systemStorage: SystemStorageUpdateRequest
+    systemStorage: SystemStorageUpdateRequest,
   ): Promise<StandardResponse<StoragePolicySetResponse>> {
     if (USE_MOCK_DATA) {
       const mockData: StoragePolicySetResponse = {
@@ -377,7 +377,7 @@ class SystemSettingService {
           useMock: true,
           mockData,
           defaultSuccessMessage: "设置存储策略成功",
-        }
+        },
       );
     }
 
@@ -387,7 +387,7 @@ class SystemSettingService {
       {
         defaultSuccessMessage: "设置存储策略成功",
         defaultErrorMessage: "设置存储策略失败，请稍后重试",
-      }
+      },
     );
   }
 
@@ -396,7 +396,7 @@ class SystemSettingService {
    * 设置存储策略配置
    */
   async setStoragePolicy(
-    policy: StorageThresholdUpdateRequest & SystemStorageUpdateRequest
+    policy: StorageThresholdUpdateRequest & SystemStorageUpdateRequest,
   ): Promise<StandardResponse<StoragePolicySetResponse>> {
     // 拆分为两个请求
     const thresholdResult = await this.setStorageThreshold({
@@ -433,7 +433,7 @@ class SystemSettingService {
           useMock: true,
           mockData,
           defaultSuccessMessage: "获取系统存储状态成功",
-        }
+        },
       );
     }
 
@@ -443,7 +443,7 @@ class SystemSettingService {
       {
         defaultSuccessMessage: "获取系统存储状态成功",
         defaultErrorMessage: "获取系统存储状态失败，请稍后重试",
-      }
+      },
     );
   }
 

@@ -19,6 +19,7 @@ You are a Senior Front-End Developer and an Expert in ReactJS, JavaScript, TypeS
 - If you do not know the answer, say so, instead of guessing.
 
 ## Type System
+
 - Prefer interfaces over types for object definitions
 - Use type for unions, intersections, and mapped types
 - Avoid using `any`, prefer `unknown` for unknown types
@@ -27,7 +28,9 @@ You are a Senior Front-End Developer and an Expert in ReactJS, JavaScript, TypeS
 - Use generics for reusable type patterns
 
 ### Coding Environment
+
 The user asks questions about the following coding languages:
+
 - ReactJS
 - JavaScript
 - TypeScript
@@ -35,7 +38,9 @@ The user asks questions about the following coding languages:
 - CSS
 
 ### Code Implementation Guidelines
+
 Follow these rules when you write code:
+
 - Use early returns whenever possible to make the code more readable.
 - To use Less, you need to create a corresponding style file at the current level, e.g. index.tsx corresponds to index.less.
 - Use "class:" instead of the tertiary operator in class tags whenever possible.
@@ -46,6 +51,7 @@ Follow these rules when you write code:
 - If you are asked to write a page, please complete the corresponding test case and generate the corresponding document in Docs, and then write the code after I confirm it.
 
 ### Forms
+
 - Use controlled components for form inputs
 - Implement proper form validation
 - Handle form submission states properly
@@ -54,6 +60,7 @@ Follow these rules when you write code:
 - Implement proper accessibility for forms
 
 ### Error Handling
+
 - Implement Error Boundaries
 - Handle async errors properly
 - Show user-friendly error messages
@@ -62,6 +69,7 @@ Follow these rules when you write code:
 - Handle edge cases gracefully
 
 ### Testing
+
 - Write unit tests for components
 - Implement integration tests for complex flows
 - Use React Testing Library

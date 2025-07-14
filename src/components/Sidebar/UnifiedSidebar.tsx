@@ -72,7 +72,7 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
       const event = new CustomEvent(eventName, { detail: eventDetail });
       window.dispatchEvent(event);
     },
-    []
+    [],
   );
 
   // 转换为Ant Design Tree所需的格式
@@ -128,7 +128,7 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
         window.dispatchEvent(event);
       }
     },
-    [selectedKeys, onSelect]
+    [selectedKeys, onSelect],
   );
 
   // 处理节点展开

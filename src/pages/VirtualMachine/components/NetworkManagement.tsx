@@ -57,7 +57,7 @@ interface NetworkManagementProps {
   hostname: string;
   networkDevices: NetworkDeviceInfo[];
   onNetworkChange: () => void;
-  message: ReturnType<typeof App.useApp>['message'];
+  message: ReturnType<typeof App.useApp>["message"];
   loading?: boolean; // 添加loading状态
 }
 
@@ -67,7 +67,7 @@ interface AddNetworkModalProps {
   onOk: () => void;
   vmName: string;
   hostname: string;
-  message: ReturnType<typeof App.useApp>['message'];
+  message: ReturnType<typeof App.useApp>["message"];
 }
 
 // 添加普通桥接网卡模态框
@@ -207,7 +207,8 @@ const AddNATNetworkModal: React.FC<AddNetworkModalProps> = ({
       } catch (apiError) {
         console.error("添加NAT网络API调用失败:", apiError);
         message.error(
-          (apiError as { message?: string }).message || "NAT网络添加任务发送失败"
+          (apiError as { message?: string }).message ||
+            "NAT网络添加任务发送失败"
         );
       } finally {
         setLoading(false);
@@ -336,7 +337,7 @@ const AddVLANNetworkModal: React.FC<AddNetworkModalProps> = ({
           net_name: values.net_name,
           forward: vlanMode,
           vlan_id: vlanMode === "bridge" ? values.vlan_id : null,
-          ip_addr: vlanMode === 'isolated' ? values.ip_addr : null,
+          ip_addr: vlanMode === "isolated" ? values.ip_addr : null,
           netmask: vlanMode === "isolated" ? values.netmask : null,
           dhcp_start: vlanMode === "isolated" ? values.dhcp_start : null,
           dhcp_end: vlanMode === "isolated" ? values.dhcp_end : null,
@@ -353,7 +354,8 @@ const AddVLANNetworkModal: React.FC<AddNetworkModalProps> = ({
       } catch (apiError) {
         console.error("添加VLAN网络API调用失败:", apiError);
         message.error(
-          (apiError as { message?: string }).message || "VLAN网络添加任务发送失败"
+          (apiError as { message?: string }).message ||
+            "VLAN网络添加任务发送失败"
         );
       } finally {
         setLoading(false);
@@ -651,11 +653,14 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
       title: "设备名",
       dataIndex: "name",
       key: "name",
+      width: 120,
+      fixed: "left" as const,
     },
     {
       title: "类型",
       dataIndex: "type",
       key: "type",
+      width: 80,
       render: (type: string) => {
         const typeConfig = {
           bridge: { color: "blue", text: "桥接" },
@@ -673,23 +678,27 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
       title: "型号",
       dataIndex: "model",
       key: "model",
+      width: 80,
     },
     {
       title: "网桥",
       dataIndex: "bridge",
       key: "bridge",
+      width: 120,
       render: (bridge: string) => <Tag color="green">{bridge}</Tag>,
     },
     {
       title: "MAC地址",
       dataIndex: "mac",
       key: "mac",
+      width: 140,
       render: (mac: string) => <code style={{ fontSize: "12px" }}>{mac}</code>,
     },
     {
       title: "VLAN ID",
       dataIndex: "vlan_id",
       key: "vlan_id",
+      width: 80,
       render: (vlanId?: number) =>
         vlanId ? <Tag color="purple">{vlanId}</Tag> : "-",
     },
@@ -697,6 +706,7 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
       title: "状态",
       dataIndex: "enabled",
       key: "enabled",
+      width: 80,
       render: (enabled: boolean) => (
         <Tag color={enabled ? "success" : "default"}>
           {enabled ? "启用" : "禁用"}
@@ -706,15 +716,17 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
     {
       title: "操作",
       key: "action",
+      width: 220,
+      fixed: "right" as const,
       render: (_: unknown, record: NetworkDeviceInfo) => (
-        <Space size="small">
-
+        <Space size={6} wrap={false}>
           {/* 热卸载按钮 */}
           <Tooltip title="热卸载网卡">
             <Button
               size="small"
               icon={<DisconnectOutlined />}
               onClick={() => handleHotUnplugNetwork(record)}
+              style={{ minWidth: '66px' }}
             >
               热卸载
             </Button>
@@ -730,7 +742,12 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
             icon={<WarningOutlined style={{ color: "red" }} />}
           >
             <Tooltip title="冷卸载网卡">
-              <Button size="small" danger icon={<ToolOutlined />}>
+              <Button 
+                size="small" 
+                danger 
+                icon={<ToolOutlined />}
+                style={{ minWidth: '66px' }}
+              >
                 冷卸载
               </Button>
             </Tooltip>
@@ -783,8 +800,9 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
         columns={columns}
         rowKey="id"
         pagination={false}
-        scroll={{ x: 800 }}
+        scroll={{ x: 920 }}
         loading={vmDataLoading}
+        style={{ minWidth: '100%' }}
       />
 
       {/* 添加桥接网卡模态框 */}

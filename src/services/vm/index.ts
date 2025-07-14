@@ -30,20 +30,6 @@ import type {
 // 配置区域
 const USE_MOCK_DATA = EnvConfig.ENABLE_MOCK;
 
-// 虚拟机状态映射
-const VM_STATUS_MAP = {
-  no_state: "无状态",
-  running: "运行中",
-  blocked: "阻塞",
-  paused: "暂停",
-  shutdown: "正在关闭",
-  shutoff: "已关闭",
-  crashed: "崩溃",
-  pm_suspended: "挂起",
-} as const;
-
-type VMStatusKey = keyof typeof VM_STATUS_MAP;
-
 /**
  * 数据适配函数：将API返回的VMApiInfo转换为UI需要的VMInfo格式
  *
@@ -68,13 +54,16 @@ const adaptVMApiInfoToVMInfo = (apiInfo: VMApiInfo): VMInfo => {
     status = "configuring";
   }
   // 3. 检查配置完整性
-  else if (!apiInfo.config || !apiInfo.config.cpu_num || !apiInfo.config.memory_gb) {
+  else if (
+    !apiInfo.config ||
+    !apiInfo.config.cpu_num ||
+    !apiInfo.config.memory_gb
+  ) {
     status = "configuring";
   }
-  // 4. 使用API返回的状态并进行映射
+  // 4. 使用API返回的状态（保持原始英文状态值，不进行中文映射）
   else if (apiInfo.status) {
-    const apiStatus = apiInfo.status as VMStatusKey;
-    status = apiStatus in VM_STATUS_MAP ? VM_STATUS_MAP[apiStatus] : "未知状态";
+    status = apiInfo.status; // 直接使用API返回的状态值
   }
 
   // 安全地获取配置信息，提供默认值
@@ -99,12 +88,12 @@ const adaptVMApiInfoToVMInfo = (apiInfo: VMApiInfo): VMInfo => {
     metadata: apiInfo.config?.metadata,
     created_at: apiInfo.config?.metadata?.updated_at
       ? new Date(
-          parseFloat(apiInfo.config.metadata.updated_at) * 1000
+          parseFloat(apiInfo.config.metadata.updated_at) * 1000,
         ).toLocaleString("zh-CN")
       : undefined,
     updated_at: apiInfo.config?.metadata?.updated_at
       ? new Date(
-          parseFloat(apiInfo.config.metadata.updated_at) * 1000
+          parseFloat(apiInfo.config.metadata.updated_at) * 1000,
         ).toLocaleString("zh-CN")
       : undefined,
   };
@@ -120,7 +109,7 @@ class VMService {
    * @returns 创建结果
    */
   async createVM(
-    params: CreateVMRequest
+    params: CreateVMRequest,
   ): Promise<StandardResponse<CreateVMResponse["data"]>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/create", params, {
@@ -158,7 +147,7 @@ class VMService {
     } = {
       hostnames: null,
       vm_names: null,
-    }
+    },
   ): Promise<StandardResponse<VMListUIResponse>> {
     const payload = {
       hostnames: params.hostnames,
@@ -187,7 +176,7 @@ class VMService {
             cdrom: [
               {
                 name: "hdc",
-                bus_type: "sata", 
+                bus_type: "sata",
                 path: "/var/lib/libvirt/my_iso/Ubuntu-20.04.iso",
                 format: "raw",
               },
@@ -274,7 +263,7 @@ class VMService {
         {
           defaultSuccessMessage: "获取虚拟机列表成功",
           defaultErrorMessage: "获取虚拟机列表失败",
-        }
+        },
       );
 
       // 优化的数据处理逻辑
@@ -356,7 +345,7 @@ class VMService {
    */
   async startVM(
     vmName: string,
-    hostname: string
+    hostname: string,
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: VMOperationRequest = {
       vm_name: vmName,
@@ -385,7 +374,7 @@ class VMService {
    */
   async stopVM(
     vmName: string,
-    hostname: string
+    hostname: string,
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: VMOperationRequest = {
       vm_name: vmName,
@@ -414,7 +403,7 @@ class VMService {
    */
   async restartVM(
     vmName: string,
-    hostname: string
+    hostname: string,
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: VMOperationRequest = {
       vm_name: vmName,
@@ -445,7 +434,7 @@ class VMService {
   async deleteVM(
     vmName: string,
     hostname: string,
-    deleteDisk: boolean = true
+    deleteDisk: boolean = true,
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: DeleteVMRequest = {
       vm_name: vmName,
@@ -475,7 +464,7 @@ class VMService {
    */
   async destroyVM(
     vmName: string,
-    hostname: string
+    hostname: string,
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: VMOperationRequest = {
       vm_name: vmName,
@@ -504,7 +493,7 @@ class VMService {
    */
   async pauseVM(
     vmName: string,
-    hostname: string
+    hostname: string,
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: VMOperationRequest = {
       vm_name: vmName,
@@ -533,7 +522,7 @@ class VMService {
    */
   async resumeVM(
     vmName: string,
-    hostname: string
+    hostname: string,
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: VMOperationRequest = {
       vm_name: vmName,
@@ -577,7 +566,7 @@ class VMService {
           useMock: true,
           mockData: mockVM,
           defaultSuccessMessage: "获取虚拟机详情成功",
-        }
+        },
       );
     }
 
@@ -587,7 +576,7 @@ class VMService {
       {
         defaultSuccessMessage: "获取虚拟机详情成功",
         defaultErrorMessage: "获取虚拟机详情失败",
-      }
+      },
     );
   }
 
@@ -645,7 +634,7 @@ class VMService {
           useMock: true,
           mockData: mockTreeData,
           defaultSuccessMessage: "获取虚拟机树形结构成功",
-        }
+        },
       );
     }
 
@@ -655,7 +644,7 @@ class VMService {
       {
         defaultSuccessMessage: "获取虚拟机树形结构成功",
         defaultErrorMessage: "获取虚拟机树形结构失败",
-      }
+      },
     );
   }
 
@@ -665,7 +654,7 @@ class VMService {
    * @returns 操作结果
    */
   async mountNetwork(
-    data: VMNetworkMountRequest
+    data: VMNetworkMountRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/mount/network", data, {
@@ -687,7 +676,7 @@ class VMService {
    * @returns 操作结果
    */
   async mountNAT(
-    data: VMNATMountRequest
+    data: VMNATMountRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/mount/nat", data, {
@@ -709,7 +698,7 @@ class VMService {
    * @returns 操作结果
    */
   async mountVLAN(
-    data: VMVLANMountRequest
+    data: VMVLANMountRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/mount/vlan", data, {
@@ -731,7 +720,7 @@ class VMService {
    * @returns 操作结果
    */
   async unmountNetwork(
-    data: VMNetworkUnmountRequest
+    data: VMNetworkUnmountRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/unmount/network", data, {
@@ -753,7 +742,7 @@ class VMService {
    * @returns 操作结果
    */
   async plugNetwork(
-    data: VMNetworkPlugRequest
+    data: VMNetworkPlugRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/plug/network", data, {
@@ -775,7 +764,7 @@ class VMService {
    * @returns 操作结果
    */
   async unplugNetwork(
-    data: VMNetworkUnplugRequest
+    data: VMNetworkUnplugRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/unplug/network", data, {
@@ -797,7 +786,7 @@ class VMService {
    * @returns 操作结果
    */
   async mountCDRom(
-    data: VMCDRomMountRequest
+    data: VMCDRomMountRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/mount/cdrom", data, {
@@ -819,7 +808,7 @@ class VMService {
    * @returns 操作结果
    */
   async unmountCDRom(
-    data: VMCDRomUnmountRequest
+    data: VMCDRomUnmountRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/unmount/cdrom", data, {
@@ -841,7 +830,7 @@ class VMService {
    * @returns 操作结果
    */
   async mountUSB(
-    data: VMUSBMountRequest
+    data: VMUSBMountRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/mount/usb", data, {
@@ -863,7 +852,7 @@ class VMService {
    * @returns 操作结果
    */
   async unmountUSB(
-    data: VMUSBUnmountRequest
+    data: VMUSBUnmountRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/unmount/usb", data, {
@@ -885,7 +874,7 @@ class VMService {
    * @returns 操作结果
    */
   async plugUSB(
-    data: VMUSBPlugRequest
+    data: VMUSBPlugRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/plug/usb", data, {
@@ -907,7 +896,7 @@ class VMService {
    * @returns 操作结果
    */
   async unplugUSB(
-    data: VMUSBUnplugRequest
+    data: VMUSBUnplugRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/unplug/usb", data, {
@@ -929,7 +918,7 @@ class VMService {
    * @returns 操作结果
    */
   async mountDisk(
-    data: VMDiskMountRequest
+    data: VMDiskMountRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/mount/disk", data, {
@@ -951,7 +940,7 @@ class VMService {
    * @returns 操作结果
    */
   async unmountDisk(
-    data: VMDiskUnmountRequest
+    data: VMDiskUnmountRequest,
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/unmount/disk", data, {

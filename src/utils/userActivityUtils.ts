@@ -36,7 +36,7 @@ export const formatDuration = (milliseconds: number): string => {
 
   if (hours > 0) {
     return `${hours}:${String(minutes % 60).padStart(2, "0")}:${String(
-      seconds % 60
+      seconds % 60,
     ).padStart(2, "0")}`;
   } else {
     return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
@@ -84,7 +84,7 @@ export const saveToStorage = (key: string, data: unknown): void => {
       JSON.stringify({
         data,
         timestamp: Date.now(),
-      })
+      }),
     );
   } catch (error) {
     console.warn(`${LOG_CONFIG.prefix} Failed to save to localStorage:`, error);
@@ -106,7 +106,7 @@ export const loadFromStorage = <T = unknown>(key: string): T | null => {
   } catch (error) {
     console.warn(
       `${LOG_CONFIG.prefix} Failed to load from localStorage:`,
-      error
+      error,
     );
     return null;
   }
@@ -139,7 +139,7 @@ export const logActivity = (event: UserActivityEvent, data?: unknown): void => {
   console.log(
     `%c${LOG_CONFIG.prefix} [${timestamp}] ${event.toUpperCase()}`,
     `color: ${color}; font-weight: bold;`,
-    data || ""
+    data || "",
   );
 };
 
@@ -149,7 +149,7 @@ export const logActivity = (event: UserActivityEvent, data?: unknown): void => {
  * @returns 日志级别
  */
 const getLogLevel = (
-  event: UserActivityEvent
+  event: UserActivityEvent,
 ): keyof typeof LOG_CONFIG.colors => {
   switch (event) {
     case "timeout":
@@ -173,7 +173,7 @@ const getLogLevel = (
  */
 export const debounce = <T extends (...args: unknown[]) => unknown>(
   func: T,
-  delay: number
+  delay: number,
 ): ((...args: Parameters<T>) => void) => {
   let timeoutId: NodeJS.Timeout;
 
@@ -191,7 +191,7 @@ export const debounce = <T extends (...args: unknown[]) => unknown>(
  */
 export const throttle = <T extends (...args: unknown[]) => unknown>(
   func: T,
-  delay: number
+  delay: number,
 ): ((...args: Parameters<T>) => void) => {
   let lastCall = 0;
 
@@ -235,7 +235,7 @@ export const supportsBroadcastChannel = (): boolean => {
  */
 export const safeAsync = async <T>(
   asyncFn: () => Promise<T>,
-  errorMessage: string = "Async operation failed"
+  errorMessage: string = "Async operation failed",
 ): Promise<T | null> => {
   try {
     return await asyncFn();
@@ -275,7 +275,7 @@ export const formatError = (error: unknown): string => {
  */
 export const isMobileDevice = (): boolean => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
+    navigator.userAgent,
   );
 };
 
@@ -301,7 +301,7 @@ export const getDeviceType = (): "mobile" | "tablet" | "desktop" => {
 
 export const findUserActivityModule = (
   path: string,
-  activityModules: Record<string, unknown>
+  activityModules: Record<string, unknown>,
 ): string => {
   // 查找匹配的活动模块
   for (const moduleName in activityModules) {
@@ -322,7 +322,7 @@ export const findUserActivityModule = (
 export const createUserActivityRecord = (
   type: string,
   details: Record<string, unknown>,
-  user: Record<string, unknown>
+  user: Record<string, unknown>,
 ): Record<string, unknown> => {
   return {
     id: generateId(),
@@ -336,7 +336,7 @@ export const createUserActivityRecord = (
 
 export const shouldSkipActivityLog = (
   path: string,
-  skipPaths: string[] = []
+  skipPaths: string[] = [],
 ): boolean => {
   // 默认跳过的路径
   const defaultSkipPaths = [
@@ -353,7 +353,7 @@ export const shouldSkipActivityLog = (
 
 export const attachActivityListeners = (
   element: Element,
-  config: Record<string, unknown> = {}
+  config: Record<string, unknown> = {},
 ): void => {
   // 实现活动监听器附加逻辑
   console.log("Attaching activity listeners to element:", element, config);
@@ -361,7 +361,7 @@ export const attachActivityListeners = (
 
 export const detachActivityListeners = (
   element: Element,
-  config: Record<string, unknown> = {}
+  config: Record<string, unknown> = {},
 ): void => {
   // 实现活动监听器分离逻辑
   console.log("Detaching activity listeners from element:", element, config);

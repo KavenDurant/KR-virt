@@ -114,8 +114,7 @@ export const mockResponseTemplates = {
   deleted: () => createMockResponse(null, true, "删除成功"),
 
   // 验证错误
-  validationError: () =>
-    createMockErrorResponse("验证失败", 422),
+  validationError: () => createMockErrorResponse("验证失败", 422),
 
   // 未授权
   unauthorized: () => createMockErrorResponse("未授权访问", 401),
@@ -139,14 +138,14 @@ export const addEndpoint = (
     delay?: number;
     status?: number;
     headers?: Record<string, string>;
-  } = {}
+  } = {},
 ) => {
-  console.log('Adding endpoint:', serviceName, endpoint, response, options);
+  console.log("Adding endpoint:", serviceName, endpoint, response, options);
   // 在这里实现端点配置逻辑
 };
 
 // 模拟API错误
 export const simulateErrors = (errors: unknown[] = []) => {
-  console.log('Simulating API errors:', errors);
+  console.log("Simulating API errors:", errors);
   // 在这里实现错误模拟逻辑
 };

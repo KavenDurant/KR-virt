@@ -5,7 +5,9 @@
 
 import { createRoot } from "react-dom/client";
 import { ConfigProvider, App, theme } from "antd";
-import TokenRefreshFailureModal, { type TokenRefreshFailureModalProps } from "./index";
+import TokenRefreshFailureModal, {
+  type TokenRefreshFailureModalProps,
+} from "./index";
 import type { TokenRefreshFailureOptions } from "./utils";
 
 type ReactRoot = ReturnType<typeof createRoot>;
@@ -22,7 +24,8 @@ class TokenRefreshFailureModalManager {
 
   static getInstance(): TokenRefreshFailureModalManager {
     if (!TokenRefreshFailureModalManager.instance) {
-      TokenRefreshFailureModalManager.instance = new TokenRefreshFailureModalManager();
+      TokenRefreshFailureModalManager.instance =
+        new TokenRefreshFailureModalManager();
     }
     return TokenRefreshFailureModalManager.instance;
   }
@@ -63,7 +66,7 @@ class TokenRefreshFailureModalManager {
       this.container = document.createElement("div");
       this.container.className = "token-refresh-failure-modal-container";
       document.body.appendChild(this.container);
-      
+
       // 使用React 18的createRoot
       this.root = createRoot(this.container);
     }
@@ -117,7 +120,8 @@ class TokenRefreshFailureModalManager {
     };
 
     // 获取当前主题
-    const currentTheme = document.documentElement.getAttribute("data-theme") || "light";
+    const currentTheme =
+      document.documentElement.getAttribute("data-theme") || "light";
     const isDark = currentTheme === "dark";
 
     this.root.render(
@@ -127,7 +131,7 @@ class TokenRefreshFailureModalManager {
         <App>
           <TokenRefreshFailureModal {...modalProps} />
         </App>
-      </ConfigProvider>
+      </ConfigProvider>,
     );
   }
 
@@ -139,7 +143,7 @@ class TokenRefreshFailureModalManager {
       this.root.unmount();
       this.root = null;
     }
-    
+
     if (this.container && this.container.parentNode) {
       this.container.parentNode.removeChild(this.container);
       this.container = null;

@@ -17,7 +17,7 @@ import {
   ReloadOutlined,
   CheckCircleOutlined,
   WarningOutlined,
-      ExclamationCircleOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 
 interface SystemMonitoringProps {
@@ -213,7 +213,10 @@ const SystemMonitoring: React.FC<SystemMonitoringProps> = ({ onRefresh }) => {
                 value={mockMonitoringData.systemLoad.cpu}
                 suffix="%"
                 valueStyle={{
-                  color: mockMonitoringData.systemLoad.cpu > 80 ? "#cf1322" : "#3f8600",
+                  color:
+                    mockMonitoringData.systemLoad.cpu > 80
+                      ? "#cf1322"
+                      : "#3f8600",
                 }}
               />
               <Progress
@@ -237,7 +240,10 @@ const SystemMonitoring: React.FC<SystemMonitoringProps> = ({ onRefresh }) => {
                 value={mockMonitoringData.systemLoad.memory}
                 suffix="%"
                 valueStyle={{
-                  color: mockMonitoringData.systemLoad.memory > 80 ? "#cf1322" : "#3f8600",
+                  color:
+                    mockMonitoringData.systemLoad.memory > 80
+                      ? "#cf1322"
+                      : "#3f8600",
                 }}
               />
               <Progress
@@ -261,7 +267,10 @@ const SystemMonitoring: React.FC<SystemMonitoringProps> = ({ onRefresh }) => {
                 value={mockMonitoringData.systemLoad.disk}
                 suffix="%"
                 valueStyle={{
-                  color: mockMonitoringData.systemLoad.disk > 80 ? "#cf1322" : "#3f8600",
+                  color:
+                    mockMonitoringData.systemLoad.disk > 80
+                      ? "#cf1322"
+                      : "#3f8600",
                 }}
               />
               <Progress
@@ -285,7 +294,10 @@ const SystemMonitoring: React.FC<SystemMonitoringProps> = ({ onRefresh }) => {
                 value={mockMonitoringData.systemLoad.network}
                 suffix="%"
                 valueStyle={{
-                  color: mockMonitoringData.systemLoad.network > 80 ? "#cf1322" : "#3f8600",
+                  color:
+                    mockMonitoringData.systemLoad.network > 80
+                      ? "#cf1322"
+                      : "#3f8600",
                 }}
               />
               <Progress
@@ -357,4 +369,4 @@ const SystemMonitoring: React.FC<SystemMonitoringProps> = ({ onRefresh }) => {
   );
 };
 
-export default SystemMonitoring; 
+export default SystemMonitoring;

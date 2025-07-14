@@ -16,7 +16,9 @@ import "./index.css";
 import Router from "@/router";
 import { App, ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN";
-import ErrorBoundary, { initializeGlobalErrorHandling } from "@/components/ErrorBoundary";
+import ErrorBoundary, {
+  initializeGlobalErrorHandling,
+} from "@/components/ErrorBoundary";
 
 // 初始化全局错误处理
 initializeGlobalErrorHandling();

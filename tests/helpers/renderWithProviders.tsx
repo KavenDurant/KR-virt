@@ -28,9 +28,7 @@ interface ExtendedRenderOptions extends Omit<RenderOptions, "wrapper"> {
 
 // 创建包含所有Provider的包装器
 const createWrapper = (options: ExtendedRenderOptions = {}) => {
-  const {
-    store: customStore,
-  } = options;
+  const { store: customStore } = options;
 
   return ({ children }: { children: React.ReactNode }) => (
     <Provider store={(customStore || store) as never}>
@@ -50,10 +48,7 @@ export const renderWithProviders = (
   ui: React.ReactElement,
   options: ExtendedRenderOptions = {},
 ) => {
-  const {
-    store: customStore,
-    ...renderOptions
-  } = options;
+  const { store: customStore, ...renderOptions } = options;
 
   const Wrapper = createWrapper({ store: customStore });
 
@@ -95,9 +90,7 @@ export const renderWithRedux = (
 // 只包含Router的渲染函数
 export const renderWithRouter = (
   ui: React.ReactElement,
-  {
-    ...options
-  }: { initialEntries?: string[] } & RenderOptions = {},
+  { ...options }: { initialEntries?: string[] } & RenderOptions = {},
 ) => {
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <BrowserRouter>{children}</BrowserRouter>

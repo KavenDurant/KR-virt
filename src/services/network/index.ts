@@ -87,7 +87,7 @@ class NetworkService {
             networks: mockNetworks,
           },
           defaultSuccessMessage: "网络配置列表获取成功",
-        }
+        },
       );
     }
 
@@ -98,7 +98,7 @@ class NetworkService {
         {
           defaultSuccessMessage: "网络配置列表获取成功",
           defaultErrorMessage: "网络配置列表获取失败",
-        }
+        },
       );
 
       return response;
@@ -115,7 +115,7 @@ class NetworkService {
    * @returns 节点网络列表
    */
   async getNodeNetworks(
-    hostname?: string
+    hostname?: string,
   ): Promise<StandardResponse<NodeNetworkListResponse>> {
     if (USE_MOCK_DATA) {
       const mockNodeNetworks: NodeNetwork[] = [
@@ -188,7 +188,7 @@ class NetworkService {
             networks: mockNodeNetworks,
           },
           defaultSuccessMessage: "节点网络列表获取成功",
-        }
+        },
       );
     }
 
@@ -199,7 +199,7 @@ class NetworkService {
         {
           defaultSuccessMessage: "节点网络列表获取成功",
           defaultErrorMessage: "节点网络列表获取失败",
-        }
+        },
       );
       return response;
     } catch (error) {
@@ -215,7 +215,7 @@ class NetworkService {
    * @returns 创建结果
    */
   async createNetwork(
-    params: CreateNetworkRequest
+    params: CreateNetworkRequest,
   ): Promise<StandardResponse<NetworkOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/network/create", params, {
@@ -240,7 +240,7 @@ class NetworkService {
    * @returns 删除结果
    */
   async deleteNetwork(
-    params: DeleteNetworkRequest
+    params: DeleteNetworkRequest,
   ): Promise<StandardResponse<NetworkOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/network/delete", params, {
@@ -319,7 +319,9 @@ class NetworkService {
    * 获取网络拓扑图数据
    * @returns 网络拓扑图数据
    */
-  async getNetworkTopology(): Promise<StandardResponse<NetworkTopologyResponse>> {
+  async getNetworkTopology(): Promise<
+    StandardResponse<NetworkTopologyResponse>
+  > {
     if (USE_MOCK_DATA) {
       // 使用模拟数据
       const mockTopologyData: NetworkTopologyResponse = {
@@ -329,9 +331,9 @@ class NetworkService {
             type: "host",
             data: {
               name: "node216",
-              interfaces: ["iface_node216_br0", "iface_node216_virbr0"]
+              interfaces: ["iface_node216_br0", "iface_node216_virbr0"],
             },
-            position: { x: 0, y: 0 }
+            position: { x: 0, y: 0 },
           },
           {
             id: "iface_node216_br0",
@@ -342,19 +344,19 @@ class NetworkService {
               mac: "BC:24:11:91:8D:B3",
               ip4_addresses: ["192.168.1.216/24"],
               ip4_gateway: "192.168.1.110",
-              is_physical: false
+              is_physical: false,
             },
-            position: { x: 0, y: 100 }
-          }
+            position: { x: 0, y: 100 },
+          },
         ],
         edges: [
           {
             id: "edge_host_node216_to_iface_node216_br0",
             source_id: "host_node216",
             target_id: "iface_node216_br0",
-            type: "host-interface"
-          }
-        ]
+            type: "host-interface",
+          },
+        ],
       };
 
       return mockApi.get(
@@ -364,7 +366,7 @@ class NetworkService {
           useMock: true,
           mockData: mockTopologyData,
           defaultSuccessMessage: "网络拓扑图数据获取成功",
-        }
+        },
       );
     }
 
@@ -375,7 +377,7 @@ class NetworkService {
         {
           defaultSuccessMessage: "网络拓扑图数据获取成功",
           defaultErrorMessage: "网络拓扑图数据获取失败",
-        }
+        },
       );
       return response;
     } catch (error) {

@@ -24,7 +24,9 @@ export interface TokenRefreshFailureOptions {
 /**
  * 显示Token刷新失败Modal
  */
-export const showTokenRefreshFailureModal = (options: TokenRefreshFailureOptions): void => {
+export const showTokenRefreshFailureModal = (
+  options: TokenRefreshFailureOptions,
+): void => {
   const manager = TokenRefreshFailureModalManager.getInstance();
   manager.show(options);
 };

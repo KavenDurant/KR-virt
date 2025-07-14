@@ -1,32 +1,28 @@
 /**
  * 数据转换工具
- * 
+ *
  * 将不同API格式的数据转换为统一的侧边栏数据格式
  */
 
-import type { 
-  ClusterTreeResponse, 
-  ClusterTreeNode, 
-  ClusterTreeNetwork, 
-  ClusterTreeStorage 
+import type {
+  ClusterTreeResponse,
+  ClusterTreeNode,
+  ClusterTreeNetwork,
+  ClusterTreeStorage,
 } from "@/services/cluster/types";
-import type { 
-  VMTreeResponse, 
-  VMTreeWithClusterResponse, 
-  SidebarHostNode, 
-  SidebarVMInfo 
+import type {
+  VMTreeResponse,
+  VMTreeWithClusterResponse,
+  SidebarHostNode,
+  SidebarVMInfo,
 } from "@/services/vm/types";
-import type { 
-  UnifiedNodeData, 
-  SidebarDataSource, 
-  SidebarMode 
-} from "../types";
+import type { UnifiedNodeData, SidebarDataSource, SidebarMode } from "../types";
 
 /**
  * 检查VM数据是否包含集群信息
  */
 export const hasClusterInfo = (
-  data: VMTreeResponse | VMTreeWithClusterResponse | null
+  data: VMTreeResponse | VMTreeWithClusterResponse | null,
 ): data is VMTreeWithClusterResponse => {
   return (
     data !== null &&
@@ -52,7 +48,9 @@ const convertClusterTreeNode = (node: ClusterTreeNode): UnifiedNodeData => ({
 /**
  * 转换集群树网络节点
  */
-const convertClusterTreeNetwork = (network: ClusterTreeNetwork): UnifiedNodeData => ({
+const convertClusterTreeNetwork = (
+  network: ClusterTreeNetwork,
+): UnifiedNodeData => ({
   id: `network-${network.name}`,
   name: network.name,
   type: "network",
@@ -63,7 +61,9 @@ const convertClusterTreeNetwork = (network: ClusterTreeNetwork): UnifiedNodeData
 /**
  * 转换集群树存储节点
  */
-const convertClusterTreeStorage = (storage: ClusterTreeStorage): UnifiedNodeData => ({
+const convertClusterTreeStorage = (
+  storage: ClusterTreeStorage,
+): UnifiedNodeData => ({
   id: `storage-${storage.name}`,
   name: storage.name,
   type: "storage",
@@ -104,7 +104,9 @@ const convertVMTreeHost = (host: SidebarHostNode): UnifiedNodeData => ({
 /**
  * 转换集群树数据
  */
-const convertClusterTreeData = (data: ClusterTreeResponse): UnifiedNodeData[] => {
+const convertClusterTreeData = (
+  data: ClusterTreeResponse,
+): UnifiedNodeData[] => {
   const children: UnifiedNodeData[] = [
     // 添加主机节点
     ...data.nodes.map(convertClusterTreeNode),
@@ -130,7 +132,9 @@ const convertClusterTreeData = (data: ClusterTreeResponse): UnifiedNodeData[] =>
 /**
  * 转换VM树数据（包含集群信息）
  */
-const convertVMTreeWithClusterData = (data: VMTreeWithClusterResponse): UnifiedNodeData[] => {
+const convertVMTreeWithClusterData = (
+  data: VMTreeWithClusterResponse,
+): UnifiedNodeData[] => {
   return [
     {
       id: `cluster-${data.cluster_uuid}`,
@@ -156,7 +160,7 @@ const convertVMTreeData = (data: VMTreeResponse): UnifiedNodeData[] => {
  */
 export const convertToUnifiedFormat = (
   data: SidebarDataSource,
-  mode: SidebarMode
+  mode: SidebarMode,
 ): UnifiedNodeData[] => {
   if (!data) {
     return [];
@@ -203,8 +207,8 @@ export const getAllExpandableKeys = (nodes: UnifiedNodeData[]): string[] => {
  * 查找节点
  */
 export const findNodeById = (
-  nodes: UnifiedNodeData[], 
-  id: string
+  nodes: UnifiedNodeData[],
+  id: string,
 ): UnifiedNodeData | null => {
   for (const node of nodes) {
     if (node.id === id) {
@@ -225,7 +229,7 @@ export const findNodeById = (
  */
 export const getDefaultSelectedNode = (
   nodes: UnifiedNodeData[],
-  mode: SidebarMode
+  mode: SidebarMode,
 ): UnifiedNodeData | null => {
   if (nodes.length === 0) {
     return null;

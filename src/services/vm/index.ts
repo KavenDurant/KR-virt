@@ -955,6 +955,28 @@ class VMService {
       defaultErrorMessage: "磁盘卸载任务发送失败",
     });
   }
+
+  /**
+   * 重置虚拟机配置异常
+   * @param data 重置虚拟机配置异常请求参数 http://192.168.1.187:8001/vm/break
+   * @returns 操作结果
+   */
+  async resetVMConfig(
+    data: VMOperationRequest,
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/break", data, {
+        useMock: true,
+        mockData: { message: "重置虚拟机配置异常任务已发送成功" },
+        defaultSuccessMessage: "重置虚拟机配置异常任务已发送成功",
+      });
+    }
+
+    return api.post<VMOperationResponse>("/vm/break", data, {
+      defaultSuccessMessage: "重置虚拟机配置异常任务已发送成功",
+      defaultErrorMessage: "重置虚拟机配置异常任务发送失败",
+    });
+  }
 }
 
 // 导出虚拟机服务实例

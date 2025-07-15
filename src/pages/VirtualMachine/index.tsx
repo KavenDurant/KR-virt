@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-10 16:09:04
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-10 18:00:09
+ * @LastEditTime: 2025-07-15 14:44:58
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -637,7 +637,32 @@ const VirtualMachineManagement: React.FC = () => {
           case "template":
             message.info(`模板转换功能开发中，虚拟机: ${vmName}`);
             break;
-
+          case "break":
+            modal.confirm({
+              title: "确认重置",
+              content: `确定要重置虚拟机 "${vmName}" 的配置吗？此操作将清除所有自定义配置。`,
+              okText: "确认重置",
+              okType: "danger",
+              cancelText: "取消",
+              onOk: async () => {
+                const resetResponse = await vmService.resetVMConfig({
+                  vm_name: vmName,
+                  hostname: hostname,
+                });
+                if (resetResponse.success) {
+                  message.success(
+                    resetResponse.message || `重置虚拟机 ${vmName} 配置成功`,
+                  );
+                  // 重新加载虚拟机列表
+                  await loadVmData();
+                } else {
+                  message.error(
+                    resetResponse.message || `重置虚拟机 ${vmName} 配置失败`,
+                  );
+                }
+              },
+            });
+            break;
           default:
             message.info(`${action} ${vmName} 操作功能开发中`);
             break;
@@ -2529,6 +2554,8 @@ const VirtualMachineManagement: React.FC = () => {
 
     return (
       <div>
+        {/* Modal contextHolder 必须在这里渲染，否则 modal.confirm 不会工作 */}
+        {contextHolder}
         <div style={{ marginBottom: "24px" }}>
           <h3
             style={{
@@ -2693,6 +2720,12 @@ const VirtualMachineManagement: React.FC = () => {
                     onClick={() => message.info("引导项设置")}
                   >
                     引导设置
+                  </Button>
+                  <Button
+                    icon={<SettingOutlined />}
+                    onClick={() => handleVMAction("break", sidebarSelectedVM)}
+                  >
+                    重置配置
                   </Button>
                 </Space>
               </div>

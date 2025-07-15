@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 14:04:19
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-10 18:13:15
+ * @LastEditTime: 2025-07-15 19:06:51
  * @FilePath: /KR-virt/src/services/vm/types.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -371,4 +371,51 @@ export interface VMDiskDeviceInfo {
   format: string; // 磁盘格式，如 'qcow2', 'raw'
   mounted: boolean; // 是否已挂载
   readonly: boolean; // 是否只读
+}
+// 快照磁盘list
+export interface VMSnapshotDisk {
+  name: string; // 磁盘名称
+  snapshot: string; // 快照名称
+}
+
+// 快照列表
+export interface VMSnapshot {
+  name: string; // 快照名称
+  state: string; // 快照状态
+  disks: VMSnapshotDisk[]; // 快照时的磁盘配置
+  describe: string; // 快照描述
+  created_at: string; // 创建时间
+  is_current: boolean; // 是否为当前快照
+  parent: string; // 父快照名称（如果有）
+  has_memory: boolean; // 是否包含内存状态
+}
+
+// 创建快照请求参数
+export interface CreateSnapshotRequest {
+  hostname: string;
+  vm_name: string;
+  snapshot_name: string;
+  description?: string; // 快照描述，可选
+  has_memory: boolean; // 是否包含内存状态，必填参数
+}
+
+// 应用快照请求参数
+export interface RevertSnapshotRequest {
+  hostname: string;
+  vm_name: string;
+  snapshot_name: string;
+}
+
+// 删除快照请求参数
+export interface DeleteSnapshotRequest {
+  hostname: string;
+  vm_name: string;
+  snapshot_name: string;
+  delete_children?: boolean; // 是否删除子快照，默认false
+}
+
+// 快照操作响应
+export interface SnapshotOperationResponse {
+  message: string;
+  success: boolean;
 }

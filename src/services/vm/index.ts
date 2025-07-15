@@ -25,6 +25,11 @@ import type {
   VMUSBUnplugRequest,
   VMDiskMountRequest,
   VMDiskUnmountRequest,
+  VMSnapshot,
+  CreateSnapshotRequest,
+  RevertSnapshotRequest,
+  DeleteSnapshotRequest,
+  SnapshotOperationResponse,
 } from "./types";
 
 // 配置区域
@@ -88,12 +93,12 @@ const adaptVMApiInfoToVMInfo = (apiInfo: VMApiInfo): VMInfo => {
     metadata: apiInfo.config?.metadata,
     created_at: apiInfo.config?.metadata?.updated_at
       ? new Date(
-          parseFloat(apiInfo.config.metadata.updated_at) * 1000,
+          parseFloat(apiInfo.config.metadata.updated_at) * 1000
         ).toLocaleString("zh-CN")
       : undefined,
     updated_at: apiInfo.config?.metadata?.updated_at
       ? new Date(
-          parseFloat(apiInfo.config.metadata.updated_at) * 1000,
+          parseFloat(apiInfo.config.metadata.updated_at) * 1000
         ).toLocaleString("zh-CN")
       : undefined,
   };
@@ -109,7 +114,7 @@ class VMService {
    * @returns 创建结果
    */
   async createVM(
-    params: CreateVMRequest,
+    params: CreateVMRequest
   ): Promise<StandardResponse<CreateVMResponse["data"]>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/create", params, {
@@ -147,7 +152,7 @@ class VMService {
     } = {
       hostnames: null,
       vm_names: null,
-    },
+    }
   ): Promise<StandardResponse<VMListUIResponse>> {
     const payload = {
       hostnames: params.hostnames,
@@ -263,7 +268,7 @@ class VMService {
         {
           defaultSuccessMessage: "获取虚拟机列表成功",
           defaultErrorMessage: "获取虚拟机列表失败",
-        },
+        }
       );
 
       // 优化的数据处理逻辑
@@ -345,7 +350,7 @@ class VMService {
    */
   async startVM(
     vmName: string,
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: VMOperationRequest = {
       vm_name: vmName,
@@ -374,7 +379,7 @@ class VMService {
    */
   async stopVM(
     vmName: string,
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: VMOperationRequest = {
       vm_name: vmName,
@@ -403,7 +408,7 @@ class VMService {
    */
   async restartVM(
     vmName: string,
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: VMOperationRequest = {
       vm_name: vmName,
@@ -434,7 +439,7 @@ class VMService {
   async deleteVM(
     vmName: string,
     hostname: string,
-    deleteDisk: boolean = true,
+    deleteDisk: boolean = true
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: DeleteVMRequest = {
       vm_name: vmName,
@@ -464,7 +469,7 @@ class VMService {
    */
   async destroyVM(
     vmName: string,
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: VMOperationRequest = {
       vm_name: vmName,
@@ -493,7 +498,7 @@ class VMService {
    */
   async pauseVM(
     vmName: string,
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: VMOperationRequest = {
       vm_name: vmName,
@@ -522,7 +527,7 @@ class VMService {
    */
   async resumeVM(
     vmName: string,
-    hostname: string,
+    hostname: string
   ): Promise<StandardResponse<VMOperationResponse>> {
     const payload: VMOperationRequest = {
       vm_name: vmName,
@@ -566,7 +571,7 @@ class VMService {
           useMock: true,
           mockData: mockVM,
           defaultSuccessMessage: "获取虚拟机详情成功",
-        },
+        }
       );
     }
 
@@ -576,7 +581,7 @@ class VMService {
       {
         defaultSuccessMessage: "获取虚拟机详情成功",
         defaultErrorMessage: "获取虚拟机详情失败",
-      },
+      }
     );
   }
 
@@ -634,7 +639,7 @@ class VMService {
           useMock: true,
           mockData: mockTreeData,
           defaultSuccessMessage: "获取虚拟机树形结构成功",
-        },
+        }
       );
     }
 
@@ -644,7 +649,7 @@ class VMService {
       {
         defaultSuccessMessage: "获取虚拟机树形结构成功",
         defaultErrorMessage: "获取虚拟机树形结构失败",
-      },
+      }
     );
   }
 
@@ -654,7 +659,7 @@ class VMService {
    * @returns 操作结果
    */
   async mountNetwork(
-    data: VMNetworkMountRequest,
+    data: VMNetworkMountRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/mount/network", data, {
@@ -676,7 +681,7 @@ class VMService {
    * @returns 操作结果
    */
   async mountNAT(
-    data: VMNATMountRequest,
+    data: VMNATMountRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/mount/nat", data, {
@@ -698,7 +703,7 @@ class VMService {
    * @returns 操作结果
    */
   async mountVLAN(
-    data: VMVLANMountRequest,
+    data: VMVLANMountRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/mount/vlan", data, {
@@ -720,7 +725,7 @@ class VMService {
    * @returns 操作结果
    */
   async unmountNetwork(
-    data: VMNetworkUnmountRequest,
+    data: VMNetworkUnmountRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/unmount/network", data, {
@@ -742,7 +747,7 @@ class VMService {
    * @returns 操作结果
    */
   async plugNetwork(
-    data: VMNetworkPlugRequest,
+    data: VMNetworkPlugRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/plug/network", data, {
@@ -764,7 +769,7 @@ class VMService {
    * @returns 操作结果
    */
   async unplugNetwork(
-    data: VMNetworkUnplugRequest,
+    data: VMNetworkUnplugRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/unplug/network", data, {
@@ -786,7 +791,7 @@ class VMService {
    * @returns 操作结果
    */
   async mountCDRom(
-    data: VMCDRomMountRequest,
+    data: VMCDRomMountRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/mount/cdrom", data, {
@@ -808,7 +813,7 @@ class VMService {
    * @returns 操作结果
    */
   async unmountCDRom(
-    data: VMCDRomUnmountRequest,
+    data: VMCDRomUnmountRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/unmount/cdrom", data, {
@@ -830,7 +835,7 @@ class VMService {
    * @returns 操作结果
    */
   async mountUSB(
-    data: VMUSBMountRequest,
+    data: VMUSBMountRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/mount/usb", data, {
@@ -852,7 +857,7 @@ class VMService {
    * @returns 操作结果
    */
   async unmountUSB(
-    data: VMUSBUnmountRequest,
+    data: VMUSBUnmountRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/unmount/usb", data, {
@@ -874,7 +879,7 @@ class VMService {
    * @returns 操作结果
    */
   async plugUSB(
-    data: VMUSBPlugRequest,
+    data: VMUSBPlugRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/plug/usb", data, {
@@ -896,7 +901,7 @@ class VMService {
    * @returns 操作结果
    */
   async unplugUSB(
-    data: VMUSBUnplugRequest,
+    data: VMUSBUnplugRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/unplug/usb", data, {
@@ -918,7 +923,7 @@ class VMService {
    * @returns 操作结果
    */
   async mountDisk(
-    data: VMDiskMountRequest,
+    data: VMDiskMountRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/mount/disk", data, {
@@ -940,7 +945,7 @@ class VMService {
    * @returns 操作结果
    */
   async unmountDisk(
-    data: VMDiskUnmountRequest,
+    data: VMDiskUnmountRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/unmount/disk", data, {
@@ -962,7 +967,7 @@ class VMService {
    * @returns 操作结果
    */
   async resetVMConfig(
-    data: VMOperationRequest,
+    data: VMOperationRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     if (USE_MOCK_DATA) {
       return mockApi.post("/vm/break", data, {
@@ -976,6 +981,168 @@ class VMService {
       defaultSuccessMessage: "重置虚拟机配置异常任务已发送成功",
       defaultErrorMessage: "重置虚拟机配置异常任务发送失败",
     });
+  }
+  /**
+   * 虚拟机快照列表 http://192.168.1.187:8001/vm/snapshot
+   * @param hostname
+   * @param vm_name
+   * @returns 虚拟机快照列表
+   */
+  async getVMSnapshotList(params: {
+    hostname: string;
+    vm_name: string;
+  }): Promise<StandardResponse<{ snapshots: VMSnapshot[] }>> {
+    const { hostname, vm_name } = params;
+
+    if (USE_MOCK_DATA) {
+      return mockApi.post(
+        "/vm/snapshot",
+        { hostname, vm_name },
+        {
+          useMock: true,
+          mockData: {
+            snapshots: [
+              {
+                name: "snapshot1",
+                state: "active",
+                disks: [],
+                describe: "示例快照1",
+                created_at: new Date().toISOString(),
+                is_current: false,
+                parent: "",
+                has_memory: false,
+              },
+              {
+                name: "snapshot2",
+                state: "inactive",
+                disks: [],
+                describe: "示例快照2",
+                created_at: new Date().toISOString(),
+                is_current: true,
+                parent: "snapshot1",
+                has_memory: true,
+              },
+            ],
+          },
+          defaultSuccessMessage: "获取虚拟机快照列表成功",
+        }
+      );
+    }
+
+    return api.post<{ snapshots: VMSnapshot[] }>(
+      "/vm/snapshot",
+      { hostname, vm_name },
+      {
+        defaultSuccessMessage: "获取虚拟机快照列表成功",
+        defaultErrorMessage: "获取虚拟机快照列表失败",
+      }
+    );
+  }
+
+  /**
+   * 创建虚拟机快照 POST /vm/snapshot/create
+   * @param params 创建快照参数
+   * @returns 创建快照结果
+   */
+  async createVMSnapshot(
+    params: CreateSnapshotRequest
+  ): Promise<StandardResponse<SnapshotOperationResponse>> {
+    const { hostname, vm_name, snapshot_name, description, has_memory } =
+      params;
+
+    if (USE_MOCK_DATA) {
+      return mockApi.post(
+        "/vm/snapshot/create",
+        { hostname, vm_name, snapshot_name, description, has_memory },
+        {
+          useMock: true,
+          mockData: {
+            message: `快照 '${snapshot_name}' 创建成功`,
+            success: true,
+          },
+          defaultSuccessMessage: "创建虚拟机快照成功",
+        }
+      );
+    }
+
+    return api.post<SnapshotOperationResponse>(
+      "/vm/snapshot/create",
+      { hostname, vm_name, snapshot_name, description, has_memory },
+      {
+        defaultSuccessMessage: "创建虚拟机快照成功",
+        defaultErrorMessage: "创建虚拟机快照失败",
+      }
+    );
+  }
+
+  /**
+   * 应用虚拟机快照 POST /vm/snapshot/revert
+   * @param params 应用快照参数
+   * @returns 应用快照结果
+   */
+  async revertVMSnapshot(
+    params: RevertSnapshotRequest
+  ): Promise<StandardResponse<SnapshotOperationResponse>> {
+    const { hostname, vm_name, snapshot_name } = params;
+
+    if (USE_MOCK_DATA) {
+      return mockApi.post(
+        "/vm/snapshot/revert",
+        { hostname, vm_name, snapshot_name },
+        {
+          useMock: true,
+          mockData: {
+            message: `虚拟机已恢复到快照 '${snapshot_name}'`,
+            success: true,
+          },
+          defaultSuccessMessage: "应用虚拟机快照成功",
+        }
+      );
+    }
+
+    return api.post<SnapshotOperationResponse>(
+      "/vm/snapshot/revert",
+      { hostname, vm_name, snapshot_name },
+      {
+        defaultSuccessMessage: "应用虚拟机快照成功",
+        defaultErrorMessage: "应用虚拟机快照失败",
+      }
+    );
+  }
+
+  /**
+   * 删除虚拟机快照 POST /vm/snapshot/delete
+   * @param params 删除快照参数
+   * @returns 删除快照结果
+   */
+  async deleteVMSnapshot(
+    params: DeleteSnapshotRequest
+  ): Promise<StandardResponse<SnapshotOperationResponse>> {
+    const { hostname, vm_name, snapshot_name, delete_children } = params;
+
+    if (USE_MOCK_DATA) {
+      return mockApi.post(
+        "/vm/snapshot/delete",
+        { hostname, vm_name, snapshot_name, delete_children },
+        {
+          useMock: true,
+          mockData: {
+            message: `快照 '${snapshot_name}' 删除成功${delete_children ? '（包含子快照）' : ''}`,
+            success: true,
+          },
+          defaultSuccessMessage: "删除虚拟机快照成功",
+        }
+      );
+    }
+
+    return api.post<SnapshotOperationResponse>(
+      "/vm/snapshot/delete",
+      { hostname, vm_name, snapshot_name, delete_children },
+      {
+        defaultSuccessMessage: "删除虚拟机快照成功",
+        defaultErrorMessage: "删除虚拟机快照失败",
+      }
+    );
   }
 }
 

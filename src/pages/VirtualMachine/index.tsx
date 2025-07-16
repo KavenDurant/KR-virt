@@ -77,6 +77,7 @@ import {
   CDRomManagement,
   USBManagement,
   DiskManagement,
+  BootManagement,
 } from "./components";
 import { vmService, type VMInfo, type CreateVMRequest, type VMSnapshot } from "@/services/vm";
 
@@ -247,6 +248,9 @@ const VirtualMachineManagement: React.FC = () => {
   const [snapshotOperationLoading, setSnapshotOperationLoading] = useState(false);
   const [deleteSnapshotModal, setDeleteSnapshotModal] = useState(false);
   const [selectedSnapshotForDelete, setSelectedSnapshotForDelete] = useState<VMSnapshot | null>(null);
+  
+  // 引导设置相关状态
+  const [bootManagementModal, setBootManagementModal] = useState(false);
   /**
    * 侧边栏选择事件处理
    *
@@ -857,7 +861,7 @@ const VirtualMachineManagement: React.FC = () => {
         }
       },
     });
-  }, [sidebarSelectedVM, message, fetchSnapshots]);
+  }, [sidebarSelectedVM, message, fetchSnapshots, modal]);
 
   // 删除快照处理函数
   const handleDeleteSnapshot = useCallback(async (snapshot: VMSnapshot) => {
@@ -2859,7 +2863,7 @@ const VirtualMachineManagement: React.FC = () => {
                   </Button>
                   <Button
                     icon={<MenuOutlined />}
-                    onClick={() => message.info("引导项设置")}
+                    onClick={() => setBootManagementModal(true)}
                   >
                     引导设置
                   </Button>
@@ -3055,6 +3059,26 @@ const VirtualMachineManagement: React.FC = () => {
             </Form>
           )}
         </Modal>
+
+        {/* 引导设置模态框 */}
+        <BootManagement
+          visible={bootManagementModal}
+          onCancel={() => setBootManagementModal(false)}
+          vmInfo={(() => {
+            if (sidebarSelectedVM && 'name' in sidebarSelectedVM) {
+              // 从当前vmList中找到对应的虚拟机详细信息
+              const vmData = vmList.find(
+                (vm) => vm.vm_name === (sidebarSelectedVM as { name: string }).name
+              );
+              return vmData;
+            }
+            return undefined;
+          })()}
+          onSuccess={() => {
+            // 刷新虚拟机数据
+            loadVmData();
+          }}
+        />
       </div>
     );
   }

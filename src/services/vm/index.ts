@@ -30,6 +30,8 @@ import type {
   RevertSnapshotRequest,
   DeleteSnapshotRequest,
   SnapshotOperationResponse,
+  VMSetBootPriorityRequest,
+  VMSetBootOrderRequest,
 } from "./types";
 
 // 配置区域
@@ -87,7 +89,7 @@ const adaptVMApiInfoToVMInfo = (apiInfo: VMApiInfo): VMInfo => {
     error: apiInfo.error,
     // 新增：包含完整的配置信息
     config: apiInfo.config,
-    boot_order: apiInfo.config?.boot || [],
+    boot_order: apiInfo.config?.boot || [], // 这是全局引导顺序
     disk_info: apiInfo.config?.disk || [],
     network_info: apiInfo.config?.net || [],
     metadata: apiInfo.config?.metadata,
@@ -1127,7 +1129,9 @@ class VMService {
         {
           useMock: true,
           mockData: {
-            message: `快照 '${snapshot_name}' 删除成功${delete_children ? '（包含子快照）' : ''}`,
+            message: `快照 '${snapshot_name}' 删除成功${
+              delete_children ? "（包含子快照）" : ""
+            }`,
             success: true,
           },
           defaultSuccessMessage: "删除虚拟机快照成功",
@@ -1141,6 +1145,65 @@ class VMService {
       {
         defaultSuccessMessage: "删除虚拟机快照成功",
         defaultErrorMessage: "删除虚拟机快照失败",
+      }
+    );
+  }
+  // 虚拟机设置全局启动优先级
+  async setVMBootOrder(
+    data: VMSetBootPriorityRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    const { hostname, vm_name, boot_devs } = data;
+
+    if (USE_MOCK_DATA) {
+      return mockApi.post(
+        "/vm/boot/dev",
+        { hostname, vm_name, boot_devs },
+        {
+          useMock: true,
+          mockData: {
+            message: `虚拟机 '${vm_name}' 启动顺序设置成功`,
+            success: true,
+          },
+          defaultSuccessMessage: "设置虚拟机启动顺序成功",
+        }
+      );
+    }
+
+    return api.post<VMOperationResponse>(
+      "/vm/boot/dev",
+      { hostname, vm_name, boot_devs },
+      {
+        defaultSuccessMessage: "设置虚拟机启动顺序成功",
+        defaultErrorMessage: "设置虚拟机启动顺序失败",
+      }
+    );
+  }
+  // 虚拟机设置局部启动优先级
+  async setVMBootOrderPartial(
+    data: VMSetBootOrderRequest
+  ): Promise<StandardResponse<VMOperationResponse>> {
+    const { hostname, vm_name, boot_orders, dev_model } = data;
+    if (USE_MOCK_DATA) {
+      return mockApi.post(
+        "/vm/boot/dev/partial",
+        { hostname, vm_name, boot_orders, dev_model },
+        {
+          useMock: true,
+          mockData: {
+            message: `虚拟机 '${vm_name}' 局部启动顺序设置成功`,
+            success: true,
+          },
+          defaultSuccessMessage: "设置虚拟机局部启动顺序成功",
+        }
+      );
+    }
+
+    return api.post<VMOperationResponse>(
+      "/vm/boot/dev/partial",
+      { hostname, vm_name, boot_orders, dev_model },
+      {
+        defaultSuccessMessage: "设置虚拟机局部启动顺序成功",
+        defaultErrorMessage: "设置虚拟机局部启动顺序失败",
       }
     );
   }

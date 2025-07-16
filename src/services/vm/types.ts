@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 14:04:19
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-15 19:06:51
+ * @LastEditTime: 2025-07-16 17:08:02
  * @FilePath: /KR-virt/src/services/vm/types.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -62,11 +62,19 @@ export interface VMMetadata {
   updated_at: string;
 }
 
+// 虚拟机引导设备配置项
+export interface VMBootOrderItem {
+  name: string;
+  type: string; 
+  order: string | null; 
+}
+
 // 虚拟机详细配置
 export interface VMDetailConfig {
   cpu_num: number;
   memory_gb: number;
   boot: string[];
+  boot_order?: VMBootOrderItem[]; // 局部引导设备配置
   disk: VMDiskConfig[];
   cdrom: VMCDRomConfig[];
   net: VMNetConfig[];
@@ -418,4 +426,21 @@ export interface DeleteSnapshotRequest {
 export interface SnapshotOperationResponse {
   message: string;
   success: boolean;
+}
+// 虚拟机设置全局启动优先级
+export interface VMSetBootPriorityRequest {
+  hostname: string; // 主机名
+  vm_name: string; // 虚拟机名
+  boot_devs: string[]; // 启动设备列表，按优先级顺序排列
+}
+// 虚拟机设置局部启动优先级
+export interface VMSetBootOrderRequest {
+  hostname: string; // 主机名
+  vm_name: string; // 虚拟机名
+  boot_orders: {
+    name: string; // 设备名称，如 'hd', 'cdrom', 'network', 'usb'
+    type: string; // 设备类型，如 'disk', 'cdrom', 'network', 'usb'
+    order: string; // 启动顺序，如 '1', '2', '3'
+  }[];
+  dev_model: boolean; // 是否同时保留启用全局配置，默认为true
 }

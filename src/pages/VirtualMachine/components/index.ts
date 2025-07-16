@@ -12,3 +12,4 @@ export { default as NetworkManagement } from "./NetworkManagement";
 export { default as CDRomManagement } from "./CDRomManagement";
 export { default as USBManagement } from "./USBManagement";
 export { default as DiskManagement } from "./DiskManagement";
+export { default as BootManagement } from "./BootManagement";

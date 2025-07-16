@@ -32,6 +32,9 @@ import type {
   SnapshotOperationResponse,
   VMSetBootPriorityRequest,
   VMSetBootOrderRequest,
+  VMUpdateMacRequest,
+  VMUpdateMacResponse,
+  VMRandomMacResponse,
 } from "./types";
 
 // 配置区域
@@ -1204,6 +1207,46 @@ class VMService {
       {
         defaultSuccessMessage: "设置虚拟机局部启动顺序成功",
         defaultErrorMessage: "设置虚拟机局部启动顺序失败",
+      }
+    );
+  }
+
+  // 虚拟机更新网络MAC地址
+  async updateVMMacAddress(
+    params: VMUpdateMacRequest
+  ): Promise<StandardResponse<VMUpdateMacResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/mac/update", params, {
+        useMock: true,
+        mockData: { message: "MAC地址更新成功" },
+        defaultSuccessMessage: "MAC地址更新成功",
+      });
+    }
+    return api.post<VMUpdateMacResponse>(
+      "/vm/mac/update",
+      params,
+      {
+        defaultSuccessMessage: "MAC地址更新成功",
+        defaultErrorMessage: "MAC地址更新失败",
+      }
+    );
+  }
+
+  // 获取随机MAC地址
+  async getRandomMacAddress(): Promise<StandardResponse<VMRandomMacResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.get("/vm/mac/random", {}, {
+        useMock: true,
+        mockData: { mac: "52:54:00:ab:cd:ef" },
+        defaultSuccessMessage: "获取随机MAC地址成功",
+      });
+    }
+    return api.get<VMRandomMacResponse>(
+      "/vm/mac/random",
+      {},
+      {
+        defaultSuccessMessage: "获取随机MAC地址成功",
+        defaultErrorMessage: "获取随机MAC地址失败",
       }
     );
   }

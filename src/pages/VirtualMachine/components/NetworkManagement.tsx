@@ -40,6 +40,7 @@ import {
   ThunderboltOutlined,
   DisconnectOutlined,
   ToolOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
 import { vmService } from "@/services/vm";
 import type {
@@ -50,6 +51,7 @@ import type {
   VMNetworkPlugRequest,
   VMNetworkUnplugRequest,
   NetworkDeviceInfo,
+  VMUpdateMacRequest,
 } from "@/services/vm/types";
 
 interface NetworkManagementProps {
@@ -68,6 +70,7 @@ interface AddNetworkModalProps {
   vmName: string;
   hostname: string;
   message: ReturnType<typeof App.useApp>["message"];
+  selectedDevice?: NetworkDeviceInfo | null;
 }
 
 // 添加普通桥接网卡模态框
@@ -588,6 +591,146 @@ const HotPlugNetworkModal: React.FC<AddNetworkModalProps> = ({
   );
 };
 
+// 更新MAC地址模态框
+const UpdateMacModal: React.FC<AddNetworkModalProps> = ({
+  visible,
+  onCancel,
+  onOk,
+  vmName,
+  hostname,
+  message,
+  selectedDevice,
+}) => {
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [randomMacLoading, setRandomMacLoading] = useState(false);
+
+  // 当模态框打开时，预填充表单
+  React.useEffect(() => {
+    if (visible && selectedDevice) {
+      form.setFieldsValue({
+        net_name: selectedDevice.bridge,
+        mac_addr: selectedDevice.mac,
+      });
+    } else if (!visible) {
+      // 模态框关闭时清空表单
+      form.resetFields();
+    }
+  }, [visible, selectedDevice, form]);
+
+  // 获取随机MAC地址
+  const handleGenerateRandomMac = async () => {
+    try {
+      setRandomMacLoading(true);
+      const response = await vmService.getRandomMacAddress();
+      if (response.success && response.data?.mac) {
+        form.setFieldsValue({ mac_addr: response.data.mac });
+        message.success(response.message);
+      } else {
+        message.error(response.message);
+      }
+    } catch (error) {
+      console.error("获取随机MAC地址失败:", error);
+      message.error("获取随机MAC地址失败");
+    } finally {
+      setRandomMacLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      // 验证表单字段
+      const values = await form.validateFields();
+      setLoading(true);
+
+      try {
+        const request: VMUpdateMacRequest = {
+          hostname,
+          vm_name: vmName,
+          net_name: values.net_name,
+          mac_addr: values.mac_addr,
+        };
+
+        const response = await vmService.updateVMMacAddress(request);
+        console.log(response,"123");
+        if (response.success) {
+          message.success(response.data?.message || "MAC地址更新成功");
+          onOk();
+        } else {
+          message.error(response.data?.message || "MAC地址更新失败");
+        }
+      } catch (apiError) {
+        console.error("更新MAC地址API调用失败:", apiError);
+        message.error(
+          (apiError as { message?: string }).message || "MAC地址更新失败"
+        );
+      } finally {
+        setLoading(false);
+      }
+    } catch (validationError) {
+      // 表单校验失败，不显示message，让表单自己显示校验错误
+      console.log("表单校验失败:", validationError);
+    }
+  };
+
+  return (
+    <Modal
+      title={
+        <Space>
+          <EditOutlined />
+          更新MAC地址
+        </Space>
+      }
+      open={visible}
+      onCancel={onCancel}
+      onOk={handleSubmit}
+      confirmLoading={loading}
+      width={500}
+    >
+      <Alert
+        message="更新MAC地址说明"
+        description="您可以手动输入MAC地址或点击随机生成按钮。"
+        type="info"
+        showIcon
+        style={{ marginBottom: 16 }}
+      />
+
+      <Form form={form} layout="vertical">
+        <Form.Item
+          name="net_name"
+          label="网络名称"
+          rules={[{ required: true, message: "请输入网络名称" }]}
+        >
+          <Input placeholder="例如: vmbr0" />
+        </Form.Item>
+
+        <Form.Item
+          name="mac_addr"
+          label="MAC地址"
+          rules={[{ required: true, message: "请输入MAC地址" }]}
+        >
+          <Input.Group compact>
+            <Form.Item name="mac_addr" noStyle>
+              <Input
+                style={{ width: "calc(100% - 120px)" }}
+                placeholder="例如: 52:54:00:12:34:56"
+              />
+            </Form.Item>
+            <Button
+              type="primary"
+              loading={randomMacLoading}
+              onClick={handleGenerateRandomMac}
+              style={{ width: "120px" }}
+            >
+              随机生成
+            </Button>
+          </Input.Group>
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
+
 // 主组件
 const NetworkManagement: React.FC<NetworkManagementProps> = ({
   vmName,
@@ -601,6 +744,8 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
   const [natModalVisible, setNatModalVisible] = useState(false);
   const [vlanModalVisible, setVlanModalVisible] = useState(false);
   const [hotPlugModalVisible, setHotPlugModalVisible] = useState(false);
+  const [updateMacModalVisible, setUpdateMacModalVisible] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState<NetworkDeviceInfo | null>(null);
 
   // 移除网卡（冷卸载）
   const handleRemoveNetwork = async (device: NetworkDeviceInfo) => {
@@ -648,6 +793,12 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
     }
   };
 
+    // 更新MAC地址
+  const handleUpdateMac = (device: NetworkDeviceInfo) => {
+    setSelectedDevice(device);
+    setUpdateMacModalVisible(true);
+  };
+
   const columns = [
     {
       title: "设备名",
@@ -692,7 +843,7 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
       dataIndex: "mac",
       key: "mac",
       width: 140,
-      render: (mac: string) => <code style={{ fontSize: "12px" }}>{mac}</code>,
+                   render: (mac: string) => <code style={{ fontSize: "12px" }}>{mac}</code>,
     },
     {
       title: "VLAN ID",
@@ -716,10 +867,22 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
     {
       title: "操作",
       key: "action",
-      width: 220,
+      width: 290,
       fixed: "right" as const,
       render: (_: unknown, record: NetworkDeviceInfo) => (
         <Space size={6} wrap={false}>
+          {/* 更新MAC地址按钮 */}
+          <Tooltip title="更新MAC地址">
+            <Button
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => handleUpdateMac(record)}
+              style={{ minWidth: '66px' }}
+            >
+              更新MAC
+            </Button>
+          </Tooltip>
+
           {/* 热卸载按钮 */}
           <Tooltip title="热卸载网卡">
             <Button
@@ -764,28 +927,24 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
         <Space>
           <Button
             type="primary"
-            size="default"
             icon={<WifiOutlined />}
             onClick={() => setBridgeModalVisible(true)}
           >
             添加桥接网卡
           </Button>
           <Button
-            size="default"
             icon={<GlobalOutlined />}
             onClick={() => setNatModalVisible(true)}
           >
             添加NAT网络
           </Button>
           <Button
-            size="default"
             icon={<LinkOutlined />}
             onClick={() => setVlanModalVisible(true)}
           >
             添加VLAN网卡
           </Button>
           <Button
-            size="default"
             icon={<ThunderboltOutlined />}
             onClick={() => setHotPlugModalVisible(true)}
           >
@@ -855,6 +1014,24 @@ const NetworkManagement: React.FC<NetworkManagementProps> = ({
         vmName={vmName}
         hostname={hostname}
         message={message}
+      />
+
+      {/* 更新MAC地址模态框 */}
+      <UpdateMacModal
+        visible={updateMacModalVisible}
+        onCancel={() => {
+          setUpdateMacModalVisible(false);
+          setSelectedDevice(null);
+        }}
+        onOk={() => {
+          setUpdateMacModalVisible(false);
+          setSelectedDevice(null);
+          onNetworkChange();
+        }}
+        vmName={vmName}
+        hostname={hostname}
+        message={message}
+        selectedDevice={selectedDevice}
       />
     </Card>
   );

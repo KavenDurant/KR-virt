@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 14:04:19
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-16 17:08:02
+ * @LastEditTime: 2025-07-16 17:55:00
  * @FilePath: /KR-virt/src/services/vm/types.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -443,4 +443,22 @@ export interface VMSetBootOrderRequest {
     order: string; // 启动顺序，如 '1', '2', '3'
   }[];
   dev_model: boolean; // 是否同时保留启用全局配置，默认为true
+}
+
+// 虚拟机更新网络MAC地址请求
+export interface VMUpdateMacRequest {
+  hostname: string;
+  vm_name: string;
+  net_name: string;
+  mac_addr: string;
+}
+
+// 虚拟机更新网络MAC地址响应
+export interface VMUpdateMacResponse {
+  message: string;
+}
+
+// 获取随机MAC地址响应
+export interface VMRandomMacResponse {
+  mac: string;
 }

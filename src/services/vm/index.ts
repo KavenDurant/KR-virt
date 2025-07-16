@@ -1178,14 +1178,14 @@ class VMService {
       }
     );
   }
-  // 虚拟机设置局部启动优先级
+  // 虚拟机设置局部启动优先级 http://192.168.1.187:8001/vm/boot/order
   async setVMBootOrderPartial(
     data: VMSetBootOrderRequest
   ): Promise<StandardResponse<VMOperationResponse>> {
     const { hostname, vm_name, boot_orders, dev_model } = data;
     if (USE_MOCK_DATA) {
       return mockApi.post(
-        "/vm/boot/dev/partial",
+        "/vm/boot/order",
         { hostname, vm_name, boot_orders, dev_model },
         {
           useMock: true,
@@ -1199,7 +1199,7 @@ class VMService {
     }
 
     return api.post<VMOperationResponse>(
-      "/vm/boot/dev/partial",
+     "/vm/boot/order",
       { hostname, vm_name, boot_orders, dev_model },
       {
         defaultSuccessMessage: "设置虚拟机局部启动顺序成功",

@@ -30,6 +30,8 @@ import {
   ExclamationCircleOutlined,
   DatabaseOutlined,
   FolderOutlined,
+  SwapOutlined,
+  PlusSquareOutlined,
 } from "@ant-design/icons";
 import { vmService } from "@/services/vm";
 import type {
@@ -73,9 +75,18 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
   message: messageApi,
   loading: vmDataLoading = false,
 }) => {
+  const { modal } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
+
+  const [migrateModalVisible, setMigrateModalVisible] = useState(false);
+  const [resizeModalVisible, setResizeModalVisible] = useState(false);
+  const [migrateForm] = Form.useForm();
+  const [resizeForm] = Form.useForm();
+  const [migrateLoading, setMigrateLoading] = useState(false);
+  const [resizeLoading, setResizeLoading] = useState(false);
+  const [currentDisk, setCurrentDisk] = useState<MockDiskDevice | null>(null);
 
   // 挂载磁盘设备
   const handleMountDisk = useCallback(
@@ -105,7 +116,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
         setLoading(false);
       }
     },
-    [hostname, vmName, messageApi, onDiskChange, form],
+    [hostname, vmName, messageApi, onDiskChange, form]
   );
 
   // 卸载磁盘设备
@@ -135,17 +146,17 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
         setLoading(false);
       }
     },
-    [hostname, vmName, messageApi, onDiskChange],
+    [hostname, vmName, messageApi, onDiskChange]
   );
 
   // 处理表单提交
   const handleFormSubmit = useCallback(
     async (values: Record<string, unknown>) => {
       await handleMountDisk(
-        values as Omit<VMDiskMountRequest, "hostname" | "vm_name">,
+        values as Omit<VMDiskMountRequest, "hostname" | "vm_name">
       );
     },
-    [handleMountDisk],
+    [handleMountDisk]
   );
 
   // 格式化磁盘大小显示
@@ -232,6 +243,8 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
     {
       title: "磁盘信息",
       key: "disk_info",
+      width: "200px",
+      fixed: "left",
       render: (_: unknown, record: MockDiskDevice) => (
         <div>
           <div style={{ fontWeight: "bold", marginBottom: "4px" }}>
@@ -274,8 +287,8 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
                   record.usage_percent > 80
                     ? "#ff4d4f"
                     : record.usage_percent > 60
-                      ? "#faad14"
-                      : "#52c41a"
+                    ? "#faad14"
+                    : "#52c41a"
                 }
               />
             </div>
@@ -310,59 +323,45 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
     {
       title: "操作",
       key: "actions",
+      width: "320px",
+      fixed: "right",
       render: (_: unknown, record: MockDiskDevice) => (
-        <Space direction="vertical" size={4}>
-          {record.mounted ? (
-            <Popconfirm
-              title="确认卸载磁盘"
-              description={
-                <div>
-                  <div>卸载后虚拟机将无法访问此磁盘</div>
-                  <div style={{ marginTop: "8px" }}>
-                    <Switch
-                      size="small"
-                      onChange={() => {
-                        // 可以保存用户选择，在确认时使用
-                      }}
-                    />{" "}
-                    <span style={{ fontSize: "12px" }}>同时删除磁盘文件</span>
-                  </div>
+        <Space direction="horizontal" size={4}>
+          <Popconfirm
+            title="确认卸载磁盘"
+            description={
+              <div>
+                <div>卸载后虚拟机将无法访问此磁盘</div>
+                <div style={{ marginTop: "8px" }}>
+                  <Switch
+                    size="small"
+                    onChange={() => {
+                      // 可以保存用户选择，在确认时使用
+                    }}
+                  />{" "}
+                  <span style={{ fontSize: "12px" }}>同时删除磁盘文件</span>
                 </div>
-              }
-              onConfirm={() => handleUnmountDisk(record, false)} // 根据用户选择决定是否删除文件
-              okText="确认卸载"
-              cancelText="取消"
-            >
-              <Button
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-                loading={loading}
-              >
-                卸载磁盘
-              </Button>
-            </Popconfirm>
-          ) : (
+              </div>
+            }
+            onConfirm={() => handleUnmountDisk(record, false)} // 根据用户选择决定是否删除文件
+            okText="确认卸载"
+            cancelText="取消"
+          >
             <Button
               size="small"
-              type="primary"
-              icon={<HddOutlined />}
-              onClick={() => {
-                // 重新挂载逻辑
-                messageApi.info("重新挂载功能开发中");
-              }}
+              danger
+              icon={<DeleteOutlined />}
               loading={loading}
             >
-              挂载磁盘
+              卸载磁盘
             </Button>
-          )}
-
+          </Popconfirm>
           <Tooltip title="查看磁盘详细信息">
             <Button
               size="small"
               icon={<InfoCircleOutlined />}
               onClick={() => {
-                Modal.info({
+                modal.info({
                   title: `磁盘详情 - ${record.name}`,
                   width: 600,
                   content: (
@@ -428,6 +427,44 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
               详情
             </Button>
           </Tooltip>
+
+          {/* 迁移按钮 */}
+          <Tooltip title="迁移磁盘到其他目录">
+            <Button
+              size="small"
+              icon={<SwapOutlined />}
+              onClick={() => {
+                setCurrentDisk(record);
+                migrateForm.setFieldsValue({
+                  target_dir: "",
+                  disk_path: record.path,
+                  dev: record.name,
+                });
+                setMigrateModalVisible(true);
+              }}
+            >
+              迁移
+            </Button>
+          </Tooltip>
+
+          {/* 扩容按钮 */}
+          <Tooltip title="扩容磁盘容量">
+            <Button
+              size="small"
+              icon={<PlusSquareOutlined />}
+              onClick={() => {
+                setCurrentDisk(record);
+                resizeForm.setFieldsValue({
+                  new_size_gb: record.size_gb,
+                  disk_path: record.path,
+                  dev: record.name,
+                });
+                setResizeModalVisible(true);
+              }}
+            >
+              扩容
+            </Button>
+          </Tooltip>
         </Space>
       ),
     },
@@ -477,8 +514,8 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
             size="small"
             pagination={false}
             loading={vmDataLoading || loading}
-            scroll={{ x: 800 }}
-            style={{ minWidth: '100%' }}
+            scroll={{ x: 1200 }}
+            style={{ minWidth: "100%" }}
           />
         )}
       </Card>
@@ -492,7 +529,7 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
           form.resetFields();
         }}
         footer={null}
-        width={600}
+        width={800}
       >
         <Alert
           message="磁盘设备创建说明"
@@ -580,8 +617,8 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
                 <Select placeholder="选择总线类型">
                   {BUS_TYPE_OPTIONS.map((option) => (
                     <Option key={option.value} value={option.value}>
-                      <div>
-                        <div>{option.label}</div>
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        <div>{option.label}</div> &nbsp;&nbsp;
                         <div style={{ fontSize: "12px", color: "#666" }}>
                           {option.description}
                         </div>
@@ -600,6 +637,108 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
                 创建磁盘
               </Button>
             </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 迁移磁盘弹窗 */}
+      <Modal
+        title="迁移磁盘"
+        open={migrateModalVisible}
+        onCancel={() => setMigrateModalVisible(false)}
+        onOk={async () => {
+          try {
+            const values = await migrateForm.validateFields();
+            setMigrateLoading(true);
+            const res = await vmService.migrateVMDisk({
+              hostname: hostname,
+              vm_name: vmName,
+              target_dir: values.target_dir,
+              disk_path: currentDisk?.path,
+              dev: currentDisk?.name,
+            });
+            messageApi.success(res.data?.message || res.message);
+            setMigrateModalVisible(false);
+            // 刷新磁盘列表
+            onDiskChange?.();
+          } catch (err: unknown) {
+            messageApi.error(err instanceof Error ? err.message : "未知错误");
+          } finally {
+            setMigrateLoading(false);
+          }
+        }}
+        confirmLoading={migrateLoading}
+        destroyOnHidden
+      >
+        <Form form={migrateForm} layout="vertical">
+          <Form.Item
+            name="target_dir"
+            label="目标目录"
+            rules={[{ required: true, message: "请输入迁移目标目录" }]}
+          >
+            <Input placeholder="请输入本地文件夹或存储目录" />
+          </Form.Item>
+          <Form.Item label="磁盘路径">
+            <Input value={currentDisk?.path} disabled />
+          </Form.Item>
+          <Form.Item label="设备名">
+            <Input value={currentDisk?.name} disabled />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 扩容磁盘弹窗 */}
+      <Modal
+        title="扩容磁盘"
+        open={resizeModalVisible}
+        onCancel={() => setResizeModalVisible(false)}
+        onOk={async () => {
+          try {
+            const values = await resizeForm.validateFields();
+            setResizeLoading(true);
+            const res = await vmService.resizeVMDisk({
+              hostname: hostname,
+              vm_name: vmName,
+              new_size_gb: values.new_size_gb,
+              disk_path: currentDisk?.path,
+              dev: currentDisk?.name,
+            });
+            messageApi.success(res.data?.message || res.message);
+            setResizeModalVisible(false);
+            // 刷新磁盘列表
+            onDiskChange?.();
+          } catch (err: unknown) {
+            messageApi.error(err instanceof Error ? err.message : "未知错误");
+          } finally {
+            setResizeLoading(false);
+          }
+        }}
+        confirmLoading={resizeLoading}
+        destroyOnHidden
+      >
+        <Form form={resizeForm} layout="vertical">
+          <Form.Item
+            name="new_size_gb"
+            label="扩容到(GB)"
+            rules={[
+              { required: true, message: "请输入扩容后的容量" },
+              {
+                type: "number",
+                min: (currentDisk?.size_gb || 1) + 1,
+                message: `必须大于当前容量(${currentDisk?.size_gb || 1}GB)`,
+              },
+            ]}
+          >
+            <InputNumber
+              min={(currentDisk?.size_gb || 1) + 1}
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+          <Form.Item label="磁盘路径">
+            <Input value={currentDisk?.path} disabled />
+          </Form.Item>
+          <Form.Item label="设备名">
+            <Input value={currentDisk?.name} disabled />
           </Form.Item>
         </Form>
       </Modal>

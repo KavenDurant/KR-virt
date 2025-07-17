@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 14:04:19
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-17 09:45:22
+ * @LastEditTime: 2025-07-17 10:55:46
  * @FilePath: /KR-virt/src/services/vm/types.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -476,4 +476,22 @@ export interface VMMemoryUpdateRequest {
   hostname: string;
   vm_name: string;
   memory_gb: number;
+}
+
+// 虚拟机迁移硬盘请求
+export interface VMDiskMigrateRequest {
+  hostname: string;
+  vm_name: string;
+  target_dir: string;
+  disk_path?: string;
+  dev?: string;
+}
+
+// 虚拟机扩容硬盘请求
+export interface VMDiskResizeRequest {
+  hostname: string;
+  vm_name: string;
+  new_size_gb: number;
+  disk_path?: string;
+  dev?: string;
 }

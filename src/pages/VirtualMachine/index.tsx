@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-10 16:09:04
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-17 10:15:12
+ * @LastEditTime: 2025-07-17 10:34:39
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -3137,7 +3137,7 @@ const VirtualMachineManagement: React.FC = () => {
             }
           }}
           confirmLoading={cpuLoading}
-          destroyOnClose
+          destroyOnHidden
         >
           <Form form={cpuForm} layout="vertical">
             <Form.Item
@@ -3175,7 +3175,7 @@ const VirtualMachineManagement: React.FC = () => {
             }
           }}
           confirmLoading={memoryLoading}
-          destroyOnClose
+          destroyOnHidden
         >
           <Form form={memoryForm} layout="vertical">
             <Form.Item

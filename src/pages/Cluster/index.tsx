@@ -4255,7 +4255,7 @@ const ClusterManagement: React.FC = () => {
           onCancel={() => {
             setAddNodeModalVisible(false);
             setAddNodeLoading(false);
-            // 重置表单在destroyOnClose为true时会自动处理
+            // 重置表单在destroyOnHidden为true时会自动处理
           }}
           footer={null}
           destroyOnHidden

@@ -38,6 +38,8 @@ import type {
   VMCpuUpdateRequest,
   VMMemoryUpdateRequest,
   VMMessageResponse,
+  VMDiskMigrateRequest,
+  VMDiskResizeRequest,
 } from "./types";
 
 // 配置区域
@@ -1292,6 +1294,48 @@ class VMService {
       {
         defaultSuccessMessage: "内存大小修改成功",
         defaultErrorMessage: "内存大小修改失败",
+      }
+    );
+  }
+
+  // 虚拟机迁移硬盘
+  async migrateVMDisk(
+    params: VMDiskMigrateRequest
+  ): Promise<StandardResponse<VMMessageResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/migrate/disk", params, {
+        useMock: true,
+        mockData: { message: "硬盘迁移任务已提交" },
+        defaultSuccessMessage: "硬盘迁移任务已提交",
+      });
+    }
+    return api.post<VMMessageResponse>(
+      "/vm/migrate/disk",
+      params,
+      {
+        defaultSuccessMessage: "硬盘迁移任务已提交",
+        defaultErrorMessage: "硬盘迁移任务提交失败",
+      }
+    );
+  }
+
+  // 虚拟机扩容硬盘
+  async resizeVMDisk(
+    params: VMDiskResizeRequest
+  ): Promise<StandardResponse<VMMessageResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/resize/disk", params, {
+        useMock: true,
+        mockData: { message: "硬盘扩容任务已提交" },
+        defaultSuccessMessage: "硬盘扩容任务已提交",
+      });
+    }
+    return api.post<VMMessageResponse>(
+      "/vm/resize/disk",
+      params,
+      {
+        defaultSuccessMessage: "硬盘扩容任务已提交",
+        defaultErrorMessage: "硬盘扩容任务提交失败",
       }
     );
   }

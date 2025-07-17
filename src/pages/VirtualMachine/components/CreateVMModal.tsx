@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   Form,
@@ -10,12 +10,14 @@ import {
   Button,
   Space,
   Divider,
+  Select,
 } from "antd";
 import {
   DesktopOutlined,
   FolderOutlined,
   FileImageOutlined,
 } from "@ant-design/icons";
+import { vmService, type ImageIsoListResponse } from "@/services/vm";
 
 interface CreateVMFormValues {
   vm_name: string;
@@ -43,7 +45,7 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
   defaultHostname,
 }) => {
   const [form] = Form.useForm<CreateVMFormValues>();
-
+  const [isoList, setIsoList] = useState<ImageIsoListResponse["iso"]>([]);
   const handleFinish = async (values: CreateVMFormValues) => {
     try {
       await onFinish(values);
@@ -66,6 +68,14 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
       });
     }
   }, [visible, defaultHostname, form]);
+
+  useEffect(() => {
+    if (visible) {
+      vmService.getImageIsoList().then((res) => {
+        setIsoList(res.data?.iso || []);
+      });
+    }
+  }, [visible]);
 
   return (
     <Modal
@@ -240,14 +250,19 @@ const CreateVMModal: React.FC<CreateVMModalProps> = ({
             }
             name="iso_file_path"
             rules={[
-              { required: false, message: "请输入ISO镜像文件路径" },
+              { required: true, message: "请输入ISO镜像文件路径" },
               {
                 pattern: /^\/.*\.iso$/i,
                 message: "请输入有效的ISO文件路径（以.iso结尾）",
               },
             ]}
           >
-            <Input placeholder="/var/lib/libvirt/images" />
+            <Select
+              options={isoList.map((iso) => ({
+                label: `名称：${iso.name} —— 大小：${iso.size_gb}GB —— 路径：${iso.path}`,
+                value: iso.path,
+              }))}
+            />
           </Form.Item>
         </Card>
 

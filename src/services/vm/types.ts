@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 14:04:19
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-17 10:55:46
+ * @LastEditTime: 2025-07-17 14:53:19
  * @FilePath: /KR-virt/src/services/vm/types.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -494,4 +494,14 @@ export interface VMDiskResizeRequest {
   new_size_gb: number;
   disk_path?: string;
   dev?: string;
+}
+// ISO列表
+export interface ImageIsoListResponse {
+  iso: {
+    name: string;
+    size_gb: number;
+    path: string;
+    format: string;
+    created_time: string;
+  }[];
 }

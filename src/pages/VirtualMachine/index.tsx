@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-10 16:09:04
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-17 14:09:14
+ * @LastEditTime: 2025-07-17 14:13:49
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -2531,11 +2531,6 @@ const VirtualMachineManagement: React.FC = () => {
                 size="small"
                 dataSource={buildSnapshotTree(snapshotList)}
                 loading={snapshotLoading}
-                expandable={{
-                  defaultExpandAllRows: true,
-                  rowExpandable: (record) =>
-                    !!record.children && record.children.length > 0,
-                }}
                 rowKey="name"
                 columns={[
                   {
@@ -3928,7 +3923,7 @@ function buildSnapshotTree(snapshots: VMSnapshot[]): VMSnapshot[] {
   snapshots.forEach((item) => {
     map.set(item.name, { ...item });
   });
-  map.forEach((item, name) => {
+  map.forEach((item) => {
     if (item.parent && map.has(item.parent)) {
       const parent = map.get(item.parent)!;
       if (!parent.children) parent.children = [];

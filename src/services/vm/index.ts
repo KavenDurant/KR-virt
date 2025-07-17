@@ -40,6 +40,7 @@ import type {
   VMMessageResponse,
   VMDiskMigrateRequest,
   VMDiskResizeRequest,
+  ImageIsoListResponse,
 } from "./types";
 
 // 配置区域
@@ -1207,7 +1208,7 @@ class VMService {
     }
 
     return api.post<VMOperationResponse>(
-     "/vm/boot/order",
+      "/vm/boot/order",
       { hostname, vm_name, boot_orders, dev_model },
       {
         defaultSuccessMessage: "设置虚拟机局部启动顺序成功",
@@ -1227,24 +1228,24 @@ class VMService {
         defaultSuccessMessage: "MAC地址更新成功",
       });
     }
-    return api.post<VMUpdateMacResponse>(
-      "/vm/mac/update",
-      params,
-      {
-        defaultSuccessMessage: "MAC地址更新成功",
-        defaultErrorMessage: "MAC地址更新失败",
-      }
-    );
+    return api.post<VMUpdateMacResponse>("/vm/mac/update", params, {
+      defaultSuccessMessage: "MAC地址更新成功",
+      defaultErrorMessage: "MAC地址更新失败",
+    });
   }
 
   // 获取随机MAC地址
   async getRandomMacAddress(): Promise<StandardResponse<VMRandomMacResponse>> {
     if (USE_MOCK_DATA) {
-      return mockApi.get("/vm/mac/random", {}, {
-        useMock: true,
-        mockData: { mac: "52:54:00:ab:cd:ef" },
-        defaultSuccessMessage: "获取随机MAC地址成功",
-      });
+      return mockApi.get(
+        "/vm/mac/random",
+        {},
+        {
+          useMock: true,
+          mockData: { mac: "52:54:00:ab:cd:ef" },
+          defaultSuccessMessage: "获取随机MAC地址成功",
+        }
+      );
     }
     return api.get<VMRandomMacResponse>(
       "/vm/mac/random",
@@ -1267,14 +1268,10 @@ class VMService {
         defaultSuccessMessage: "CPU数量修改成功",
       });
     }
-    return api.post<VMMessageResponse>(
-      "/vm/cpu",
-      params,
-      {
-        defaultSuccessMessage: "CPU数量修改成功",
-        defaultErrorMessage: "CPU数量修改失败",
-      }
-    );
+    return api.post<VMMessageResponse>("/vm/cpu", params, {
+      defaultSuccessMessage: "CPU数量修改成功",
+      defaultErrorMessage: "CPU数量修改失败",
+    });
   }
 
   // 虚拟机修改内存
@@ -1288,14 +1285,10 @@ class VMService {
         defaultSuccessMessage: "内存大小修改成功",
       });
     }
-    return api.post<VMMessageResponse>(
-      "/vm/memory",
-      params,
-      {
-        defaultSuccessMessage: "内存大小修改成功",
-        defaultErrorMessage: "内存大小修改失败",
-      }
-    );
+    return api.post<VMMessageResponse>("/vm/memory", params, {
+      defaultSuccessMessage: "内存大小修改成功",
+      defaultErrorMessage: "内存大小修改失败",
+    });
   }
 
   // 虚拟机迁移硬盘
@@ -1309,14 +1302,10 @@ class VMService {
         defaultSuccessMessage: "硬盘迁移任务已提交",
       });
     }
-    return api.post<VMMessageResponse>(
-      "/vm/migrate/disk",
-      params,
-      {
-        defaultSuccessMessage: "硬盘迁移任务已提交",
-        defaultErrorMessage: "硬盘迁移任务提交失败",
-      }
-    );
+    return api.post<VMMessageResponse>("/vm/migrate/disk", params, {
+      defaultSuccessMessage: "硬盘迁移任务已提交",
+      defaultErrorMessage: "硬盘迁移任务提交失败",
+    });
   }
 
   // 虚拟机扩容硬盘
@@ -1330,12 +1319,30 @@ class VMService {
         defaultSuccessMessage: "硬盘扩容任务已提交",
       });
     }
-    return api.post<VMMessageResponse>(
-      "/vm/resize/disk",
-      params,
+    return api.post<VMMessageResponse>("/vm/resize/disk", params, {
+      defaultSuccessMessage: "硬盘扩容任务已提交",
+      defaultErrorMessage: "硬盘扩容任务提交失败",
+    });
+  }
+  // 镜像列表
+  async getImageIsoList(): Promise<StandardResponse<ImageIsoListResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.get(
+        "/image/iso/list",
+        {},
+        {
+          useMock: true,
+          mockData: { iso: [] },
+          defaultSuccessMessage: "获取镜像列表成功",
+        }
+      );
+    }
+    return api.get<ImageIsoListResponse>(
+      "/image/iso/list",
+      {},
       {
-        defaultSuccessMessage: "硬盘扩容任务已提交",
-        defaultErrorMessage: "硬盘扩容任务提交失败",
+        defaultSuccessMessage: "获取镜像列表成功",
+        defaultErrorMessage: "获取镜像列表失败",
       }
     );
   }

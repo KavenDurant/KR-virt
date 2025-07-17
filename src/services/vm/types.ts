@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-01 14:04:19
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-16 17:55:00
+ * @LastEditTime: 2025-07-17 09:45:22
  * @FilePath: /KR-virt/src/services/vm/types.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -29,7 +29,9 @@ export interface VMOperationRequest {
 export interface DeleteVMRequest extends VMOperationRequest {
   delete_disk: boolean;
 }
-
+export interface VMMessageResponse {
+  message: string;
+}
 // 虚拟机磁盘配置
 export interface VMDiskConfig {
   name: string;
@@ -461,4 +463,17 @@ export interface VMUpdateMacResponse {
 // 获取随机MAC地址响应
 export interface VMRandomMacResponse {
   mac: string;
+}
+
+// 虚拟机修改CPU数请求
+export interface VMCpuUpdateRequest {
+  hostname: string;
+  vm_name: string;
+  cpu_num: number;
+}
+// 虚拟机修改内存请求
+export interface VMMemoryUpdateRequest {
+  hostname: string;
+  vm_name: string;
+  memory_gb: number;
 }

@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-10 16:09:04
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-15 19:26:59
+ * @LastEditTime: 2025-07-17 10:15:12
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -30,6 +30,7 @@ import {
   Spin,
   Form,
   Checkbox,
+  InputNumber,
 } from "antd";
 import type { MenuProps, TabsProps } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -251,6 +252,12 @@ const VirtualMachineManagement: React.FC = () => {
   
   // 引导设置相关状态
   const [bootManagementModal, setBootManagementModal] = useState(false);
+  const [cpuModalVisible, setCpuModalVisible] = useState(false);
+  const [memoryModalVisible, setMemoryModalVisible] = useState(false);
+  const [cpuForm] = Form.useForm();
+  const [memoryForm] = Form.useForm();
+  const [cpuLoading, setCpuLoading] = useState(false);
+  const [memoryLoading, setMemoryLoading] = useState(false);
   /**
    * 侧边栏选择事件处理
    *
@@ -1687,9 +1694,35 @@ const VirtualMachineManagement: React.FC = () => {
               </Descriptions.Item>
               <Descriptions.Item label="CPU核心数">
                 {selectedVMDataForDetail.config?.cpu_num || selectedVMDataForDetail.cpu_count}核
+                <Button
+                  type="link"
+                  icon={<EditOutlined />}
+                  size="small"
+                  style={{ padding: 0, marginLeft: 8 }}
+                  onClick={() => {
+                    cpuForm.setFieldsValue({
+                      cpu_num: selectedVMDataForDetail.config?.cpu_num || selectedVMDataForDetail.cpu_count || 1,
+                    });
+                    setCpuModalVisible(true);
+                  }}
+                  aria-label="修改CPU核心数"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="内存大小">
                 {selectedVMDataForDetail.config?.memory_gb || selectedVMDataForDetail.memory_gb}GB
+                <Button
+                  type="link"
+                  icon={<EditOutlined />}
+                  size="small"
+                  style={{ padding: 0, marginLeft: 8 }}
+                  onClick={() => {
+                    memoryForm.setFieldsValue({
+                      memory_gb: selectedVMDataForDetail.config?.memory_gb || selectedVMDataForDetail.memory_gb || 1,
+                    });
+                    setMemoryModalVisible(true);
+                  }}
+                  aria-label="修改内存大小"
+                />
               </Descriptions.Item>
               <Descriptions.Item label="启动设备">
                 {selectedVMDataForDetail.config?.boot?.join(" → ") ||
@@ -3079,6 +3112,81 @@ const VirtualMachineManagement: React.FC = () => {
             loadVmData();
           }}
         />
+
+        {/* 修改CPU弹窗 */}
+        <Modal
+          title="修改CPU核心数"
+          open={cpuModalVisible}
+          onCancel={() => setCpuModalVisible(false)}
+          onOk={async () => {
+            try {
+              const values = await cpuForm.validateFields();
+              setCpuLoading(true);
+              const res = await vmService.updateVMCpu({
+                hostname: selectedVM?.hostname || '',
+                vm_name: selectedVM?.vm_name || '',
+                cpu_num: values.cpu_num,
+              });
+              message.success(res.data?.message || res.message);
+              setCpuModalVisible(false);
+              loadVmData();
+            } catch (err:unknown) {
+              message.error(err instanceof Error ? err.message : '未知错误');
+            } finally {
+              setCpuLoading(false);
+            }
+          }}
+          confirmLoading={cpuLoading}
+          destroyOnClose
+        >
+          <Form form={cpuForm} layout="vertical">
+            <Form.Item
+              name="cpu_num"
+              label="CPU核心数"
+              rules={[{ required: true, message: '请输入CPU核心数' }, { type: 'number', min: 1, message: '必须大于0' }]}
+            >
+              <InputNumber min={1} precision={0} style={{ width: '100%' }} />
+            </Form.Item>
+          </Form>
+        </Modal>
+
+        {/* 修改内存弹窗 */}
+        <Modal
+          title="修改内存大小(GB)"
+          open={memoryModalVisible}
+          onCancel={() => setMemoryModalVisible(false)}
+          onOk={async () => {
+            try {
+              const values = await memoryForm.validateFields();
+              setMemoryLoading(true);
+              const res = await vmService.updateVMMemory({
+                hostname: selectedVM?.hostname || '',
+                vm_name: selectedVM?.vm_name || '',
+                memory_gb: values.memory_gb,
+              });
+              message.success(res.data?.message || res.message);
+              setMemoryModalVisible(false);
+              loadVmData();
+            } catch (err:unknown) {
+              message.error(err instanceof Error ? err.message : '未知错误');
+              // 校验失败或接口异常
+            } finally {
+              setMemoryLoading(false);
+            }
+          }}
+          confirmLoading={memoryLoading}
+          destroyOnClose
+        >
+          <Form form={memoryForm} layout="vertical">
+            <Form.Item
+              name="memory_gb"
+              label="内存大小(GB)"
+              rules={[{ required: true, message: '请输入内存大小' }, { type: 'number', min: 1, message: '必须大于0' }]}
+            >
+              <InputNumber min={1} style={{ width: '100%' }} />
+            </Form.Item>
+          </Form>
+        </Modal>
       </div>
     );
   }
@@ -3363,9 +3471,35 @@ const VirtualMachineManagement: React.FC = () => {
                         </Descriptions.Item>
                         <Descriptions.Item label="CPU核心数">
                           {selectedVM?.config?.cpu_num || selectedVM?.cpu_count}核
+                          <Button
+                            type="link"
+                            icon={<EditOutlined />}
+                            size="small"
+                            style={{ padding: 0, marginLeft: 8 }}
+                            onClick={() => {
+                              cpuForm.setFieldsValue({
+                                cpu_num: selectedVM.config?.cpu_num || selectedVM.cpu_count || 1,
+                              });
+                              setCpuModalVisible(true);
+                            }}
+                            aria-label="修改CPU核心数"
+                          />
                         </Descriptions.Item>
                         <Descriptions.Item label="内存大小">
                           {selectedVM?.config?.memory_gb || selectedVM?.memory_gb}GB
+                          <Button
+                            type="link"
+                            icon={<EditOutlined />}
+                            size="small"
+                            style={{ padding: 0, marginLeft: 8 }}
+                            onClick={() => {
+                              memoryForm.setFieldsValue({
+                                memory_gb: selectedVM.config?.memory_gb || selectedVM.memory_gb || 1,
+                              });
+                              setMemoryModalVisible(true);
+                            }}
+                            aria-label="修改内存大小"
+                          />
                         </Descriptions.Item>
                         <Descriptions.Item label="启动设备">
                           {selectedVM?.config?.boot?.join(" → ") ||

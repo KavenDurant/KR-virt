@@ -35,6 +35,9 @@ import type {
   VMUpdateMacRequest,
   VMUpdateMacResponse,
   VMRandomMacResponse,
+  VMCpuUpdateRequest,
+  VMMemoryUpdateRequest,
+  VMMessageResponse,
 } from "./types";
 
 // 配置区域
@@ -1247,6 +1250,48 @@ class VMService {
       {
         defaultSuccessMessage: "获取随机MAC地址成功",
         defaultErrorMessage: "获取随机MAC地址失败",
+      }
+    );
+  }
+
+  // 虚拟机修改CPU数
+  async updateVMCpu(
+    params: VMCpuUpdateRequest
+  ): Promise<StandardResponse<VMMessageResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/cpu", params, {
+        useMock: true,
+        mockData: { message: "CPU数量修改成功" },
+        defaultSuccessMessage: "CPU数量修改成功",
+      });
+    }
+    return api.post<VMMessageResponse>(
+      "/vm/cpu",
+      params,
+      {
+        defaultSuccessMessage: "CPU数量修改成功",
+        defaultErrorMessage: "CPU数量修改失败",
+      }
+    );
+  }
+
+  // 虚拟机修改内存
+  async updateVMMemory(
+    params: VMMemoryUpdateRequest
+  ): Promise<StandardResponse<VMMessageResponse>> {
+    if (USE_MOCK_DATA) {
+      return mockApi.post("/vm/memory", params, {
+        useMock: true,
+        mockData: { message: "内存大小修改成功" },
+        defaultSuccessMessage: "内存大小修改成功",
+      });
+    }
+    return api.post<VMMessageResponse>(
+      "/vm/memory",
+      params,
+      {
+        defaultSuccessMessage: "内存大小修改成功",
+        defaultErrorMessage: "内存大小修改失败",
       }
     );
   }

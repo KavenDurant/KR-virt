@@ -243,8 +243,8 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
     {
       title: "磁盘信息",
       key: "disk_info",
-      width: "200px",
-      fixed: "left",
+      width: 200,
+      fixed: "left" as const,
       render: (_: unknown, record: MockDiskDevice) => (
         <div>
           <div style={{ fontWeight: "bold", marginBottom: "4px" }}>
@@ -323,8 +323,8 @@ const DiskManagement: React.FC<DiskManagementProps> = ({
     {
       title: "操作",
       key: "actions",
-      width: "320px",
-      fixed: "right",
+      width: 320,
+      fixed: "right" as const,
       render: (_: unknown, record: MockDiskDevice) => (
         <Space direction="horizontal" size={4}>
           <Popconfirm

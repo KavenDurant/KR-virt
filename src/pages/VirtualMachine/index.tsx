@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-10 16:09:04
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-17 10:34:39
+ * @LastEditTime: 2025-07-17 14:09:14
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -80,7 +80,12 @@ import {
   DiskManagement,
   BootManagement,
 } from "./components";
-import { vmService, type VMInfo, type CreateVMRequest, type VMSnapshot } from "@/services/vm";
+import {
+  vmService,
+  type VMInfo,
+  type CreateVMRequest,
+  type VMSnapshot,
+} from "@/services/vm";
 
 // 使用统一的虚拟机数据类型 - 使用包含完整配置信息的 VMInfo
 type VirtualMachine = VMInfo;
@@ -242,14 +247,16 @@ const VirtualMachineManagement: React.FC = () => {
   const [snapshotList, setSnapshotList] = useState<VMSnapshot[]>([]);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
   const [vmDetailActiveTab, setVmDetailActiveTab] = useState("basic"); // 新增：虚拟机详情页面的活动tab状态
-  
+
   // 快照操作相关状态
   const [createSnapshotModal, setCreateSnapshotModal] = useState(false);
   const [createSnapshotLoading, setCreateSnapshotLoading] = useState(false);
-  const [snapshotOperationLoading, setSnapshotOperationLoading] = useState(false);
+  const [snapshotOperationLoading, setSnapshotOperationLoading] =
+    useState(false);
   const [deleteSnapshotModal, setDeleteSnapshotModal] = useState(false);
-  const [selectedSnapshotForDelete, setSelectedSnapshotForDelete] = useState<VMSnapshot | null>(null);
-  
+  const [selectedSnapshotForDelete, setSelectedSnapshotForDelete] =
+    useState<VMSnapshot | null>(null);
+
   // 引导设置相关状态
   const [bootManagementModal, setBootManagementModal] = useState(false);
   const [cpuModalVisible, setCpuModalVisible] = useState(false);
@@ -526,8 +533,6 @@ const VirtualMachineManagement: React.FC = () => {
     }
   }, [sidebarSelectedVM, vmDetailActiveTab, fetchSnapshots]);
 
-
-
   // 虚拟机操作处理函数
   const handleVMAction = useCallback(
     async (
@@ -794,128 +799,144 @@ const VirtualMachineManagement: React.FC = () => {
   };
 
   // 创建快照处理函数
-  const handleCreateSnapshot = useCallback(async (values: {
-    snapshotName: string;
-    description?: string;
-    includeMemory?: boolean;
-  }) => {
-    if (!sidebarSelectedVM) {
-      message.error("请先选择虚拟机");
-      return;
-    }
-
-    setCreateSnapshotLoading(true);
-    try {
-      const hostname = (sidebarSelectedVM as unknown as { hostname: string }).hostname || "unknown";
-      const res = await vmService.createVMSnapshot({
-        hostname,
-        vm_name: sidebarSelectedVM.name,
-        snapshot_name: values.snapshotName,
-        description: values.description,
-        has_memory: values.includeMemory || false, // 确保传递boolean值
-      });
-
-      if (res.success) {
-        message.success(res.message || "创建快照成功");
-        setCreateSnapshotModal(false);
-        // 重新加载快照列表
-        fetchSnapshots();
-      } else {
-        message.error(res.message || "创建快照失败");
+  const handleCreateSnapshot = useCallback(
+    async (values: {
+      snapshotName: string;
+      description?: string;
+      includeMemory?: boolean;
+    }) => {
+      if (!sidebarSelectedVM) {
+        message.error("请先选择虚拟机");
+        return;
       }
-    } catch (error) {
-      console.error("创建快照异常:", error);
-      message.error("创建快照异常");
-    } finally {
-      setCreateSnapshotLoading(false);
-    }
-  }, [sidebarSelectedVM, message, fetchSnapshots]);
+
+      setCreateSnapshotLoading(true);
+      try {
+        const hostname =
+          (sidebarSelectedVM as unknown as { hostname: string }).hostname ||
+          "unknown";
+        const res = await vmService.createVMSnapshot({
+          hostname,
+          vm_name: sidebarSelectedVM.name,
+          snapshot_name: values.snapshotName,
+          description: values.description,
+          has_memory: values.includeMemory || false, // 确保传递boolean值
+        });
+
+        if (res.success) {
+          message.success(res.message || "创建快照成功");
+          setCreateSnapshotModal(false);
+          // 重新加载快照列表
+          fetchSnapshots();
+        } else {
+          message.error(res.message || "创建快照失败");
+        }
+      } catch (error) {
+        console.error("创建快照异常:", error);
+        message.error("创建快照异常");
+      } finally {
+        setCreateSnapshotLoading(false);
+      }
+    },
+    [sidebarSelectedVM, message, fetchSnapshots]
+  );
 
   // 应用快照处理函数
-  const handleRevertSnapshot = useCallback(async (snapshot: VMSnapshot) => {
-    if (!sidebarSelectedVM) {
-      message.error("请先选择虚拟机");
-      return;
-    }
+  const handleRevertSnapshot = useCallback(
+    async (snapshot: VMSnapshot) => {
+      if (!sidebarSelectedVM) {
+        message.error("请先选择虚拟机");
+        return;
+      }
 
-    modal.confirm({
-      title: "确认恢复快照",
-      content: `确定要将虚拟机恢复到快照 "${snapshot.name}" 吗？此操作不可逆，当前状态将会丢失。`,
-      okText: "确认恢复",
-      cancelText: "取消",
-      onOk: async () => {
-        setSnapshotOperationLoading(true);
-        try {
-          const hostname = (sidebarSelectedVM as unknown as { hostname: string }).hostname || "unknown";
-          const res = await vmService.revertVMSnapshot({
-            hostname,
-            vm_name: sidebarSelectedVM.name,
-            snapshot_name: snapshot.name,
-          });
+      modal.confirm({
+        title: "确认恢复快照",
+        content: `确定要将虚拟机恢复到快照 "${snapshot.name}" 吗？此操作不可逆，当前状态将会丢失。`,
+        okText: "确认恢复",
+        cancelText: "取消",
+        onOk: async () => {
+          setSnapshotOperationLoading(true);
+          try {
+            const hostname =
+              (sidebarSelectedVM as unknown as { hostname: string }).hostname ||
+              "unknown";
+            const res = await vmService.revertVMSnapshot({
+              hostname,
+              vm_name: sidebarSelectedVM.name,
+              snapshot_name: snapshot.name,
+            });
 
-          if (res.success) {
-            message.success(res.message || "恢复快照成功");
-            // 重新加载快照列表
-            fetchSnapshots();
-          } else {
-            message.error(res.message || "恢复快照失败");
+            if (res.success) {
+              message.success(res.message || "恢复快照成功");
+              // 重新加载快照列表
+              fetchSnapshots();
+            } else {
+              message.error(res.message || "恢复快照失败");
+            }
+          } catch (error) {
+            console.error("恢复快照异常:", error);
+            message.error("恢复快照异常");
+          } finally {
+            setSnapshotOperationLoading(false);
           }
-        } catch (error) {
-          console.error("恢复快照异常:", error);
-          message.error("恢复快照异常");
-        } finally {
-          setSnapshotOperationLoading(false);
-        }
-      },
-    });
-  }, [sidebarSelectedVM, message, fetchSnapshots, modal]);
+        },
+      });
+    },
+    [sidebarSelectedVM, message, fetchSnapshots, modal]
+  );
 
   // 删除快照处理函数
-  const handleDeleteSnapshot = useCallback(async (snapshot: VMSnapshot) => {
-    if (!sidebarSelectedVM) {
-      message.error("请先选择虚拟机");
-      return;
-    }
+  const handleDeleteSnapshot = useCallback(
+    async (snapshot: VMSnapshot) => {
+      if (!sidebarSelectedVM) {
+        message.error("请先选择虚拟机");
+        return;
+      }
 
-    setSelectedSnapshotForDelete(snapshot);
-    setDeleteSnapshotModal(true);
-  }, [sidebarSelectedVM, message]);
+      setSelectedSnapshotForDelete(snapshot);
+      setDeleteSnapshotModal(true);
+    },
+    [sidebarSelectedVM, message]
+  );
 
   // 确认删除快照处理函数
-  const handleConfirmDeleteSnapshot = useCallback(async (values: {
-    deleteChildren: boolean;
-  }) => {
-    if (!sidebarSelectedVM || !selectedSnapshotForDelete) {
-      message.error("删除快照时发生错误");
-      return;
-    }
-
-    setSnapshotOperationLoading(true);
-    try {
-      const hostname = (sidebarSelectedVM as unknown as { hostname: string }).hostname || "unknown";
-      const res = await vmService.deleteVMSnapshot({
-        hostname,
-        vm_name: sidebarSelectedVM.name,
-        snapshot_name: selectedSnapshotForDelete.name,
-        delete_children: values.deleteChildren,
-      });
-
-      if (res.success) {
-        message.success(res.message || "删除快照成功");
-        setDeleteSnapshotModal(false);
-        setSelectedSnapshotForDelete(null);
-        // 重新加载快照列表
-        fetchSnapshots();
-      } else {
-        message.error(res.message || "删除快照失败");
+  const handleConfirmDeleteSnapshot = useCallback(
+    async (values: { deleteChildren: boolean }) => {
+      if (!sidebarSelectedVM || !selectedSnapshotForDelete) {
+        message.error("删除快照时发生错误");
+        return;
       }
-    } catch (error) {
-      console.error("删除快照异常:", error);
-      message.error("删除快照异常");
-    } finally {
-      setSnapshotOperationLoading(false);
-    }
-  }, [sidebarSelectedVM, selectedSnapshotForDelete, message, fetchSnapshots]);
+
+      setSnapshotOperationLoading(true);
+      try {
+        const hostname =
+          (sidebarSelectedVM as unknown as { hostname: string }).hostname ||
+          "unknown";
+        const res = await vmService.deleteVMSnapshot({
+          hostname,
+          vm_name: sidebarSelectedVM.name,
+          snapshot_name: selectedSnapshotForDelete.name,
+          delete_children: values.deleteChildren,
+        });
+
+        if (res.success) {
+          message.success(res.message || "删除快照成功");
+          setDeleteSnapshotModal(false);
+          setSelectedSnapshotForDelete(null);
+          // 重新加载快照列表
+          fetchSnapshots();
+        } else {
+          message.error(res.message || "删除快照失败");
+        }
+      } catch (error) {
+        console.error("删除快照异常:", error);
+        message.error("删除快照异常");
+      } finally {
+        setSnapshotOperationLoading(false);
+      }
+    },
+    [sidebarSelectedVM, selectedSnapshotForDelete, message, fetchSnapshots]
+  );
 
   // 表格列定义
   const columns: ColumnsType<VirtualMachine> = [
@@ -1636,7 +1657,10 @@ const VirtualMachineManagement: React.FC = () => {
     } else {
       // 选中虚拟机时，接口直接返回对应的虚拟机数据，直接使用第一个元素
       selectedVMDataForDetail = vmList.length > 0 ? vmList[0] : undefined;
-      console.log("虚拟机模式 - 直接使用第一个:", selectedVMDataForDetail?.vm_name);
+      console.log(
+        "虚拟机模式 - 直接使用第一个:",
+        selectedVMDataForDetail?.vm_name
+      );
     }
 
     const vmDetailTabs = [
@@ -1655,7 +1679,11 @@ const VirtualMachineManagement: React.FC = () => {
               </Descriptions.Item>
               <Descriptions.Item label="配置状态">
                 <Tag
-                  color={selectedVMDataForDetail.config_status ? "success" : "warning"}
+                  color={
+                    selectedVMDataForDetail.config_status
+                      ? "success"
+                      : "warning"
+                  }
                 >
                   {selectedVMDataForDetail.config_status ? "已配置" : "配置中"}
                 </Tag>
@@ -1693,7 +1721,9 @@ const VirtualMachineManagement: React.FC = () => {
                 {sidebarSelectedVM?.vmid || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="CPU核心数">
-                {selectedVMDataForDetail.config?.cpu_num || selectedVMDataForDetail.cpu_count}核
+                {selectedVMDataForDetail.config?.cpu_num ||
+                  selectedVMDataForDetail.cpu_count}
+                核
                 <Button
                   type="link"
                   icon={<EditOutlined />}
@@ -1701,7 +1731,10 @@ const VirtualMachineManagement: React.FC = () => {
                   style={{ padding: 0, marginLeft: 8 }}
                   onClick={() => {
                     cpuForm.setFieldsValue({
-                      cpu_num: selectedVMDataForDetail.config?.cpu_num || selectedVMDataForDetail.cpu_count || 1,
+                      cpu_num:
+                        selectedVMDataForDetail.config?.cpu_num ||
+                        selectedVMDataForDetail.cpu_count ||
+                        1,
                     });
                     setCpuModalVisible(true);
                   }}
@@ -1709,7 +1742,9 @@ const VirtualMachineManagement: React.FC = () => {
                 />
               </Descriptions.Item>
               <Descriptions.Item label="内存大小">
-                {selectedVMDataForDetail.config?.memory_gb || selectedVMDataForDetail.memory_gb}GB
+                {selectedVMDataForDetail.config?.memory_gb ||
+                  selectedVMDataForDetail.memory_gb}
+                GB
                 <Button
                   type="link"
                   icon={<EditOutlined />}
@@ -1717,7 +1752,10 @@ const VirtualMachineManagement: React.FC = () => {
                   style={{ padding: 0, marginLeft: 8 }}
                   onClick={() => {
                     memoryForm.setFieldsValue({
-                      memory_gb: selectedVMDataForDetail.config?.memory_gb || selectedVMDataForDetail.memory_gb || 1,
+                      memory_gb:
+                        selectedVMDataForDetail.config?.memory_gb ||
+                        selectedVMDataForDetail.memory_gb ||
+                        1,
                     });
                     setMemoryModalVisible(true);
                   }}
@@ -1755,19 +1793,27 @@ const VirtualMachineManagement: React.FC = () => {
                   "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="配置摘要">
-                {selectedVMDataForDetail.config?.metadata?.digested?.substring(0, 16) ||
-                  selectedVMDataForDetail.metadata?.digested?.substring(0, 16) ||
+                {selectedVMDataForDetail.config?.metadata?.digested?.substring(
+                  0,
+                  16
+                ) ||
+                  selectedVMDataForDetail.metadata?.digested?.substring(
+                    0,
+                    16
+                  ) ||
                   "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="配置更新时间">
                 {selectedVMDataForDetail.config?.metadata?.updated_at
                   ? new Date(
-                      parseFloat(selectedVMDataForDetail.config.metadata.updated_at) *
-                        1000
+                      parseFloat(
+                        selectedVMDataForDetail.config.metadata.updated_at
+                      ) * 1000
                     ).toLocaleString()
                   : selectedVMDataForDetail.metadata?.updated_at
                   ? new Date(
-                      parseFloat(selectedVMDataForDetail.metadata.updated_at) * 1000
+                      parseFloat(selectedVMDataForDetail.metadata.updated_at) *
+                        1000
                     ).toLocaleString()
                   : "N/A"}
               </Descriptions.Item>
@@ -1778,7 +1824,9 @@ const VirtualMachineManagement: React.FC = () => {
               <Table
                 size="small"
                 dataSource={
-                  selectedVMDataForDetail.config?.disk || selectedVMDataForDetail.disk_info || []
+                  selectedVMDataForDetail.config?.disk ||
+                  selectedVMDataForDetail.disk_info ||
+                  []
                 }
                 pagination={false}
                 locale={{
@@ -2240,16 +2288,19 @@ const VirtualMachineManagement: React.FC = () => {
                         "shutoff"
                       }
                       usbDevices={
-                        selectedVMDataForDetail?.config?.usb?.map((usbDevice) => {
-                          // 类型断言，转换为实际API返回的数据结构
-                          const device = usbDevice as Record<string, unknown>;
-                          return {
-                            device_id: (device.device_id as string) || "1",
-                            vendor_id: (device.vendor_id as string) || "0000",
-                            product_id: (device.product_id as string) || "0000",
-                            bus_id: (device.bus_id as string) || "1",
-                          };
-                        }) || []
+                        selectedVMDataForDetail?.config?.usb?.map(
+                          (usbDevice) => {
+                            // 类型断言，转换为实际API返回的数据结构
+                            const device = usbDevice as Record<string, unknown>;
+                            return {
+                              device_id: (device.device_id as string) || "1",
+                              vendor_id: (device.vendor_id as string) || "0000",
+                              product_id:
+                                (device.product_id as string) || "0000",
+                              bus_id: (device.bus_id as string) || "1",
+                            };
+                          }
+                        ) || []
                       }
                       onUSBChange={() => {
                         // 刷新虚拟机详情数据
@@ -2465,10 +2516,9 @@ const VirtualMachineManagement: React.FC = () => {
           <div>
             <Card
               title="快照管理"
-             
               extra={
-                <Button 
-                  type="primary" 
+                <Button
+                  type="primary"
                   icon={<CameraOutlined />}
                   onClick={() => setCreateSnapshotModal(true)}
                   loading={createSnapshotLoading}
@@ -2479,8 +2529,13 @@ const VirtualMachineManagement: React.FC = () => {
             >
               <Table
                 size="small"
-                dataSource={snapshotList}
+                dataSource={buildSnapshotTree(snapshotList)}
                 loading={snapshotLoading}
+                expandable={{
+                  defaultExpandAllRows: true,
+                  rowExpandable: (record) =>
+                    !!record.children && record.children.length > 0,
+                }}
                 rowKey="name"
                 columns={[
                   {
@@ -2488,14 +2543,14 @@ const VirtualMachineManagement: React.FC = () => {
                     dataIndex: "name",
                     key: "name",
                     render: (name: string, record: VMSnapshot) => (
-                      <div>
+                      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
                         <strong>{name}</strong>
                         {record.is_current && (
-                          <Tag color="blue" style={{ marginLeft: 8 }}>
+                          <Tag color="blue" style={{ marginLeft: 8, marginBottom: 0 }}>
                             当前
                           </Tag>
                         )}
-                      </div>
+                      </span>
                     ),
                   },
                   {
@@ -2550,24 +2605,17 @@ const VirtualMachineManagement: React.FC = () => {
                         <Button
                           size="small"
                           type="primary"
-                          disabled={record.is_current || snapshotOperationLoading}
                           loading={snapshotOperationLoading}
                           onClick={() => handleRevertSnapshot(record)}
                         >
                           恢复
                         </Button>
-                        {/* <Button
-                          size="small"
-                          onClick={() =>
-                            message.info(`编辑快照功能开发中: ${record.name}`)
-                          }
-                        >
-                          编辑
-                        </Button> */}
                         <Button
                           size="small"
                           danger
-                          disabled={record.is_current || snapshotOperationLoading}
+                          disabled={
+                            record.is_current || snapshotOperationLoading
+                          }
                           loading={snapshotOperationLoading}
                           onClick={() => handleDeleteSnapshot(record)}
                         >
@@ -2578,6 +2626,7 @@ const VirtualMachineManagement: React.FC = () => {
                   },
                 ]}
                 pagination={false}
+                expandable={{ defaultExpandAllRows: true }}
                 locale={{
                   emptyText: (
                     <Empty
@@ -2957,10 +3006,7 @@ const VirtualMachineManagement: React.FC = () => {
               name="description"
               rules={[{ max: 200, message: "描述不能超过200个字符" }]}
             >
-              <Input.TextArea
-                placeholder="请输入快照描述（可选）"
-                rows={3}
-              />
+              <Input.TextArea placeholder="请输入快照描述（可选）" rows={3} />
             </Form.Item>
 
             <Form.Item name="includeMemory" valuePropName="checked">
@@ -3031,12 +3077,26 @@ const VirtualMachineManagement: React.FC = () => {
                     {selectedSnapshotForDelete.created_at}
                   </Descriptions.Item>
                   <Descriptions.Item label="状态">
-                    <Tag color={selectedSnapshotForDelete.is_current ? "green" : "default"}>
-                      {selectedSnapshotForDelete.is_current ? "当前活跃" : "历史快照"}
+                    <Tag
+                      color={
+                        selectedSnapshotForDelete.is_current
+                          ? "green"
+                          : "default"
+                      }
+                    >
+                      {selectedSnapshotForDelete.is_current
+                        ? "当前活跃"
+                        : "历史快照"}
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="包含内存">
-                    <Tag color={selectedSnapshotForDelete.has_memory ? "blue" : "default"}>
+                    <Tag
+                      color={
+                        selectedSnapshotForDelete.has_memory
+                          ? "blue"
+                          : "default"
+                      }
+                    >
                       {selectedSnapshotForDelete.has_memory ? "是" : "否"}
                     </Tag>
                   </Descriptions.Item>
@@ -3063,14 +3123,12 @@ const VirtualMachineManagement: React.FC = () => {
               />
 
               <Form.Item name="deleteChildren" valuePropName="checked">
-                <Checkbox>
-                  同时删除此快照的所有子快照（谨慎操作）
-                </Checkbox>
+                <Checkbox>同时删除此快照的所有子快照（谨慎操作）</Checkbox>
               </Form.Item>
 
               <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
                 <Space>
-                  <Button 
+                  <Button
                     onClick={() => {
                       setDeleteSnapshotModal(false);
                       setSelectedSnapshotForDelete(null);
@@ -3098,10 +3156,11 @@ const VirtualMachineManagement: React.FC = () => {
           visible={bootManagementModal}
           onCancel={() => setBootManagementModal(false)}
           vmInfo={(() => {
-            if (sidebarSelectedVM && 'name' in sidebarSelectedVM) {
+            if (sidebarSelectedVM && "name" in sidebarSelectedVM) {
               // 从当前vmList中找到对应的虚拟机详细信息
               const vmData = vmList.find(
-                (vm) => vm.vm_name === (sidebarSelectedVM as { name: string }).name
+                (vm) =>
+                  vm.vm_name === (sidebarSelectedVM as { name: string }).name
               );
               return vmData;
             }
@@ -3123,15 +3182,15 @@ const VirtualMachineManagement: React.FC = () => {
               const values = await cpuForm.validateFields();
               setCpuLoading(true);
               const res = await vmService.updateVMCpu({
-                hostname: selectedVM?.hostname || '',
-                vm_name: selectedVM?.vm_name || '',
+                hostname: selectedVM?.hostname || "",
+                vm_name: selectedVM?.vm_name || "",
                 cpu_num: values.cpu_num,
               });
               message.success(res.data?.message || res.message);
               setCpuModalVisible(false);
               loadVmData();
-            } catch (err:unknown) {
-              message.error(err instanceof Error ? err.message : '未知错误');
+            } catch (err: unknown) {
+              message.error(err instanceof Error ? err.message : "未知错误");
             } finally {
               setCpuLoading(false);
             }
@@ -3143,9 +3202,12 @@ const VirtualMachineManagement: React.FC = () => {
             <Form.Item
               name="cpu_num"
               label="CPU核心数"
-              rules={[{ required: true, message: '请输入CPU核心数' }, { type: 'number', min: 1, message: '必须大于0' }]}
+              rules={[
+                { required: true, message: "请输入CPU核心数" },
+                { type: "number", min: 1, message: "必须大于0" },
+              ]}
             >
-              <InputNumber min={1} precision={0} style={{ width: '100%' }} />
+              <InputNumber min={1} precision={0} style={{ width: "100%" }} />
             </Form.Item>
           </Form>
         </Modal>
@@ -3160,15 +3222,15 @@ const VirtualMachineManagement: React.FC = () => {
               const values = await memoryForm.validateFields();
               setMemoryLoading(true);
               const res = await vmService.updateVMMemory({
-                hostname: selectedVM?.hostname || '',
-                vm_name: selectedVM?.vm_name || '',
+                hostname: selectedVM?.hostname || "",
+                vm_name: selectedVM?.vm_name || "",
                 memory_gb: values.memory_gb,
               });
               message.success(res.data?.message || res.message);
               setMemoryModalVisible(false);
               loadVmData();
-            } catch (err:unknown) {
-              message.error(err instanceof Error ? err.message : '未知错误');
+            } catch (err: unknown) {
+              message.error(err instanceof Error ? err.message : "未知错误");
               // 校验失败或接口异常
             } finally {
               setMemoryLoading(false);
@@ -3181,9 +3243,12 @@ const VirtualMachineManagement: React.FC = () => {
             <Form.Item
               name="memory_gb"
               label="内存大小(GB)"
-              rules={[{ required: true, message: '请输入内存大小' }, { type: 'number', min: 1, message: '必须大于0' }]}
+              rules={[
+                { required: true, message: "请输入内存大小" },
+                { type: "number", min: 1, message: "必须大于0" },
+              ]}
             >
-              <InputNumber min={1} style={{ width: '100%' }} />
+              <InputNumber min={1} style={{ width: "100%" }} />
             </Form.Item>
           </Form>
         </Modal>
@@ -3470,7 +3535,8 @@ const VirtualMachineManagement: React.FC = () => {
                           {selectedVM?.uuid || "N/A"}
                         </Descriptions.Item>
                         <Descriptions.Item label="CPU核心数">
-                          {selectedVM?.config?.cpu_num || selectedVM?.cpu_count}核
+                          {selectedVM?.config?.cpu_num || selectedVM?.cpu_count}
+                          核
                           <Button
                             type="link"
                             icon={<EditOutlined />}
@@ -3478,7 +3544,10 @@ const VirtualMachineManagement: React.FC = () => {
                             style={{ padding: 0, marginLeft: 8 }}
                             onClick={() => {
                               cpuForm.setFieldsValue({
-                                cpu_num: selectedVM.config?.cpu_num || selectedVM.cpu_count || 1,
+                                cpu_num:
+                                  selectedVM.config?.cpu_num ||
+                                  selectedVM.cpu_count ||
+                                  1,
                               });
                               setCpuModalVisible(true);
                             }}
@@ -3486,7 +3555,9 @@ const VirtualMachineManagement: React.FC = () => {
                           />
                         </Descriptions.Item>
                         <Descriptions.Item label="内存大小">
-                          {selectedVM?.config?.memory_gb || selectedVM?.memory_gb}GB
+                          {selectedVM?.config?.memory_gb ||
+                            selectedVM?.memory_gb}
+                          GB
                           <Button
                             type="link"
                             icon={<EditOutlined />}
@@ -3494,7 +3565,10 @@ const VirtualMachineManagement: React.FC = () => {
                             style={{ padding: 0, marginLeft: 8 }}
                             onClick={() => {
                               memoryForm.setFieldsValue({
-                                memory_gb: selectedVM.config?.memory_gb || selectedVM.memory_gb || 1,
+                                memory_gb:
+                                  selectedVM.config?.memory_gb ||
+                                  selectedVM.memory_gb ||
+                                  1,
                               });
                               setMemoryModalVisible(true);
                             }}
@@ -3532,19 +3606,24 @@ const VirtualMachineManagement: React.FC = () => {
                             "N/A"}
                         </Descriptions.Item>
                         <Descriptions.Item label="配置摘要">
-                          {selectedVM?.config?.metadata?.digested?.substring(0, 16) ||
+                          {selectedVM?.config?.metadata?.digested?.substring(
+                            0,
+                            16
+                          ) ||
                             selectedVM?.metadata?.digested?.substring(0, 16) ||
                             "N/A"}
                         </Descriptions.Item>
                         <Descriptions.Item label="配置更新时间">
                           {selectedVM?.config?.metadata?.updated_at
                             ? new Date(
-                                parseFloat(selectedVM.config.metadata.updated_at) *
-                                  1000
+                                parseFloat(
+                                  selectedVM.config.metadata.updated_at
+                                ) * 1000
                               ).toLocaleString()
                             : selectedVM?.metadata?.updated_at
                             ? new Date(
-                                parseFloat(selectedVM.metadata.updated_at) * 1000
+                                parseFloat(selectedVM.metadata.updated_at) *
+                                  1000
                               ).toLocaleString()
                             : "N/A"}
                         </Descriptions.Item>
@@ -3560,7 +3639,11 @@ const VirtualMachineManagement: React.FC = () => {
                           >
                             <Table
                               size="small"
-                              dataSource={selectedVM?.config?.disk || selectedVM?.disk_info || []}
+                              dataSource={
+                                selectedVM?.config?.disk ||
+                                selectedVM?.disk_info ||
+                                []
+                              }
                               pagination={false}
                               columns={[
                                 {
@@ -3602,7 +3685,11 @@ const VirtualMachineManagement: React.FC = () => {
                           >
                             <Table
                               size="small"
-                              dataSource={selectedVM?.config?.net || selectedVM?.network_info || []}
+                              dataSource={
+                                selectedVM?.config?.net ||
+                                selectedVM?.network_info ||
+                                []
+                              }
                               pagination={false}
                               columns={[
                                 {
@@ -3833,3 +3920,22 @@ const VirtualMachineManagement: React.FC = () => {
 };
 
 export default VirtualMachineManagement;
+
+// 工具函数：将快照列表转换为树形结构
+function buildSnapshotTree(snapshots: VMSnapshot[]): VMSnapshot[] {
+  const map = new Map<string, VMSnapshot & { children?: VMSnapshot[] }>();
+  const roots: (VMSnapshot & { children?: VMSnapshot[] })[] = [];
+  snapshots.forEach((item) => {
+    map.set(item.name, { ...item });
+  });
+  map.forEach((item, name) => {
+    if (item.parent && map.has(item.parent)) {
+      const parent = map.get(item.parent)!;
+      if (!parent.children) parent.children = [];
+      parent.children.push(item);
+    } else {
+      roots.push(item);
+    }
+  });
+  return roots;
+}

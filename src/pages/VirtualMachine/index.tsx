@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-10 16:09:04
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-18 08:59:53
+ * @LastEditTime: 2025-07-18 11:53:10
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -2203,7 +2203,7 @@ const [showQuickStartGuide, setShowQuickStartGuide] = useState(false);
                         color: 'white'
                       }}
                     >
-                      SSH终端2
+                      SSH终端
                     </Button>
                     <Button
                       size="large"
@@ -2229,7 +2229,7 @@ const [showQuickStartGuide, setShowQuickStartGuide] = useState(false);
               <LocalSshTerminal
                 show={showLocalSshTerminal}
                 onClose={() => setShowLocalSshTerminal(false)}
-                title="SSH终端2 - 本地代理连接"
+                title="SSH终端 - 本地代理连接"
                 theme="dark"
                 width="95%"
                 height="90vh"

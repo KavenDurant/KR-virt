@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-18 10:00:00
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-18 10:05:11
+ * @LastEditTime: 2025-07-18 12:11:22
  * @FilePath: /KR-virt/src/components/SshTerminal/LocalSshTerminal.tsx
  * @Description: 基于本地SSH连接的终端组件
  */
@@ -378,15 +378,32 @@ export default function LocalSshTerminal({
       onCancel={onClose}
       title={title}
       width={isFullscreen ? "100vw" : width}
-      height={isFullscreen ? "100vh" : undefined}
       centered={!isFullscreen}
       styles={{
         body: {
-          height: isFullscreen ? "calc(100vh - 110px)" : height,
+          height: isFullscreen ? "calc(100vh - 155px)" : height,
           padding: showConnectionForm ? "24px" : 0,
           display: "flex",
           flexDirection: "column",
         },
+        content: isFullscreen ? {
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          margin: 0,
+          padding: 0,
+          maxWidth: "none",
+          height: "100vh",
+        } : undefined,
+        mask: isFullscreen ? {
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+        } : undefined,
       }}
       footer={null}
       closable={!isFullscreen}
@@ -417,7 +434,7 @@ export default function LocalSshTerminal({
               name="host"
               rules={[
                 { required: true, message: "请输入服务器地址" },
-                { pattern: /^[\w\.-]+$/, message: "请输入有效的服务器地址" },
+                { pattern: /^[\w.-]+$/, message: "请输入有效的服务器地址" },
               ]}
             >
               <Input
@@ -522,25 +539,37 @@ export default function LocalSshTerminal({
               <Tooltip title="复制选中文本">
                 <Button
                   type="text"
-                  icon={<CopyOutlined />}
+                  icon={<CopyOutlined style={{ color: theme === "dark" ? "#d4d4d4" : "#595959" }} />}
                   onClick={handleCopy}
                   size="small"
+                  style={{
+                    color: theme === "dark" ? "#d4d4d4" : "#595959",
+                    borderColor: "transparent"
+                  }}
                 />
               </Tooltip>
               <Tooltip title="清空终端">
                 <Button
                   type="text"
-                  icon={<ClearOutlined />}
+                  icon={<ClearOutlined style={{ color: theme === "dark" ? "#d4d4d4" : "#595959" }} />}
                   onClick={handleClear}
                   size="small"
+                  style={{
+                    color: theme === "dark" ? "#d4d4d4" : "#595959",
+                    borderColor: "transparent"
+                  }}
                 />
               </Tooltip>
               <Tooltip title="搜索">
                 <Button
                   type="text"
-                  icon={<SearchOutlined />}
+                  icon={<SearchOutlined style={{ color: theme === "dark" ? "#d4d4d4" : "#595959" }} />}
                   onClick={handleSearch}
                   size="small"
+                  style={{
+                    color: theme === "dark" ? "#d4d4d4" : "#595959",
+                    borderColor: "transparent"
+                  }}
                 />
               </Tooltip>
             </Space>
@@ -549,9 +578,13 @@ export default function LocalSshTerminal({
               <Tooltip title="断开连接">
                 <Button
                   type="text"
-                  icon={<DisconnectOutlined />}
+                  icon={<DisconnectOutlined style={{ color: theme === "dark" ? "#ff7875" : "#ff4d4f" }} />}
                   onClick={handleDisconnect}
                   size="small"
+                  style={{
+                    color: theme === "dark" ? "#ff7875" : "#ff4d4f",
+                    borderColor: "transparent"
+                  }}
                 />
               </Tooltip>
               <Tooltip title={isFullscreen ? "退出全屏" : "全屏显示"}>
@@ -559,13 +592,17 @@ export default function LocalSshTerminal({
                   type="text"
                   icon={
                     isFullscreen ? (
-                      <FullscreenExitOutlined />
+                      <FullscreenExitOutlined style={{ color: theme === "dark" ? "#91caff" : "#1677ff" }} />
                     ) : (
-                      <FullscreenOutlined />
+                      <FullscreenOutlined style={{ color: theme === "dark" ? "#91caff" : "#1677ff" }} />
                     )
                   }
                   onClick={toggleFullscreen}
                   size="small"
+                  style={{
+                    color: theme === "dark" ? "#91caff" : "#1677ff",
+                    borderColor: "transparent"
+                  }}
                 />
               </Tooltip>
             </Space>

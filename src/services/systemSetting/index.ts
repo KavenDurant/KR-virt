@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-06-18 18:51:32
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-06-19 16:22:33
+ * @LastEditTime: 2025-07-11 13:39:26
  * @FilePath: /KR-virt/src/services/systemSetting/index.ts
  * @Description: 系统设置服务 - 参考cluster集群服务的统一架构
  */
@@ -16,9 +16,13 @@ import type {
   TimeSyncExecuteResponse,
   LicenseInfo,
   LicenseUploadResponse,
-  LoginPolicy,
   LoginPolicyUpdateRequest,
   LoginPolicyResponse,
+  StoragePolicyResponse,
+  StorageThresholdUpdateRequest,
+  SystemStorageUpdateRequest,
+  StoragePolicySetResponse,
+  SystemStorageStatus,
 } from "./types";
 
 // 配置区域
@@ -287,6 +291,160 @@ class SystemSettingService {
       defaultSuccessMessage: "登录策略更新成功",
       defaultErrorMessage: "登录策略更新失败，请稍后重试",
     });
+  }
+
+  // ===== 存储策略管理相关方法 =====
+
+  /**
+   * 获取存储策略配置
+   */
+  async getStoragePolicy(): Promise<StandardResponse<StoragePolicyResponse>> {
+    if (USE_MOCK_DATA) {
+      const mockData: StoragePolicyResponse = {
+        system_storage_id: 1,
+        storage_threshold: 80,
+        system_storage_threshold: 90,
+      };
+
+      return mockApi.get(
+        "/system_setting/storage_policy",
+        {},
+        {
+          useMock: true,
+          mockData,
+          defaultSuccessMessage: "获取存储策略成功",
+        },
+      );
+    }
+
+    return api.get<StoragePolicyResponse>(
+      "/system_setting/storage_policy",
+      {},
+      {
+        defaultSuccessMessage: "获取存储策略成功",
+        defaultErrorMessage: "获取存储策略失败，请稍后重试",
+      },
+    );
+  }
+
+  /**
+   * 设置存储阈值
+   */
+  async setStorageThreshold(
+    thresholds: StorageThresholdUpdateRequest,
+  ): Promise<StandardResponse<StoragePolicySetResponse>> {
+    if (USE_MOCK_DATA) {
+      const mockData: StoragePolicySetResponse = {
+        message: "设置存储策略成功",
+      };
+
+      return mockApi.put(
+        "/system_setting/storage_policy/storage_threshold",
+        thresholds,
+        {
+          useMock: true,
+          mockData,
+          defaultSuccessMessage: "设置存储策略成功",
+        },
+      );
+    }
+
+    return api.put<StoragePolicySetResponse>(
+      "/system_setting/storage_policy/storage_threshold",
+      thresholds,
+      {
+        defaultSuccessMessage: "设置存储策略成功",
+        defaultErrorMessage: "设置存储策略失败，请稍后重试",
+      },
+    );
+  }
+
+  /**
+   * 设置系统存储
+   */
+  async setSystemStorage(
+    systemStorage: SystemStorageUpdateRequest,
+  ): Promise<StandardResponse<StoragePolicySetResponse>> {
+    if (USE_MOCK_DATA) {
+      const mockData: StoragePolicySetResponse = {
+        message: "设置存储策略成功",
+      };
+
+      return mockApi.put(
+        "/system_setting/storage_policy/system_storage",
+        systemStorage,
+        {
+          useMock: true,
+          mockData,
+          defaultSuccessMessage: "设置存储策略成功",
+        },
+      );
+    }
+
+    return api.put<StoragePolicySetResponse>(
+      "/system_setting/storage_policy/system_storage",
+      systemStorage,
+      {
+        defaultSuccessMessage: "设置存储策略成功",
+        defaultErrorMessage: "设置存储策略失败，请稍后重试",
+      },
+    );
+  }
+
+  /**
+   * @deprecated 使用 setStorageThreshold 和 setSystemStorage 替代
+   * 设置存储策略配置
+   */
+  async setStoragePolicy(
+    policy: StorageThresholdUpdateRequest & SystemStorageUpdateRequest,
+  ): Promise<StandardResponse<StoragePolicySetResponse>> {
+    // 拆分为两个请求
+    const thresholdResult = await this.setStorageThreshold({
+      storage_threshold: policy.storage_threshold,
+      system_storage_threshold: policy.system_storage_threshold,
+    });
+
+    if (!thresholdResult.success) {
+      return thresholdResult;
+    }
+
+    return this.setSystemStorage({
+      system_storage_id: policy.system_storage_id,
+    });
+  }
+
+  /**
+   * 获取系统存储状态
+   */
+  async getSystemStorageStatus(): Promise<
+    StandardResponse<SystemStorageStatus>
+  > {
+    if (USE_MOCK_DATA) {
+      const mockData: SystemStorageStatus = {
+        status: "normal",
+        total: 1024, // 1TB
+        used: 512, // 512GB
+      };
+
+      return mockApi.get(
+        "/system_setting/system_storage",
+        {},
+        {
+          useMock: true,
+          mockData,
+          defaultSuccessMessage: "获取系统存储状态成功",
+        },
+      );
+    }
+
+    return api.get<SystemStorageStatus>(
+      "/system_setting/system_storage",
+      {},
+      {
+        defaultSuccessMessage: "获取系统存储状态成功",
+        defaultErrorMessage: "获取系统存储状态失败，请稍后重试",
+      },
+    );
   }
 
   /**

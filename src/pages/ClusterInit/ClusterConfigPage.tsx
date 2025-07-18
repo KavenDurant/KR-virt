@@ -97,7 +97,6 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
         };
 
         setNodeInfo(newNodeInfo);
-
       } catch (error) {
         console.error("获取节点信息失败:", error);
         message.error("获取节点信息失败，请稍后重试");
@@ -124,7 +123,7 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
         const currentValues = createForm.getFieldsValue();
 
         if (currentValues.hostname !== nodeInfo.hostname) {
-          createForm.setFieldValue('hostname', nodeInfo.hostname);
+          createForm.setFieldValue("hostname", nodeInfo.hostname);
         }
       }, 100);
     }
@@ -188,7 +187,8 @@ const ClusterConfigPage: React.FC<ClusterConfigPageProps> = ({
               { max: 63, message: "节点名称不能超过63个字符" },
               {
                 pattern: /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/,
-                message: "节点名称只能包含字母、数字和连字符，且不能以连字符开头或结尾",
+                message:
+                  "节点名称只能包含字母、数字和连字符，且不能以连字符开头或结尾",
               },
             ]}
             tooltip="节点名称将用于集群内部识别，建议使用有意义的名称"

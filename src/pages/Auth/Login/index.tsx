@@ -7,6 +7,7 @@
 import React, { useState } from "react";
 import { App } from "antd";
 import { Form, Input, Button, Card, Typography } from "antd";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   UserOutlined,
   LockOutlined,
@@ -34,6 +35,8 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const { message } = App.useApp();
   const [form] = Form.useForm();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [loading, setLoading] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
@@ -86,10 +89,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           if (isFirstTime) {
             // 首次登录，跳转到首次登录流程
             console.log("检测到首次登录，跳转到首次登录流程");
-            window.location.hash = "#/first-time-login";
+            navigate("/first-time-login", { replace: true });
           } else {
-            // 正常登录，跳转到仪表盘
-            window.location.hash = "#/dashboard";
+            // 正常登录，检查是否有来源页面，如果有则跳转回去，否则跳转到仪表盘
+            const from = location.state?.from?.pathname || "/dashboard";
+            console.log("登录成功，跳转到:", from);
+            navigate(from, { replace: true });
           }
         }
       }, 1000);

@@ -7,7 +7,7 @@
  * @Description: 路由配置 - 集成集群状态检查和认证控制
  */
 import React from "react";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CookieUtils } from "@/utils/cookies";
 import AppBootstrap from "@/components/AppBootstrap";
 import AppLayout from "@/components/Layout";
@@ -23,7 +23,7 @@ const isUserAuthenticated = () => {
 
 const Router: React.FC = () => {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
         {/* 集群状态检查和登录的启动页面 */}
         <Route path="/bootstrap" element={<AppBootstrap />} />
@@ -66,7 +66,7 @@ const Router: React.FC = () => {
           }
         />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

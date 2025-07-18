@@ -46,40 +46,40 @@ interface TokenRefreshFailureModalProps {
 ### 1. 基本使用
 
 ```typescript
-import { showTokenRefreshFailureModal } from '@/components/TokenRefreshFailureModal/utils';
+import { showTokenRefreshFailureModal } from "@/components/TokenRefreshFailureModal/utils";
 
 // 显示Token刷新失败Modal
 showTokenRefreshFailureModal({
-  message: '登录状态已过期，系统将自动退出登录',
-  reason: 'Token已失效',
+  message: "登录状态已过期，系统将自动退出登录",
+  reason: "Token已失效",
   countdown: 5,
   autoRedirect: true,
   onConfirm: () => {
-    window.location.href = '/login';
-  }
+    window.location.href = "/login";
+  },
 });
 ```
 
 ### 2. 带重试功能的使用
 
 ```typescript
-import { showTokenRefreshFailureModal } from '@/components/TokenRefreshFailureModal/utils';
+import { showTokenRefreshFailureModal } from "@/components/TokenRefreshFailureModal/utils";
 
 showTokenRefreshFailureModal({
-  message: '网络连接异常，为了您的账户安全，系统将自动退出登录',
-  reason: '网络连接超时',
+  message: "网络连接异常，为了您的账户安全，系统将自动退出登录",
+  reason: "网络连接超时",
   countdown: 10,
   showRetry: true,
   onRetry: async () => {
     // 重试刷新Token的逻辑
     const result = await loginService.refreshToken();
     if (!result.success) {
-      throw new Error('重试失败');
+      throw new Error("重试失败");
     }
   },
   onConfirm: () => {
-    window.location.href = '/login';
-  }
+    window.location.href = "/login";
+  },
 });
 ```
 
@@ -176,6 +176,7 @@ destroyTokenRefreshFailureModal(): void
 `tests/components/TokenRefreshFailureModal.test.tsx`
 
 运行测试：
+
 ```bash
 npm run test -- TokenRefreshFailureModal
 ```

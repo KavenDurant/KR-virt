@@ -83,8 +83,8 @@ export class MockApiHelper {
 }
 
 // Mock服务类生成器
-export const createMockService = (_serviceName: string) => {
-  const mockMethods: Record<string, any> = {};
+export const createMockService = () => {
+  const mockMethods: Record<string, unknown> = {};
 
   return new Proxy(mockMethods, {
     get(target, prop) {
@@ -114,8 +114,7 @@ export const mockResponseTemplates = {
   deleted: () => createMockResponse(null, true, "删除成功"),
 
   // 验证错误
-  validationError: (_errors: Record<string, string[]>) =>
-    createMockErrorResponse("验证失败", 422),
+  validationError: () => createMockErrorResponse("验证失败", 422),
 
   // 未授权
   unauthorized: () => createMockErrorResponse("未授权访问", 401),
@@ -128,4 +127,25 @@ export const mockResponseTemplates = {
 
   // 服务器错误
   serverError: () => createMockErrorResponse("服务器内部错误", 500),
+};
+
+// 添加API端点配置
+export const addEndpoint = (
+  serviceName: string,
+  endpoint: string,
+  response: unknown,
+  options: {
+    delay?: number;
+    status?: number;
+    headers?: Record<string, string>;
+  } = {},
+) => {
+  console.log("Adding endpoint:", serviceName, endpoint, response, options);
+  // 在这里实现端点配置逻辑
+};
+
+// 模拟API错误
+export const simulateErrors = (errors: unknown[] = []) => {
+  console.log("Simulating API errors:", errors);
+  // 在这里实现错误模拟逻辑
 };

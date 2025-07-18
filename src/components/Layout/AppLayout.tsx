@@ -33,11 +33,15 @@ import {
 } from "@ant-design/icons";
 import routes from "@/router/routes";
 import TaskDrawer from "@/components/TaskDrawer";
-import HierarchicalSidebar from "@/components/HierarchicalSidebar";
+import { UnifiedSidebar } from "@/components/Sidebar";
 import { useTheme } from "@/hooks/useTheme";
 import { loginService } from "@/services/login";
 import type { UserInfo } from "@/services/login";
 import { UserActivityMonitor } from "@/components/UserActivity";
+import { vmService } from "@/services/vm";
+import type { VMTreeResponse } from "@/services/vm/types";
+import { clusterInitService } from "@/services/cluster";
+import type { ClusterTreeResponse } from "@/services/cluster/types";
 
 import type {
   IdleEvent,
@@ -46,8 +50,6 @@ import type {
   TimeoutEvent,
   LogoutEvent,
 } from "@/components/UserActivity/types";
-import { getSidebarData, getClusterSidebarData } from "@/services/mockData";
-import type { DataCenter } from "@/services/mockData";
 import "./AppLayout.css";
 
 const AppLayout: React.FC = () => {
@@ -72,8 +74,6 @@ const AppLayout: React.FC = () => {
     // 确保Token自动刷新在主应用中运行
     // 这是为了修复页面刷新后Token自动刷新停止的问题
     if (loginService.isAuthenticated()) {
-      console.log("🔧 AppLayout: 确保Token自动刷新正在运行");
-
       // 检查当前自动刷新状态
       const status = loginService.getAutoRefreshStatus();
       console.log("📊 当前Token自动刷新状态:", status);
@@ -106,7 +106,11 @@ const AppLayout: React.FC = () => {
   const [taskDrawerVisible, setTaskDrawerVisible] = useState(false);
 
   // 侧边栏数据状态
-  const [sidebarData, setSidebarData] = useState<DataCenter | null>(null);
+  const [clusterSidebarData, setClusterSidebarData] =
+    useState<ClusterTreeResponse | null>(null);
+  const [vmSidebarData, setVmSidebarData] = useState<VMTreeResponse | null>(
+    null,
+  );
   const [sidebarLoading, setSidebarLoading] = useState(false);
   const [sidebarError, setSidebarError] = useState<string | null>(null);
 
@@ -130,7 +134,7 @@ const AppLayout: React.FC = () => {
         originalWidthRef.current = validWidth;
       }
     },
-    [] // 移除sidebarWidth依赖，避免频繁重新创建函数
+    [], // 移除sidebarWidth依赖，避免频繁重新创建函数
   );
 
   // 根据当前路径确定选中的菜单项
@@ -140,7 +144,7 @@ const AppLayout: React.FC = () => {
   }, [location.pathname]);
 
   const [selectedActivityItem, setSelectedActivityItem] = useState(
-    getCurrentSelectedPath
+    getCurrentSelectedPath,
   );
 
   // 获取侧边栏数据的异步函数
@@ -150,20 +154,48 @@ const AppLayout: React.FC = () => {
       setSidebarLoading(true);
       setSidebarError(null); // 清除之前的错误
       try {
-        const clusterData = await getClusterSidebarData();
-        setSidebarData(clusterData);
+        const result = await clusterInitService.getClusterTree();
+        if (result.success && result.data) {
+          setClusterSidebarData(result.data);
+          setVmSidebarData(null); // 清除VM数据
+        } else {
+          throw new Error(result.message || "获取集群树失败");
+        }
       } catch (error) {
         console.error("获取集群侧边栏数据失败:", error);
         // 设置错误状态，不再回退到mock数据
         setSidebarError("获取集群数据失败，请检查网络连接或联系管理员");
-        setSidebarData(null);
+        setClusterSidebarData(null);
+        setVmSidebarData(null); // 清除VM数据
+      } finally {
+        setSidebarLoading(false);
+      }
+    } else if (modulePath === "/virtual-machine") {
+      // 虚拟机页面使用API数据
+      setSidebarLoading(true);
+      setSidebarError(null); // 清除之前的错误
+      try {
+        const result = await vmService.getVMTree();
+        if (result.success && result.data) {
+          setVmSidebarData(result.data);
+          setClusterSidebarData(null); // 清除集群数据
+        } else {
+          throw new Error(result.message || "获取虚拟机树失败");
+        }
+      } catch (error) {
+        console.error("获取虚拟机侧边栏数据失败:", error);
+        // 设置错误状态，不再回退到mock数据
+        setSidebarError("获取虚拟机数据失败，请检查网络连接或联系管理员");
+        setVmSidebarData(null);
+        setClusterSidebarData(null);
       } finally {
         setSidebarLoading(false);
       }
     } else {
-      // 其他页面使用静态数据
+      // 其他页面不需要侧边栏数据
       setSidebarError(null);
-      setSidebarData(getSidebarData(modulePath));
+      setClusterSidebarData(null);
+      setVmSidebarData(null);
     }
   }, []);
 
@@ -191,32 +223,27 @@ const AppLayout: React.FC = () => {
 
   // 监听侧边栏刷新事件
   useEffect(() => {
-    const handleSidebarRefresh = (event: CustomEvent) => {
-      console.log("收到侧边栏刷新事件:", event.detail);
-
+    const handleSidebarRefresh = () => {
       // 只有在显示集群侧边栏时才刷新
       if (shouldShowSidebar && selectedActivityItem === "/cluster") {
-        console.log("正在刷新集群侧边栏数据...");
         loadSidebarData(selectedActivityItem);
       }
     };
 
     window.addEventListener(
       "refresh-sidebar",
-      handleSidebarRefresh as EventListener
+      handleSidebarRefresh as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "refresh-sidebar",
-        handleSidebarRefresh as EventListener
+        handleSidebarRefresh as EventListener,
       );
     };
   }, [shouldShowSidebar, selectedActivityItem, loadSidebarData]);
 
-  // 初始加载时设置侧边栏宽度
   useEffect(() => {
-    // 确保侧边栏宽度与localStorage同步（仅在组件挂载时）
     const savedWidth = localStorage.getItem("sidebarWidth");
     if (savedWidth && sidebarRef.current) {
       const width = parseInt(savedWidth);
@@ -225,7 +252,6 @@ const AppLayout: React.FC = () => {
       sidebarRef.current.style.width = `${width}px`;
     }
 
-    // 监听存储变化（来自其他标签页的变化）
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "sidebarWidth" && e.newValue) {
         const width = parseInt(e.newValue);
@@ -241,24 +267,20 @@ const AppLayout: React.FC = () => {
     return () => {
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, []); // 空依赖数组，仅在挂载时执行
+  }, []);
 
-  // 处理根路径重定向
   useEffect(() => {
     if (location.pathname === "/") {
       navigate("/dashboard");
     }
   }, [location.pathname, navigate]);
 
-  // 处理菜单点击事件
   const handleMenuClick = (path: string) => {
     setSelectedActivityItem(path);
     navigate(path);
   };
 
-  // 处理退出登录
   const handleLogout = () => {
-    // 使用内联模态框代替静态方法，这样可以正确获取上下文
     setLogoutModalVisible(true);
   };
 
@@ -383,8 +405,8 @@ const AppLayout: React.FC = () => {
                             ? "#ffffff"
                             : "#000000"
                           : actualTheme === "dark"
-                          ? "#858585"
-                          : "#666666",
+                            ? "#858585"
+                            : "#666666",
                     },
                   })}
                 </Tooltip>
@@ -396,8 +418,8 @@ const AppLayout: React.FC = () => {
                       ? "#444444"
                       : "#e6f7ff"
                     : actualTheme === "dark"
-                    ? "#333333"
-                    : "#f3f3f3",
+                      ? "#333333"
+                      : "#f3f3f3",
                 height: "50px",
               },
             }))}
@@ -451,8 +473,8 @@ const AppLayout: React.FC = () => {
                           ? "#ffffff"
                           : "#000000"
                         : actualTheme === "dark"
-                        ? "#858585"
-                        : "#666666",
+                          ? "#858585"
+                          : "#666666",
                       cursor: "pointer",
                     }}
                     onClick={() => {
@@ -555,12 +577,15 @@ const AppLayout: React.FC = () => {
                   点击重试
                 </div>
               </div>
-            ) : (
-              <HierarchicalSidebar
-                data={sidebarData}
+            ) : selectedActivityItem === "/virtual-machine" ? (
+              <UnifiedSidebar
+                mode="vm"
+                data={vmSidebarData}
+                loading={sidebarLoading}
+                error={sidebarError}
                 onSelect={(
                   selectedKeys: string[],
-                  info: Record<string, unknown>
+                  info: Record<string, unknown>,
                 ) => {
                   // 处理树节点选择事件，传递选择信息到主内容区域
                   const selectedKey = selectedKeys[0];
@@ -578,7 +603,38 @@ const AppLayout: React.FC = () => {
                           nodeType: nodeInfo.type,
                           nodeData: nodeInfo.data,
                         },
-                      })
+                      }),
+                    );
+                  }
+                }}
+              />
+            ) : (
+              <UnifiedSidebar
+                mode="cluster"
+                data={clusterSidebarData}
+                loading={sidebarLoading}
+                error={sidebarError}
+                onSelect={(
+                  selectedKeys: string[],
+                  info: Record<string, unknown>,
+                ) => {
+                  // 处理树节点选择事件，传递选择信息到主内容区域
+                  const selectedKey = selectedKeys[0];
+                  const nodeInfo = info.node as {
+                    type?: string;
+                    data?: unknown;
+                  };
+
+                  if (nodeInfo && nodeInfo.data) {
+                    // 通过自定义事件传递选择信息到页面组件
+                    window.dispatchEvent(
+                      new CustomEvent("hierarchical-sidebar-select", {
+                        detail: {
+                          selectedKey,
+                          nodeType: nodeInfo.type,
+                          nodeData: nodeInfo.data,
+                        },
+                      }),
                     );
                   }
                 }}
@@ -602,7 +658,7 @@ const AppLayout: React.FC = () => {
                     routes.find((route) => route.path === selectedActivityItem)
                       ?.name || "仪表盘",
                   icon: routes.find(
-                    (route) => route.path === selectedActivityItem
+                    (route) => route.path === selectedActivityItem,
                   )?.icon,
                   children: [],
                   className: "sidebar-menu-item",
@@ -638,7 +694,7 @@ const AppLayout: React.FC = () => {
                   if (now - lastUpdateTime > throttleDelay) {
                     originalWidthRef.current = Math.max(
                       200,
-                      Math.min(newWidth, 400)
+                      Math.min(newWidth, 400),
                     );
                     lastUpdateTime = now;
                   }

@@ -24,6 +24,7 @@ import {
   Form,
   Input,
   Empty,
+  Spin,
 } from "antd";
 import SafetyConfirmModal from "@/components/SafetyConfirmModal";
 import {
@@ -50,6 +51,8 @@ import {
   PlusOutlined,
   SettingOutlined,
   AppstoreOutlined,
+  UsbOutlined,
+  GlobalOutlined,
 } from "@ant-design/icons";
 import {
   formatResourceUsage,
@@ -66,6 +69,7 @@ import {
   useTimeZone,
 } from "../../hooks";
 import { clusterInitService } from "@/services/cluster";
+import networkService from "@/services/network";
 import { loginService } from "@/services/login";
 import type { ClusterNodesResponse } from "@/services/cluster";
 import type { ClusterSummaryResponse } from "@/services/cluster";
@@ -327,6 +331,20 @@ const ClusterManagement: React.FC = () => {
   >(null);
   const [nodeDisksLoading, setNodeDisksLoading] = useState(false);
   const [nodeDisksError, setNodeDisksError] = useState<string | null>(null);
+
+  // 硬件信息相关状态 - USB设备
+  const [nodeUsbData, setNodeUsbData] = useState<
+    import("@/services/cluster").NodeUsbResponse | null
+  >(null);
+  const [nodeUsbLoading, setNodeUsbLoading] = useState(false);
+  const [nodeUsbError, setNodeUsbError] = useState<string | null>(null);
+
+  // 硬件信息相关状态 - 网络设备
+  const [nodeNetworkData, setNodeNetworkData] = useState<
+    import("@/services/network").NodeNetworkListResponse | null
+  >(null);
+  const [nodeNetworkLoading, setNodeNetworkLoading] = useState(false);
+  const [nodeNetworkError, setNodeNetworkError] = useState<string | null>(null);
 
   // 节点操作相关状态
   const [nodeOperationLoading, setNodeOperationLoading] = useState<
@@ -644,6 +662,82 @@ const ClusterManagement: React.FC = () => {
     [withApiLock, fetchNodeDisksDataBase],
   );
 
+  // 获取节点USB设备信息基础函数
+  const fetchNodeUsbDataBase = useCallback(
+    async (hostname: string) => {
+      const timestamp = new Date().toLocaleTimeString();
+      setNodeUsbLoading(true);
+      setNodeUsbError(null);
+      try {
+        const result = await clusterInitService.getNodeUsbDevices(hostname);
+        if (result.success && result.data) {
+          setNodeUsbData(result.data);
+        } else {
+          console.error(
+            `❌ [${timestamp}][API Error] 获取节点USB设备数据失败:`,
+            result.message,
+          );
+          setNodeUsbError(result.message);
+          message.error(result.message);
+        }
+      } catch (error) {
+        console.error(
+          `❌ [${timestamp}][API Exception] 获取节点USB设备数据异常:`,
+          error,
+        );
+        const errorMessage = "获取节点USB设备数据失败，请稍后重试";
+        setNodeUsbError(errorMessage);
+        message.error(errorMessage);
+      } finally {
+        setNodeUsbLoading(false);
+      }
+    },
+    [message],
+  );
+
+  const fetchNodeUsbData = useMemo(
+    () => withApiLock("fetchNodeUsbData", fetchNodeUsbDataBase),
+    [withApiLock, fetchNodeUsbDataBase],
+  );
+
+  // 获取节点网络设备信息基础函数
+  const fetchNodeNetworkDataBase = useCallback(
+    async (hostname: string) => {
+      const timestamp = new Date().toLocaleTimeString();
+      setNodeNetworkLoading(true);
+      setNodeNetworkError(null);
+      try {
+        const result = await networkService.getNodeNetworks(hostname);
+        if (result.success && result.data) {
+          setNodeNetworkData(result.data);
+        } else {
+          console.error(
+            `❌ [${timestamp}][API Error] 获取节点网络设备数据失败:`,
+            result.message,
+          );
+          setNodeNetworkError(result.message);
+          message.error(result.message);
+        }
+      } catch (error) {
+        console.error(
+          `❌ [${timestamp}][API Exception] 获取节点网络设备数据异常:`,
+          error,
+        );
+        const errorMessage = "获取节点网络设备数据失败，请稍后重试";
+        setNodeNetworkError(errorMessage);
+        message.error(errorMessage);
+      } finally {
+        setNodeNetworkLoading(false);
+      }
+    },
+    [message],
+  );
+
+  const fetchNodeNetworkData = useMemo(
+    () => withApiLock("fetchNodeNetworkData", fetchNodeNetworkDataBase),
+    [withApiLock, fetchNodeNetworkDataBase],
+  );
+
   // ===== 节点操作相关函数 =====
 
   // 节点操作处理函数
@@ -758,7 +852,13 @@ const ClusterManagement: React.FC = () => {
         setNodeOperationLoading(null);
       }
     },
-    [checkCanEnterMaintenance, fetchNodeDetailData, fetchRealClusterData, modal, message],
+    [
+      checkCanEnterMaintenance,
+      fetchNodeDetailData,
+      fetchRealClusterData,
+      modal,
+      message,
+    ],
   );
 
   // 添加节点处理函数
@@ -856,10 +956,6 @@ const ClusterManagement: React.FC = () => {
         `🔍 [Node Detail] 开始获取主机 ${sidebarSelectedHost.name} 的详细信息`,
       );
 
-      // 重置主机详情标签页到默认状态（基本信息）
-      // 这确保了每次选择主机时都从默认标签页开始，提供一致的用户体验
-      setHostDetailActiveTab("basic");
-
       // 清空之前的所有数据，准备按需加载
       setNodeDetailData(null);
       setNodeDetailError(null);
@@ -867,14 +963,47 @@ const ClusterManagement: React.FC = () => {
       setNodePCIError(null);
       setNodeDisksData(null);
       setNodeDisksError(null);
+      setNodeUsbData(null);
+      setNodeUsbError(null);
+      setNodeNetworkData(null);
+      setNodeNetworkError(null);
 
-      // 默认加载基本信息（因为默认显示basic Tab）
+      // 根据当前活跃的Tab加载对应的数据
       console.log(
-        `📊 [Default Loading] 默认加载基本信息: ${sidebarSelectedHost.name}`,
+        `📊 [Smart Loading] 根据当前Tab (${hostDetailActiveTab}) 加载对应数据: ${sidebarSelectedHost.name}`,
       );
-      fetchNodeDetailData(sidebarSelectedHost.name);
+
+      switch (hostDetailActiveTab) {
+        case "basic":
+          fetchNodeDetailData(sidebarSelectedHost.name);
+          break;
+        case "performance":
+          // 性能监控数据由图表组件自己管理
+          fetchNodeDetailData(sidebarSelectedHost.name); // 性能页面也需要基本信息
+          break;
+        case "hardware":
+          // 硬件信息页面需要加载所有硬件数据
+          fetchNodeDetailData(sidebarSelectedHost.name); // 也需要基本信息
+          fetchNodePCIData(sidebarSelectedHost.name);
+          fetchNodeDisksData(sidebarSelectedHost.name);
+          fetchNodeUsbData(sidebarSelectedHost.name);
+          fetchNodeNetworkData(sidebarSelectedHost.name);
+          break;
+        default:
+          // 默认加载基本信息
+          fetchNodeDetailData(sidebarSelectedHost.name);
+          break;
+      }
     }
-  }, [sidebarSelectedHost, fetchNodeDetailData]);
+  }, [
+    sidebarSelectedHost,
+    hostDetailActiveTab,
+    fetchNodeDetailData,
+    fetchNodePCIData,
+    fetchNodeDisksData,
+    fetchNodeUsbData,
+    fetchNodeNetworkData,
+  ]);
 
   // 防重复调用的标记和上一次激活的Tab追踪
   const loadingRef = useRef<Set<string>>(new Set());
@@ -1003,7 +1132,7 @@ const ClusterManagement: React.FC = () => {
         // 延迟跳转，让用户看到成功消息
         setTimeout(() => {
           // 跳转到bootstrap页面，该页面会自动调用status接口检查集群状态
-          window.location.hash = "#/bootstrap";
+          window.location.href = "/bootstrap";
           // 强制刷新页面，确保重新检查集群状态
           window.location.reload();
         }, 1500);
@@ -1298,6 +1427,35 @@ const ClusterManagement: React.FC = () => {
 
   // 如果从侧边栏选中了物理主机，显示主机详情
   if (sidebarSelectedHost) {
+    // 安全获取虚拟机数量 - 处理数据结构不匹配的问题
+    const getHostVMsCount = (): number => {
+      // 类型断言为更通用的对象类型来处理不同的数据结构
+      const hostData = sidebarSelectedHost as unknown as Record<
+        string,
+        unknown
+      >;
+
+      // 如果有 vms 字段，返回其长度
+      if (hostData.vms && Array.isArray(hostData.vms)) {
+        return hostData.vms.length;
+      }
+
+      // 如果有 data 字段且包含 vms，使用 data.vms
+      if (
+        hostData.data &&
+        typeof hostData.data === "object" &&
+        hostData.data !== null &&
+        "vms" in hostData.data &&
+        Array.isArray((hostData.data as Record<string, unknown>).vms)
+      ) {
+        return ((hostData.data as Record<string, unknown>).vms as unknown[])
+          .length;
+      }
+
+      // 默认返回0
+      return 0;
+    };
+
     // 计算CPU和内存使用百分比
     const cpuUsagePercent = nodeDetailData
       ? Math.round((nodeDetailData.cpu_used / nodeDetailData.cpu_total) * 100)
@@ -1307,7 +1465,7 @@ const ClusterManagement: React.FC = () => {
       : 0;
     const totalVmsCount = nodeDetailData
       ? nodeDetailData.vms_num
-      : sidebarSelectedHost.vms.length;
+      : getHostVMsCount();
 
     const hostDetailTabs = [
       {
@@ -2226,6 +2384,42 @@ const ClusterManagement: React.FC = () => {
         label: "硬件信息",
         children: (
           <div>
+            {/* 硬件信息页面统一操作栏 */}
+            <Card
+              size="small"
+              style={{ marginBottom: 16 }}
+              title="硬件信息管理"
+            >
+              <Space>
+                <Button
+                  icon={<SyncOutlined />}
+                  type="primary"
+                  loading={
+                    nodePCILoading ||
+                    nodeDisksLoading ||
+                    nodeUsbLoading ||
+                    nodeNetworkLoading
+                  }
+                  onClick={() => {
+                    if (sidebarSelectedHost) {
+                      console.log(
+                        `🔄 [Hardware] 刷新所有硬件信息: ${sidebarSelectedHost.name}`,
+                      );
+                      fetchNodePCIData(sidebarSelectedHost.name);
+                      fetchNodeDisksData(sidebarSelectedHost.name);
+                      fetchNodeUsbData(sidebarSelectedHost.name);
+                      fetchNodeNetworkData(sidebarSelectedHost.name);
+                    }
+                  }}
+                >
+                  刷新所有硬件信息
+                </Button>
+                <span style={{ color: "#666", fontSize: "12px" }}>
+                  包含PCI设备、磁盘设备、USB设备和网络设备信息
+                </span>
+              </Space>
+            </Card>
+
             <Row gutter={[16, 16]}>
               {/* PCI设备信息 */}
               <Col span={24}>
@@ -2372,6 +2566,406 @@ const ClusterManagement: React.FC = () => {
                   )}
                 </Card>
               </Col>
+
+              {/* USB设备信息 */}
+              <Col span={24}>
+                <Card
+                  title={
+                    <Space>
+                      <UsbOutlined />
+                      <span>USB设备列表</span>
+                    </Space>
+                  }
+                  extra={
+                    <Button
+                      icon={<SyncOutlined />}
+                      loading={nodeUsbLoading}
+                      onClick={() => {
+                        if (sidebarSelectedHost) {
+                          fetchNodeUsbData(sidebarSelectedHost.name);
+                        }
+                      }}
+                    >
+                      刷新
+                    </Button>
+                  }
+                  size="small"
+                >
+                  {nodeUsbLoading ? (
+                    <div style={{ textAlign: "center", padding: "20px" }}>
+                      <SyncOutlined spin style={{ fontSize: "18px" }} />
+                      <div style={{ marginTop: "8px" }}>
+                        加载USB设备信息中...
+                      </div>
+                    </div>
+                  ) : nodeUsbError ? (
+                    <Alert
+                      message="获取USB设备信息失败"
+                      description={nodeUsbError}
+                      type="error"
+                      showIcon
+                    />
+                  ) : nodeUsbData && nodeUsbData.devices.length > 0 ? (
+                    <Table
+                      dataSource={nodeUsbData.devices}
+                      rowKey={(record, index) =>
+                        `${record.bus_id}-${record.device_num || index}`
+                      }
+                      pagination={{ pageSize: 10, showSizeChanger: true }}
+                      size="small"
+                      columns={[
+                        {
+                          title: "总线ID",
+                          dataIndex: "bus_id",
+                          key: "bus_id",
+                          width: "12%",
+                          render: (busId: string) => (
+                            <Tag color="blue">{busId}</Tag>
+                          ),
+                        },
+                        {
+                          title: "设备编号",
+                          dataIndex: "device_num",
+                          key: "device_num",
+                          width: "10%",
+                          render: (deviceNum: string) => (
+                            <Tag color="purple">{deviceNum}</Tag>
+                          ),
+                        },
+                        {
+                          title: "厂商ID",
+                          dataIndex: "vendor_id",
+                          key: "vendor_id",
+                          width: "12%",
+                          render: (vendorId: string) => (
+                            <code style={{ fontSize: "12px" }}>{vendorId}</code>
+                          ),
+                        },
+                        {
+                          title: "产品ID",
+                          dataIndex: "product_id",
+                          key: "product_id",
+                          width: "12%",
+                          render: (productId: string) => (
+                            <code style={{ fontSize: "12px" }}>
+                              {productId}
+                            </code>
+                          ),
+                        },
+                        {
+                          title: "厂商名称",
+                          dataIndex: "vendor_name",
+                          key: "vendor_name",
+                          width: "20%",
+                          ellipsis: true,
+                        },
+                        {
+                          title: "产品名称",
+                          dataIndex: "product_name",
+                          key: "product_name",
+                          width: "25%",
+                          ellipsis: true,
+                        },
+                        {
+                          title: "设备名称",
+                          dataIndex: "device_name",
+                          key: "device_name",
+                          width: "19%",
+                          ellipsis: true,
+                          render: (deviceName: string) => (
+                            <Tag color="green">{deviceName}</Tag>
+                          ),
+                        },
+                      ]}
+                    />
+                  ) : (
+                    <Empty description="暂无USB设备信息" />
+                  )}
+                </Card>
+              </Col>
+
+              {/* 网络设备信息 */}
+              <Col span={24}>
+                <Card
+                  title={
+                    <Space>
+                      <GlobalOutlined />
+                      <span>网络设备列表</span>
+                    </Space>
+                  }
+                  extra={
+                    <Button
+                      icon={<SyncOutlined />}
+                      loading={nodeNetworkLoading}
+                      onClick={() => {
+                        if (sidebarSelectedHost) {
+                          fetchNodeNetworkData(sidebarSelectedHost.name);
+                        }
+                      }}
+                    >
+                      刷新
+                    </Button>
+                  }
+                  size="small"
+                >
+                  {nodeNetworkLoading ? (
+                    <div style={{ textAlign: "center", padding: "20px" }}>
+                      <SyncOutlined spin style={{ fontSize: "18px" }} />
+                      <div style={{ marginTop: "8px" }}>
+                        加载网络设备信息中...
+                      </div>
+                    </div>
+                  ) : nodeNetworkError ? (
+                    <Alert
+                      message="获取网络设备信息失败"
+                      description={nodeNetworkError}
+                      type="error"
+                      showIcon
+                    />
+                  ) : nodeNetworkData && nodeNetworkData.networks.length > 0 ? (
+                    <Table
+                      dataSource={nodeNetworkData.networks}
+                      rowKey={(record, index) => `${record.device}-${index}`}
+                      pagination={{ pageSize: 10, showSizeChanger: true }}
+                      size="small"
+                      scroll={{ x: 1200 }}
+                      columns={[
+                        {
+                          title: "设备名称",
+                          dataIndex: "device",
+                          key: "device",
+                          width: "12%",
+                          render: (
+                            device: string,
+                            record: import("@/services/network").NodeNetwork,
+                          ) => (
+                            <Space direction="vertical" size={0}>
+                              <Tag
+                                color={record.is_physical ? "green" : "blue"}
+                              >
+                                {device}
+                              </Tag>
+                              <span style={{ fontSize: "11px", color: "#666" }}>
+                                {record.is_physical ? "物理网卡" : "虚拟网卡"}
+                              </span>
+                            </Space>
+                          ),
+                        },
+                        {
+                          title: "类型",
+                          dataIndex: "type",
+                          key: "type",
+                          width: "10%",
+                          render: (type: string) => (
+                            <Tag color="purple">{type}</Tag>
+                          ),
+                        },
+                        {
+                          title: "MAC地址",
+                          dataIndex: "mac",
+                          key: "mac",
+                          width: "15%",
+                          render: (mac: string) => (
+                            <code style={{ fontSize: "11px" }}>{mac}</code>
+                          ),
+                        },
+                        {
+                          title: "状态",
+                          dataIndex: "state",
+                          key: "state",
+                          width: "12%",
+                          render: (state: string) => {
+                            const isConnected = state.includes("连接");
+                            return (
+                              <Tag color={isConnected ? "success" : "default"}>
+                                {state}
+                              </Tag>
+                            );
+                          },
+                        },
+                        {
+                          title: "IPv4地址",
+                          dataIndex: "ip4_addresses",
+                          key: "ip4_addresses",
+                          width: "15%",
+                          render: (
+                            addresses: Array<{ index: number; value: string }>,
+                          ) => (
+                            <div>
+                              {addresses && addresses.length > 0 ? (
+                                addresses.map((addr, idx) => (
+                                  <div key={idx} style={{ fontSize: "11px" }}>
+                                    {addr.value}
+                                  </div>
+                                ))
+                              ) : (
+                                <span style={{ color: "#999" }}>--</span>
+                              )}
+                            </div>
+                          ),
+                        },
+                        {
+                          title: "IPv4网关",
+                          dataIndex: "ip4_gateway",
+                          key: "ip4_gateway",
+                          width: "12%",
+                          render: (gateway: string) => (
+                            <span style={{ fontSize: "11px" }}>
+                              {gateway === "--" ? (
+                                <span style={{ color: "#999" }}>--</span>
+                              ) : (
+                                gateway
+                              )}
+                            </span>
+                          ),
+                        },
+                        {
+                          title: "MTU",
+                          dataIndex: "mtu",
+                          key: "mtu",
+                          width: "8%",
+                          render: (mtu: number) => (
+                            <Tag color="cyan">{mtu}</Tag>
+                          ),
+                        },
+                        {
+                          title: "连接",
+                          dataIndex: "connection",
+                          key: "connection",
+                          width: "12%",
+                          ellipsis: true,
+                          render: (connection: string) => (
+                            <span style={{ fontSize: "11px" }}>
+                              {connection}
+                            </span>
+                          ),
+                        },
+                      ]}
+                      expandable={{
+                        expandedRowRender: (record) => (
+                          <div style={{ margin: 0, padding: "8px 0" }}>
+                            <Row gutter={16}>
+                              <Col span={12}>
+                                <Descriptions
+                                  title="IPv4 详细信息"
+                                  bordered
+                                  size="small"
+                                  column={1}
+                                >
+                                  <Descriptions.Item label="DNS服务器">
+                                    {record.ip4_dns && record.ip4_dns.length > 0
+                                      ? record.ip4_dns.map(
+                                          (
+                                            dns: {
+                                              index: number;
+                                              value: string;
+                                            },
+                                            idx: number,
+                                          ) => (
+                                            <div
+                                              key={idx}
+                                              style={{ fontSize: "11px" }}
+                                            >
+                                              {dns.value}
+                                            </div>
+                                          ),
+                                        )
+                                      : "--"}
+                                  </Descriptions.Item>
+                                  <Descriptions.Item label="路由信息">
+                                    {record.ip4_routes &&
+                                    record.ip4_routes.length > 0
+                                      ? record.ip4_routes.map(
+                                          (
+                                            route: {
+                                              dst: string;
+                                              nh: string;
+                                              mt: number;
+                                            },
+                                            idx: number,
+                                          ) => (
+                                            <div
+                                              key={idx}
+                                              style={{
+                                                fontSize: "10px",
+                                                marginBottom: "2px",
+                                              }}
+                                            >
+                                              目标: {route.dst} → 网关:{" "}
+                                              {route.nh} (优先级: {route.mt})
+                                            </div>
+                                          ),
+                                        )
+                                      : "--"}
+                                  </Descriptions.Item>
+                                </Descriptions>
+                              </Col>
+                              <Col span={12}>
+                                <Descriptions
+                                  title="IPv6 详细信息"
+                                  bordered
+                                  size="small"
+                                  column={1}
+                                >
+                                  <Descriptions.Item label="IPv6地址">
+                                    {record.ip6_addresses &&
+                                    record.ip6_addresses.length > 0
+                                      ? record.ip6_addresses.map(
+                                          (
+                                            addr: {
+                                              index: number;
+                                              value: string;
+                                            },
+                                            idx: number,
+                                          ) => (
+                                            <div
+                                              key={idx}
+                                              style={{ fontSize: "11px" }}
+                                            >
+                                              {addr.value}
+                                            </div>
+                                          ),
+                                        )
+                                      : "--"}
+                                  </Descriptions.Item>
+                                  <Descriptions.Item label="IPv6网关">
+                                    {record.ip6_gateway === "--"
+                                      ? "--"
+                                      : record.ip6_gateway}
+                                  </Descriptions.Item>
+                                  <Descriptions.Item label="IPv6 DNS">
+                                    {record.ip6_dns && record.ip6_dns.length > 0
+                                      ? record.ip6_dns.map(
+                                          (
+                                            dns: {
+                                              index: number;
+                                              value: string;
+                                            },
+                                            idx: number,
+                                          ) => (
+                                            <div
+                                              key={idx}
+                                              style={{ fontSize: "11px" }}
+                                            >
+                                              {dns.value}
+                                            </div>
+                                          ),
+                                        )
+                                      : "--"}
+                                  </Descriptions.Item>
+                                </Descriptions>
+                              </Col>
+                            </Row>
+                          </div>
+                        ),
+                        rowExpandable: () => true,
+                      }}
+                    />
+                  ) : (
+                    <Empty description="暂无网络设备信息" />
+                  )}
+                </Card>
+              </Col>
             </Row>
           </div>
         ),
@@ -2484,40 +3078,91 @@ const ClusterManagement: React.FC = () => {
               if (sidebarSelectedHost) {
                 switch (key) {
                   case "basic":
-                    // 切换到基本信息Tab时，每次都重新加载基本信息（真正的按需加载）
-                    if (!nodeDetailLoading) {
+                    // 切换到基本信息Tab时，如果数据不存在或正在加载则加载
+                    if (!nodeDetailData && !nodeDetailLoading) {
+                      console.log(`📊 [Basic Loading] 加载基本信息`);
                       fetchNodeDetailData(sidebarSelectedHost.name);
-                    } else {
+                    } else if (nodeDetailLoading) {
                       console.log(
                         `⏳ [Loading] 基本信息正在加载中，跳过重复请求`,
+                      );
+                    } else {
+                      console.log(
+                        `✅ [Cache Hit] 基本信息已存在，无需重新加载`,
                       );
                     }
                     break;
 
                   case "hardware":
-                    // 每次都重新加载PCI设备数据
-                    if (!nodePCILoading) {
-                      console.log(`📡 [PCI Loading] 重新加载PCI设备信息`);
+                    // 确保基本信息存在（硬件页面也需要显示基本统计）
+                    if (!nodeDetailData && !nodeDetailLoading) {
+                      fetchNodeDetailData(sidebarSelectedHost.name);
+                    }
+
+                    // 智能加载PCI设备数据
+                    if (!nodePCIData && !nodePCILoading) {
+                      console.log(`📡 [PCI Loading] 加载PCI设备信息`);
                       fetchNodePCIData(sidebarSelectedHost.name);
-                    } else {
+                    } else if (nodePCILoading) {
                       console.log(
                         `⏳ [PCI Loading] PCI设备信息正在加载中，跳过重复请求`,
                       );
-                    }
-
-                    // 每次都重新加载磁盘设备数据
-                    if (!nodeDisksLoading) {
-                      fetchNodeDisksData(sidebarSelectedHost.name);
                     } else {
                       console.log(
+                        `✅ [Cache Hit] PCI设备信息已存在，无需重新加载`,
+                      );
+                    }
+
+                    // 智能加载磁盘设备数据
+                    if (!nodeDisksData && !nodeDisksLoading) {
+                      console.log(`💾 [Disks Loading] 加载磁盘设备信息`);
+                      fetchNodeDisksData(sidebarSelectedHost.name);
+                    } else if (nodeDisksLoading) {
+                      console.log(
                         `⏳ [Disks Loading] 磁盘设备信息正在加载中，跳过重复请求`,
+                      );
+                    } else {
+                      console.log(
+                        `✅ [Cache Hit] 磁盘设备信息已存在，无需重新加载`,
+                      );
+                    }
+
+                    // 智能加载USB设备数据
+                    if (!nodeUsbData && !nodeUsbLoading) {
+                      console.log(`🔌 [USB Loading] 加载USB设备信息`);
+                      fetchNodeUsbData(sidebarSelectedHost.name);
+                    } else if (nodeUsbLoading) {
+                      console.log(
+                        `⏳ [USB Loading] USB设备信息正在加载中，跳过重复请求`,
+                      );
+                    } else {
+                      console.log(
+                        `✅ [Cache Hit] USB设备信息已存在，无需重新加载`,
+                      );
+                    }
+
+                    // 智能加载网络设备数据
+                    if (!nodeNetworkData && !nodeNetworkLoading) {
+                      console.log(`🌐 [Network Loading] 加载网络设备信息`);
+                      fetchNodeNetworkData(sidebarSelectedHost.name);
+                    } else if (nodeNetworkLoading) {
+                      console.log(
+                        `⏳ [Network Loading] 网络设备信息正在加载中，跳过重复请求`,
+                      );
+                    } else {
+                      console.log(
+                        `✅ [Cache Hit] 网络设备信息已存在，无需重新加载`,
                       );
                     }
                     break;
 
                   case "performance":
-                    // 性能监控Tab的数据由图表组件自己管理，无需在这里加载
-
+                    // 确保基本信息存在（性能页面需要显示基本统计）
+                    if (!nodeDetailData && !nodeDetailLoading) {
+                      console.log(`📊 [Performance] 加载基本信息用于性能页面`);
+                      fetchNodeDetailData(sidebarSelectedHost.name);
+                    }
+                    // 性能监控Tab的图表数据由图表组件自己管理，无需在这里加载
                     break;
 
                   default:
@@ -2658,845 +3303,860 @@ const ClusterManagement: React.FC = () => {
     return null; // 这种情况已经在上面的条件中处理了
   }
   return (
-    <div style={{ width: "100%" }}>
+    <Spin spinning={false} tip="加载集群数据中...">
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "24px",
+          width: "100%",
+          minHeight: "400px",
         }}
       >
-        <h3
+        <div
           style={{
-            margin: 0,
             display: "flex",
+            justifyContent: "space-between",
             alignItems: "center",
-            gap: "8px",
+            marginBottom: "24px",
           }}
         >
-          <ClusterOutlined />
-          <span>集群管理</span>
-        </h3>
-        <Space>
-          <Button
-            type="primary"
-            danger
-            icon={<ExclamationCircleOutlined />}
-            onClick={handleDissolveCluster}
+          <h3
+            style={{
+              margin: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
           >
-            解散集群
-          </Button>
-        </Space>
-      </div>
+            <ClusterOutlined />
+            <span>集群管理</span>
+          </h3>
+          <Space>
+            <Button
+              type="primary"
+              danger
+              icon={<ExclamationCircleOutlined />}
+              onClick={handleDissolveCluster}
+            >
+              解散集群
+            </Button>
+          </Space>
+        </div>
 
-      <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        items={[
-          {
-            key: "overview",
-            label: "集群概览",
-            children: (
-              <div className="cluster-overview">
-                {clusterSummaryLoading ? (
-                  <div style={{ textAlign: "center", padding: "50px" }}>
-                    <SyncOutlined spin style={{ fontSize: "24px" }} />
-                    <div style={{ marginTop: "16px" }}>
-                      加载集群概览数据中...
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={[
+            {
+              key: "overview",
+              label: "集群概览",
+              children: (
+                <div className="cluster-overview">
+                  {clusterSummaryLoading ? (
+                    <div style={{ textAlign: "center", padding: "50px" }}>
+                      <SyncOutlined spin style={{ fontSize: "24px" }} />
+                      <div style={{ marginTop: "16px" }}>
+                        加载集群概览数据中...
+                      </div>
                     </div>
-                  </div>
-                ) : clusterSummaryError ? (
-                  <div style={{ textAlign: "center", padding: "50px" }}>
-                    <Alert
-                      message="获取集群概览数据失败"
-                      description={clusterSummaryError}
-                      type="error"
-                      showIcon
-                      action={
-                        <Button
-                          type="primary"
-                          onClick={fetchClusterSummaryData}
-                          icon={<SyncOutlined />}
-                        >
-                          重新加载
-                        </Button>
-                      }
-                    />
-                  </div>
-                ) : clusterSummaryData ? (
-                  <>
-                    {/* 集群基本信息 */}
-                    <Card
-                      title="集群基本信息"
-                      style={{ marginBottom: "16px" }}
-                      extra={
-                        <Button
-                          icon={<SyncOutlined />}
-                          onClick={fetchClusterSummaryData}
-                          size="small"
-                        >
-                          刷新
-                        </Button>
-                      }
-                    >
-                      <Row gutter={[16, 16]}>
-                        <Col xs={24} md={12}>
-                          <Descriptions column={1} bordered size="small">
-                            <Descriptions.Item label="集群名称">
-                              {clusterSummaryData.cluster_name}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="技术栈">
-                              {clusterSummaryData.stack}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="DC节点">
-                              {clusterSummaryData.dc_node}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="DC版本">
-                              {clusterSummaryData.dc_version}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="仲裁状态">
-                              {clusterSummaryData.dc_quorum}
-                            </Descriptions.Item>
-                          </Descriptions>
-                        </Col>
-                        <Col xs={24} md={12}>
-                          <Descriptions column={1} bordered size="small">
-                            <Descriptions.Item label="最后更新">
-                              {lastUpdatedValid
-                                ? lastUpdatedTime
-                                : clusterSummaryData.last_updated || "未知"}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="最后变更时间">
-                              {lastChangeValid
-                                ? lastChangeTime
-                                : clusterSummaryData.last_change_time || "未知"}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="变更用户">
-                              {clusterSummaryData.last_change_user}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="变更方式">
-                              {clusterSummaryData.last_change_via}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="变更节点">
-                              {clusterSummaryData.last_change_node}
-                            </Descriptions.Item>
-                          </Descriptions>
-                        </Col>
-                      </Row>
-                    </Card>
-
-                    {/* 统计信息 */}
-                    <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
-                      <Col xs={24} sm={8} md={6}>
-                        <Card size="small">
-                          <Statistic
-                            title="配置节点数"
-                            value={clusterSummaryData.nodes_configured}
-                            prefix={<ClusterOutlined />}
-                            valueStyle={{ color: "#1890ff" }}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={8} md={6}>
-                        <Card size="small">
-                          <Statistic
-                            title="在线节点数"
-                            value={
-                              clusterSummaryData.nodes.filter(
-                                (node) => node.status === "online",
-                              ).length
-                            }
-                            prefix={<CheckCircleOutlined />}
-                            valueStyle={{ color: "#52c41a" }}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={8} md={6}>
-                        <Card size="small">
-                          <Statistic
-                            title="配置资源数"
-                            value={clusterSummaryData.resources_configured}
-                            prefix={<DatabaseOutlined />}
-                            valueStyle={{ color: "#722ed1" }}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={8} md={6}>
-                        <Card size="small">
-                          <Statistic
-                            title="运行资源数"
-                            value={
-                              clusterSummaryData.resources.filter(
-                                (resource) => resource.status === "started",
-                              ).length
-                            }
-                            prefix={<ThunderboltOutlined />}
-                            valueStyle={{ color: "#52c41a" }}
-                          />
-                        </Card>
-                      </Col>
-                    </Row>
-
-                    {/* 节点列表 */}
-                    <Card title="集群节点" style={{ marginBottom: "16px" }}>
-                      <Table
-                        dataSource={clusterSummaryData.nodes}
-                        rowKey="name"
-                        pagination={false}
-                        size="small"
-                        columns={[
-                          {
-                            title: "节点名称",
-                            dataIndex: "name",
-                            key: "name",
-                            render: (name: string) => (
-                              <Space>
-                                <HddOutlined />
-                                <strong>{name}</strong>
-                              </Space>
-                            ),
-                          },
-                          {
-                            title: "状态",
-                            dataIndex: "status",
-                            key: "status",
-                            render: (status: string) => getStatusTag(status),
-                          },
-                        ]}
-                      />
-                    </Card>
-
-                    {/* 资源列表 */}
-                    <Card title="集群资源">
-                      <Table
-                        dataSource={clusterSummaryData.resources}
-                        rowKey="name"
-                        pagination={false}
-                        size="small"
-                        columns={[
-                          {
-                            title: "资源名称",
-                            dataIndex: "name",
-                            key: "name",
-                            render: (name: string) => (
-                              <Space>
-                                <ApiOutlined />
-                                <strong>{name}</strong>
-                              </Space>
-                            ),
-                          },
-                          {
-                            title: "类型",
-                            dataIndex: "type",
-                            key: "type",
-                            render: (type: string) => (
-                              <Tag color="blue">{type}</Tag>
-                            ),
-                          },
-                          {
-                            title: "状态",
-                            dataIndex: "status",
-                            key: "status",
-                            render: (status: string) => getStatusTag(status),
-                          },
-                          {
-                            title: "运行节点",
-                            dataIndex: "node",
-                            key: "node",
-                            render: (node: string) => (
-                              <Tag color="geekblue">{node}</Tag>
-                            ),
-                          },
-                        ]}
-                      />
-                    </Card>
-
-                    {/* 守护进程状态 */}
-                    <Card title="守护进程状态" style={{ marginTop: "16px" }}>
-                      <Row gutter={[16, 16]}>
-                        {Object.entries(clusterSummaryData.daemons).map(
-                          ([daemon, status]) => (
-                            <Col xs={24} sm={12} md={8} lg={6} key={daemon}>
-                              <Card size="small">
-                                <Space
-                                  direction="vertical"
-                                  style={{ width: "100%" }}
-                                >
-                                  <Text strong>{daemon}</Text>
-                                  {getStatusTag(status)}
-                                </Space>
-                              </Card>
-                            </Col>
-                          ),
-                        )}
-                      </Row>
-                    </Card>
-                  </>
-                ) : (
-                  <div style={{ textAlign: "center", padding: "50px" }}>
-                    <Alert
-                      message="暂无集群概览数据"
-                      description="请检查集群是否正常运行"
-                      type="info"
-                      showIcon
-                    />
-                  </div>
-                )}
-              </div>
-            ),
-          },
-          {
-            key: "list",
-            label: "物理机列表",
-            children: (
-              <div>
-                {realClusterLoading ? (
-                  <div style={{ textAlign: "center", padding: "50px" }}>
-                    <SyncOutlined spin style={{ fontSize: "24px" }} />
-                    <div style={{ marginTop: "16px" }}>加载物理机数据中...</div>
-                  </div>
-                ) : realClusterError ? (
-                  <div style={{ textAlign: "center", padding: "50px" }}>
-                    <Alert
-                      message="获取物理机数据失败"
-                      description={realClusterError}
-                      type="error"
-                      showIcon
-                      action={
-                        <Button
-                          type="primary"
-                          onClick={fetchRealClusterData}
-                          icon={<SyncOutlined />}
-                        >
-                          重新加载
-                        </Button>
-                      }
-                    />
-                  </div>
-                ) : realClusterData && realClusterData.nodes.length > 0 ? (
-                  <div>
-                    <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
-                      <Col xs={24} sm={8}>
-                        <Card size="small">
-                          <Statistic
-                            title="集群名称"
-                            value={realClusterData.cluster_name}
-                            prefix={<ClusterOutlined />}
-                            valueStyle={{ color: "#1890ff" }}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={8}>
-                        <Card size="small">
-                          <Statistic
-                            title="物理机总数"
-                            value={realClusterData.nodes.length}
-                            prefix={<HddOutlined />}
-                            valueStyle={{ color: "#1890ff" }}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={8}>
-                        <Card size="small">
-                          <Statistic
-                            title="在线节点"
-                            value={
-                              realClusterData.nodes.filter(
-                                (node) => node.status === "online",
-                              ).length
-                            }
-                            prefix={<CheckCircleOutlined />}
-                            valueStyle={{ color: "#52c41a" }}
-                          />
-                        </Card>
-                      </Col>
-                    </Row>
-
-                    <Card
-                      title={
-                        <Space>
-                          <HddOutlined />
-                          <span>物理机节点列表</span>
-                        </Space>
-                      }
-                      extra={
-                        <Space>
+                  ) : clusterSummaryError ? (
+                    <div style={{ textAlign: "center", padding: "50px" }}>
+                      <Alert
+                        message="获取集群概览数据失败"
+                        description={clusterSummaryError}
+                        type="error"
+                        showIcon
+                        action={
                           <Button
-                            size="small"
                             type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={() => setAddNodeModalVisible(true)}
-                          >
-                            添加节点
-                          </Button>
-                          <Button
-                            size="small"
+                            onClick={fetchClusterSummaryData}
                             icon={<SyncOutlined />}
-                            onClick={fetchRealClusterData}
+                          >
+                            重新加载
+                          </Button>
+                        }
+                      />
+                    </div>
+                  ) : clusterSummaryData ? (
+                    <>
+                      {/* 集群基本信息 */}
+                      <Card
+                        title="集群基本信息"
+                        style={{ marginBottom: "16px" }}
+                        extra={
+                          <Button
+                            icon={<SyncOutlined />}
+                            onClick={fetchClusterSummaryData}
+                            size="small"
                           >
                             刷新
                           </Button>
-                        </Space>
-                      }
-                    >
-                      <Table
-                        columns={realClusterNodesColumns}
-                        dataSource={realClusterData.nodes}
-                        rowKey="node_id"
-                        loading={realClusterLoading}
-                        pagination={{
-                          pageSize: 10,
-                          showSizeChanger: true,
-                          showQuickJumper: true,
-                          showTotal: (total, range) =>
-                            `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
-                        }}
-                        scroll={{ x: 800 }}
+                        }
+                      >
+                        <Row gutter={[16, 16]}>
+                          <Col xs={24} md={12}>
+                            <Descriptions column={1} bordered size="small">
+                              <Descriptions.Item label="集群名称">
+                                {clusterSummaryData.cluster_name}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="技术栈">
+                                {clusterSummaryData.stack}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="DC节点">
+                                {clusterSummaryData.dc_node}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="DC版本">
+                                {clusterSummaryData.dc_version}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="仲裁状态">
+                                {clusterSummaryData.dc_quorum}
+                              </Descriptions.Item>
+                            </Descriptions>
+                          </Col>
+                          <Col xs={24} md={12}>
+                            <Descriptions column={1} bordered size="small">
+                              <Descriptions.Item label="最后更新">
+                                {lastUpdatedValid
+                                  ? lastUpdatedTime
+                                  : clusterSummaryData.last_updated || "未知"}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="最后变更时间">
+                                {lastChangeValid
+                                  ? lastChangeTime
+                                  : clusterSummaryData.last_change_time ||
+                                    "未知"}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="变更用户">
+                                {clusterSummaryData.last_change_user}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="变更方式">
+                                {clusterSummaryData.last_change_via}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="变更节点">
+                                {clusterSummaryData.last_change_node}
+                              </Descriptions.Item>
+                            </Descriptions>
+                          </Col>
+                        </Row>
+                      </Card>
+
+                      {/* 统计信息 */}
+                      <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
+                        <Col xs={24} sm={8} md={6}>
+                          <Card size="small">
+                            <Statistic
+                              title="配置节点数"
+                              value={clusterSummaryData.nodes_configured}
+                              prefix={<ClusterOutlined />}
+                              valueStyle={{ color: "#1890ff" }}
+                            />
+                          </Card>
+                        </Col>
+                        <Col xs={24} sm={8} md={6}>
+                          <Card size="small">
+                            <Statistic
+                              title="在线节点数"
+                              value={
+                                clusterSummaryData.nodes.filter(
+                                  (node) => node.status === "online",
+                                ).length
+                              }
+                              prefix={<CheckCircleOutlined />}
+                              valueStyle={{ color: "#52c41a" }}
+                            />
+                          </Card>
+                        </Col>
+                        <Col xs={24} sm={8} md={6}>
+                          <Card size="small">
+                            <Statistic
+                              title="配置资源数"
+                              value={clusterSummaryData.resources_configured}
+                              prefix={<DatabaseOutlined />}
+                              valueStyle={{ color: "#722ed1" }}
+                            />
+                          </Card>
+                        </Col>
+                        <Col xs={24} sm={8} md={6}>
+                          <Card size="small">
+                            <Statistic
+                              title="运行资源数"
+                              value={
+                                clusterSummaryData.resources.filter(
+                                  (resource) => resource.status === "started",
+                                ).length
+                              }
+                              prefix={<ThunderboltOutlined />}
+                              valueStyle={{ color: "#52c41a" }}
+                            />
+                          </Card>
+                        </Col>
+                      </Row>
+
+                      {/* 节点列表 */}
+                      <Card title="集群节点" style={{ marginBottom: "16px" }}>
+                        <Table
+                          dataSource={clusterSummaryData.nodes}
+                          rowKey="name"
+                          pagination={false}
+                          size="small"
+                          columns={[
+                            {
+                              title: "节点名称",
+                              dataIndex: "name",
+                              key: "name",
+                              render: (name: string) => (
+                                <Space>
+                                  <HddOutlined />
+                                  <strong>{name}</strong>
+                                </Space>
+                              ),
+                            },
+                            {
+                              title: "状态",
+                              dataIndex: "status",
+                              key: "status",
+                              render: (status: string) => getStatusTag(status),
+                            },
+                          ]}
+                        />
+                      </Card>
+
+                      {/* 资源列表 */}
+                      <Card title="集群资源">
+                        <Table
+                          dataSource={clusterSummaryData.resources}
+                          rowKey="name"
+                          pagination={false}
+                          size="small"
+                          columns={[
+                            {
+                              title: "资源名称",
+                              dataIndex: "name",
+                              key: "name",
+                              render: (name: string) => (
+                                <Space>
+                                  <ApiOutlined />
+                                  <strong>{name}</strong>
+                                </Space>
+                              ),
+                            },
+                            {
+                              title: "类型",
+                              dataIndex: "type",
+                              key: "type",
+                              render: (type: string) => (
+                                <Tag color="blue">{type}</Tag>
+                              ),
+                            },
+                            {
+                              title: "状态",
+                              dataIndex: "status",
+                              key: "status",
+                              render: (status: string) => getStatusTag(status),
+                            },
+                            {
+                              title: "运行节点",
+                              dataIndex: "node",
+                              key: "node",
+                              render: (node: string) => (
+                                <Tag color="geekblue">{node}</Tag>
+                              ),
+                            },
+                          ]}
+                        />
+                      </Card>
+
+                      {/* 守护进程状态 */}
+                      <Card title="守护进程状态" style={{ marginTop: "16px" }}>
+                        <Row gutter={[16, 16]}>
+                          {Object.entries(clusterSummaryData.daemons).map(
+                            ([daemon, status]) => (
+                              <Col xs={24} sm={12} md={8} lg={6} key={daemon}>
+                                <Card size="small">
+                                  <Space
+                                    direction="vertical"
+                                    style={{ width: "100%" }}
+                                  >
+                                    <Text strong>{daemon}</Text>
+                                    {getStatusTag(status)}
+                                  </Space>
+                                </Card>
+                              </Col>
+                            ),
+                          )}
+                        </Row>
+                      </Card>
+                    </>
+                  ) : (
+                    <div style={{ textAlign: "center", padding: "50px" }}>
+                      <Alert
+                        message="暂无集群概览数据"
+                        description="请检查集群是否正常运行"
+                        type="info"
+                        showIcon
                       />
-                    </Card>
-                  </div>
-                ) : (
-                  <div style={{ textAlign: "center", padding: "50px" }}>
-                    <Alert
-                      message="暂无物理机数据"
-                      description="点击下方按钮获取最新的物理机节点信息"
-                      type="info"
-                      showIcon
-                      action={
-                        <Button
-                          type="primary"
-                          onClick={fetchRealClusterData}
-                          icon={<SyncOutlined />}
-                        >
-                          获取数据
-                        </Button>
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-            ),
-          },
-          {
-            key: "resources",
-            label: "集群资源",
-            children: (
-              <div>
-                {clusterResourcesLoading ? (
-                  <div style={{ textAlign: "center", padding: "50px" }}>
-                    <SyncOutlined spin style={{ fontSize: "24px" }} />
-                    <div style={{ marginTop: "16px" }}>
-                      加载集群资源数据中...
                     </div>
-                  </div>
-                ) : clusterResourcesError ? (
-                  <div style={{ textAlign: "center", padding: "50px" }}>
-                    <Alert
-                      message="获取集群资源数据失败"
-                      description={clusterResourcesError}
-                      type="error"
-                      showIcon
-                      action={
-                        <Button
-                          type="primary"
-                          onClick={fetchClusterResourcesData}
-                          icon={<SyncOutlined />}
-                        >
-                          重新加载
-                        </Button>
-                      }
-                    />
-                  </div>
-                ) : clusterResourcesData ? (
-                  <>
-                    {/* 资源统计概览 */}
-                    <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
-                      <Col xs={24} sm={6}>
-                        <Card size="small">
-                          <Statistic
-                            title="资源组数量"
-                            value={clusterResourcesData.group.length}
-                            prefix={<DatabaseOutlined />}
-                            valueStyle={{ color: "#722ed1" }}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={6}>
-                        <Card size="small">
-                          <Statistic
-                            title="独立资源数量"
-                            value={clusterResourcesData.resources.length}
-                            prefix={<ApiOutlined />}
-                            valueStyle={{ color: "#1890ff" }}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={6}>
-                        <Card size="small">
-                          <Statistic
-                            title="资源总数"
-                            value={
-                              clusterResourcesData.group.reduce(
+                  )}
+                </div>
+              ),
+            },
+            {
+              key: "list",
+              label: "物理机列表",
+              children: (
+                <div>
+                  {realClusterLoading ? (
+                    <div style={{ textAlign: "center", padding: "50px" }}>
+                      <SyncOutlined spin style={{ fontSize: "24px" }} />
+                      <div style={{ marginTop: "16px" }}>
+                        加载物理机数据中...
+                      </div>
+                    </div>
+                  ) : realClusterError ? (
+                    <div style={{ textAlign: "center", padding: "50px" }}>
+                      <Alert
+                        message="获取物理机数据失败"
+                        description={realClusterError}
+                        type="error"
+                        showIcon
+                        action={
+                          <Button
+                            type="primary"
+                            onClick={fetchRealClusterData}
+                            icon={<SyncOutlined />}
+                          >
+                            重新加载
+                          </Button>
+                        }
+                      />
+                    </div>
+                  ) : realClusterData && realClusterData.nodes.length > 0 ? (
+                    <div>
+                      <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
+                        <Col xs={24} sm={8}>
+                          <Card size="small">
+                            <Statistic
+                              title="集群名称"
+                              value={realClusterData.cluster_name}
+                              prefix={<ClusterOutlined />}
+                              valueStyle={{ color: "#1890ff" }}
+                            />
+                          </Card>
+                        </Col>
+                        <Col xs={24} sm={8}>
+                          <Card size="small">
+                            <Statistic
+                              title="物理机总数"
+                              value={realClusterData.nodes.length}
+                              prefix={<HddOutlined />}
+                              valueStyle={{ color: "#1890ff" }}
+                            />
+                          </Card>
+                        </Col>
+                        <Col xs={24} sm={8}>
+                          <Card size="small">
+                            <Statistic
+                              title="在线节点"
+                              value={
+                                realClusterData.nodes.filter(
+                                  (node) => node.status === "online",
+                                ).length
+                              }
+                              prefix={<CheckCircleOutlined />}
+                              valueStyle={{ color: "#52c41a" }}
+                            />
+                          </Card>
+                        </Col>
+                      </Row>
+
+                      <Card
+                        title={
+                          <Space>
+                            <HddOutlined />
+                            <span>物理机节点列表</span>
+                          </Space>
+                        }
+                        extra={
+                          <Space>
+                            <Button
+                              size="small"
+                              type="primary"
+                              icon={<PlusOutlined />}
+                              onClick={() => setAddNodeModalVisible(true)}
+                            >
+                              添加节点
+                            </Button>
+                            <Button
+                              size="small"
+                              icon={<SyncOutlined />}
+                              onClick={fetchRealClusterData}
+                            >
+                              刷新
+                            </Button>
+                          </Space>
+                        }
+                      >
+                        <Table
+                          columns={realClusterNodesColumns}
+                          dataSource={realClusterData.nodes}
+                          rowKey="node_id"
+                          loading={realClusterLoading}
+                          pagination={{
+                            pageSize: 10,
+                            showSizeChanger: true,
+                            showQuickJumper: true,
+                            showTotal: (total, range) =>
+                              `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
+                          }}
+                          scroll={{ x: 800 }}
+                        />
+                      </Card>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: "center", padding: "50px" }}>
+                      <Alert
+                        message="暂无物理机数据"
+                        description="点击下方按钮获取最新的物理机节点信息"
+                        type="info"
+                        showIcon
+                        action={
+                          <Button
+                            type="primary"
+                            onClick={fetchRealClusterData}
+                            icon={<SyncOutlined />}
+                          >
+                            获取数据
+                          </Button>
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              ),
+            },
+            {
+              key: "resources",
+              label: "集群资源",
+              children: (
+                <div>
+                  {clusterResourcesLoading ? (
+                    <div style={{ textAlign: "center", padding: "50px" }}>
+                      <SyncOutlined spin style={{ fontSize: "24px" }} />
+                      <div style={{ marginTop: "16px" }}>
+                        加载集群资源数据中...
+                      </div>
+                    </div>
+                  ) : clusterResourcesError ? (
+                    <div style={{ textAlign: "center", padding: "50px" }}>
+                      <Alert
+                        message="获取集群资源数据失败"
+                        description={clusterResourcesError}
+                        type="error"
+                        showIcon
+                        action={
+                          <Button
+                            type="primary"
+                            onClick={fetchClusterResourcesData}
+                            icon={<SyncOutlined />}
+                          >
+                            重新加载
+                          </Button>
+                        }
+                      />
+                    </div>
+                  ) : clusterResourcesData ? (
+                    <>
+                      {/* 资源统计概览 */}
+                      <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
+                        <Col xs={24} sm={6}>
+                          <Card size="small">
+                            <Statistic
+                              title="资源组数量"
+                              value={clusterResourcesData.group.length}
+                              prefix={<DatabaseOutlined />}
+                              valueStyle={{ color: "#722ed1" }}
+                            />
+                          </Card>
+                        </Col>
+                        <Col xs={24} sm={6}>
+                          <Card size="small">
+                            <Statistic
+                              title="独立资源数量"
+                              value={clusterResourcesData.resources.length}
+                              prefix={<ApiOutlined />}
+                              valueStyle={{ color: "#1890ff" }}
+                            />
+                          </Card>
+                        </Col>
+                        <Col xs={24} sm={6}>
+                          <Card size="small">
+                            <Statistic
+                              title="资源总数"
+                              value={
+                                clusterResourcesData.group.reduce(
+                                  (acc, group) => acc + group.resources.length,
+                                  0,
+                                ) + clusterResourcesData.resources.length
+                              }
+                              prefix={<ClusterOutlined />}
+                              valueStyle={{ color: "#52c41a" }}
+                            />
+                          </Card>
+                        </Col>
+                        <Col xs={24} sm={6}>
+                          <Card size="small">
+                            <Statistic
+                              title="监控资源数"
+                              value={
+                                clusterResourcesData.group.reduce(
+                                  (acc, group) =>
+                                    acc +
+                                    group.resources.filter((r) =>
+                                      r.operations.some(
+                                        (op) => op.name === "monitor",
+                                      ),
+                                    ).length,
+                                  0,
+                                ) +
+                                clusterResourcesData.resources.filter((r) =>
+                                  r.operations.some(
+                                    (op) => op.name === "monitor",
+                                  ),
+                                ).length
+                              }
+                              prefix={<CheckCircleOutlined />}
+                              valueStyle={{ color: "#fa8c16" }}
+                            />
+                          </Card>
+                        </Col>
+                      </Row>
+
+                      {/* 统一资源列表 - 可展开的树形表格 */}
+                      <Card
+                        title={
+                          <Space>
+                            <ClusterOutlined />
+                            <span>集群资源列表</span>
+                            <Tag color="processing">
+                              {clusterResourcesData.group.reduce(
                                 (acc, group) => acc + group.resources.length,
                                 0,
-                              ) + clusterResourcesData.resources.length
-                            }
-                            prefix={<ClusterOutlined />}
-                            valueStyle={{ color: "#52c41a" }}
-                          />
-                        </Card>
-                      </Col>
-                      <Col xs={24} sm={6}>
-                        <Card size="small">
-                          <Statistic
-                            title="监控资源数"
-                            value={
-                              clusterResourcesData.group.reduce(
-                                (acc, group) =>
-                                  acc +
-                                  group.resources.filter((r) =>
-                                    r.operations.some(
-                                      (op) => op.name === "monitor",
-                                    ),
-                                  ).length,
-                                0,
-                              ) +
-                              clusterResourcesData.resources.filter((r) =>
-                                r.operations.some(
-                                  (op) => op.name === "monitor",
+                              ) + clusterResourcesData.resources.length}{" "}
+                              个资源
+                            </Tag>
+                          </Space>
+                        }
+                        extra={
+                          <Button
+                            size="small"
+                            icon={<SyncOutlined />}
+                            onClick={fetchClusterResourcesData}
+                          >
+                            刷新
+                          </Button>
+                        }
+                      >
+                        <Table
+                          dataSource={[
+                            // 资源组作为父节点
+                            ...clusterResourcesData.group.map(
+                              (group, groupIndex) => ({
+                                key: `group-${groupIndex}`,
+                                id: group.group,
+                                type: "资源组",
+                                class_: "",
+                                provider: "",
+                                attributes: {},
+                                operations: [],
+                                isGroup: true,
+                                resourceCount: group.resources.length,
+                                children: group.resources.map(
+                                  (resource, resourceIndex) => ({
+                                    key: `group-${groupIndex}-resource-${resourceIndex}`,
+                                    ...resource,
+                                    isGroup: false,
+                                    groupName: group.group,
+                                  }),
                                 ),
-                              ).length
-                            }
-                            prefix={<CheckCircleOutlined />}
-                            valueStyle={{ color: "#fa8c16" }}
-                          />
-                        </Card>
-                      </Col>
-                    </Row>
-
-                    {/* 统一资源列表 - 可展开的树形表格 */}
-                    <Card
-                      title={
-                        <Space>
-                          <ClusterOutlined />
-                          <span>集群资源列表</span>
-                          <Tag color="processing">
-                            {clusterResourcesData.group.reduce(
-                              (acc, group) => acc + group.resources.length,
-                              0,
-                            ) + clusterResourcesData.resources.length}{" "}
-                            个资源
-                          </Tag>
-                        </Space>
-                      }
-                      extra={
-                        <Button
+                              }),
+                            ),
+                            // 独立资源组（如果有独立资源的话）
+                            ...(clusterResourcesData.resources.length > 0
+                              ? [
+                                  {
+                                    key: "standalone-group",
+                                    id: "独立资源",
+                                    type: "资源组",
+                                    class_: "",
+                                    provider: "",
+                                    attributes: {},
+                                    operations: [],
+                                    isGroup: true,
+                                    resourceCount:
+                                      clusterResourcesData.resources.length,
+                                    children:
+                                      clusterResourcesData.resources.map(
+                                        (resource, resourceIndex) => ({
+                                          key: `standalone-resource-${resourceIndex}`,
+                                          ...resource,
+                                          isGroup: false,
+                                          groupName: "独立资源",
+                                        }),
+                                      ),
+                                  },
+                                ]
+                              : []),
+                          ]}
+                          rowKey="key"
+                          pagination={{
+                            pageSize: 10,
+                            showSizeChanger: true,
+                            showQuickJumper: true,
+                            showTotal: (total, range) =>
+                              `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
+                          }}
                           size="small"
-                          icon={<SyncOutlined />}
-                          onClick={fetchClusterResourcesData}
-                        >
-                          刷新
-                        </Button>
-                      }
-                    >
-                      <Table
-                        dataSource={[
-                          // 资源组作为父节点
-                          ...clusterResourcesData.group.map(
-                            (group, groupIndex) => ({
-                              key: `group-${groupIndex}`,
-                              id: group.group,
-                              type: "资源组",
-                              class_: "",
-                              provider: "",
-                              attributes: {},
-                              operations: [],
-                              isGroup: true,
-                              resourceCount: group.resources.length,
-                              children: group.resources.map(
-                                (resource, resourceIndex) => ({
-                                  key: `group-${groupIndex}-resource-${resourceIndex}`,
-                                  ...resource,
-                                  isGroup: false,
-                                  groupName: group.group,
-                                }),
-                              ),
-                            }),
-                          ),
-                          // 独立资源组（如果有独立资源的话）
-                          ...(clusterResourcesData.resources.length > 0
-                            ? [
-                                {
-                                  key: "standalone-group",
-                                  id: "独立资源",
-                                  type: "资源组",
-                                  class_: "",
-                                  provider: "",
-                                  attributes: {},
-                                  operations: [],
-                                  isGroup: true,
-                                  resourceCount:
-                                    clusterResourcesData.resources.length,
-                                  children: clusterResourcesData.resources.map(
-                                    (resource, resourceIndex) => ({
-                                      key: `standalone-resource-${resourceIndex}`,
-                                      ...resource,
-                                      isGroup: false,
-                                      groupName: "独立资源",
-                                    }),
-                                  ),
-                                },
-                              ]
-                            : []),
-                        ]}
-                        rowKey="key"
-                        pagination={{
-                          pageSize: 10,
-                          showSizeChanger: true,
-                          showQuickJumper: true,
-                          showTotal: (total, range) =>
-                            `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
-                        }}
-                        size="small"
-                        expandable={{
-                          defaultExpandAllRows: false,
-                          indentSize: 20,
-                          expandRowByClick: false,
-                        }}
-                        columns={[
-                          {
-                            title: "资源名称/ID",
-                            dataIndex: "id",
-                            key: "id",
-                            width: "25%",
-                            render: (
-                              id: string,
-                              record: ExpandableResourceNode,
-                            ) => {
-                              if (record.isGroup) {
-                                return (
-                                  <div>
-                                    <div
-                                      style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        marginBottom: "4px",
-                                      }}
-                                    >
-                                      <DatabaseOutlined
-                                        style={{
-                                          marginRight: "8px",
-                                          color: "#722ed1",
-                                        }}
-                                      />
-                                      <strong style={{ fontSize: "14px" }}>
-                                        {id}
-                                      </strong>
-                                      <Tag
-                                        color="purple"
-                                        style={{ marginLeft: "8px" }}
-                                      >
-                                        {record.resourceCount} 个资源
-                                      </Tag>
-                                    </div>
-                                  </div>
-                                );
-                              } else {
-                                return (
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      flexDirection: "column",
-                                      alignItems: "flex-start",
-                                    }}
-                                  >
-                                    <div
-                                      style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        marginBottom: "6px",
-                                      }}
-                                    >
-                                      <ApiOutlined
-                                        style={{
-                                          marginRight: "6px",
-                                          color: "#1890ff",
-                                        }}
-                                      />
-                                      <strong>{id}</strong>
-                                    </div>
-                                    <div
-                                      style={{
-                                        paddingLeft: "20px", // 与图标对齐
-                                        fontSize: "12px",
-                                        color: "#666",
-                                      }}
-                                    >
-                                      <Tag color="blue">{record.groupName}</Tag>
-                                    </div>
-                                  </div>
-                                );
-                              }
-                            },
-                          },
-                          {
-                            title: "类型信息",
-                            key: "typeInfo",
-                            width: "20%",
-                            render: (_, record: ExpandableResourceNode) => {
-                              if (record.isGroup) {
-                                return (
-                                  <div>
-                                    <Tag color="purple">资源组</Tag>
-                                    <div
-                                      style={{
-                                        fontSize: "12px",
-                                        color: "#666",
-                                        marginTop: "4px",
-                                      }}
-                                    >
-                                      包含 {record.resourceCount} 个资源
-                                    </div>
-                                  </div>
-                                );
-                              } else {
-                                return (
-                                  <div>
-                                    <Tag color="geekblue">{record.type}</Tag>
-                                    <div
-                                      style={{
-                                        fontSize: "12px",
-                                        color: "#666",
-                                        marginTop: "4px",
-                                      }}
-                                    >
-                                      {record.class_} / {record.provider}
-                                    </div>
-                                  </div>
-                                );
-                              }
-                            },
-                          },
-                          {
-                            title: "配置属性",
-                            dataIndex: "attributes",
-                            key: "attributes",
-                            width: "30%",
-                            render: (
-                              attributes: Record<string, string>,
-                              record: ExpandableResourceNode,
-                            ) => {
-                              if (record.isGroup) {
-                                return (
-                                  <div
-                                    style={{
-                                      color: "#666",
-                                      fontStyle: "italic",
-                                    }}
-                                  >
-                                    展开查看具体资源配置
-                                  </div>
-                                );
-                              } else {
-                                const attributeEntries =
-                                  Object.entries(attributes);
-                                if (attributeEntries.length === 0) {
+                          expandable={{
+                            defaultExpandAllRows: false,
+                            indentSize: 20,
+                            expandRowByClick: false,
+                          }}
+                          columns={[
+                            {
+                              title: "资源名称/ID",
+                              dataIndex: "id",
+                              key: "id",
+                              width: "25%",
+                              render: (
+                                id: string,
+                                record: ExpandableResourceNode,
+                              ) => {
+                                if (record.isGroup) {
                                   return (
-                                    <span style={{ color: "#999" }}>
-                                      无配置属性
-                                    </span>
-                                  );
-                                }
-
-                                return (
-                                  <div>
-                                    {attributeEntries.map(([key, value]) => (
+                                    <div>
                                       <div
-                                        key={key}
                                         style={{
-                                          fontSize: "12px",
+                                          display: "flex",
+                                          alignItems: "center",
                                           marginBottom: "4px",
                                         }}
                                       >
-                                        <Text code style={{ fontSize: "11px" }}>
-                                          {key}
-                                        </Text>
-                                        <span style={{ marginLeft: "4px" }}>
-                                          {value}
-                                        </span>
+                                        <DatabaseOutlined
+                                          style={{
+                                            marginRight: "8px",
+                                            color: "#722ed1",
+                                          }}
+                                        />
+                                        <strong style={{ fontSize: "14px" }}>
+                                          {id}
+                                        </strong>
+                                        <Tag
+                                          color="purple"
+                                          style={{ marginLeft: "8px" }}
+                                        >
+                                          {record.resourceCount} 个资源
+                                        </Tag>
                                       </div>
-                                    ))}
-                                  </div>
-                                );
-                              }
-                            },
-                          },
-                          {
-                            title: "监控配置",
-                            dataIndex: "operations",
-                            key: "operations",
-                            width: "15%",
-                            render: (
-                              operations: Array<{
-                                name: string;
-                                interval: string;
-                                timeout: string;
-                              }>,
-                              record: ExpandableResourceNode,
-                            ) => {
-                              if (record.isGroup) {
-                                const totalOps = record.children
-                                  ? record.children.reduce(
-                                      (
-                                        acc: number,
-                                        child: ExpandableResourceNode,
-                                      ) =>
-                                        acc + (child.operations?.length || 0),
-                                      0,
-                                    )
-                                  : 0;
-                                return (
-                                  <div style={{ color: "#666" }}>
-                                    <Tag color="orange">{totalOps}</Tag>
+                                    </div>
+                                  );
+                                } else {
+                                  return (
                                     <div
                                       style={{
-                                        fontSize: "11px",
-                                        marginTop: "2px",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "flex-start",
                                       }}
                                     >
-                                      个操作配置
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          marginBottom: "6px",
+                                        }}
+                                      >
+                                        <ApiOutlined
+                                          style={{
+                                            marginRight: "6px",
+                                            color: "#1890ff",
+                                          }}
+                                        />
+                                        <strong>{id}</strong>
+                                      </div>
+                                      <div
+                                        style={{
+                                          paddingLeft: "20px", // 与图标对齐
+                                          fontSize: "12px",
+                                          color: "#666",
+                                        }}
+                                      >
+                                        <Tag color="blue">
+                                          {record.groupName}
+                                        </Tag>
+                                      </div>
                                     </div>
-                                  </div>
-                                );
-                              } else {
-                                if (!operations || operations.length === 0) {
-                                  return (
-                                    <span style={{ color: "#999" }}>
-                                      无监控配置
-                                    </span>
                                   );
                                 }
-
-                                return (
-                                  <div>
-                                    {operations.slice(0, 2).map((op, idx) => (
+                              },
+                            },
+                            {
+                              title: "类型信息",
+                              key: "typeInfo",
+                              width: "20%",
+                              render: (_, record: ExpandableResourceNode) => {
+                                if (record.isGroup) {
+                                  return (
+                                    <div>
+                                      <Tag color="purple">资源组</Tag>
                                       <div
-                                        key={idx}
-                                        style={{ marginBottom: "4px" }}
+                                        style={{
+                                          fontSize: "12px",
+                                          color: "#666",
+                                          marginTop: "4px",
+                                        }}
                                       >
-                                        <Tag color="orange">{op.name}</Tag>
+                                        包含 {record.resourceCount} 个资源
+                                      </div>
+                                    </div>
+                                  );
+                                } else {
+                                  return (
+                                    <div>
+                                      <Tag color="geekblue">{record.type}</Tag>
+                                      <div
+                                        style={{
+                                          fontSize: "12px",
+                                          color: "#666",
+                                          marginTop: "4px",
+                                        }}
+                                      >
+                                        {record.class_} / {record.provider}
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                              },
+                            },
+                            {
+                              title: "配置属性",
+                              dataIndex: "attributes",
+                              key: "attributes",
+                              width: "30%",
+                              render: (
+                                attributes: Record<string, string>,
+                                record: ExpandableResourceNode,
+                              ) => {
+                                if (record.isGroup) {
+                                  return (
+                                    <div
+                                      style={{
+                                        color: "#666",
+                                        fontStyle: "italic",
+                                      }}
+                                    >
+                                      展开查看具体资源配置
+                                    </div>
+                                  );
+                                } else {
+                                  const attributeEntries =
+                                    Object.entries(attributes);
+                                  if (attributeEntries.length === 0) {
+                                    return (
+                                      <span style={{ color: "#999" }}>
+                                        无配置属性
+                                      </span>
+                                    );
+                                  }
+
+                                  return (
+                                    <div>
+                                      {attributeEntries.map(([key, value]) => (
                                         <div
+                                          key={key}
                                           style={{
-                                            fontSize: "11px",
-                                            color: "#666",
+                                            fontSize: "12px",
+                                            marginBottom: "4px",
                                           }}
                                         >
-                                          {op.interval} / {op.timeout}
+                                          <Text
+                                            code
+                                            style={{ fontSize: "11px" }}
+                                          >
+                                            {key}
+                                          </Text>
+                                          <span style={{ marginLeft: "4px" }}>
+                                            {value}
+                                          </span>
                                         </div>
+                                      ))}
+                                    </div>
+                                  );
+                                }
+                              },
+                            },
+                            {
+                              title: "监控配置",
+                              dataIndex: "operations",
+                              key: "operations",
+                              width: "15%",
+                              render: (
+                                operations: Array<{
+                                  name: string;
+                                  interval: string;
+                                  timeout: string;
+                                }>,
+                                record: ExpandableResourceNode,
+                              ) => {
+                                if (record.isGroup) {
+                                  const totalOps = record.children
+                                    ? record.children.reduce(
+                                        (
+                                          acc: number,
+                                          child: ExpandableResourceNode,
+                                        ) =>
+                                          acc + (child.operations?.length || 0),
+                                        0,
+                                      )
+                                    : 0;
+                                  return (
+                                    <div style={{ color: "#666" }}>
+                                      <Tag color="orange">{totalOps}</Tag>
+                                      <div
+                                        style={{
+                                          fontSize: "11px",
+                                          marginTop: "2px",
+                                        }}
+                                      >
+                                        个操作配置
                                       </div>
-                                    ))}
-                                    {/* {operations.length > 2 && (
+                                    </div>
+                                  );
+                                } else {
+                                  if (!operations || operations.length === 0) {
+                                    return (
+                                      <span style={{ color: "#999" }}>
+                                        无监控配置
+                                      </span>
+                                    );
+                                  }
+
+                                  return (
+                                    <div>
+                                      {operations.slice(0, 2).map((op, idx) => (
+                                        <div
+                                          key={idx}
+                                          style={{ marginBottom: "4px" }}
+                                        >
+                                          <Tag color="orange">{op.name}</Tag>
+                                          <div
+                                            style={{
+                                              fontSize: "11px",
+                                              color: "#666",
+                                            }}
+                                          >
+                                            {op.interval} / {op.timeout}
+                                          </div>
+                                        </div>
+                                      ))}
+                                      {/* {operations.length > 2 && (
                                       <Text
                                         type="secondary"
                                         style={{ fontSize: "11px" }}
@@ -3504,161 +4164,162 @@ const ClusterManagement: React.FC = () => {
                                         +{operations.length - 2} 更多...
                                       </Text>
                                     )} */}
-                                  </div>
-                                );
-                              }
+                                    </div>
+                                  );
+                                }
+                              },
                             },
-                          },
-                          {
-                            title: "操作",
-                            key: "action",
-                            width: "10%",
-                            render: (_, record: ExpandableResourceNode) => {
-                              if (record.isGroup) {
-                                return (
-                                  <Button
-                                    type="link"
-                                    size="small"
-                                    icon={<InfoCircleOutlined />}
-                                    onClick={() =>
-                                      message.info(
-                                        `查看资源组 ${record.id} 详情`,
-                                      )
-                                    }
-                                  >
-                                    详情
-                                  </Button>
-                                );
-                              } else {
-                                return (
-                                  <Space size="small" direction="vertical">
+                            {
+                              title: "操作",
+                              key: "action",
+                              width: "10%",
+                              render: (_, record: ExpandableResourceNode) => {
+                                if (record.isGroup) {
+                                  return (
                                     <Button
                                       type="link"
                                       size="small"
                                       icon={<InfoCircleOutlined />}
                                       onClick={() =>
                                         message.info(
-                                          `查看资源 ${record.id} 详情`,
+                                          `查看资源组 ${record.id} 详情`,
                                         )
                                       }
                                     >
                                       详情
                                     </Button>
-                                    <Button
-                                      type="link"
-                                      size="small"
-                                      icon={<MonitorOutlined />}
-                                      onClick={() =>
-                                        message.info(`监控资源 ${record.id}`)
-                                      }
-                                    >
-                                      监控
-                                    </Button>
-                                  </Space>
-                                );
-                              }
+                                  );
+                                } else {
+                                  return (
+                                    <Space size="small" direction="vertical">
+                                      <Button
+                                        type="link"
+                                        size="small"
+                                        icon={<InfoCircleOutlined />}
+                                        onClick={() =>
+                                          message.info(
+                                            `查看资源 ${record.id} 详情`,
+                                          )
+                                        }
+                                      >
+                                        详情
+                                      </Button>
+                                      <Button
+                                        type="link"
+                                        size="small"
+                                        icon={<MonitorOutlined />}
+                                        onClick={() =>
+                                          message.info(`监控资源 ${record.id}`)
+                                        }
+                                      >
+                                        监控
+                                      </Button>
+                                    </Space>
+                                  );
+                                }
+                              },
                             },
-                          },
-                        ]}
+                          ]}
+                        />
+                      </Card>
+                    </>
+                  ) : (
+                    <div style={{ textAlign: "center", padding: "50px" }}>
+                      <Alert
+                        message="暂无集群资源数据"
+                        description="点击下方按钮获取最新的集群资源信息"
+                        type="info"
+                        showIcon
+                        action={
+                          <Button
+                            type="primary"
+                            onClick={fetchClusterResourcesData}
+                            icon={<SyncOutlined />}
+                          >
+                            获取数据
+                          </Button>
+                        }
                       />
-                    </Card>
-                  </>
-                ) : (
-                  <div style={{ textAlign: "center", padding: "50px" }}>
-                    <Alert
-                      message="暂无集群资源数据"
-                      description="点击下方按钮获取最新的集群资源信息"
-                      type="info"
-                      showIcon
-                      action={
-                        <Button
-                          type="primary"
-                          onClick={fetchClusterResourcesData}
-                          icon={<SyncOutlined />}
-                        >
-                          获取数据
-                        </Button>
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-            ),
-          },
-        ]}
-      />
-
-      {/* 添加节点弹窗 */}
-      <Modal
-        title="添加节点到集群"
-        open={addNodeModalVisible}
-        onCancel={() => {
-          setAddNodeModalVisible(false);
-          setAddNodeLoading(false);
-          // 重置表单在destroyOnClose为true时会自动处理
-        }}
-        footer={null}
-        destroyOnClose
-        width={500}
-      >
-        <Form layout="vertical" onFinish={handleAddNode} autoComplete="off">
-          <Form.Item
-            label="节点IP地址"
-            name="join_ip"
-            rules={[
-              { required: true, message: "请输入节点IP地址" },
-              {
-                pattern:
-                  /^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$/,
-                message: "请输入有效的IP地址",
-              },
-            ]}
-          >
-            <Input placeholder="例如: 192.168.1.100" />
-          </Form.Item>
-          <Form.Item
-            label="节点主机名"
-            name="join_hostname"
-            rules={[
-              { required: true, message: "请输入节点主机名" },
-              {
-                pattern: /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/,
-                message:
-                  "主机名只能包含字母、数字和连字符，且不能以连字符开头或结尾",
-              },
-            ]}
-          >
-            <Input placeholder="例如: node-2" />
-          </Form.Item>
-          <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
-            <Space>
-              <Button onClick={() => setAddNodeModalVisible(false)}>
-                取消
-              </Button>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={addNodeLoading}
-                icon={<PlusOutlined />}
-              >
-                添加节点
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* 安全确认模态框 */}
-      {safetyConfirmVisible && getSafetyConfirmProps() && (
-        <SafetyConfirmModal
-          visible={safetyConfirmVisible}
-          onConfirm={handleSafetyConfirm}
-          onCancel={handleSafetyCancel}
-          loading={safetyConfirmLoading}
-          {...getSafetyConfirmProps()!}
+                    </div>
+                  )}
+                </div>
+              ),
+            },
+          ]}
         />
-      )}
-    </div>
+
+        {/* 添加节点弹窗 */}
+        <Modal
+          title="添加节点到集群"
+          open={addNodeModalVisible}
+          onCancel={() => {
+            setAddNodeModalVisible(false);
+            setAddNodeLoading(false);
+            // 重置表单在destroyOnHidden为true时会自动处理
+          }}
+          footer={null}
+          destroyOnHidden
+          width={500}
+        >
+          <Form layout="vertical" onFinish={handleAddNode} autoComplete="off">
+            <Form.Item
+              label="节点IP地址"
+              name="join_ip"
+              rules={[
+                { required: true, message: "请输入节点IP地址" },
+                {
+                  pattern:
+                    /^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$/,
+                  message: "请输入有效的IP地址",
+                },
+              ]}
+            >
+              <Input placeholder="例如: 192.168.1.100" />
+            </Form.Item>
+            <Form.Item
+              label="节点主机名"
+              name="join_hostname"
+              rules={[
+                { required: true, message: "请输入节点主机名" },
+                {
+                  pattern: /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/,
+                  message:
+                    "主机名只能包含字母、数字和连字符，且不能以连字符开头或结尾",
+                },
+              ]}
+            >
+              <Input placeholder="例如: node-2" />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+              <Space>
+                <Button onClick={() => setAddNodeModalVisible(false)}>
+                  取消
+                </Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={addNodeLoading}
+                  icon={<PlusOutlined />}
+                >
+                  添加节点
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Modal>
+
+        {/* 安全确认模态框 */}
+        {safetyConfirmVisible && getSafetyConfirmProps() && (
+          <SafetyConfirmModal
+            visible={safetyConfirmVisible}
+            onConfirm={handleSafetyConfirm}
+            onCancel={handleSafetyCancel}
+            loading={safetyConfirmLoading}
+            {...getSafetyConfirmProps()!}
+          />
+        )}
+      </div>
+    </Spin>
   );
 };
 

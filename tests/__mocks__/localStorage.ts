@@ -7,59 +7,65 @@
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 /**
- * 浏览器API Mock
- * 用于模拟localStorage、sessionStorage等浏览器API
+ * localStorage Mock
+ * 用于模拟localStorage功能，确保测试环境的一致性
  */
-import { vi } from "vitest";
-// Mock localStorage
-const localStorageMock = {
-  getItem: vi.fn((key: string) => null),
-  setItem: vi.fn((key: string, value: string) => {}),
-  removeItem: vi.fn((key: string) => {}),
-  clear: vi.fn(() => {}),
-  length: 0,
-  key: vi.fn((index: number) => null),
+
+const createLocalStorageMock = () => {
+  let store: Record<string, string> = {};
+
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => {
+      store[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+    key: (index: number) => {
+      const keys = Object.keys(store);
+      return keys[index] || null;
+    },
+    get length() {
+      return Object.keys(store).length;
+    },
+  };
 };
 
-// Mock sessionStorage
-const sessionStorageMock = {
-  getItem: vi.fn((key: string) => null),
-  setItem: vi.fn((key: string, value: string) => {}),
-  removeItem: vi.fn((key: string) => {}),
-  clear: vi.fn(() => {}),
-  length: 0,
-  key: vi.fn((index: number) => null),
+const createSessionStorageMock = () => {
+  let store: Record<string, string> = {};
+
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => {
+      store[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+    key: (index: number) => {
+      const keys = Object.keys(store);
+      return keys[index] || null;
+    },
+    get length() {
+      return Object.keys(store).length;
+    },
+  };
 };
 
-// Mock document.cookie
-Object.defineProperty(document, "cookie", {
-  writable: true,
-  value: "",
-});
-
-// Mock window.location
-Object.defineProperty(window, "location", {
-  writable: true,
-  value: {
-    href: "http://localhost:3000",
-    origin: "http://localhost:3000",
-    pathname: "/",
-    search: "",
-    hash: "",
-    reload: vi.fn(),
-    assign: vi.fn(),
-    replace: vi.fn(),
-  },
-});
-
-// 导出Mock对象
-export { localStorageMock, sessionStorageMock };
-
-// 全局设置
+// 设置全局mock
 Object.defineProperty(window, "localStorage", {
-  value: localStorageMock,
+  value: createLocalStorageMock(),
 });
 
 Object.defineProperty(window, "sessionStorage", {
-  value: sessionStorageMock,
+  value: createSessionStorageMock(),
 });
+
+export {};

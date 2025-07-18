@@ -60,11 +60,6 @@ export interface LoginApiResponse {
   [key: string]: unknown;
 }
 
-// Token刷新相关类型定义
-export interface TokenRefreshRequest {
-  // 根据实际API需求定义请求参数
-}
-
 export interface TokenRefreshResponse {
   access_token: string;
   expires_in?: number;

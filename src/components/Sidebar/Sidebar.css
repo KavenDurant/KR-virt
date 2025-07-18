@@ -1,3 +1,4 @@
+/* 统一侧边栏样式 */
 .hierarchical-sidebar {
   height: 100%;
   display: flex;
@@ -344,7 +345,7 @@
   font-size: 10px;
   color: #8c8c8c;
   margin-left: 6px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
 }
 
 [data-theme="dark"] .tree-node-content[data-type="node"] .tree-node-subtitle {
@@ -354,7 +355,9 @@
 /* 节点状态特定颜色 */
 .tree-node-content[data-type="node"][data-status="online"] .status-dot {
   background-color: #52c41a !important;
-  box-shadow: 0 0 0 1px rgba(82, 196, 26, 0.3), 0 0 4px rgba(82, 196, 26, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(82, 196, 26, 0.3),
+    0 0 4px rgba(82, 196, 26, 0.4);
 }
 
 .tree-node-content[data-type="node"][data-status="offline"] .status-dot {
@@ -364,12 +367,16 @@
 
 .tree-node-content[data-type="node"][data-status="standby"] .status-dot {
   background-color: #faad14 !important;
-  box-shadow: 0 0 0 1px rgba(250, 173, 20, 0.3), 0 0 4px rgba(250, 173, 20, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(250, 173, 20, 0.3),
+    0 0 4px rgba(250, 173, 20, 0.4);
 }
 
 .tree-node-content[data-type="node"][data-status="maintenance"] .status-dot {
   background-color: #ff7a00 !important;
-  box-shadow: 0 0 0 1px rgba(255, 122, 0, 0.3), 0 0 4px rgba(255, 122, 0, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(255, 122, 0, 0.3),
+    0 0 4px rgba(255, 122, 0, 0.4);
 }
 
 /* 响应式调整 */

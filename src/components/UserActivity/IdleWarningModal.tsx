@@ -12,7 +12,7 @@ import {
 import type { IdleWarningModalProps } from "./types";
 import { formatTime } from "@/utils/userActivityUtils";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const IdleWarningModal: React.FC<IdleWarningModalProps> = ({
   visible,
@@ -132,7 +132,7 @@ const IdleWarningModal: React.FC<IdleWarningModalProps> = ({
       maskClosable={maskClosable}
       width={480}
       centered
-      destroyOnClose
+      destroyOnHidden
       footer={null}
       className="idle-warning-modal"
       style={{ userSelect: "none" }}

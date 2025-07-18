@@ -35,7 +35,9 @@ export const formatDuration = (milliseconds: number): string => {
   const hours = Math.floor(minutes / 60);
 
   if (hours > 0) {
-    return `${hours}:${String(minutes % 60).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+    return `${hours}:${String(minutes % 60).padStart(2, "0")}:${String(
+      seconds % 60,
+    ).padStart(2, "0")}`;
   } else {
     return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
   }
@@ -75,7 +77,7 @@ export const generateTabId = (): string => {
  * 保存用户数据到本地存储
  * @param data 要保存的数据
  */
-export const saveToStorage = (key: string, data: any): void => {
+export const saveToStorage = (key: string, data: unknown): void => {
   try {
     localStorage.setItem(
       key,
@@ -94,7 +96,7 @@ export const saveToStorage = (key: string, data: any): void => {
  * @param key 存储键
  * @returns 读取的数据
  */
-export const loadFromStorage = <T = any>(key: string): T | null => {
+export const loadFromStorage = <T = unknown>(key: string): T | null => {
   try {
     const item = localStorage.getItem(key);
     if (!item) return null;
@@ -128,7 +130,7 @@ export const cleanupStorage = (): void => {
  * @param event 事件类型
  * @param data 附加数据
  */
-export const logActivity = (event: UserActivityEvent, data?: any): void => {
+export const logActivity = (event: UserActivityEvent, data?: unknown): void => {
   if (!import.meta.env.DEV) return;
 
   const timestamp = new Date().toLocaleTimeString();
@@ -169,7 +171,7 @@ const getLogLevel = (
  * @param delay 延迟时间
  * @returns 防抖后的函数
  */
-export const debounce = <T extends (...args: any[]) => any>(
+export const debounce = <T extends (...args: unknown[]) => unknown>(
   func: T,
   delay: number,
 ): ((...args: Parameters<T>) => void) => {
@@ -187,7 +189,7 @@ export const debounce = <T extends (...args: any[]) => any>(
  * @param delay 延迟时间
  * @returns 节流后的函数
  */
-export const throttle = <T extends (...args: any[]) => any>(
+export const throttle = <T extends (...args: unknown[]) => unknown>(
   func: T,
   delay: number,
 ): ((...args: Parameters<T>) => void) => {
@@ -295,4 +297,72 @@ export const getDeviceType = (): "mobile" | "tablet" | "desktop" => {
   }
 
   return "desktop";
+};
+
+export const findUserActivityModule = (
+  path: string,
+  activityModules: Record<string, unknown>,
+): string => {
+  // 查找匹配的活动模块
+  for (const moduleName in activityModules) {
+    const moduleConfig = activityModules[moduleName] as Record<string, unknown>;
+
+    if (moduleConfig?.paths && Array.isArray(moduleConfig.paths)) {
+      for (const pathPattern of moduleConfig.paths) {
+        if (typeof pathPattern === "string" && path.includes(pathPattern)) {
+          return moduleName;
+        }
+      }
+    }
+  }
+
+  return "未知模块";
+};
+
+export const createUserActivityRecord = (
+  type: string,
+  details: Record<string, unknown>,
+  user: Record<string, unknown>,
+): Record<string, unknown> => {
+  return {
+    id: generateId(),
+    timestamp: Date.now(),
+    type,
+    details,
+    user,
+    sessionId: getSessionId(),
+  };
+};
+
+export const shouldSkipActivityLog = (
+  path: string,
+  skipPaths: string[] = [],
+): boolean => {
+  // 默认跳过的路径
+  const defaultSkipPaths = [
+    "/api/system/health",
+    "/api/auth/refresh",
+    "/api/ping",
+    "/favicon.ico",
+  ];
+
+  const allSkipPaths = [...defaultSkipPaths, ...skipPaths];
+
+  return allSkipPaths.some((skipPath) => path.includes(skipPath));
+};
+
+export const attachActivityListeners = (
+  element: Element,
+  config: Record<string, unknown> = {},
+): void => {
+  // 实现活动监听器附加逻辑
+  console.log("Attaching activity listeners to element:", element, config);
+};
+
+export const detachActivityListeners = (
+  element: Element,
+  config: Record<string, unknown> = {},
+): void => {
+  // 实现活动监听器分离逻辑
+  console.log("Detaching activity listeners from element:", element, config);
 };

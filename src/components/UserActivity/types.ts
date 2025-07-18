@@ -263,5 +263,5 @@ export interface UserActivityUtils {
   cleanupUserData: () => void;
 
   /** 记录活动日志 */
-  logActivity: (event: UserActivityEvent, data?: any) => void;
+  logActivity: (event: UserActivityEvent, data?: unknown) => void;
 }

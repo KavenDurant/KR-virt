@@ -26,6 +26,12 @@ const customThemes = {
       boxShadow:
         "0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)",
     },
+    components: {
+      Tooltip: {
+        colorBgSpotlight: "rgba(0, 0, 0, 0.85)",
+        colorTextLightSolid: "#ffffff",
+      },
+    },
     algorithm: theme.defaultAlgorithm,
   },
   dark: {
@@ -47,6 +53,12 @@ const customThemes = {
       borderRadius: 6,
       boxShadow:
         "0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)",
+    },
+    components: {
+      Tooltip: {
+        colorBgSpotlight: "#434343",
+        colorTextLightSolid: "#ffffff",
+      },
     },
     algorithm: theme.darkAlgorithm,
   },

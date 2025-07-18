@@ -64,7 +64,7 @@ describe("useTimeZone Hook", () => {
     });
 
     it("应该处理null或undefined输入", () => {
-      const { result } = renderHook(() => useTimeZone(null as any));
+      const { result } = renderHook(() => useTimeZone(null as unknown));
 
       expect(result.current.isValid).toBe(false);
       expect(result.current.error).toBe("输入的时间字符串无效");

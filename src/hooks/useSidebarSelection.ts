@@ -88,19 +88,85 @@ export const useSidebarSelection = (): UseSidebarSelectionReturn => {
       clearSelection();
       setSelectedCluster(cluster);
     },
-    [clearSelection]
+    [clearSelection],
   );
+
+  /**
+   * 将 UnifiedNodeData 转换为 Node 格式的适配函数
+   */
+  const adaptUnifiedNodeToNode = (unifiedNode: unknown): Node => {
+    const nodeData = unifiedNode as Record<string, unknown>;
+
+    // 尝试从不同的数据结构中提取信息
+    const extractVMs = (): unknown[] => {
+      // 如果有 children 字段且是数组，用作 vms
+      if (nodeData.children && Array.isArray(nodeData.children)) {
+        return nodeData.children;
+      }
+
+      // 如果有 data 字段
+      if (nodeData.data && typeof nodeData.data === "object") {
+        const data = nodeData.data as Record<string, unknown>;
+
+        // 如果 data 有 vms 字段
+        if (data.vms && Array.isArray(data.vms)) {
+          return data.vms;
+        }
+
+        // 如果 data 本身就是数组（某些情况下）
+        if (Array.isArray(data)) {
+          return data;
+        }
+      }
+
+      // 如果直接有 vms 字段
+      if (nodeData.vms && Array.isArray(nodeData.vms)) {
+        return nodeData.vms;
+      }
+
+      return [];
+    };
+
+    // 构建适配后的 Node 对象
+    const adaptedNode: Node = {
+      id: String(nodeData.id || nodeData.name || "unknown"),
+      name: String(nodeData.name || nodeData.hostname || "unknown"),
+      type: "node" as const,
+      status: String(nodeData.status || "unknown") as
+        | "online"
+        | "offline"
+        | "standby"
+        | "maintenance",
+      cpu: Number(nodeData.cpu || 0),
+      memory: Number(nodeData.memory || 0),
+      uptime: String(nodeData.uptime || "0"),
+      vms: extractVMs() as VMData[], // 使用适配后的 VMs 数据
+      ip: nodeData.ip ? String(nodeData.ip) : undefined,
+      is_dc: Boolean(nodeData.is_dc),
+    };
+
+    return adaptedNode;
+  };
 
   /**
    * 选择主机节点
    * @param host 主机数据对象
    */
   const selectHost = useCallback(
-    (host: Node) => {
+    (host: Node | unknown) => {
       clearSelection();
-      setSelectedHost(host);
+      // 如果传入的是 UnifiedNodeData，进行适配
+      const hostData = host as Record<string, unknown>;
+      const adaptedHost =
+        typeof host === "object" &&
+        host !== null &&
+        "type" in host &&
+        hostData.type === "host"
+          ? adaptUnifiedNodeToNode(host)
+          : (host as Node);
+      setSelectedHost(adaptedHost);
     },
-    [clearSelection]
+    [clearSelection],
   );
 
   /**
@@ -112,7 +178,7 @@ export const useSidebarSelection = (): UseSidebarSelectionReturn => {
       clearSelection();
       setSelectedVM(vm);
     },
-    [clearSelection]
+    [clearSelection],
   );
 
   /**
@@ -124,7 +190,7 @@ export const useSidebarSelection = (): UseSidebarSelectionReturn => {
       clearSelection();
       setSelectedNetwork(network);
     },
-    [clearSelection]
+    [clearSelection],
   );
 
   /**
@@ -136,7 +202,7 @@ export const useSidebarSelection = (): UseSidebarSelectionReturn => {
       clearSelection();
       setSelectedStorage(storage);
     },
-    [clearSelection]
+    [clearSelection],
   );
 
   /**
@@ -179,7 +245,7 @@ export const useSidebarSelection = (): UseSidebarSelectionReturn => {
 
       setIsLoading(false);
     },
-    [selectHost, selectVM, selectNetwork, selectStorage, clearSelection]
+    [selectHost, selectVM, selectNetwork, selectStorage, clearSelection],
   );
 
   /**

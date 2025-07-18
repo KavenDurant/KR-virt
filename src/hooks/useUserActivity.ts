@@ -1,3 +1,11 @@
+/*
+ * @Author: KavenDurant luojiaxin888@gmail.com
+ * @Date: 2025-07-08 17:20:22
+ * @LastEditors: KavenDurant luojiaxin888@gmail.com
+ * @LastEditTime: 2025-07-09 11:56:30
+ * @FilePath: /KR-virt/src/hooks/useUserActivity.ts
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 /**
  * 用户活动监控Hook
  */
@@ -101,7 +109,8 @@ export const useUserActivity = (
       // 重置Token刷新计时器
       if (finalConfig.resetTokenOnActivity && loginService.isAuthenticated()) {
         try {
-          loginService.resetTokenRefreshTimer?.();
+          // 重新触发token刷新机制
+          loginService.startGlobalTokenRefresh();
         } catch (error) {
           console.warn("Failed to reset token refresh timer:", error);
         }
@@ -282,14 +291,14 @@ export const useUserActivity = (
   // 配置react-idle-timer
   const idleTimer = useIdleTimer({
     timeout: finalConfig.timeout,
-    promptTimeout: finalConfig.promptTimeout,
+    promptBeforeIdle: finalConfig.promptTimeout,
     onIdle: handleIdle,
     onActive: handleActive,
     onPrompt: handlePrompt,
     onAction: handleActivity,
     debounce: finalConfig.debounce,
     throttle: finalConfig.throttle,
-    events: finalConfig.events as any,
+    events: finalConfig.events as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     crossTab: finalConfig.crossTab,
     startOnMount: true,
     startManually: false,
@@ -395,10 +404,13 @@ export const useUserActivity = (
   const getConfig = useCallback(() => finalConfig, [finalConfig]);
 
   // 更新配置（注意：这会重新创建idleTimer）
-  const updateConfig = useCallback((newConfig: Partial<UserActivityConfig>) => {
-    // 这里需要重新初始化，实际使用中可能需要更复杂的逻辑
-    console.warn("updateConfig is not fully implemented yet");
-  }, []);
+  const updateConfig = useCallback(
+    (newConfig: Partial<UserActivityConfig>) => {
+      // 这里需要重新初始化，实际使用中可能需要更复杂的逻辑
+      console.warn("updateConfig is not fully implemented yet", newConfig);
+    },
+    [],
+  );
 
   // 获取详细状态
   const getDetailedState = useCallback(
@@ -483,7 +495,7 @@ export const useUserActivity = (
       }
       clearInterval(interval);
     };
-  }, [state.isPrompted, handleTimeout, finalConfig.debug]);
+  }, [state.isPrompted, state.remainingTime, handleTimeout, finalConfig.debug]);
 
   return {
     ...state,

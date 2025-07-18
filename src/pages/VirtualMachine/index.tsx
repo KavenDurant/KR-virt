@@ -2,7 +2,7 @@
  * @Author: KavenDurant luojiaxin888@gmail.com
  * @Date: 2025-07-10 16:09:04
  * @LastEditors: KavenDurant luojiaxin888@gmail.com
- * @LastEditTime: 2025-07-17 14:13:49
+ * @LastEditTime: 2025-07-18 08:59:53
  * @FilePath: /KR-virt/src/pages/VirtualMachine/index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -86,6 +86,8 @@ import {
   type CreateVMRequest,
   type VMSnapshot,
 } from "@/services/vm";
+import LocalSshTerminal from "@/components/SshTerminal/LocalSshTerminal";
+import QuickStartGuide from "@/components/SshTerminal/QuickStartGuide";
 
 // 使用统一的虚拟机数据类型 - 使用包含完整配置信息的 VMInfo
 type VirtualMachine = VMInfo;
@@ -270,6 +272,10 @@ const VirtualMachineManagement: React.FC = () => {
    *
    * useSidebarSelection Hook 自动处理所有事件监听
    */
+
+// SSH终端窗口状态
+const [showLocalSshTerminal, setShowLocalSshTerminal] = useState(false);
+const [showQuickStartGuide, setShowQuickStartGuide] = useState(false);
 
   // 数据加载函数
   const loadVmData = useCallback(async () => {
@@ -2176,7 +2182,7 @@ const VirtualMachineManagement: React.FC = () => {
                 <p style={{ color: "#666", marginBottom: "24px" }}>
                   通过控制台可以直接访问虚拟机桌面，进行远程操作和管理。
                 </p>
-                <Space>
+                <Space wrap>
                   <Button
                     type="primary"
                     size="large"
@@ -2185,13 +2191,31 @@ const VirtualMachineManagement: React.FC = () => {
                   >
                     VNC控制台
                   </Button>
-                  <Button
-                    size="large"
-                    icon={<CodeOutlined />}
-                    onClick={() => message.info("正在连接SSH终端...")}
-                  >
-                    SSH终端
-                  </Button>
+
+                  <Space.Compact>
+                    <Button
+                      size="large"
+                      icon={<CodeOutlined />}
+                      onClick={() => setShowLocalSshTerminal(true)}
+                      style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        borderColor: '#667eea',
+                        color: 'white'
+                      }}
+                    >
+                      SSH终端2
+                    </Button>
+                    <Button
+                      size="large"
+                      icon={<QuestionCircleOutlined />}
+                      onClick={() => setShowQuickStartGuide(true)}
+                      style={{
+                        borderColor: '#667eea',
+                        color: '#667eea'
+                      }}
+                      title="查看启动指南"
+                    />
+                  </Space.Compact>
                   <Button
                     size="large"
                     icon={<DesktopOutlined />}
@@ -2201,6 +2225,19 @@ const VirtualMachineManagement: React.FC = () => {
                   </Button>
                 </Space>
               </div>
+
+              <LocalSshTerminal
+                show={showLocalSshTerminal}
+                onClose={() => setShowLocalSshTerminal(false)}
+                title="SSH终端2 - 本地代理连接"
+                theme="dark"
+                width="95%"
+                height="90vh"
+              />
+              <QuickStartGuide
+                visible={showQuickStartGuide}
+                onClose={() => setShowQuickStartGuide(false)}
+              />
             </Card>
           </div>
         ),
